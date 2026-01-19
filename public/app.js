@@ -247,12 +247,6 @@ function renderState(state) {
     }
     socket.emit('cmd', { text: a.id });
   });
-      if (!code) return;
-      socket.emit('cmd', { text: `vip activate ${code.trim()}` });
-      return;
-    }
-    socket.emit('cmd', { text: a.id });
-  });
 }
 
 const remembered = localStorage.getItem('rememberedUser');
