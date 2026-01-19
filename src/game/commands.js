@@ -179,7 +179,7 @@ function partyStatus(party) {
   return `队伍成员: ${party.members.join(', ')}`;
 }
 
-export async function handleCommand({ player, players, input, send, partyApi, guildApi, mailApi }) {
+export async function handleCommand({ player, players, input, send, partyApi, guildApi, tradeApi, mailApi }) {
   const [cmdRaw, ...rest] = input.trim().split(' ');
   const cmd = (cmdRaw || '').toLowerCase();
   const args = rest.join(' ').trim();
@@ -188,7 +188,7 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
 
   switch (cmd) {
     case 'help': {
-      send('指令: help, look, go <方向/地点>, say <内容>, who, stats, bag, equip <物品>, unequip <部位>, use <物品>, attack <怪物/玩家>, pk <玩家>, cast <技能> <怪物>, autoskill <技能/off>, autopotion <hp%> <mp%>, shop, buy <物品>, buy list, sell <物品>, quests, accept <id>, complete <id>, party, guild, gsay, sabak, vip, mail, teleport。');
+      send('指令: help, look, go <方向/地点>, say <内容>, who, stats, bag, equip <物品>, unequip <部位>, use <物品>, attack <怪物/玩家>, pk <玩家>, cast <技能> <怪物>, autoskill <技能/off>, autopotion <hp%> <mp%>, shop, buy <物品>, buy list, sell <物品>, quests, accept <id>, complete <id>, party, guild, gsay, sabak, vip, trade, mail, teleport。');
       return;
     }
     case 'look': {
@@ -361,9 +361,16 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         send(`自动技能: ${current}`);
         return;
       }
-      if (args.toLowerCase() === 'off') {
+      const lower = args.toLowerCase();
+      if (lower === 'off') {
         if (player.flags) player.flags.autoSkillId = null;
         send('已关闭自动技能。');
+        return;
+      }
+      if (lower === 'all') {
+        if (!player.flags) player.flags = {};
+        player.flags.autoSkillId = 'all';
+        send('已设置自动技能: 全部技能。');
         return;
       }
       const skill = skillByName(player, args);
@@ -679,6 +686,104 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         return;
       }
       send('邮件指令: mail list | mail read <id>');
+      return;
+    }
+    case 'trade': {
+      if (!tradeApi) return send('交易系统不可用。');
+      const [subCmd, ...restArgs] = args.split(' ').filter(Boolean);
+      const sub = (subCmd || '').toLowerCase();
+      const rest = restArgs.join(' ').trim();
+      const target = rest;
+      const trade = tradeApi.getTrade(player.name);
+
+      if (!sub || sub === 'request') {
+        if (!target) return send('请输入交易对象。');
+        const res = tradeApi.requestTrade(player, target);
+        send(res.msg);
+        return;
+      }
+
+      if (sub === 'accept') {
+        if (!target) return send('请输入交易对象。');
+        const res = tradeApi.acceptTrade(player, target);
+        if (!res.ok) send(res.msg);
+        return;
+      }
+
+      if (sub === 'add') {
+        if (!trade) return send('你不在交易中。');
+        const [kind, ...restOffer] = restArgs;
+        if (!kind) return send('格式: trade add item <物品> <数量> | trade add gold <数量>');
+        if (kind.toLowerCase() === 'gold') {
+          const amount = Number(restOffer[0]);
+          if (!amount || amount <= 0) return send('请输入金币数量。');
+          const res = tradeApi.addGold(player, amount);
+          if (!res.ok) return send(res.msg);
+          const offer = trade.offers[player.name];
+          const otherName = trade.a.name === player.name ? trade.b.name : trade.a.name;
+          const other = players.find((p) => p.name === otherName);
+          send(`你放入金币: ${amount} (总计 ${offer.gold})`);
+          if (other) other.send(`${player.name} 放入金币: ${amount}`);
+          return;
+        }
+        if (kind.toLowerCase() !== 'item') return send('格式: trade add item <物品> <数量>');
+        const offerParts = restOffer.slice();
+        if (offerParts.length === 0) return send('请输入物品名称或ID。');
+        let qty = 1;
+        const last = offerParts[offerParts.length - 1];
+        if (/^\d+$/.test(last)) {
+          qty = Number(last);
+          offerParts.pop();
+        }
+        const itemName = offerParts.join(' ');
+        const itemLower = itemName.toLowerCase();
+        const item = Object.values(ITEM_TEMPLATES).find((i) => i.id.toLowerCase() === itemLower || i.name === itemName);
+        if (!item) return send('未找到物品。');
+        const res = tradeApi.addItem(player, item.id, qty);
+        if (!res.ok) return send(res.msg);
+        const otherName = trade.a.name === player.name ? trade.b.name : trade.a.name;
+        const other = players.find((p) => p.name === otherName);
+        send(`你放入: ${item.name} x${qty}`);
+        if (other) other.send(`${player.name} 放入: ${item.name} x${qty}`);
+        return;
+      }
+
+      if (sub === 'lock') {
+        if (!trade) return send('你不在交易中。');
+        const res = tradeApi.lock(player);
+        if (!res.ok) return send(res.msg);
+        const otherName = trade.a.name === player.name ? trade.b.name : trade.a.name;
+        const other = players.find((p) => p.name === otherName);
+        send('你已锁定交易。');
+        if (other) other.send(`${player.name} 已锁定交易。`);
+        if (trade.locked[trade.a.name] && trade.locked[trade.b.name]) {
+          send('双方已锁定，请输入 trade confirm 确认交易。');
+          if (other) other.send('双方已锁定，请输入 trade confirm 确认交易。');
+        }
+        return;
+      }
+
+      if (sub === 'confirm') {
+        if (!trade) return send('你不在交易中。');
+        const res = tradeApi.confirm(player);
+        if (!res.ok) return send(res.msg);
+        const otherName = trade.a.name === player.name ? trade.b.name : trade.a.name;
+        const other = players.find((p) => p.name === otherName);
+        send('你已确认交易。');
+        if (other) other.send(`${player.name} 已确认交易。`);
+        if (trade.confirmed[trade.a.name] && trade.confirmed[trade.b.name]) {
+          tradeApi.finalize(trade);
+        }
+        return;
+      }
+
+      if (sub === 'cancel') {
+        const res = tradeApi.cancel(player);
+        send(res.msg || '已取消交易。');
+        return;
+      }
+
+      send('交易指令: trade request <玩家> | trade accept <玩家> | trade add item <物品> <数量> | trade add gold <数量> | trade lock | trade confirm | trade cancel');
       return;
     }
     case 'rest': {

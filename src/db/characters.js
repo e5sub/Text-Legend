@@ -1,4 +1,5 @@
 import knex from './index.js';
+import { normalizeInventory } from '../game/player.js';
 
 function parseJson(value, fallback) {
   try {
@@ -15,7 +16,7 @@ export async function listCharacters(userId) {
 export async function loadCharacter(userId, name) {
   const row = await knex('characters').where({ user_id: userId, name }).first();
   if (!row) return null;
-  return {
+  const player = {
     id: row.id,
     user_id: row.user_id,
     name: row.name,
@@ -35,9 +36,12 @@ export async function loadCharacter(userId, name) {
     flags: parseJson(row.flags_json, {}),
     status: {}
   };
+  normalizeInventory(player);
+  return player;
 }
 
 export async function saveCharacter(userId, player) {
+  normalizeInventory(player);
   const data = {
     user_id: userId,
     name: player.name,

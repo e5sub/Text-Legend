@@ -93,12 +93,27 @@ export function bagLimit(player) {
 }
 
 export function addItem(player, itemId, qty = 1) {
+  if (!player.inventory) player.inventory = [];
   const slot = player.inventory.find((i) => i.id === itemId);
   if (slot) {
     slot.qty += qty;
   } else {
     player.inventory.push({ id: itemId, qty });
   }
+}
+
+export function normalizeInventory(player) {
+  const merged = new Map();
+  (player.inventory || []).forEach((slot) => {
+    if (!slot || !slot.id) return;
+    const id = slot.id;
+    const qty = Number(slot.qty || 0);
+    if (qty <= 0) return;
+    const cur = merged.get(id) || { id, qty: 0 };
+    cur.qty += qty;
+    merged.set(id, cur);
+  });
+  player.inventory = Array.from(merged.values());
 }
 
 export function removeItem(player, itemId, qty = 1) {

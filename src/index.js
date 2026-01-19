@@ -14,7 +14,7 @@ import { createAdminSession, listUsers, verifyAdminSession } from './db/admin.js
 import { sendMail, listMail, markMailRead } from './db/mail.js';
 import { createVipCodes, listVipCodes, useVipCode } from './db/vip.js';
 import { runMigrations } from './db/migrate.js';
-import { newCharacter, computeDerived, gainExp } from './game/player.js';
+import { newCharacter, computeDerived, gainExp, addItem, removeItem } from './game/player.js';
 import { handleCommand, awardKill } from './game/commands.js';
 import { DEFAULT_SKILLS, getLearnedSkills, getSkill, hasSkill, ensurePlayerSkills } from './game/skills.js';
 import { MOB_TEMPLATES } from './game/mobs.js';
@@ -168,6 +168,8 @@ const players = new Map();
 const parties = new Map();
 const partyInvites = new Map();
 const guildInvites = new Map();
+const tradeInvites = new Map();
+const tradesByPlayer = new Map();
 
 const sabakConfig = {
   startHour: 20,
@@ -289,6 +291,191 @@ function removeFromParty(name) {
   }
 }
 
+function getTradeByPlayer(name) {
+  return tradesByPlayer.get(name);
+}
+
+function clearTrade(trade, reason) {
+  const names = [trade.a.name, trade.b.name];
+  names.forEach((n) => tradesByPlayer.delete(n));
+  if (reason) {
+    names.forEach((n) => {
+      const p = playersByName(n);
+      if (p) p.send(reason);
+    });
+  }
+}
+
+function playersByName(name) {
+  return Array.from(players.values()).find((p) => p.name === name);
+}
+
+function ensureOffer(trade, playerName) {
+  if (!trade.offers[playerName]) {
+    trade.offers[playerName] = { gold: 0, items: [] };
+  }
+  return trade.offers[playerName];
+}
+
+function offerText(offer) {
+  const parts = [];
+  if (offer.gold) parts.push(`金币 ${offer.gold}`);
+  offer.items.forEach((i) => {
+    const name = ITEM_TEMPLATES[i.id]?.name || i.id;
+    parts.push(`${name} x${i.qty}`);
+  });
+  return parts.length ? parts.join(', ') : '无';
+}
+
+function hasOfferItems(player, offer) {
+  return offer.items.every((slot) => {
+    const inv = player.inventory.find((i) => i.id === slot.id);
+    return inv && inv.qty >= slot.qty;
+  });
+}
+
+function applyOfferItems(from, to, offer) {
+  offer.items.forEach((slot) => {
+    removeItem(from, slot.id, slot.qty);
+    addItem(to, slot.id, slot.qty);
+  });
+}
+
+function createTrade(player, target) {
+  const trade = {
+    id: `trade-${Date.now()}-${randInt(100, 999)}`,
+    a: { name: player.name },
+    b: { name: target.name },
+    offers: {
+      [player.name]: { gold: 0, items: [] },
+      [target.name]: { gold: 0, items: [] }
+    },
+    locked: { [player.name]: false, [target.name]: false },
+    confirmed: { [player.name]: false, [target.name]: false }
+  };
+  tradesByPlayer.set(player.name, trade);
+  tradesByPlayer.set(target.name, trade);
+  return trade;
+}
+
+const tradeApi = {
+  requestTrade(player, targetName) {
+    if (getTradeByPlayer(player.name)) return { ok: false, msg: '你正在交易中。' };
+    const target = playersByName(targetName);
+    if (!target) return { ok: false, msg: '玩家不在线。' };
+    if (target.name === player.name) return { ok: false, msg: '不能和自己交易。' };
+    if (getTradeByPlayer(target.name)) return { ok: false, msg: '对方正在交易中。' };
+    const existing = tradeInvites.get(target.name);
+    if (existing && existing.from !== player.name) {
+      return { ok: false, msg: '对方已有交易请求。' };
+    }
+    tradeInvites.set(target.name, { from: player.name, at: Date.now() });
+    target.send(`${player.name} 请求交易，输入 trade accept ${player.name} 接受。`);
+    return { ok: true, msg: `交易请求已发送给 ${target.name}。` };
+  },
+  acceptTrade(player, fromName) {
+    const invite = tradeInvites.get(player.name);
+    if (!invite || invite.from !== fromName) return { ok: false, msg: '没有该交易请求。' };
+    if (getTradeByPlayer(player.name)) return { ok: false, msg: '你正在交易中。' };
+    const inviter = playersByName(fromName);
+    if (!inviter) return { ok: false, msg: '对方不在线。' };
+    if (getTradeByPlayer(inviter.name)) return { ok: false, msg: '对方正在交易中。' };
+    tradeInvites.delete(player.name);
+    const trade = createTrade(inviter, player);
+    const tip = '交易建立。使用 trade add item <物品> <数量> / trade add gold <数量> / trade lock / trade confirm / trade cancel。';
+    inviter.send(tip);
+    player.send(tip);
+    return { ok: true, trade };
+  },
+  addItem(player, itemId, qty) {
+    const trade = getTradeByPlayer(player.name);
+    if (!trade) return { ok: false, msg: '你不在交易中。' };
+    if (trade.locked[player.name] || trade.locked[trade.a.name === player.name ? trade.b.name : trade.a.name]) {
+      return { ok: false, msg: '交易已锁定，无法修改。' };
+    }
+    if (!qty || qty <= 0) return { ok: false, msg: '数量无效。' };
+    const inv = player.inventory.find((i) => i.id === itemId);
+    if (!inv || inv.qty < qty) return { ok: false, msg: '背包里没有足够的物品。' };
+    const offer = ensureOffer(trade, player.name);
+    const existing = offer.items.find((i) => i.id === itemId);
+    if (existing) existing.qty += qty;
+    else offer.items.push({ id: itemId, qty });
+    return { ok: true, trade };
+  },
+  addGold(player, amount) {
+    const trade = getTradeByPlayer(player.name);
+    if (!trade) return { ok: false, msg: '你不在交易中。' };
+    if (trade.locked[player.name] || trade.locked[trade.a.name === player.name ? trade.b.name : trade.a.name]) {
+      return { ok: false, msg: '交易已锁定，无法修改。' };
+    }
+    if (!amount || amount <= 0) return { ok: false, msg: '数量无效。' };
+    if (player.gold < amount) return { ok: false, msg: '金币不足。' };
+    const offer = ensureOffer(trade, player.name);
+    offer.gold += amount;
+    return { ok: true, trade };
+  },
+  lock(player) {
+    const trade = getTradeByPlayer(player.name);
+    if (!trade) return { ok: false, msg: '你不在交易中。' };
+    trade.locked[player.name] = true;
+    return { ok: true, trade };
+  },
+  confirm(player) {
+    const trade = getTradeByPlayer(player.name);
+    if (!trade) return { ok: false, msg: '你不在交易中。' };
+    if (!trade.locked[trade.a.name] || !trade.locked[trade.b.name]) {
+      return { ok: false, msg: '双方都锁定后才能确认。' };
+    }
+    trade.confirmed[player.name] = true;
+    return { ok: true, trade };
+  },
+  cancel(player, reason) {
+    const trade = getTradeByPlayer(player.name);
+    if (trade) {
+      clearTrade(trade, reason || `交易已取消（${player.name}）。`);
+      return { ok: true };
+    }
+    if (tradeInvites.get(player.name)) {
+      tradeInvites.delete(player.name);
+      return { ok: true, msg: '已取消交易请求。' };
+    }
+    for (const [targetName, invite] of tradeInvites.entries()) {
+      if (invite.from === player.name) {
+        tradeInvites.delete(targetName);
+        return { ok: true, msg: '已取消交易请求。' };
+      }
+    }
+    return { ok: false, msg: '没有可取消的交易。' };
+  },
+  finalize(trade) {
+    const playerA = playersByName(trade.a.name);
+    const playerB = playersByName(trade.b.name);
+    if (!playerA || !playerB) {
+      clearTrade(trade, '交易失败，对方已离线。');
+      return { ok: false };
+    }
+    const offerA = ensureOffer(trade, playerA.name);
+    const offerB = ensureOffer(trade, playerB.name);
+    if (playerA.gold < offerA.gold || playerB.gold < offerB.gold ||
+      !hasOfferItems(playerA, offerA) || !hasOfferItems(playerB, offerB)) {
+      clearTrade(trade, '交易失败，物品或金币不足。');
+      return { ok: false };
+    }
+    playerA.gold -= offerA.gold;
+    playerB.gold += offerA.gold;
+    playerB.gold -= offerB.gold;
+    playerA.gold += offerB.gold;
+    applyOfferItems(playerA, playerB, offerA);
+    applyOfferItems(playerB, playerA, offerB);
+    clearTrade(trade, '交易完成。');
+    return { ok: true };
+  },
+  getTrade(playerName) {
+    return getTradeByPlayer(playerName);
+  },
+  offerText
+};
+
 function partyMembersInRoom(party, playersList, zone, room) {
   return party.members
     .map((name) => playersList.find((p) => p.name === name))
@@ -301,7 +488,7 @@ function distributeLoot(party, partyMembers, drops) {
     const targetName = party.members[party.lootIndex % party.members.length];
     party.lootIndex += 1;
     const target = partyMembers.find((p) => p.name === targetName) || partyMembers[0];
-    target.inventory.push({ id: itemId, qty: 1 });
+    addItem(target, itemId, 1);
     target.send(`队伍分配获得: ${ITEM_TEMPLATES[itemId].name}`);
   });
 }
@@ -574,6 +761,7 @@ io.on('connection', (socket) => {
         sabakWindowInfo,
         useVipCode
       },
+      tradeApi,
       mailApi: {
         listMail,
         markMailRead
@@ -589,6 +777,10 @@ io.on('connection', (socket) => {
       if (!player.flags) player.flags = {};
       player.flags.offlineAt = Date.now();
       removeFromParty(player.name);
+      const trade = getTradeByPlayer(player.name);
+      if (trade) {
+        clearTrade(trade, `交易已取消（${player.name} 离线）。`);
+      }
       await savePlayer(player);
       players.delete(socket.id);
     }
@@ -602,6 +794,16 @@ function skillForPlayer(player, skillId) {
   }
   const fallbackId = DEFAULT_SKILLS[player.classId];
   return getSkill(player.classId, fallbackId);
+}
+
+function selectAutoSkill(player) {
+  const learned = getLearnedSkills(player).filter((skill) =>
+    ['attack', 'spell', 'cleave', 'dot'].includes(skill.type)
+  );
+  const usable = learned.filter((skill) => player.mp >= skill.mp);
+  if (!usable.length) return null;
+  usable.sort((a, b) => (b.power || 1) - (a.power || 1));
+  return usable[0].id;
 }
 
 function handleDeath(player) {
@@ -640,11 +842,13 @@ function combatTick() {
 
     let chosenSkillId = player.combat.skillId;
     if (!chosenSkillId && player.flags?.autoSkillId) {
-      chosenSkillId = player.flags.autoSkillId;
+      chosenSkillId = player.flags.autoSkillId === 'all'
+        ? selectAutoSkill(player)
+        : player.flags.autoSkillId;
     }
-    const skill = skillForPlayer(player, chosenSkillId || 'slash');
+    let skill = skillForPlayer(player, chosenSkillId);
     if (skill && player.mp < skill.mp) {
-      chosenSkillId = 'slash';
+      skill = skillForPlayer(player, DEFAULT_SKILLS[player.classId]);
     }
 
     const hitChance = calcHitChance(player, target);
@@ -712,13 +916,14 @@ function combatTick() {
     }
     let chosenSkillId = player.combat.skillId;
     if (!chosenSkillId && player.flags?.autoSkillId) {
-      chosenSkillId = player.flags.autoSkillId;
+      chosenSkillId = player.flags.autoSkillId === 'all'
+        ? selectAutoSkill(player)
+        : player.flags.autoSkillId;
     }
-    const skill = skillForPlayer(player, chosenSkillId || 'slash');
+    let skill = skillForPlayer(player, chosenSkillId);
     if (skill && player.mp < skill.mp) {
       player.send('魔法不足，改用普通攻击。');
-      player.combat.skillId = 'slash';
-      chosenSkillId = 'slash';
+      skill = skillForPlayer(player, DEFAULT_SKILLS[player.classId]);
     }
 
     const hitChance = calcHitChance(player, mob);
@@ -788,7 +993,7 @@ function combatTick() {
           distributeLoot(party, partyMembers, drops);
         } else {
           drops.forEach((id) => {
-            player.inventory.push({ id, qty: 1 });
+            addItem(player, id, 1);
           });
           player.send(`掉落: ${drops.map((id) => ITEM_TEMPLATES[id].name).join(', ')}`);
         }

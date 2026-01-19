@@ -456,6 +456,39 @@ button:hover {
   background: #fffaf1;
 }
 
+.trade-panel {
+  padding: 10px 14px 14px;
+  border-top: 1px dashed #e3c6a4;
+  background: #fff9f0;
+}
+
+.trade-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.trade-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+#trade-item {
+  flex: 1;
+  min-width: 0;
+}
+
+#trade-qty,
+#trade-gold {
+  width: 90px;
+}
+
+.trade-status {
+  font-size: 0.85rem;
+  color: #6b4a2a;
+}
+
 .log p {
   margin: 0 0 8px;
   white-space: pre-wrap;
@@ -492,6 +525,10 @@ button:hover {
   font-size: 0.85rem;
   cursor: pointer;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
 }
 
 .chip.active {

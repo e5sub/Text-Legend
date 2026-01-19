@@ -41,6 +41,19 @@ const chat = {
   guildInviteBtn: document.getElementById('chat-guild-invite'),
   locationBtn: document.getElementById('chat-send-location')
 };
+const tradeUi = {
+  requestBtn: document.getElementById('chat-trade-request'),
+  acceptBtn: document.getElementById('chat-trade-accept'),
+  itemSelect: document.getElementById('trade-item'),
+  qtyInput: document.getElementById('trade-qty'),
+  goldInput: document.getElementById('trade-gold'),
+  addItemBtn: document.getElementById('trade-add-item'),
+  addGoldBtn: document.getElementById('trade-add-gold'),
+  lockBtn: document.getElementById('trade-lock'),
+  confirmBtn: document.getElementById('trade-confirm'),
+  cancelBtn: document.getElementById('trade-cancel'),
+  status: document.getElementById('trade-status')
+};
 
 const authSection = document.getElementById('auth');
 const characterSection = document.getElementById('character');
@@ -82,6 +95,11 @@ function appendChatLine(text) {
   p.textContent = text;
   chat.log.appendChild(p);
   chat.log.scrollTop = chat.log.scrollHeight;
+}
+
+function setTradeStatus(text) {
+  if (!tradeUi.status) return;
+  tradeUi.status.textContent = text;
 }
 
 function isChatLine(text) {
@@ -190,7 +208,14 @@ function renderState(state) {
     socket.emit('cmd', { text: `cast ${s.raw.id} ${selectedMob.name}` });
   });
 
-  const items = (state.items || []).map((i) => ({ id: i.id, label: `${i.name} x${i.qty}`, raw: i }));
+  const itemTotals = {};
+  (state.items || []).forEach((i) => {
+    if (!itemTotals[i.id]) {
+      itemTotals[i.id] = { ...i, qty: 0 };
+    }
+    itemTotals[i.id].qty += i.qty;
+  });
+  const items = Object.values(itemTotals).map((i) => ({ id: i.id, label: `${i.name} x${i.qty}`, raw: i }));
   renderChips(ui.items, items, (i) => {
     if (i.raw.type === 'consumable') {
       socket.emit('cmd', { text: `use ${i.raw.id}` });
@@ -198,6 +223,22 @@ function renderState(state) {
       socket.emit('cmd', { text: `equip ${i.raw.id}` });
     }
   });
+  if (tradeUi.itemSelect) {
+    tradeUi.itemSelect.innerHTML = '';
+    if (!items.length) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = '\u65e0\u53ef\u7528\u7269\u54c1';
+      tradeUi.itemSelect.appendChild(opt);
+    } else {
+      items.forEach((entry) => {
+        const opt = document.createElement('option');
+        opt.value = entry.raw.id;
+        opt.textContent = entry.label;
+        tradeUi.itemSelect.appendChild(opt);
+      });
+    }
+  }
 
   const actions = [
     { id: 'look', label: '\u89c2\u5bdf' },
@@ -223,7 +264,7 @@ function renderState(state) {
     }
     if (a.id === 'afk') {
       const skillList = (state.skills || []).map((s) => `${s.name}(${s.id})`).join(', ');
-      const skillInput = window.prompt(`\u8f93\u5165\u81ea\u52a8\u6280\u80fd(\u8f93\u5165off\u5173\u95ed)\n\u53ef\u9009: ${skillList}`);
+      const skillInput = window.prompt(`\u8f93\u5165\u81ea\u52a8\u6280\u80fd(\u8f93\u5165all\u5168\u90e8\u6280\u80fd, off\u5173\u95ed)\n\u53ef\u9009: ${skillList}`);
       if (skillInput === null) return;
       const skillValue = skillInput.trim();
       if (skillValue) {
@@ -355,6 +396,7 @@ function enterGame(name) {
   show(gameSection);
   log.innerHTML = '';
   if (chat.log) chat.log.innerHTML = '';
+  setTradeStatus('\u672a\u5728\u4ea4\u6613\u4e2d');
   appendLine('正在连接...');
   ui.name.textContent = name;
   ui.classLevel.textContent = '-';
@@ -378,6 +420,10 @@ function enterGame(name) {
     parseStats(payload.text);
     if (isChatLine(payload.text)) {
       appendChatLine(payload.text);
+    }
+    if (payload.text.startsWith('\u4ea4\u6613')) {
+      appendChatLine(payload.text);
+      setTradeStatus(payload.text);
     }
   });
   socket.on('state', (payload) => {
@@ -418,6 +464,59 @@ if (chat.locationBtn) {
     const location = zone && room ? `${zone} - ${room}` : zone || room || '';
     if (!location) return;
     socket.emit('cmd', { text: `say \u6211\u5728 ${location}` });
+  });
+}
+if (tradeUi.requestBtn) {
+  tradeUi.requestBtn.addEventListener('click', () => {
+    const name = window.prompt('\u8bf7\u8f93\u5165\u4ea4\u6613\u5bf9\u8c61');
+    if (!name || !socket) return;
+    socket.emit('cmd', { text: `trade request ${name.trim()}` });
+    setTradeStatus('\u4ea4\u6613\u8bf7\u6c42\u5df2\u53d1\u9001');
+  });
+}
+if (tradeUi.acceptBtn) {
+  tradeUi.acceptBtn.addEventListener('click', () => {
+    const name = window.prompt('\u8bf7\u8f93\u5165\u5bf9\u65b9\u540d\u5b57');
+    if (!name || !socket) return;
+    socket.emit('cmd', { text: `trade accept ${name.trim()}` });
+  });
+}
+if (tradeUi.addItemBtn) {
+  tradeUi.addItemBtn.addEventListener('click', () => {
+    if (!socket || !tradeUi.itemSelect) return;
+    const itemId = tradeUi.itemSelect.value;
+    if (!itemId) return;
+    const qtyValue = tradeUi.qtyInput ? tradeUi.qtyInput.value : '1';
+    const qty = Math.max(1, Number(qtyValue || 1));
+    socket.emit('cmd', { text: `trade add item ${itemId} ${qty}` });
+  });
+}
+if (tradeUi.addGoldBtn) {
+  tradeUi.addGoldBtn.addEventListener('click', () => {
+    if (!socket) return;
+    const goldValue = tradeUi.goldInput ? tradeUi.goldInput.value : '0';
+    const amount = Number(goldValue || 0);
+    if (!amount || amount <= 0) return;
+    socket.emit('cmd', { text: `trade add gold ${amount}` });
+  });
+}
+if (tradeUi.lockBtn) {
+  tradeUi.lockBtn.addEventListener('click', () => {
+    if (!socket) return;
+    socket.emit('cmd', { text: 'trade lock' });
+  });
+}
+if (tradeUi.confirmBtn) {
+  tradeUi.confirmBtn.addEventListener('click', () => {
+    if (!socket) return;
+    socket.emit('cmd', { text: 'trade confirm' });
+  });
+}
+if (tradeUi.cancelBtn) {
+  tradeUi.cancelBtn.addEventListener('click', () => {
+    if (!socket) return;
+    socket.emit('cmd', { text: 'trade cancel' });
+    setTradeStatus('\u4ea4\u6613\u5df2\u53d6\u6d88');
   });
 }
 document.querySelectorAll('.quick-btn').forEach((btn) => {
