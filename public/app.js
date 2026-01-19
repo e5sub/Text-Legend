@@ -182,7 +182,7 @@ function renderState(state) {
     selectedMob = m.raw;
     ui.target.textContent = `目标: ${m.raw.name}`;
     socket.emit('cmd', { text: `attack ${m.raw.name}` });
-  }, selectedMob?.id);
+  }, selectedMob ? selectedMob.id : null);
 
   const skills = (state.skills || []).map((s) => ({ id: s.id, label: s.name, raw: s }));
   renderChips(ui.skills, skills, (s) => {
@@ -418,7 +418,7 @@ if (chat.guildInviteBtn) {
 }
 if (chat.locationBtn) {
   chat.locationBtn.addEventListener('click', () => {
-    if (!socket || !lastState?.room) return;
+    if (!socket || !lastState || !lastState.room) return;
     const zone = lastState.room.zone || '';
     const room = lastState.room.name || '';
     const location = zone && room ? `${zone} - ${room}` : zone || room || '';
