@@ -3,6 +3,7 @@ let socket = null;
 let activeChar = null;
 const classNames = { warrior: '战士', mage: '法师', taoist: '道士' };
 let selectedMob = null;
+let lastState = null;
 const directionLabels = {
   north: '北',
   south: '南',
@@ -31,6 +32,14 @@ const ui = {
   items: document.getElementById('items-list'),
   actions: document.getElementById('actions-list'),
   target: document.getElementById('target-label')
+};
+const chat = {
+  log: document.getElementById('chat-log'),
+  input: document.getElementById('chat-input'),
+  sendBtn: document.getElementById('chat-send'),
+  partyInviteBtn: document.getElementById('chat-party-invite'),
+  guildInviteBtn: document.getElementById('chat-guild-invite'),
+  locationBtn: document.getElementById('chat-send-location')
 };
 
 const authSection = document.getElementById('auth');
@@ -65,6 +74,29 @@ function appendLine(text) {
   p.textContent = text;
   log.appendChild(p);
   log.scrollTop = log.scrollHeight;
+}
+
+function appendChatLine(text) {
+  if (!chat.log) return;
+  const p = document.createElement('p');
+  p.textContent = text;
+  chat.log.appendChild(p);
+  chat.log.scrollTop = chat.log.scrollHeight;
+}
+
+function isChatLine(text) {
+  const match = text.match(/^\[([^\]]+)\]/);
+  if (!match) return false;
+  const head = match[1];
+  return !/^\d+$/.test(head);
+}
+
+function sendChatMessage() {
+  if (!socket || !chat.input) return;
+  const msg = chat.input.value.trim();
+  if (!msg) return;
+  socket.emit('cmd', { text: `say ${msg}` });
+  chat.input.value = '';
 }
 
 function setBar(el, current, max) {
@@ -121,6 +153,7 @@ function renderChips(container, items, onClick, activeId) {
 }
 
 function renderState(state) {
+  lastState = state;
   if (state.player) {
     ui.name.textContent = state.player.name || '-';
     const classLabel = classNames[state.player.classId] || state.player.classId || '-';
@@ -327,6 +360,7 @@ function enterGame(name) {
   activeChar = name;
   show(gameSection);
   log.innerHTML = '';
+  if (chat.log) chat.log.innerHTML = '';
   appendLine('正在连接...');
   ui.name.textContent = name;
   ui.classLevel.textContent = '-';
@@ -348,6 +382,9 @@ function enterGame(name) {
   socket.on('output', (payload) => {
     appendLine(payload.text);
     parseStats(payload.text);
+    if (isChatLine(payload.text)) {
+      appendChatLine(payload.text);
+    }
   });
   socket.on('state', (payload) => {
     renderState(payload);
@@ -357,6 +394,38 @@ function enterGame(name) {
 document.getElementById('login-btn').addEventListener('click', login);
 document.getElementById('register-btn').addEventListener('click', register);
 document.getElementById('create-char-btn').addEventListener('click', createCharacter);
+if (chat.sendBtn) {
+  chat.sendBtn.addEventListener('click', sendChatMessage);
+}
+if (chat.input) {
+  chat.input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') sendChatMessage();
+  });
+}
+if (chat.partyInviteBtn) {
+  chat.partyInviteBtn.addEventListener('click', () => {
+    const name = window.prompt('\u8F93\u5165\u8981\u9080\u8BF7\u7684\u73A9\u5BB6\u540D');
+    if (!name || !socket) return;
+    socket.emit('cmd', { text: `party invite ${name.trim()}` });
+  });
+}
+if (chat.guildInviteBtn) {
+  chat.guildInviteBtn.addEventListener('click', () => {
+    const name = window.prompt('\u8F93\u5165\u8981\u9080\u8BF7\u7684\u73A9\u5BB6\u540D');
+    if (!name || !socket) return;
+    socket.emit('cmd', { text: `guild invite ${name.trim()}` });
+  });
+}
+if (chat.locationBtn) {
+  chat.locationBtn.addEventListener('click', () => {
+    if (!socket || !lastState?.room) return;
+    const zone = lastState.room.zone || '';
+    const room = lastState.room.name || '';
+    const location = zone && room ? `${zone} - ${room}` : zone || room || '';
+    if (!location) return;
+    socket.emit('cmd', { text: `say \u6211\u5728 ${location}` });
+  });
+}
 document.querySelectorAll('.quick-btn').forEach((btn) => {
   btn.addEventListener('click', () => {
     const cmd = btn.getAttribute('data-cmd');

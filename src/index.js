@@ -16,7 +16,7 @@ import { createVipCodes, listVipCodes, useVipCode } from './db/vip.js';
 import { runMigrations } from './db/migrate.js';
 import { newCharacter, computeDerived, gainExp } from './game/player.js';
 import { handleCommand, awardKill } from './game/commands.js';
-import { SKILLS } from './game/skills.js';
+import { DEFAULT_SKILLS, getLearnedSkills, getSkill, hasSkill, ensurePlayerSkills } from './game/skills.js';
 import { MOB_TEMPLATES } from './game/mobs.js';
 import { ITEM_TEMPLATES } from './game/items.js';
 import { WORLD } from './game/world.js';
@@ -416,7 +416,7 @@ function buildState(player) {
       : dest;
     return { dir, label };
   }) : [];
-  const skills = Object.values(SKILLS[player.classId] || {}).map((s) => ({
+  const skills = getLearnedSkills(player).map((s) => ({
     id: s.id,
     name: s.name,
     mp: s.mp,
@@ -596,8 +596,12 @@ io.on('connection', (socket) => {
 });
 
 function skillForPlayer(player, skillId) {
-  const skills = SKILLS[player.classId] || {};
-  return skills[skillId] || skills.slash || skills.fireball || skills.soul || null;
+  ensurePlayerSkills(player);
+  if (skillId && hasSkill(player, skillId)) {
+    return getSkill(player.classId, skillId);
+  }
+  const fallbackId = DEFAULT_SKILLS[player.classId];
+  return getSkill(player.classId, fallbackId);
 }
 
 function handleDeath(player) {

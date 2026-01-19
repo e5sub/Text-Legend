@@ -1,6 +1,6 @@
 ﻿import { WORLD, NPCS } from './world.js';
 import { ITEM_TEMPLATES, SHOP_STOCKS } from './items.js';
-import { SKILLS } from './skills.js';
+import { BOOK_SKILLS, getSkill, getLearnedSkills, hasSkill, ensurePlayerSkills } from './skills.js';
 import { QUESTS } from './quests.js';
 import { addItem, removeItem, equipItem, unequipItem, bagLimit, gainExp, computeDerived } from './player.js';
 import { CLASSES, expForLevel } from './constants.js';
@@ -167,9 +167,11 @@ function getShopStock(player) {
   return SHOP_STOCKS[shopId].map((id) => ITEM_TEMPLATES[id]);
 }
 
-function skillByName(classId, name) {
-  const list = Object.values(SKILLS[classId] || {});
-  return list.find((s) => s.id === name || s.name.toLowerCase() === name.toLowerCase());
+function skillByName(player, name) {
+  if (!name) return null;
+  const list = getLearnedSkills(player);
+  const target = name.toLowerCase();
+  return list.find((s) => s.id === target || s.name.toLowerCase() === target);
 }
 
 function partyStatus(party) {
@@ -275,6 +277,19 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
       if (!args) return send('要使用什么？');
       const item = Object.values(ITEM_TEMPLATES).find((i) => i.name.toLowerCase() === args.toLowerCase() || i.id === args);
       if (!item) return send('未找到物品。');
+      if (item.type === 'book') {
+        const mapping = BOOK_SKILLS[item.id];
+        if (!mapping) return send('该技能书暂未开放。');
+        if (mapping.classId !== player.classId) return send('你的职业无法学习该技能。');
+        const skill = getSkill(mapping.classId, mapping.skillId);
+        if (!skill) return send('该技能暂未开放。');
+        ensurePlayerSkills(player);
+        if (hasSkill(player, skill.id)) return send('你已学会该技能。');
+        if (!removeItem(player, item.id, 1)) return send('背包里没有该物品。');
+        player.skills.push(skill.id);
+        send(`学会技能: ${skill.name}。`);
+        return;
+      }
       if (!removeItem(player, item.id, 1)) return send('背包里没有该物品。');
       if (item.type !== 'consumable') {
         addItem(player, item.id, 1);
@@ -323,7 +338,7 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
       if (parts.length < 1) return send('要施放哪个技能？');
       const skillName = parts[0];
       const targetName = parts.slice(1).join(' ');
-      const skill = skillByName(player.classId, skillName);
+      const skill = skillByName(player, skillName);
       if (!skill) return send('未找到技能。');
       if (skill.type === 'heal') {
         if (player.mp < skill.mp) return send('魔法不足。');
@@ -351,7 +366,7 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         send('已关闭自动技能。');
         return;
       }
-      const skill = skillByName(player.classId, args);
+      const skill = skillByName(player, args);
       if (!skill) return send('未找到技能。');
       if (!player.flags) player.flags = {};
       player.flags.autoSkillId = skill.id;

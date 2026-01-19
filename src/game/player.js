@@ -1,5 +1,6 @@
 import { CLASSES, START_POSITION, expForLevel, maxBagSlots } from './constants.js';
 import { ITEM_TEMPLATES } from './items.js';
+import { DEFAULT_SKILLS } from './skills.js';
 import { clamp } from './utils.js';
 
 export function newCharacter(name, classId) {
@@ -36,6 +37,7 @@ export function newCharacter(name, classId) {
       bracelet: null
     },
     quests: {},
+    skills: [DEFAULT_SKILLS[classId]].filter(Boolean),
     flags: { tutorial: true, pkValue: 0, vip: false, offlineAt: null, autoSkillId: null, autoHpPct: null, autoMpPct: null },
     status: {}
   };
