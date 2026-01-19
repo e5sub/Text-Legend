@@ -10,8 +10,11 @@ services:
       - dbdata:/var/lib/mysql
     command: ["--default-authentication-plugin=mysql_native_password"]
 
-  game:
-    build: .
+  text-legend:
+    image: ghcr.io/e5sub/text-legend:latest
+    container_name: text-legend
+    hostname: text-legend
+    restart: unless-stopped
     depends_on:
       - db
     ports:

@@ -1,9 +1,9 @@
-import knex from './index.js';
 import { readdir } from 'node:fs/promises';
-import { pathToFileURL } from 'node:url';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import knex from './index.js';
 
-async function migrate() {
+export async function runMigrations({ destroy = false } = {}) {
   const dir = new URL('./migrations/', import.meta.url);
   const files = (await readdir(dir)).filter((f) => f.endsWith('.js')).sort();
 
@@ -28,10 +28,14 @@ async function migrate() {
     }
   }
 
-  await knex.destroy();
+  if (destroy) {
+    await knex.destroy();
+  }
 }
 
-migrate().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  runMigrations({ destroy: true }).catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

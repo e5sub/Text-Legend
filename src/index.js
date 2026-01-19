@@ -13,6 +13,7 @@ import { addGuildMember, createGuild, getGuildByName, getGuildMember, getSabakOw
 import { createAdminSession, listUsers, verifyAdminSession } from './db/admin.js';
 import { sendMail, listMail, markMailRead } from './db/mail.js';
 import { createVipCodes, listVipCodes, useVipCode } from './db/vip.js';
+import { runMigrations } from './db/migrate.js';
 import { newCharacter, computeDerived, gainExp } from './game/player.js';
 import { handleCommand, awardKill } from './game/commands.js';
 import { SKILLS } from './game/skills.js';
@@ -864,6 +865,11 @@ async function sabakTick() {
 }
 
 async function start() {
+  if (config.db.client === 'sqlite') {
+    const dir = path.dirname(config.db.filename);
+    await mkdir(dir, { recursive: true });
+  }
+  await runMigrations();
   await loadSabakState();
   setInterval(() => sabakTick().catch(() => {}), 5000);
   if (config.adminBootstrapSecret && config.adminBootstrapUser) {
@@ -877,10 +883,6 @@ async function start() {
         console.warn('ADMIN_BOOTSTRAP_USER not found, cannot bootstrap admin.');
       }
     }
-  }
-  if (config.db.client === 'sqlite') {
-    const dir = path.dirname(config.db.filename);
-    await mkdir(dir, { recursive: true });
   }
   server.listen(config.port, () => {
     console.log(`Server on http://localhost:${config.port}`);

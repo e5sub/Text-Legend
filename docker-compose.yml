@@ -1,6 +1,9 @@
 services:
-  game:
-    build: .
+  text-legend:
+    image: ghcr.io/e5sub/text-legend:latest
+    container_name: text-legend
+    hostname: text-legend
+    restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
