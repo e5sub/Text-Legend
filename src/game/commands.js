@@ -8,6 +8,40 @@ import { getRoom, getRoomMobs, spawnMobs } from './state.js';
 import { clamp } from './utils.js';
 
 const PARTY_LIMIT = 5;
+const DIR_LABELS = {
+  north: '北',
+  south: '南',
+  east: '东',
+  west: '西',
+  northeast: '东北',
+  northwest: '西北',
+  southeast: '东南',
+  southwest: '西南',
+  up: '上',
+  down: '下'
+};
+const DIR_ALIASES = {
+  北: 'north',
+  南: 'south',
+  东: 'east',
+  西: 'west',
+  东北: 'northeast',
+  西北: 'northwest',
+  东南: 'southeast',
+  西南: 'southwest',
+  上: 'up',
+  下: 'down'
+};
+
+function dirLabel(dir) {
+  return DIR_LABELS[dir] || dir;
+}
+
+function normalizeDirection(input) {
+  const trimmed = (input || '').trim();
+  if (!trimmed) return '';
+  return DIR_ALIASES[trimmed] || trimmed.toLowerCase();
+}
 
 function roomLabel(player) {
   const zone = WORLD[player.position.zone];
@@ -99,7 +133,7 @@ function formatStats(player, partyApi) {
 function sendRoomDescription(player, send) {
   const zone = WORLD[player.position.zone];
   const room = zone.rooms[player.position.room];
-  const exits = Object.keys(room.exits).join(', ');
+  const exits = Object.keys(room.exits).map((dir) => dirLabel(dir)).join(', ');
   send(`当前位置: ${roomLabel(player)}`);
   send(room.desc);
   send(`出口: ${exits || '无'}`);
@@ -148,7 +182,7 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
     }
     case 'go':
     case 'move': {
-      const dir = args.toLowerCase();
+      const dir = normalizeDirection(args);
       const room = getRoom(player.position.zone, player.position.room);
       if (!dir || !room.exits[dir]) {
         send('方向无效。');
@@ -162,7 +196,7 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
       } else {
         player.position.room = dest;
       }
-      send(`你向 ${dir} 移动。`);
+      send(`你向 ${dirLabel(dir)} 移动。`);
       sendRoomDescription(player, send);
       return;
     }
@@ -340,13 +374,13 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
       return;
     }
     case 'quests': {
-      const list = Object.values(QUESTS).map((q) => `${q.id}: ${q.name} - ${q.desc}`);
+      const list = Object.values(QUESTS).map((q) => `任务: ${q.name} - ${q.desc}`);
       send(list.join('\n'));
       return;
     }
     case 'accept': {
       if (!args) return send('要接受哪个任务？');
-      const quest = QUESTS[args];
+      const quest = Object.values(QUESTS).find((q) => q.id === args || q.name === args);
       if (!quest) return send('未找到任务。');
       if (player.quests[quest.id]) return send('任务已在进行中。');
       player.quests[quest.id] = { progress: {}, completed: false };
@@ -355,8 +389,8 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
     }
     case 'complete': {
       if (!args) return send('要完成哪个任务？');
-      const quest = QUESTS[args];
-      const state = player.quests[args];
+      const quest = Object.values(QUESTS).find((q) => q.id === args || q.name === args);
+      const state = quest ? player.quests[quest.id] : null;
       if (!quest || !state) return send('该任务未接受。');
       const goals = quest.goals.kill || {};
       const progress = state.progress.kill || {};

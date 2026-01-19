@@ -524,7 +524,10 @@ io.on('connection', (socket) => {
     if (loaded.guild) loaded.send(`行会: ${loaded.guild.name}`);
     applyOfflineRewards(loaded);
     spawnMobs(loaded.position.zone, loaded.position.room);
-    loaded.send(`你位于 ${loaded.position.zone}:${loaded.position.room}。输入 look 查看。`);
+    const zone = WORLD[loaded.position.zone];
+    const room = zone?.rooms[loaded.position.room];
+    const locationName = zone && room ? `${zone.name} - ${room.name}` : `${loaded.position.zone}:${loaded.position.room}`;
+    loaded.send(`你位于 ${locationName}。输入 look 查看。`);
     sendState(loaded);
   });
 

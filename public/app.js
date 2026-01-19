@@ -3,6 +3,18 @@ let socket = null;
 let activeChar = null;
 const classNames = { warrior: '战士', mage: '法师', taoist: '道士' };
 let selectedMob = null;
+const directionLabels = {
+  north: '北',
+  south: '南',
+  east: '东',
+  west: '西',
+  northeast: '东北',
+  northwest: '西北',
+  southeast: '东南',
+  southwest: '西南',
+  up: '上',
+  down: '下'
+};
 const ui = {
   name: document.getElementById('ui-name'),
   classLevel: document.getElementById('ui-class'),
@@ -129,7 +141,7 @@ function renderState(state) {
   }
   ui.target.textContent = selectedMob ? `目标: ${selectedMob.name}` : '未选择';
 
-  const exits = (state.exits || []).map((e) => ({ id: e.dir, label: e.dir }));
+  const exits = (state.exits || []).map((e) => ({ id: e.dir, label: directionLabels[e.dir] || e.dir }));
   renderChips(ui.exits, exits, (e) => socket.emit('cmd', { text: `go ${e.id}` }));
 
   const mobs = (state.mobs || []).map((m) => ({ id: m.id, label: `${m.name}(${m.hp})`, raw: m }));
@@ -155,16 +167,25 @@ function renderState(state) {
   });
 
   const actions = [
-    { id: 'look', label: '观察' },
-    { id: 'stats', label: '状态' },
-    { id: 'bag', label: '背包' },
-    { id: 'quests', label: '任务' },
-    { id: 'party', label: '队伍' },
-    { id: 'guild', label: '行会' },
-    { id: 'sabak status', label: '沙巴克' },
-    { id: 'mail list', label: '邮件' }
+    { id: 'look', label: '\u89c2\u5bdf' },
+    { id: 'stats', label: '\u72b6\u6001' },
+    { id: 'bag', label: '\u80cc\u5305' },
+    { id: 'quests', label: '\u4efb\u52a1' },
+    { id: 'party', label: '\u961f\u4f0d' },
+    { id: 'guild', label: '\u884c\u4f1a' },
+    { id: 'sabak status', label: '\u6c99\u5df4\u514b' },
+    { id: 'mail list', label: '\u90ae\u4ef6' },
+    { id: 'vip activate', label: 'VIP\u6fc0\u6d3b' }
   ];
-  renderChips(ui.actions, actions, (a) => socket.emit('cmd', { text: a.id }));
+  renderChips(ui.actions, actions, (a) => {
+    if (a.id === 'vip activate') {
+      const code = window.prompt('\u8f93\u5165VIP\u6fc0\u6d3b\u7801');
+      if (!code) return;
+      socket.emit('cmd', { text: `vip activate ${code.trim()}` });
+      return;
+    }
+    socket.emit('cmd', { text: a.id });
+  });
 }
 
 const remembered = localStorage.getItem('rememberedUser');
