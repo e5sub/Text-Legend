@@ -133,7 +133,21 @@ function formatStats(player, partyApi) {
 function sendRoomDescription(player, send) {
   const zone = WORLD[player.position.zone];
   const room = zone.rooms[player.position.room];
-  const exits = Object.keys(room.exits).map((dir) => dirLabel(dir)).join(', ');
+  const exits = Object.entries(room.exits)
+    .map(([dir, dest]) => {
+      let zoneId = player.position.zone;
+      let roomId = dest;
+      if (dest.includes(':')) {
+        [zoneId, roomId] = dest.split(':');
+      }
+      const destZone = WORLD[zoneId];
+      const destRoom = destZone?.rooms[roomId];
+      const name = destRoom
+        ? (zoneId === player.position.zone ? destRoom.name : `${destZone.name} - ${destRoom.name}`)
+        : dest;
+      return `${name}`;
+    })
+    .join(', ');
   send(`当前位置: ${roomLabel(player)}`);
   send(room.desc);
   send(`出口: ${exits || '无'}`);
@@ -172,7 +186,7 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
 
   switch (cmd) {
     case 'help': {
-      send('指令: help, look, go <方向>, say <内容>, who, stats, bag, equip <物品>, unequip <部位>, use <物品>, attack <怪物/玩家>, pk <玩家>, cast <技能> <怪物>, autoskill <技能/off>, autopotion <hp%> <mp%>, buy <物品>, sell <物品>, quests, accept <id>, complete <id>, party, guild, gsay, sabak, vip, mail, teleport。');
+      send('指令: help, look, go <方向/地点>, say <内容>, who, stats, bag, equip <物品>, unequip <部位>, use <物品>, attack <怪物/玩家>, pk <玩家>, cast <技能> <怪物>, autoskill <技能/off>, autopotion <hp%> <mp%>, shop, buy <物品>, buy list, sell <物品>, quests, accept <id>, complete <id>, party, guild, gsay, sabak, vip, mail, teleport。');
       return;
     }
     case 'look': {
@@ -182,8 +196,26 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
     }
     case 'go':
     case 'move': {
-      const dir = normalizeDirection(args);
       const room = getRoom(player.position.zone, player.position.room);
+      let dir = normalizeDirection(args);
+      if (!dir || !room.exits[dir]) {
+        const targetName = (args || '').trim();
+        if (targetName) {
+          const entry = Object.entries(room.exits).find(([exitDir, dest]) => {
+            let zoneId = player.position.zone;
+            let roomId = dest;
+            if (dest.includes(':')) {
+              [zoneId, roomId] = dest.split(':');
+            }
+            const destZone = WORLD[zoneId];
+            const destRoom = destZone?.rooms[roomId];
+            if (!destRoom) return false;
+            const fullName = `${destZone.name} - ${destRoom.name}`;
+            return targetName === destRoom.name || targetName === fullName;
+          });
+          if (entry) dir = entry[0];
+        }
+      }
       if (!dir || !room.exits[dir]) {
         send('方向无效。');
         return;
@@ -196,7 +228,9 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
       } else {
         player.position.room = dest;
       }
-      send(`你向 ${dirLabel(dir)} 移动。`);
+      const zone = WORLD[player.position.zone];
+      const roomName = zone?.rooms[player.position.room]?.name;
+      send(`你前往 ${roomName || dirLabel(dir)}。`);
       sendRoomDescription(player, send);
       return;
     }
@@ -353,6 +387,12 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
     case 'buy': {
       if (!canShop(player)) return send('这里没有商店。');
       if (!args) return send('要买什么？');
+      if (args.toLowerCase() === 'list') {
+        const stock = getShopStock(player);
+        if (!stock.length) return send('商店暂无商品。');
+        send(`商店商品: ${stock.map((i) => `${i.name}(${i.price}金)`).join(', ')}`);
+        return;
+      }
       const stock = getShopStock(player);
       const item = stock.find((i) => i.name.toLowerCase() === args.toLowerCase() || i.id === args);
       if (!item) return send('这里不卖该物品。');
@@ -360,6 +400,14 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
       player.gold -= item.price;
       addItem(player, item.id, 1);
       send(`购买了 ${item.name}，花费 ${item.price} 金币。`);
+      return;
+    }
+    case 'shop': {
+      if (!canShop(player)) return send('这里没有商店。');
+      const stock = getShopStock(player);
+      if (!stock.length) return send('商店暂无商品。');
+      send(`商店商品: ${stock.map((i) => `${i.name}(${i.price}金)`).join(', ')}`);
+      send('购买指令: buy <物品名> 或 buy list 查看。');
       return;
     }
     case 'sell': {

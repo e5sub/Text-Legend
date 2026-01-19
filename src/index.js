@@ -402,7 +402,20 @@ function buildState(player) {
     hp: m.hp,
     max_hp: m.max_hp
   }));
-  const exits = room ? Object.keys(room.exits).map((dir) => ({ dir })) : [];
+  const exits = room ? Object.keys(room.exits).map((dir) => {
+    const dest = room.exits[dir];
+    let zoneId = player.position.zone;
+    let roomId = dest;
+    if (dest.includes(':')) {
+      [zoneId, roomId] = dest.split(':');
+    }
+    const destZone = WORLD[zoneId];
+    const destRoom = destZone?.rooms[roomId];
+    const label = destRoom
+      ? (zoneId === player.position.zone ? destRoom.name : `${destZone.name} - ${destRoom.name}`)
+      : dest;
+    return { dir, label };
+  }) : [];
   const skills = Object.values(SKILLS[player.classId] || {}).map((s) => ({
     id: s.id,
     name: s.name,

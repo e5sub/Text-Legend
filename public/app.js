@@ -141,7 +141,7 @@ function renderState(state) {
   }
   ui.target.textContent = selectedMob ? `目标: ${selectedMob.name}` : '未选择';
 
-  const exits = (state.exits || []).map((e) => ({ id: e.dir, label: directionLabels[e.dir] || e.dir }));
+  const exits = (state.exits || []).map((e) => ({ id: e.dir, label: e.label || directionLabels[e.dir] || e.dir }));
   renderChips(ui.exits, exits, (e) => socket.emit('cmd', { text: `go ${e.id}` }));
 
   const mobs = (state.mobs || []).map((m) => ({ id: m.id, label: `${m.name}(${m.hp})`, raw: m }));
@@ -175,11 +175,45 @@ function renderState(state) {
     { id: 'guild', label: '\u884c\u4f1a' },
     { id: 'sabak status', label: '\u6c99\u5df4\u514b' },
     { id: 'mail list', label: '\u90ae\u4ef6' },
+    { id: 'shop', label: '\u5546\u5e97' },
     { id: 'vip activate', label: 'VIP\u6fc0\u6d3b' }
   ];
+  if (state.stats && state.stats.vip) {
+    actions.push({ id: 'afk', label: '\u6302\u673a' });
+  }
   renderChips(ui.actions, actions, (a) => {
     if (a.id === 'vip activate') {
       const code = window.prompt('\u8f93\u5165VIP\u6fc0\u6d3b\u7801');
+      if (!code) return;
+      socket.emit('cmd', { text: `vip activate ${code.trim()}` });
+      return;
+    }
+    if (a.id === 'afk') {
+      const skillList = (state.skills || []).map((s) => `${s.name}(${s.id})`).join(', ');
+      const skillInput = window.prompt(`\u8f93\u5165\u81ea\u52a8\u6280\u80fd(\u8f93\u5165off\u5173\u95ed)\n\u53ef\u9009: ${skillList}`);
+      if (skillInput === null) return;
+      const skillValue = skillInput.trim();
+      if (skillValue) {
+        if (skillValue.toLowerCase() === 'off') {
+          socket.emit('cmd', { text: 'autoskill off' });
+        } else {
+          socket.emit('cmd', { text: `autoskill ${skillValue}` });
+        }
+      }
+      const potionInput = window.prompt('\u81ea\u52a8\u559d\u836f\u9608\u503c: \u8f93\u5165 "HP MP" (5-95) \u6216 off \u5173\u95ed');
+      if (potionInput === null) return;
+      const potionValue = potionInput.trim();
+      if (potionValue) {
+        if (potionValue.toLowerCase() === 'off') {
+          socket.emit('cmd', { text: 'autopotion off' });
+        } else {
+          socket.emit('cmd', { text: `autopotion ${potionValue}` });
+        }
+      }
+      return;
+    }
+    socket.emit('cmd', { text: a.id });
+  });
       if (!code) return;
       socket.emit('cmd', { text: `vip activate ${code.trim()}` });
       return;

@@ -13,7 +13,9 @@ export async function createVipCodes(count) {
 }
 
 export async function useVipCode(code, userId) {
-  const row = await knex('vip_codes').where({ code }).first();
+  const normalized = (code || '').trim().toUpperCase();
+  if (!normalized) return null;
+  const row = await knex('vip_codes').where({ code: normalized }).first();
   if (!row || row.used_at) return null;
   await knex('vip_codes').where({ id: row.id }).update({ used_by_user_id: userId, used_at: knex.fn.now() });
   return row;
