@@ -37,7 +37,7 @@ export function expForLevel(level) {
 }
 
 export function maxBagSlots(level) {
-  return 20 + Math.floor(level / 5) * 2;
+  return 500;
 }
 
 export const START_POSITION = {

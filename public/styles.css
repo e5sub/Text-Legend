@@ -629,6 +629,27 @@ button:hover {
   filter: brightness(1.03);
 }
 
+.bag-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.bag-item {
+  border-radius: 999px;
+  border: 1px solid rgba(118, 70, 22, 0.25);
+  background: #f7e2c6;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  text-align: center;
+  cursor: pointer;
+  line-height: 1.2;
+}
+
+.bag-item:hover {
+  filter: brightness(1.03);
+}
+
 .afk-skill-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

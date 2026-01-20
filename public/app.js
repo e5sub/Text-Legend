@@ -85,6 +85,14 @@ const shopUi = {
   sellList: document.getElementById('shop-sell-list'),
   close: document.getElementById('shop-close')
 };
+const bagUi = {
+  modal: document.getElementById('bag-modal'),
+  list: document.getElementById('bag-list'),
+  page: document.getElementById('bag-page'),
+  prev: document.getElementById('bag-prev'),
+  next: document.getElementById('bag-next'),
+  close: document.getElementById('bag-close')
+};
 const afkUi = {
   modal: document.getElementById('afk-modal'),
   list: document.getElementById('afk-skill-list'),
@@ -102,6 +110,9 @@ const playerUi = {
 };
 const itemTooltip = document.getElementById('item-tooltip');
 let lastShopItems = [];
+let bagItems = [];
+let bagPage = 0;
+const BAG_PAGE_SIZE = 40;
 
 const authSection = document.getElementById('auth');
 const characterSection = document.getElementById('character');
@@ -523,6 +534,15 @@ function hideItemTooltip() {
   itemTooltip.classList.add('hidden');
 }
 
+function handleItemAction(item) {
+  if (!item || !socket) return;
+  if (item.type === 'consumable' || item.type === 'book') {
+    socket.emit('cmd', { text: `use ${item.id}` });
+  } else if (item.slot) {
+    socket.emit('cmd', { text: `equip ${item.id}` });
+  }
+}
+
 function renderChips(container, items, onClick, activeId) {
   container.innerHTML = '';
   items.forEach((item) => {
@@ -540,6 +560,31 @@ function renderChips(container, items, onClick, activeId) {
     btn.addEventListener('click', () => onClick(item));
     container.appendChild(btn);
   });
+}
+
+function renderBagModal() {
+  if (!bagUi.modal || !bagUi.list) return;
+  bagUi.list.innerHTML = '';
+  const totalPages = Math.max(1, Math.ceil(bagItems.length / BAG_PAGE_SIZE));
+  bagPage = Math.min(Math.max(0, bagPage), totalPages - 1);
+  const start = bagPage * BAG_PAGE_SIZE;
+  const pageItems = bagItems.slice(start, start + BAG_PAGE_SIZE);
+  pageItems.forEach((item) => {
+    const btn = document.createElement('div');
+    btn.className = 'bag-item';
+    btn.textContent = `${item.name} x${item.qty}`;
+    if (item.tooltip) {
+      btn.addEventListener('mouseenter', (evt) => showItemTooltip(item.tooltip, evt));
+      btn.addEventListener('mousemove', (evt) => positionTooltip(evt.clientX, evt.clientY));
+      btn.addEventListener('mouseleave', hideItemTooltip);
+    }
+    btn.addEventListener('click', () => handleItemAction(item));
+    bagUi.list.appendChild(btn);
+  });
+  if (bagUi.page) bagUi.page.textContent = `第 ${bagPage + 1}/${totalPages} 页`;
+  if (bagUi.prev) bagUi.prev.disabled = bagPage === 0;
+  if (bagUi.next) bagUi.next.disabled = bagPage >= totalPages - 1;
+  bagUi.modal.classList.remove('hidden');
 }
 
 const ITEM_TYPE_LABELS = {
@@ -735,12 +780,16 @@ function renderState(state) {
     tooltip: formatItemTooltip(i),
     className: `${i.rarity ? `rarity-${i.rarity}` : ''}${i.is_set ? ' item-set' : ''}`.trim()
   }));
-  renderChips(ui.items, items, (i) => {
-    if (i.raw.type === 'consumable' || i.raw.type === 'book') {
-      socket.emit('cmd', { text: `use ${i.raw.id}` });
-    } else if (i.raw.slot) {
-      socket.emit('cmd', { text: `equip ${i.raw.id}` });
+  bagItems = items.map((i) => ({ ...i.raw, tooltip: i.tooltip }));
+  const inlineItems = items.length > BAG_PAGE_SIZE
+    ? items.slice(0, BAG_PAGE_SIZE).concat([{ id: 'bag-more', label: '更多...', raw: null }])
+    : items;
+  renderChips(ui.items, inlineItems, (i) => {
+    if (i.id === 'bag-more') {
+      renderBagModal();
+      return;
     }
+    handleItemAction(i.raw);
   });
   if (shopUi.modal && !shopUi.modal.classList.contains('hidden')) {
     renderShopSellList(state.items || []);
@@ -1132,6 +1181,29 @@ if (tradeUi.cancelBtn) {
 if (shopUi.close) {
   shopUi.close.addEventListener('click', () => {
     shopUi.modal.classList.add('hidden');
+    hideItemTooltip();
+  });
+}
+if (bagUi.prev) {
+  bagUi.prev.addEventListener('click', () => {
+    if (bagPage > 0) {
+      bagPage -= 1;
+      renderBagModal();
+    }
+  });
+}
+if (bagUi.next) {
+  bagUi.next.addEventListener('click', () => {
+    const totalPages = Math.max(1, Math.ceil(bagItems.length / BAG_PAGE_SIZE));
+    if (bagPage < totalPages - 1) {
+      bagPage += 1;
+      renderBagModal();
+    }
+  });
+}
+if (bagUi.close) {
+  bagUi.close.addEventListener('click', () => {
+    if (bagUi.modal) bagUi.modal.classList.add('hidden');
     hideItemTooltip();
   });
 }
