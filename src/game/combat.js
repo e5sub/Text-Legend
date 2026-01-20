@@ -30,8 +30,8 @@ export function applyHealing(target, amount) {
   target.hp = clamp(target.hp + amount, 0, target.max_hp);
 }
 
-export function applyPoison(target, turns, tickDamage) {
-  target.status.poison = { turns, tickDamage };
+export function applyPoison(target, turns, tickDamage, sourceName = null) {
+  target.status.poison = { turns, tickDamage, sourceName };
 }
 
 export function tickStatus(target) {

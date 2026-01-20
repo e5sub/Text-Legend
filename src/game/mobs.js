@@ -124,4 +124,26 @@
     { id: 'ring_protect', chance: 0.003 },
     { id: 'ring_revival', chance: 0.003 }
   ] }
+  ,
+  world_boss: {
+    id: 'world_boss',
+    name: '世界BOSS·炎龙',
+    level: 60,
+    hp: 12000,
+    atk: 180,
+    def: 110,
+    exp: 9000,
+    gold: [2000, 3200],
+    worldBoss: true,
+    drops: [
+      { id: 'armor_molong', chance: 0.12 },
+      { id: 'wulong', chance: 0.04 },
+      { id: 'nujian', chance: 0.04 },
+      { id: 'blood_drink', chance: 0.04 },
+      { id: 'ring_magic', chance: 0.01 },
+      { id: 'ring_teleport', chance: 0.01 },
+      { id: 'ring_protect', chance: 0.01 },
+      { id: 'ring_revival', chance: 0.01 }
+    ]
+  }
 };

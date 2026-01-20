@@ -215,7 +215,7 @@
         id: 'gate',
         name: '土城城门',
         desc: '黄沙漫天，旅人聚集。',
-        exits: { south: 'mg_plains:gate', north: 'mg_market', west: 'wms:entrance', east: 'zm:hall', northeast: 'cr:valley' },
+        exits: { south: 'mg_plains:gate', north: 'mg_market', west: 'wms:entrance', east: 'zm:hall', northeast: 'cr:valley', northwest: 'wb:lair' },
         npcs: ['guard'],
         spawns: []
       },
@@ -452,6 +452,20 @@
         desc: '魔龙教主在此守望。',
         exits: { south: 'gate' },
         spawns: ['molong_boss']
+      }
+    }
+  }
+  ,
+  wb: {
+    id: 'wb',
+    name: '世界BOSS领域',
+    rooms: {
+      lair: {
+        id: 'lair',
+        name: '炎龙巢穴',
+        desc: '灼热气息翻涌，世界BOSS盘踞于此。',
+        exits: { southeast: 'mg_town:gate' },
+        spawns: ['world_boss']
       }
     }
   }

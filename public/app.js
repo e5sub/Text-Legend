@@ -202,12 +202,22 @@ function appendChatLine(payload) {
   if (!chat.log) return;
   const p = buildLine(payload);
   const loc = parseLocationMessage(normalizePayload(payload).text);
+  const data = normalizePayload(payload);
   if (loc && socket) {
     const btn = document.createElement('button');
     btn.className = 'chat-link-btn';
     btn.textContent = '前往';
     btn.addEventListener('click', () => {
       socket.emit('cmd', { text: `goto ${loc.player}` });
+    });
+    p.appendChild(btn);
+  }
+  if (data.location && socket) {
+    const btn = document.createElement('button');
+    btn.className = 'chat-link-btn';
+    btn.textContent = '前往';
+    btn.addEventListener('click', () => {
+      socket.emit('cmd', { text: `goto_room ${data.location.zoneId}:${data.location.roomId}` });
     });
     p.appendChild(btn);
   }

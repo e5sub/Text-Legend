@@ -202,8 +202,8 @@ function sendTo(player, message) {
   player.socket.emit('output', { text: message });
 }
 
-function emitAnnouncement(text, color) {
-  io.emit('output', { text, prefix: '公告', prefixColor: 'announce', color });
+function emitAnnouncement(text, color, location) {
+  io.emit('output', { text, prefix: '公告', prefixColor: 'announce', color, location });
 }
 
 const RARITY_ORDER = ['legendary', 'epic', 'rare', 'uncommon', 'common'];
@@ -259,6 +259,7 @@ function isSetItem(itemId) {
 function isBossMob(mobTemplate) {
   const id = mobTemplate.id;
   return (
+    mobTemplate.worldBoss ||
     id.includes('leader') ||
     id.includes('boss') ||
     id.includes('demon') ||
@@ -266,12 +267,12 @@ function isBossMob(mobTemplate) {
   );
 }
 
-function rollRarityDrop(mobTemplate) {
+function rollRarityDrop(mobTemplate, bonus = 1) {
   if (!isBossMob(mobTemplate)) return null;
   const table = RARITY_BOSS;
   const allowSet = true;
   for (const rarity of RARITY_ORDER) {
-    if (Math.random() <= table[rarity]) {
+    if (Math.random() <= Math.min(1, table[rarity] * bonus)) {
       const pool = allowSet
         ? ITEM_POOLS[rarity]
         : ITEM_POOLS[rarity].filter((id) => !isSetItem(id));
@@ -282,14 +283,15 @@ function rollRarityDrop(mobTemplate) {
   return null;
 }
 
-function dropLoot(player, mobTemplate) {
+function dropLoot(mobTemplate, bonus = 1) {
   const loot = [];
   if (mobTemplate.drops) {
     mobTemplate.drops.forEach((drop) => {
-      if (Math.random() <= drop.chance) loot.push(drop.id);
+      const chance = Math.min(1, (drop.chance || 0) * bonus);
+      if (Math.random() <= chance) loot.push(drop.id);
     });
   }
-  const rarityDrop = rollRarityDrop(mobTemplate);
+  const rarityDrop = rollRarityDrop(mobTemplate, bonus);
   if (rarityDrop) loot.push(rarityDrop);
   return loot;
 }
@@ -515,11 +517,11 @@ function partyMembersInRoom(party, playersList, zone, room) {
 function distributeLoot(party, partyMembers, drops) {
   if (!drops.length || !party || partyMembers.length === 0) return;
   drops.forEach((itemId) => {
-    const targetName = party.members[party.lootIndex % party.members.length];
-    party.lootIndex += 1;
-    const target = partyMembers.find((p) => p.name === targetName) || partyMembers[0];
+    const target = partyMembers[randInt(0, partyMembers.length - 1)];
     addItem(target, itemId, 1);
-    target.send(`队伍分配获得: ${ITEM_TEMPLATES[itemId].name}`);
+    partyMembers.forEach((member) => {
+      member.send(`队伍掉落: ${ITEM_TEMPLATES[itemId].name} -> ${target.name}`);
+    });
   });
 }
 
@@ -778,6 +780,64 @@ function sendRoomState(zoneId, roomId) {
     .forEach((p) => sendState(p));
 }
 
+const WORLD_BOSS_ROOM = { zoneId: 'wb', roomId: 'lair' };
+
+function checkWorldBossRespawn() {
+  const { zoneId, roomId } = WORLD_BOSS_ROOM;
+  const mobs = spawnMobs(zoneId, roomId);
+  const respawned = mobs.filter((m) => m.justRespawned);
+  if (!respawned.length) return;
+  respawned.forEach((mob) => {
+    mob.justRespawned = false;
+  });
+  const zone = WORLD[zoneId];
+  const room = zone?.rooms?.[roomId];
+  const bossName = respawned[0]?.name || '世界BOSS';
+  emitAnnouncement(
+    `${bossName} 已刷新，点击前往。`,
+    'announce',
+    {
+      zoneId,
+      roomId,
+      label: zone && room ? `${zone.name} - ${room.name}` : `${zoneId}:${roomId}`
+    }
+  );
+}
+
+function recordMobDamage(mob, attackerName, dmg) {
+  if (!mob) return;
+  if (!mob.status) mob.status = {};
+  if (!mob.status.damageBy) mob.status.damageBy = {};
+  if (!mob.status.firstHitBy) mob.status.firstHitBy = attackerName;
+  if (attackerName) {
+    mob.status.damageBy[attackerName] = (mob.status.damageBy[attackerName] || 0) + dmg;
+  }
+}
+
+function applyDamageToMob(mob, dmg, attackerName) {
+  recordMobDamage(mob, attackerName, dmg);
+  applyDamage(mob, dmg);
+}
+
+function buildDamageRankMap(mob) {
+  const damageBy = mob.status?.damageBy || {};
+  const entries = Object.entries(damageBy).sort((a, b) => b[1] - a[1]);
+  const rankMap = {};
+  entries.forEach(([name], idx) => {
+    rankMap[name] = idx + 1;
+  });
+  return { rankMap, entries };
+}
+
+function rankDropBonus(rank) {
+  if (!rank || rank <= 0) return 1;
+  if (rank === 1) return 2.0;
+  if (rank === 2) return 1.6;
+  if (rank === 3) return 1.3;
+  if (rank <= 5) return 1.15;
+  return 1.0;
+}
+
 function consumeItem(player, itemId) {
   const slot = player.inventory.find((i) => i.id === itemId);
   if (!slot) return false;
@@ -1011,9 +1071,31 @@ function processMobDeath(player, mob, online) {
   const gold = randInt(template.gold[0], template.gold[1]);
 
   const party = getPartyByMember(player.name);
-  const partyMembers = party ? partyMembersInRoom(party, online, player.position.zone, player.position.room) : [player];
+  let partyMembers = party ? partyMembersInRoom(party, online, player.position.zone, player.position.room) : [];
   const inRoomCount = partyMembers.length || 1;
-  const allInRoom = party && partyMembers.length === party.members.length;
+  const allInRoom = partyMembers.length > 1;
+  const isBoss = isBossMob(template);
+  const isWorldBoss = Boolean(template.worldBoss);
+  const { rankMap, entries } = isWorldBoss ? buildDamageRankMap(mob) : { rankMap: {}, entries: [] };
+  let lootOwner = player;
+  if (!party || partyMembers.length === 0) {
+    let ownerName = null;
+    if (isBoss) {
+      const damageBy = mob.status?.damageBy || {};
+      let maxDamage = -1;
+      Object.entries(damageBy).forEach(([name, dmg]) => {
+        if (dmg > maxDamage) {
+          maxDamage = dmg;
+          ownerName = name;
+        }
+      });
+    } else {
+      ownerName = mob.status?.firstHitBy || null;
+    }
+    if (!ownerName) ownerName = player.name;
+    lootOwner = playersByName(ownerName) || player;
+    partyMembers = [lootOwner];
+  }
   const eligibleCount = allInRoom ? 1 : inRoomCount;
   const bonus = inRoomCount > 1 ? Math.min(0.2 * inRoomCount, 1.0) : 0;
   const totalExp = Math.floor(exp * (1 + bonus));
@@ -1033,25 +1115,45 @@ function processMobDeath(player, mob, online) {
     if (leveled) member.send('你升级了！');
   });
 
-  const drops = dropLoot(player, template);
-  if (drops.length) {
-    if (party && partyMembers.length > 1) {
+  const dropTargets = [];
+  if (isWorldBoss && (!party || partyMembers.length === 0)) {
+    const top = entries
+      .map(([name]) => playersByName(name))
+      .filter(Boolean)
+      .slice(0, 3);
+    if (top.length) {
+      dropTargets.push(...top.map((p) => ({ player: p, bonus: rankDropBonus(rankMap[p.name]) })));
+    } else {
+      dropTargets.push({ player: lootOwner, bonus: 1 });
+    }
+  } else {
+    const bestRank = isWorldBoss
+      ? Math.min(...partyMembers.map((m) => rankMap[m.name] || 9999))
+      : 0;
+    const bonus = isWorldBoss ? rankDropBonus(bestRank) : 1;
+    dropTargets.push({ player: lootOwner, bonus });
+  }
+
+  dropTargets.forEach(({ player: owner, bonus }) => {
+    const drops = dropLoot(template, bonus);
+    if (!drops.length) return;
+    if (party && partyMembers.length > 0) {
       distributeLoot(party, partyMembers, drops);
     } else {
       drops.forEach((id) => {
-        addItem(player, id, 1);
+        addItem(owner, id, 1);
       });
-      player.send(`掉落: ${drops.map((id) => ITEM_TEMPLATES[id].name).join(', ')}`);
+      owner.send(`掉落: ${drops.map((id) => ITEM_TEMPLATES[id].name).join(', ')}`);
     }
     drops.forEach((id) => {
       const item = ITEM_TEMPLATES[id];
       if (!item) return;
       const rarity = rarityByPrice(item);
       if (['uncommon', 'rare', 'epic', 'legendary'].includes(rarity)) {
-        emitAnnouncement(`${player.name} 击败 ${template.name} 获得${RARITY_LABELS[rarity] || '稀有'}装备 ${item.name}！`, rarity);
+        emitAnnouncement(`${owner.name} 击败 ${template.name} 获得${RARITY_LABELS[rarity] || '稀有'}装备 ${item.name}！`, rarity);
       }
     });
-  }
+  });
 }
 
 function combatTick() {
@@ -1130,9 +1232,9 @@ function combatTick() {
       if (!target.combat || target.combat.targetType !== 'player' || target.combat.targetId !== player.name) {
         target.combat = { targetId: player.name, targetType: 'player', skillId: 'slash' };
       }
-      if (skill && skill.type === 'dot') {
+  if (skill && skill.type === 'dot') {
         if (!target.status) target.status = {};
-        applyPoison(target, 4, Math.max(2, Math.floor(player.mag * 0.3 * skillPower)));
+        applyPoison(target, 4, Math.max(2, Math.floor(player.mag * 0.3 * skillPower)), player.name);
       }
       if (skill && ['attack', 'spell', 'cleave', 'dot', 'aoe'].includes(skill.type)) {
         notifyMastery(player, skill);
@@ -1215,7 +1317,7 @@ function combatTick() {
 
       if (skill && skill.type === 'aoe') {
         mobs.forEach((target) => {
-          applyDamage(target, dmg);
+          applyDamageToMob(target, dmg, player.name);
         });
         player.send(`你施放了 ${skill.name}，造成范围伤害 ${dmg}。`);
         const deadTargets = mobs.filter((target) => target.hp <= 0);
@@ -1229,7 +1331,7 @@ function combatTick() {
         }
         sendRoomState(player.position.zone, player.position.room);
       } else {
-        applyDamage(mob, dmg);
+        applyDamageToMob(mob, dmg, player.name);
         player.send(`你对 ${mob.name} 造成 ${dmg} 点伤害。`);
         if (mob.hp > 0) {
           sendRoomState(player.position.zone, player.position.room);
@@ -1242,11 +1344,12 @@ function combatTick() {
         player.send(`${mob.name} 被麻痹戒指定身。`);
       }
       if (skill && skill.type === 'dot') {
-        applyPoison(mob, 4, Math.max(2, Math.floor(player.mag * 0.3 * skillPower)));
+        if (!mob.status) mob.status = {};
+        applyPoison(mob, 4, Math.max(2, Math.floor(player.mag * 0.3 * skillPower)), player.name);
       }
       if (skill && skill.type === 'cleave') {
         mobs.filter((m) => m.id !== mob.id).forEach((other) => {
-          applyDamage(other, Math.floor(dmg * 0.5));
+          applyDamageToMob(other, Math.floor(dmg * 0.5), player.name);
         });
       }
       if (skill && ['attack', 'spell', 'cleave', 'dot', 'aoe'].includes(skill.type)) {
@@ -1259,6 +1362,10 @@ function combatTick() {
     const statusTick = tickStatus(mob);
     if (statusTick && statusTick.type === 'poison') {
       player.send(`${mob.name} 受到 ${statusTick.dmg} 点中毒伤害。`);
+      const sourceName = mob.status?.poison?.sourceName;
+      if (sourceName) {
+        recordMobDamage(mob, sourceName, statusTick.dmg);
+      }
     }
 
     if (player.summon && mob.hp > 0) {
@@ -1266,7 +1373,7 @@ function combatTick() {
       const hitChance = calcHitChance(summon, mob);
       if (Math.random() <= hitChance) {
         const dmg = calcDamage(summon, mob, 1);
-        applyDamage(mob, dmg);
+        applyDamageToMob(mob, dmg, player.name);
         player.send(`${summon.name} 对 ${mob.name} 造成 ${dmg} 点伤害。`);
       }
     }
@@ -1371,6 +1478,8 @@ async function start() {
   }
   await runMigrations();
   await loadSabakState();
+  checkWorldBossRespawn();
+  setInterval(() => checkWorldBossRespawn(), 5000);
   setInterval(() => sabakTick().catch(() => {}), 5000);
   if (config.adminBootstrapSecret && config.adminBootstrapUser) {
     const admins = await knex('users').where({ is_admin: true }).first();

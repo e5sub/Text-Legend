@@ -47,7 +47,8 @@ export function spawnMobs(zoneId, roomId) {
         def: tpl.def,
         dex: tpl.dex || 6,
         status: {},
-        respawnAt: null
+        respawnAt: null,
+        justRespawned: Boolean(tpl.worldBoss)
       };
       mobList.push(mob);
       return;
@@ -64,6 +65,7 @@ export function spawnMobs(zoneId, roomId) {
       mob.dex = tpl.dex || 6;
       mob.status = {};
       mob.respawnAt = null;
+      mob.justRespawned = Boolean(tpl.worldBoss);
     }
   });
   return mobList;
@@ -78,12 +80,13 @@ export function removeMob(zoneId, roomId, mobId) {
     mob.status = {};
     const tpl = MOB_TEMPLATES[mob.templateId];
     const isBoss = tpl && (
+      tpl.worldBoss ||
       tpl.id.includes('boss') ||
       tpl.id.includes('leader') ||
       tpl.id.includes('demon') ||
       ['bug_queen', 'huangquan', 'evil_snake', 'pig_white'].includes(tpl.id)
     );
-    const delayMs = isBoss ? 60 * 1000 : 0;
+    const delayMs = tpl && tpl.worldBoss ? 60 * 60 * 1000 : (isBoss ? 60 * 1000 : 0);
     mob.respawnAt = Date.now() + delayMs;
   }
 }

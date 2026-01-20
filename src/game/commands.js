@@ -1,5 +1,6 @@
 ﻿import { WORLD, NPCS } from './world.js';
 import { ITEM_TEMPLATES, SHOP_STOCKS } from './items.js';
+import { MOB_TEMPLATES } from './mobs.js';
 import {
   BOOK_SKILLS,
   getSkill,
@@ -112,6 +113,13 @@ function shopForRoom(roomId) {
   return null;
 }
 
+function isWorldBossRoom(zoneId, roomId) {
+  const zone = WORLD[zoneId];
+  const room = zone?.rooms?.[roomId];
+  if (!room || !room.spawns) return false;
+  return room.spawns.some((mobId) => MOB_TEMPLATES[mobId]?.worldBoss);
+}
+
 function formatInventory(player) {
   if (player.inventory.length === 0) return '背包为空。';
   return player.inventory
@@ -205,7 +213,13 @@ function getShopStock(player) {
   if (!shopId) return [];
   return SHOP_STOCKS[shopId]
     .map((id) => ITEM_TEMPLATES[id])
-    .filter((item) => item && rarityByPrice(item) === 'common');
+    .filter((item) => {
+      if (!item) return false;
+      if (['weapon', 'armor', 'accessory'].includes(item.type)) {
+        return rarityByPrice(item) === 'common';
+      }
+      return true;
+    });
 }
 
 function rarityByPrice(item) {
@@ -259,6 +273,16 @@ function applyBuff(target, buff) {
   if (!target.status) target.status = {};
   if (!target.status.buffs) target.status.buffs = {};
   target.status.buffs[buff.key] = buff;
+}
+
+function recordMobDamage(mob, attackerName, dmg) {
+  if (!mob) return;
+  if (!mob.status) mob.status = {};
+  if (!mob.status.damageBy) mob.status.damageBy = {};
+  if (!mob.status.firstHitBy) mob.status.firstHitBy = attackerName;
+  if (attackerName) {
+    mob.status.damageBy[attackerName] = (mob.status.damageBy[attackerName] || 0) + dmg;
+  }
 }
 
 function notifyMastery(player, skill) {
@@ -328,6 +352,29 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
       const zone = WORLD[player.position.zone];
       const roomName = zone?.rooms[player.position.room]?.name;
       send(`你前往 ${roomName || dirLabel(dir)}。`);
+      sendRoomDescription(player, send);
+      return;
+    }
+    case 'goto_room': {
+      if (!args) return send('要前往哪个房间？');
+      let zoneId = '';
+      let roomId = '';
+      if (args.includes(':')) {
+        [zoneId, roomId] = args.split(':');
+      } else {
+        const parts = args.split(' ').filter(Boolean);
+        zoneId = parts[0];
+        roomId = parts[1];
+      }
+      if (!zoneId || !roomId || !WORLD[zoneId] || !WORLD[zoneId].rooms[roomId]) {
+        return send('目标地点无效。');
+      }
+      if (!isWorldBossRoom(zoneId, roomId)) {
+        return send('该地点无法直接前往。');
+      }
+      player.position.zone = zoneId;
+      player.position.room = roomId;
+      send('你已前往世界BOSS房间。');
       sendRoomDescription(player, send);
       return;
     }
@@ -575,6 +622,7 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         if (!mobs.length) return send('这里没有怪物。');
         mobs.forEach((mob) => {
           const dmg = Math.max(1, Math.floor(player.mag * 0.6 * power));
+          recordMobDamage(mob, player.name, dmg);
           applyDamage(mob, dmg);
           mob.status.stunTurns = Math.max(mob.status.stunTurns || 0, 1);
         });
