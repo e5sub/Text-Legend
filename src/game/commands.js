@@ -331,6 +331,16 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
       sendRoomDescription(player, send);
       return;
     }
+    case 'goto': {
+      if (!args) return send('要前往哪个玩家？');
+      const target = players.find((p) => p.name === args);
+      if (!target) return send('玩家不在线。');
+      player.position.zone = target.position.zone;
+      player.position.room = target.position.room;
+      send(`你前往 ${target.name} 的位置。`);
+      sendRoomDescription(player, send);
+      return;
+    }
     case 'say': {
       if (!args) return;
       players.forEach((p) => p.send(`[${player.name}] ${args}`));

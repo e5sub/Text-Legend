@@ -175,6 +175,13 @@ function buildLine(payload) {
   return p;
 }
 
+function parseLocationMessage(text) {
+  if (!text) return null;
+  const match = text.match(/^\[([^\]]+)\]\s+我在\s+(.+?)\s+-\s+(.+)$/);
+  if (!match) return null;
+  return { player: match[1], location: `${match[2]} - ${match[3]}` };
+}
+
 function appendLine(payload) {
   const p = buildLine(payload);
   log.appendChild(p);
@@ -184,6 +191,16 @@ function appendLine(payload) {
 function appendChatLine(payload) {
   if (!chat.log) return;
   const p = buildLine(payload);
+  const loc = parseLocationMessage(normalizePayload(payload).text);
+  if (loc && socket) {
+    const btn = document.createElement('button');
+    btn.className = 'chat-link-btn';
+    btn.textContent = '前往';
+    btn.addEventListener('click', () => {
+      socket.emit('cmd', { text: `goto ${loc.player}` });
+    });
+    p.appendChild(btn);
+  }
   chat.log.appendChild(p);
   chat.log.scrollTop = chat.log.scrollHeight;
   if (activeChar) cacheChatLine(activeChar, payload);
