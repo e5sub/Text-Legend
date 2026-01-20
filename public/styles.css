@@ -657,6 +657,64 @@ button:hover {
   margin-bottom: 8px;
 }
 
+.consign-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0 10px;
+}
+
+.consign-tab {
+  border-radius: 999px;
+  border: 1px solid rgba(118, 70, 22, 0.25);
+  background: #f5d8b4;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.consign-tab.active {
+  background: #d07a2c;
+  color: #fff;
+}
+
+.consign-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.consign-filter {
+  border-radius: 999px;
+  border: 1px solid rgba(118, 70, 22, 0.25);
+  background: #f7e2c6;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.consign-filter.active {
+  background: #d07a2c;
+  color: #fff;
+}
+
+.consign-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 6px 0 2px;
+  font-size: 0.85rem;
+}
+
+.consign-pager button {
+  min-width: 84px;
+}
+
+.consign-panel.hidden {
+  display: none;
+}
+
 .consign-item {
   border-radius: 12px;
   border: 1px solid rgba(118, 70, 22, 0.25);
@@ -676,6 +734,40 @@ button:hover {
   display: block;
   color: #6b4a2a;
   margin-top: 4px;
+}
+
+#consign-modal .modal-card {
+  max-height: 78vh;
+  overflow: auto;
+}
+
+#consign-modal .modal-actions {
+  position: sticky;
+  bottom: 0;
+  background: #fff5e8;
+  padding-top: 10px;
+}
+
+.repair-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.repair-item {
+  border-radius: 12px;
+  border: 1px solid rgba(118, 70, 22, 0.25);
+  background: #f7e2c6;
+  padding: 8px 10px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1.3;
+}
+
+.repair-item:hover {
+  filter: brightness(1.03);
 }
 
 .bag-list {

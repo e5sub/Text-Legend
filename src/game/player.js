@@ -3,6 +3,50 @@ import { ITEM_TEMPLATES } from './items.js';
 import { DEFAULT_SKILLS } from './skills.js';
 import { clamp } from './utils.js';
 
+function rarityByPrice(item) {
+  if (!item) return 'common';
+  const price = Number(item.price || 0);
+  if (price >= 80000) return 'legendary';
+  if (price >= 30000) return 'epic';
+  if (price >= 10000) return 'rare';
+  if (price >= 2000) return 'uncommon';
+  return 'common';
+}
+
+function ensureDurability(equipped) {
+  if (!equipped || !equipped.id) return;
+  const item = ITEM_TEMPLATES[equipped.id];
+  if (!item) return;
+  if (!equipped.max_durability) {
+    equipped.max_durability = 100;
+  }
+  if (equipped.durability == null) {
+    equipped.durability = equipped.max_durability;
+  }
+  equipped.durability = clamp(equipped.durability, 0, equipped.max_durability);
+}
+
+export function getDurabilityMax(item) {
+  if (!item) return 0;
+  return 100;
+}
+
+export function getRepairCost(item, missing) {
+  if (!item || missing <= 0) return 0;
+  const base = item.type === 'weapon' ? 12 : item.type === 'armor' ? 10 : 8;
+  const rarity = rarityByPrice(item);
+  const mult = rarity === 'legendary'
+    ? 1.7
+    : rarity === 'epic'
+      ? 1.45
+      : rarity === 'rare'
+        ? 1.25
+        : rarity === 'uncommon'
+          ? 1.1
+          : 1.0;
+  return Math.max(1, Math.floor(base * mult * missing));
+}
+
 export function newCharacter(name, classId) {
   const cls = CLASSES[classId];
   const level = 1;
@@ -63,8 +107,8 @@ export function computeDerived(player) {
   const base = cls.base;
   const level = player.level;
   const bonus = Object.values(player.equipment)
-    .filter(Boolean)
-    .map((item) => ITEM_TEMPLATES[item.id]);
+    .filter((equipped) => equipped && equipped.id && (equipped.durability == null || equipped.durability > 0))
+    .map((equipped) => ITEM_TEMPLATES[equipped.id]);
 
   const stats = { ...base };
   for (const item of bonus) {
@@ -149,6 +193,7 @@ export function normalizeEquipment(player) {
   player.equipment.ring_right = player.equipment.ring_right || null;
   player.equipment.bracelet_left = player.equipment.bracelet_left || null;
   player.equipment.bracelet_right = player.equipment.bracelet_right || null;
+  Object.values(player.equipment).forEach((equipped) => ensureDurability(equipped));
 }
 
 function resolveEquipSlot(player, item) {
@@ -189,7 +234,8 @@ export function equipItem(player, itemId) {
     addItem(player, player.equipment[slot].id, 1);
   }
 
-  player.equipment[slot] = { id: itemId };
+  const maxDur = 100;
+  player.equipment[slot] = { id: itemId, durability: maxDur, max_durability: maxDur };
   removeItem(player, itemId, 1);
   computeDerived(player);
   return { ok: true, msg: `\u5DF2\u88C5\u5907${item.name}\u3002` };

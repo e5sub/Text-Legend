@@ -85,11 +85,29 @@ const shopUi = {
   sellList: document.getElementById('shop-sell-list'),
   close: document.getElementById('shop-close')
 };
+const repairUi = {
+  modal: document.getElementById('repair-modal'),
+  list: document.getElementById('repair-list'),
+  all: document.getElementById('repair-all'),
+  close: document.getElementById('repair-close')
+};
 const consignUi = {
   modal: document.getElementById('consign-modal'),
+  tabs: Array.from(document.querySelectorAll('.consign-tab')),
+  panels: Array.from(document.querySelectorAll('.consign-panel')),
+  filters: Array.from(document.querySelectorAll('.consign-filter')),
   marketList: document.getElementById('consign-market-list'),
+  marketPrev: document.getElementById('consign-market-prev'),
+  marketNext: document.getElementById('consign-market-next'),
+  marketPage: document.getElementById('consign-market-page'),
   myList: document.getElementById('consign-my-list'),
+  myPrev: document.getElementById('consign-my-prev'),
+  myNext: document.getElementById('consign-my-next'),
+  myPage: document.getElementById('consign-my-page'),
   inventoryList: document.getElementById('consign-inventory-list'),
+  inventoryPrev: document.getElementById('consign-inventory-prev'),
+  inventoryNext: document.getElementById('consign-inventory-next'),
+  inventoryPage: document.getElementById('consign-inventory-page'),
   close: document.getElementById('consign-close')
 };
 const bagUi = {
@@ -119,6 +137,12 @@ const itemTooltip = document.getElementById('item-tooltip');
 let lastShopItems = [];
 let consignMarketItems = [];
 let consignMyItems = [];
+let consignInventoryItems = [];
+let consignMarketPage = 0;
+let consignMyPage = 0;
+let consignInventoryPage = 0;
+let consignMarketFilter = 'all';
+const CONSIGN_PAGE_SIZE = 9;
 let bagItems = [];
 let bagPage = 0;
 const BAG_PAGE_SIZE = 40;
@@ -410,16 +434,30 @@ function showShopModal(items) {
   shopUi.modal.classList.remove('hidden');
 }
 
+function filterConsignItems(items, filter) {
+  if (!filter || filter === 'all') return items;
+  return items.filter((entry) => entry && entry.item && entry.item.type === filter);
+}
+
+function paginateItems(items, page) {
+  const totalPages = Math.max(1, Math.ceil(items.length / CONSIGN_PAGE_SIZE));
+  const safePage = Math.min(Math.max(0, page), totalPages - 1);
+  const start = safePage * CONSIGN_PAGE_SIZE;
+  return { totalPages, page: safePage, slice: items.slice(start, start + CONSIGN_PAGE_SIZE) };
+}
+
 function renderConsignMarket(items) {
   if (!consignUi.marketList) return;
   consignUi.marketList.innerHTML = '';
-  if (!items.length) {
+  const filtered = filterConsignItems(items, consignMarketFilter);
+  const { totalPages, page, slice } = paginateItems(filtered, consignMarketPage);
+  consignMarketPage = page;
+  if (!slice.length) {
     const empty = document.createElement('div');
     empty.textContent = '\u5BC4\u552E\u5E02\u573A\u6682\u65E0\u5546\u54C1';
     consignUi.marketList.appendChild(empty);
-    return;
-  }
-  items.forEach((entry) => {
+  } else {
+    slice.forEach((entry) => {
     const btn = document.createElement('div');
     btn.className = 'consign-item';
     btn.innerHTML = `${entry.item.name} x${entry.qty} (${entry.price}\u91D1)<small>${entry.seller}</small>`;
@@ -447,19 +485,27 @@ function renderConsignMarket(items) {
       socket.emit('cmd', { text: 'consign list' });
     });
     consignUi.marketList.appendChild(btn);
-  });
+    });
+  }
+  if (consignUi.marketPage) {
+    consignUi.marketPage.textContent = `\u7B2C ${consignMarketPage + 1}/${totalPages} \u9875`;
+  }
+  if (consignUi.marketPrev) consignUi.marketPrev.disabled = consignMarketPage <= 0;
+  if (consignUi.marketNext) consignUi.marketNext.disabled = consignMarketPage >= totalPages - 1;
 }
 
 function renderConsignMine(items) {
   if (!consignUi.myList) return;
   consignUi.myList.innerHTML = '';
-  if (!items.length) {
+  const { totalPages, page, slice } = paginateItems(items, consignMyPage);
+  consignMyPage = page;
+  if (!slice.length) {
     const empty = document.createElement('div');
     empty.textContent = '\u6682\u65E0\u5BC4\u552E';
     consignUi.myList.appendChild(empty);
     return;
   }
-  items.forEach((entry) => {
+  slice.forEach((entry) => {
     const btn = document.createElement('div');
     btn.className = 'consign-item';
     btn.innerHTML = `${entry.item.name} x${entry.qty} (${entry.price}\u91D1)<small>\u7F16\u53F7 ${entry.id}</small>`;
@@ -476,6 +522,11 @@ function renderConsignMine(items) {
     });
     consignUi.myList.appendChild(btn);
   });
+  if (consignUi.myPage) {
+    consignUi.myPage.textContent = `\u7B2C ${consignMyPage + 1}/${totalPages} \u9875`;
+  }
+  if (consignUi.myPrev) consignUi.myPrev.disabled = consignMyPage <= 0;
+  if (consignUi.myNext) consignUi.myNext.disabled = consignMyPage >= totalPages - 1;
 }
 
 function renderConsignInventory(items) {
@@ -484,13 +535,16 @@ function renderConsignInventory(items) {
   const equipItems = (items || []).filter((item) =>
     item && ['weapon', 'armor', 'accessory', 'book'].includes(item.type)
   );
-  if (!equipItems.length) {
+  consignInventoryItems = equipItems;
+  const { totalPages, page, slice } = paginateItems(equipItems, consignInventoryPage);
+  consignInventoryPage = page;
+  if (!slice.length) {
     const empty = document.createElement('div');
     empty.textContent = '\u6CA1\u6709\u53EF\u5BC4\u552E\u7684\u88C5\u5907';
     consignUi.inventoryList.appendChild(empty);
     return;
   }
-  equipItems.forEach((item) => {
+  slice.forEach((item) => {
     const btn = document.createElement('div');
     btn.className = 'consign-item';
     btn.textContent = `${item.name} x${item.qty}`;
@@ -529,17 +583,83 @@ function renderConsignInventory(items) {
     });
     consignUi.inventoryList.appendChild(btn);
   });
+  if (consignUi.inventoryPage) {
+    consignUi.inventoryPage.textContent = `\u7B2C ${consignInventoryPage + 1}/${totalPages} \u9875`;
+  }
+  if (consignUi.inventoryPrev) consignUi.inventoryPrev.disabled = consignInventoryPage <= 0;
+  if (consignUi.inventoryNext) consignUi.inventoryNext.disabled = consignInventoryPage >= totalPages - 1;
 }
 
 function showConsignModal() {
   if (!consignUi.modal) return;
   hideItemTooltip();
+  consignMarketPage = 0;
+  consignMyPage = 0;
+  consignInventoryPage = 0;
+  consignMarketFilter = 'all';
+  if (consignUi.filters && consignUi.filters.length) {
+    consignUi.filters.forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.filter === 'all');
+    });
+  }
+  if (consignUi.tabs && consignUi.tabs.length) {
+    consignUi.tabs.forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.tab === 'market');
+    });
+  }
+  if (consignUi.panels && consignUi.panels.length) {
+    consignUi.panels.forEach((panel) => {
+      panel.classList.toggle('hidden', panel.dataset.panel !== 'market');
+    });
+  }
   if (socket) {
     socket.emit('cmd', { text: 'consign list' });
     socket.emit('cmd', { text: 'consign my' });
   }
   renderConsignInventory(lastState ? lastState.items : []);
   consignUi.modal.classList.remove('hidden');
+}
+
+function renderRepairList(equipment) {
+  if (!repairUi.list) return;
+  repairUi.list.innerHTML = '';
+  if (!equipment || !equipment.length) {
+    const empty = document.createElement('div');
+    empty.textContent = '\u6CA1\u6709\u88C5\u5907';
+    repairUi.list.appendChild(empty);
+    return;
+  }
+  const entries = equipment.filter((entry) => entry && entry.item);
+  const needRepair = entries.filter((entry) =>
+    entry.max_durability && entry.durability != null && entry.durability < entry.max_durability
+  );
+  if (!needRepair.length) {
+    const empty = document.createElement('div');
+    empty.textContent = '\u65E0\u9700\u4FEE\u7406';
+    repairUi.list.appendChild(empty);
+    return;
+  }
+  needRepair.forEach((entry) => {
+    const missing = entry.max_durability - entry.durability;
+    const cost = calcRepairCost(entry.item, missing);
+    const btn = document.createElement('div');
+    btn.className = 'repair-item';
+    btn.innerHTML = `${entry.item.name}<br>${entry.durability}/${entry.max_durability} (${cost}\u91D1)`;
+    const tooltip = formatItemTooltip(entry.item);
+    if (tooltip) {
+      btn.addEventListener('mouseenter', (evt) => showItemTooltip(tooltip, evt));
+      btn.addEventListener('mousemove', (evt) => positionTooltip(evt.clientX, evt.clientY));
+      btn.addEventListener('mouseleave', hideItemTooltip);
+    }
+    repairUi.list.appendChild(btn);
+  });
+}
+
+function showRepairModal() {
+  if (!repairUi.modal) return;
+  hideItemTooltip();
+  renderRepairList(lastState ? lastState.equipment : []);
+  repairUi.modal.classList.remove('hidden');
 }
 
 function showAfkModal(skills, activeIds) {
@@ -807,6 +927,32 @@ const RARITY_LABELS = {
   uncommon: '\u9ad8\u7ea7',
   common: '\u666e\u901a'
 };
+
+function repairMultiplier(rarity) {
+  switch (rarity) {
+    case 'legendary':
+      return 1.7;
+    case 'epic':
+      return 1.45;
+    case 'rare':
+      return 1.25;
+    case 'uncommon':
+      return 1.1;
+    default:
+      return 1.0;
+  }
+}
+
+function repairBase(type) {
+  if (type === 'weapon') return 12;
+  if (type === 'armor') return 10;
+  return 8;
+}
+
+function calcRepairCost(item, missing) {
+  if (!item || missing <= 0) return 0;
+  return Math.max(1, Math.floor(repairBase(item.type) * repairMultiplier(item.rarity) * missing));
+}
 const ITEM_SLOT_LABELS = {
   weapon: '\u6b66\u5668',
   chest: '\u8863\u670d',
@@ -1016,6 +1162,9 @@ function renderState(state) {
   if (consignUi.modal && !consignUi.modal.classList.contains('hidden')) {
     renderConsignInventory(state.items || []);
   }
+  if (repairUi.modal && !repairUi.modal.classList.contains('hidden')) {
+    renderRepairList(state.equipment || []);
+  }
 
   if (ui.training) {
     const training = state.training || { hp: 0, mp: 0, atk: 0, mag: 0, spirit: 0, dex: 0 };
@@ -1059,6 +1208,7 @@ function renderState(state) {
     { id: 'sabak status', label: '\u6c99\u5df4\u514b' },
     { id: 'mail list', label: '\u90ae\u4ef6' },
     { id: 'shop', label: '\u5546\u5e97' },
+    { id: 'repair', label: '\u4FEE\u7406' },
     { id: 'consign', label: '\u5BC4\u552E' },
     { id: 'vip activate', label: 'VIP\u6fc0\u6d3b' }
   ];
@@ -1097,6 +1247,10 @@ function renderState(state) {
     }
     if (a.id === 'consign') {
       showConsignModal();
+      return;
+    }
+    if (a.id === 'repair') {
+      showRepairModal();
       return;
     }
     socket.emit('cmd', { text: a.id });
@@ -1436,10 +1590,81 @@ if (shopUi.close) {
     hideItemTooltip();
   });
 }
+if (repairUi.close) {
+  repairUi.close.addEventListener('click', () => {
+    repairUi.modal.classList.add('hidden');
+    hideItemTooltip();
+  });
+}
+if (repairUi.all) {
+  repairUi.all.addEventListener('click', () => {
+    if (!socket) return;
+    socket.emit('cmd', { text: 'repair all' });
+  });
+}
 if (consignUi.close) {
   consignUi.close.addEventListener('click', () => {
     consignUi.modal.classList.add('hidden');
     hideItemTooltip();
+  });
+}
+if (consignUi.tabs && consignUi.tabs.length) {
+  consignUi.tabs.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.tab;
+      if (!tab) return;
+      consignUi.tabs.forEach((b) => b.classList.toggle('active', b === btn));
+      consignUi.panels.forEach((panel) => {
+        panel.classList.toggle('hidden', panel.dataset.panel !== tab);
+      });
+    });
+  });
+}
+if (consignUi.filters && consignUi.filters.length) {
+  consignUi.filters.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const filter = btn.dataset.filter || 'all';
+      consignMarketFilter = filter;
+      consignMarketPage = 0;
+      consignUi.filters.forEach((b) => b.classList.toggle('active', b === btn));
+      renderConsignMarket(consignMarketItems);
+    });
+  });
+}
+if (consignUi.marketPrev) {
+  consignUi.marketPrev.addEventListener('click', () => {
+    consignMarketPage -= 1;
+    renderConsignMarket(consignMarketItems);
+  });
+}
+if (consignUi.marketNext) {
+  consignUi.marketNext.addEventListener('click', () => {
+    consignMarketPage += 1;
+    renderConsignMarket(consignMarketItems);
+  });
+}
+if (consignUi.myPrev) {
+  consignUi.myPrev.addEventListener('click', () => {
+    consignMyPage -= 1;
+    renderConsignMine(consignMyItems);
+  });
+}
+if (consignUi.myNext) {
+  consignUi.myNext.addEventListener('click', () => {
+    consignMyPage += 1;
+    renderConsignMine(consignMyItems);
+  });
+}
+if (consignUi.inventoryPrev) {
+  consignUi.inventoryPrev.addEventListener('click', () => {
+    consignInventoryPage -= 1;
+    renderConsignInventory(consignInventoryItems);
+  });
+}
+if (consignUi.inventoryNext) {
+  consignUi.inventoryNext.addEventListener('click', () => {
+    consignInventoryPage += 1;
+    renderConsignInventory(consignInventoryItems);
   });
 }
 if (bagUi.prev) {

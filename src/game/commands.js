@@ -12,7 +12,7 @@ import {
   ensurePlayerSkills
 } from './skills.js';
 import { QUESTS } from './quests.js';
-import { addItem, removeItem, equipItem, unequipItem, bagLimit, gainExp, computeDerived } from './player.js';
+import { addItem, removeItem, equipItem, unequipItem, bagLimit, gainExp, computeDerived, getDurabilityMax, getRepairCost } from './player.js';
 import { CLASSES, expForLevel } from './constants.js';
 import { getRoom, getAliveMobs, spawnMobs } from './state.js';
 import { clamp } from './utils.js';
@@ -857,6 +857,55 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         return;
       }
       send('寄售指令: consign list | consign my | consign sell <物品> <数量> <单价> | consign buy <编号> [数量] | consign cancel <编号>');
+      return;
+    }
+    case 'repair': {
+      if (!player.equipment) return send('没有可修理的装备。');
+      const slots = Object.keys(player.equipment || {});
+      if (!args.trim() || args.trim() === 'list') {
+        const list = slots
+          .map((slot) => {
+            const equipped = player.equipment[slot];
+            if (!equipped || !equipped.id) return null;
+            const item = ITEM_TEMPLATES[equipped.id];
+            if (!item) return null;
+            const maxDur = equipped.max_durability || getDurabilityMax(item);
+            const cur = equipped.durability == null ? maxDur : equipped.durability;
+            const missing = Math.max(0, maxDur - cur);
+            const cost = missing > 0 ? getRepairCost(item, missing) : 0;
+            return `${slot}: ${item.name} (${cur}/${maxDur}) 费用 ${cost}`;
+          })
+          .filter(Boolean);
+        if (!list.length) send('没有可修理的装备。');
+        else send(list.join('\n'));
+        return;
+      }
+      let total = 0;
+      const targets = [];
+      slots.forEach((slot) => {
+        const equipped = player.equipment[slot];
+        if (!equipped || !equipped.id) return;
+        const item = ITEM_TEMPLATES[equipped.id];
+        if (!item) return;
+        const maxDur = equipped.max_durability || getDurabilityMax(item);
+        const cur = equipped.durability == null ? maxDur : equipped.durability;
+        const missing = Math.max(0, maxDur - cur);
+        if (missing <= 0) return;
+        const cost = getRepairCost(item, missing);
+        total += cost;
+        targets.push({ slot, item, maxDur });
+      });
+      if (!targets.length) return send('无需修理。');
+      if (player.gold < total) return send('金币不足。');
+      player.gold -= total;
+      targets.forEach((t) => {
+        const equipped = player.equipment[t.slot];
+        if (!equipped) return;
+        equipped.max_durability = t.maxDur;
+        equipped.durability = t.maxDur;
+      });
+      computeDerived(player);
+      send(`修理完成，花费 ${total} 金币。`);
       return;
     }
     case 'quests': {

@@ -842,6 +842,14 @@ function buildState(player) {
       dex: item.dex || 0
     };
   });
+  const equipment = Object.entries(player.equipment || {})
+    .filter(([, equipped]) => equipped && equipped.id)
+    .map(([slot, equipped]) => ({
+      slot,
+      durability: equipped.durability ?? null,
+      max_durability: equipped.max_durability ?? null,
+      item: buildItemView(equipped.id)
+    }));
   const party = getPartyByMember(player.name);
   const partyMembers = party
     ? party.members.map((name) => ({
@@ -904,6 +912,7 @@ function buildState(player) {
           def: player.summon.def
         }
       : null,
+    equipment,
     guild: player.guild?.name || null,
     party: party ? { size: party.members.length, members: partyMembers } : null,
     training: player.flags?.training || { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 },
@@ -1324,6 +1333,25 @@ function autoResummon(player) {
   return true;
 }
 
+function reduceDurabilityOnAttack(player) {
+  if (!player || !player.equipment) return;
+  if (!player.flags) player.flags = {};
+  player.flags.attackCount = (player.flags.attackCount || 0) + 1;
+  const threshold = player.flags.vip ? 100 : 50;
+  if (player.flags.attackCount < threshold) return;
+  player.flags.attackCount = 0;
+  let broken = false;
+  Object.values(player.equipment).forEach((equipped) => {
+    if (!equipped || !equipped.id || equipped.durability == null || equipped.durability <= 0) return;
+    equipped.durability = Math.max(0, equipped.durability - 1);
+    if (equipped.durability === 0) broken = true;
+  });
+  if (broken) {
+    computeDerived(player);
+    player.send('有装备持久度归零，属性已失效，请修理。');
+  }
+}
+
 function handleDeath(player) {
   player.hp = Math.floor(player.max_hp * 0.5);
   player.mp = Math.floor(player.max_mp * 0.3);
@@ -1483,6 +1511,8 @@ function combatTick() {
       if (!target.flags) target.flags = {};
       target.flags.lastCombatAt = Date.now();
 
+      reduceDurabilityOnAttack(player);
+
     let chosenSkillId = pickCombatSkillId(player, player.combat.skillId);
     let skill = skillForPlayer(player, chosenSkillId);
     if (skill && player.mp < skill.mp) {
@@ -1579,6 +1609,8 @@ function combatTick() {
       player.send('目标已消失。');
       return;
     }
+
+    reduceDurabilityOnAttack(player);
 
     if (mob.status && mob.status.stunTurns > 0) {
       mob.status.stunTurns -= 1;
