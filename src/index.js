@@ -579,6 +579,8 @@ const consignApi = {
       qty,
       price
     });
+    await consignApi.listMine(player);
+    await consignApi.listMarket(player);
     return { ok: true, msg: `寄售成功，编号 ${id}。` };
   },
   async buy(player, listingId, qty) {
@@ -605,6 +607,8 @@ const consignApi = {
       seller.gold += total;
       seller.send(`寄售成交: ${ITEM_TEMPLATES[row.item_id]?.name || row.item_id} x${qty}，获得 ${total} 金币。`);
       savePlayer(seller);
+      await consignApi.listMine(seller);
+      await consignApi.listMarket(seller);
     } else {
       const sellerRow = await findCharacterByName(row.seller_name);
       if (sellerRow) {
@@ -615,6 +619,8 @@ const consignApi = {
         }
       }
     }
+    await consignApi.listMine(player);
+    await consignApi.listMarket(player);
     return { ok: true, msg: `购买成功，花费 ${total} 金币。` };
   },
   async cancel(player, listingId) {
@@ -623,6 +629,8 @@ const consignApi = {
     if (row.seller_name !== player.name) return { ok: false, msg: '只能取消自己的寄售。' };
     addItem(player, row.item_id, row.qty);
     await deleteConsignment(listingId);
+    await consignApi.listMine(player);
+    await consignApi.listMarket(player);
     return { ok: true, msg: '寄售已取消，物品已返回背包。' };
   }
 };
