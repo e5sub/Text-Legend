@@ -669,6 +669,7 @@ button:hover {
   background: #f5d8b4;
   padding: 6px 12px;
   font-size: 0.85rem;
+  color: #4b2f17;
   cursor: pointer;
 }
 
@@ -690,6 +691,7 @@ button:hover {
   background: #f7e2c6;
   padding: 4px 10px;
   font-size: 0.8rem;
+  color: #4b2f17;
   cursor: pointer;
 }
 
