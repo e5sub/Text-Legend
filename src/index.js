@@ -1473,16 +1473,20 @@ function combatTick() {
     processPotionRegen(player);
     updateRedNameAutoClear(player);
     const poisonSource = player.status?.poison?.sourceName;
-    const playerPoisonTick = tickStatus(player);
-    if (playerPoisonTick && playerPoisonTick.type === 'poison') {
-      player.send(`你受到 ${playerPoisonTick.dmg} 点中毒伤害。`);
-      if (poisonSource) {
-        const source = playersByName(poisonSource);
-        if (source) {
-          source.send(`你的施毒对 ${player.name} 造成 ${playerPoisonTick.dmg} 点伤害。`);
+      const playerPoisonTick = tickStatus(player);
+      if (playerPoisonTick && playerPoisonTick.type === 'poison') {
+        player.send(`你受到 ${playerPoisonTick.dmg} 点中毒伤害。`);
+        if (poisonSource) {
+          const source = playersByName(poisonSource);
+          if (source) {
+            source.send(`你的施毒对 ${player.name} 造成 ${playerPoisonTick.dmg} 点伤害。`);
+          }
         }
       }
-    }
+      if (player.summon && player.summon.hp <= 0) {
+        player.summon = null;
+        autoResummon(player);
+      }
 
     if (!player.combat) {
       regenOutOfCombat(player);
