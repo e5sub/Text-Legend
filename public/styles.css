@@ -506,6 +506,10 @@ button:hover {
   z-index: 10;
 }
 
+.modal.hidden {
+  display: none;
+}
+
 .modal-card {
   width: min(420px, 90vw);
   background: #fff7ea;
