@@ -42,6 +42,10 @@ export async function loadCharacter(userId, name) {
   return player;
 }
 
+export async function findCharacterByName(name) {
+  return knex('characters').where({ name }).first();
+}
+
 export async function saveCharacter(userId, player) {
   normalizeInventory(player);
   const data = {

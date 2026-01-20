@@ -8,12 +8,20 @@ import { mkdir } from 'node:fs/promises';
 import config from './config.js';
 import knex from './db/index.js';
 import { createUser, verifyUser, createSession, getSession, getUserByName, setAdminFlag } from './db/users.js';
-import { listCharacters, loadCharacter, saveCharacter } from './db/characters.js';
+import { listCharacters, loadCharacter, saveCharacter, findCharacterByName } from './db/characters.js';
 import { addGuildMember, createGuild, getGuildByName, getGuildMember, getSabakOwner, isGuildLeader, listGuildMembers, listSabakRegistrations, registerSabak, removeGuildMember, setSabakOwner, clearSabakRegistrations } from './db/guilds.js';
 import { createAdminSession, listUsers, verifyAdminSession } from './db/admin.js';
 import { sendMail, listMail, markMailRead } from './db/mail.js';
 import { createVipCodes, listVipCodes, useVipCode } from './db/vip.js';
 import { listMobRespawns, upsertMobRespawn, clearMobRespawn } from './db/mobs.js';
+import {
+  listConsignments,
+  listConsignmentsBySeller,
+  getConsignment,
+  createConsignment,
+  updateConsignmentQty,
+  deleteConsignment
+} from './db/consignments.js';
 import { runMigrations } from './db/migrate.js';
 import { newCharacter, computeDerived, gainExp, addItem, removeItem } from './game/player.js';
 import { handleCommand, awardKill, summonStats } from './game/commands.js';
@@ -259,6 +267,26 @@ function isSetItem(itemId) {
   return item.name.includes('(套)');
 }
 
+function buildItemView(itemId) {
+  const item = ITEM_TEMPLATES[itemId] || { id: itemId, name: itemId, type: 'unknown' };
+  return {
+    id: itemId,
+    name: item.name,
+    type: item.type,
+    slot: item.slot || null,
+    rarity: rarityByPrice(item),
+    is_set: isSetItem(itemId),
+    price: item.price || 0,
+    hp: item.hp || 0,
+    mp: item.mp || 0,
+    atk: item.atk || 0,
+    def: item.def || 0,
+    mag: item.mag || 0,
+    spirit: item.spirit || 0,
+    dex: item.dex || 0
+  };
+}
+
 function isBossMob(mobTemplate) {
   const id = mobTemplate.id;
   return (
@@ -288,13 +316,14 @@ function rollRarityDrop(mobTemplate, bonus = 1) {
 
 function dropLoot(mobTemplate, bonus = 1) {
   const loot = [];
+  const finalBonus = bonus;
   if (mobTemplate.drops) {
     mobTemplate.drops.forEach((drop) => {
-      const chance = Math.min(1, (drop.chance || 0) * bonus);
+      const chance = Math.min(1, (drop.chance || 0) * finalBonus);
       if (Math.random() <= chance) loot.push(drop.id);
     });
   }
-  const rarityDrop = rollRarityDrop(mobTemplate, bonus);
+  const rarityDrop = rollRarityDrop(mobTemplate, finalBonus);
   if (rarityDrop) loot.push(rarityDrop);
   return loot;
 }
@@ -509,6 +538,93 @@ const tradeApi = {
     return getTradeByPlayer(playerName);
   },
   offerText
+};
+
+const CONSIGN_EQUIPMENT_TYPES = new Set(['weapon', 'armor', 'accessory']);
+
+const consignApi = {
+  async listMarket(player) {
+    const rows = await listConsignments();
+    const items = rows.map((row) => ({
+      id: row.id,
+      seller: row.seller_name,
+      qty: row.qty,
+      price: row.price,
+      item: buildItemView(row.item_id)
+    }));
+    player.socket.emit('consign_list', { type: 'market', items });
+    return items;
+  },
+  async listMine(player) {
+    const rows = await listConsignmentsBySeller(player.name);
+    const items = rows.map((row) => ({
+      id: row.id,
+      seller: row.seller_name,
+      qty: row.qty,
+      price: row.price,
+      item: buildItemView(row.item_id)
+    }));
+    player.socket.emit('consign_list', { type: 'mine', items });
+    return items;
+  },
+  async sell(player, itemId, qty, price) {
+    const item = ITEM_TEMPLATES[itemId];
+    if (!item) return { ok: false, msg: '未找到物品。' };
+    if (!CONSIGN_EQUIPMENT_TYPES.has(item.type)) return { ok: false, msg: '仅可寄售装备。' };
+    if (qty <= 0 || price <= 0) return { ok: false, msg: '数量或价格无效。' };
+    if (!removeItem(player, itemId, qty)) return { ok: false, msg: '背包里没有足够数量。' };
+    const id = await createConsignment({
+      sellerName: player.name,
+      itemId,
+      qty,
+      price
+    });
+    return { ok: true, msg: `寄售成功，编号 ${id}。` };
+  },
+  async buy(player, listingId, qty) {
+    if (qty <= 0) return { ok: false, msg: '购买数量无效。' };
+    const row = await getConsignment(listingId);
+    if (!row) return { ok: false, msg: '寄售不存在。' };
+    if (row.seller_name === player.name) return { ok: false, msg: '不能购买自己的寄售。' };
+    if (row.qty < qty) return { ok: false, msg: '寄售数量不足。' };
+    const total = row.price * qty;
+    if (player.gold < total) return { ok: false, msg: '金币不足。' };
+
+    player.gold -= total;
+    addItem(player, row.item_id, qty);
+
+    const remain = row.qty - qty;
+    if (remain > 0) {
+      await updateConsignmentQty(listingId, remain);
+    } else {
+      await deleteConsignment(listingId);
+    }
+
+    const seller = playersByName(row.seller_name);
+    if (seller) {
+      seller.gold += total;
+      seller.send(`寄售成交: ${ITEM_TEMPLATES[row.item_id]?.name || row.item_id} x${qty}，获得 ${total} 金币。`);
+      savePlayer(seller);
+    } else {
+      const sellerRow = await findCharacterByName(row.seller_name);
+      if (sellerRow) {
+        const sellerPlayer = await loadCharacter(sellerRow.user_id, sellerRow.name);
+        if (sellerPlayer) {
+          sellerPlayer.gold += total;
+          await saveCharacter(sellerRow.user_id, sellerPlayer);
+        }
+      }
+    }
+    return { ok: true, msg: `购买成功，花费 ${total} 金币。` };
+  },
+  async cancel(player, listingId) {
+    const row = await getConsignment(listingId);
+    if (!row) return { ok: false, msg: '寄售不存在。' };
+    if (row.seller_name !== player.name) return { ok: false, msg: '只能取消自己的寄售。' };
+    addItem(player, row.item_id, row.qty);
+    await deleteConsignment(listingId);
+    return { ok: true, msg: '寄售已取消，物品已返回背包。' };
+  }
 };
 
 function partyMembersInRoom(party, playersList, zone, room) {
@@ -830,9 +946,18 @@ function recordMobDamage(mob, attackerName, dmg) {
   if (!mob.status) mob.status = {};
   if (!mob.status.damageBy) mob.status.damageBy = {};
   if (!mob.status.firstHitBy) mob.status.firstHitBy = attackerName;
-  if (attackerName) {
-    mob.status.damageBy[attackerName] = (mob.status.damageBy[attackerName] || 0) + dmg;
-  }
+  if (!attackerName) return;
+  mob.status.damageBy[attackerName] = (mob.status.damageBy[attackerName] || 0) + dmg;
+  const damageBy = mob.status.damageBy;
+  let maxName = attackerName;
+  let maxDamage = -1;
+  Object.entries(damageBy).forEach(([name, total]) => {
+    if (total > maxDamage) {
+      maxDamage = total;
+      maxName = name;
+    }
+  });
+  mob.status.aggroTarget = maxName;
 }
 
 function gainSummonExp(player) {
@@ -1065,6 +1190,7 @@ io.on('connection', (socket) => {
         useVipCode
       },
       tradeApi,
+      consignApi,
       mailApi: {
         listMail,
         markMailRead
@@ -1165,6 +1291,15 @@ function pickCombatSkillId(player, combatSkillId) {
     return autoId || combatSkillId;
   }
   return combatSkillId;
+}
+
+function consumeFirestrikeCrit(player, targetType, isNormalAttack) {
+  if (!player.status || !player.status.firestrikeCrit) return 1;
+  if (!isNormalAttack) return 1;
+  delete player.status.firestrikeCrit;
+  if (targetType === 'mob') return 2.0;
+  if (targetType === 'player') return Math.random() <= 0.5 ? 1.2 : 1.0;
+  return 1;
 }
 
 function handleDeath(player) {
@@ -1290,11 +1425,17 @@ function combatTick() {
 
     if (!player.combat) {
       regenOutOfCombat(player);
+      const mobs = getAliveMobs(player.position.zone, player.position.room);
+      const aggroMob = mobs.find((m) => m.status?.aggroTarget === player.name);
+      if (aggroMob) {
+        player.combat = { targetId: aggroMob.id, targetType: 'mob', skillId: null };
+      }
       if (player.flags?.autoSkillId) {
-        const mobs = getAliveMobs(player.position.zone, player.position.room);
-        const target = mobs.length ? mobs[randInt(0, mobs.length - 1)] : null;
-        if (target) {
-          player.combat = { targetId: target.id, targetType: 'mob', skillId: null };
+        if (!player.combat) {
+          const target = mobs.length ? mobs[randInt(0, mobs.length - 1)] : null;
+          if (target) {
+            player.combat = { targetId: target.id, targetType: 'mob', skillId: null };
+          }
         }
       }
       if (!player.combat) return;
@@ -1330,10 +1471,10 @@ function combatTick() {
     if (Math.random() <= hitChance) {
       let dmg = 0;
       let skillPower = 1;
-      if (skill && (skill.type === 'attack' || skill.type === 'spell' || skill.type === 'cleave' || skill.type === 'dot' || skill.type === 'aoe')) {
-        const skillLevel = getSkillLevel(player, skill.id);
-        skillPower = scaledSkillPower(skill, skillLevel);
-        if (skill.type === 'spell' || skill.type === 'aoe') {
+        if (skill && (skill.type === 'attack' || skill.type === 'spell' || skill.type === 'cleave' || skill.type === 'dot' || skill.type === 'aoe')) {
+          const skillLevel = getSkillLevel(player, skill.id);
+          skillPower = scaledSkillPower(skill, skillLevel);
+          if (skill.type === 'spell' || skill.type === 'aoe') {
           const mdefMultiplier = getMagicDefenseMultiplier(target);
           const mdef = Math.floor((target.mdef || 0) * mdefMultiplier);
           dmg = Math.floor((player.mag + randInt(0, player.mag / 2)) * skillPower - mdef * 0.6);
@@ -1341,11 +1482,14 @@ function combatTick() {
         } else if (skill.type === 'dot') {
           dmg = Math.max(1, Math.floor(player.mag * 0.5 * skillPower));
         } else {
-          dmg = calcDamage(player, target, skillPower);
+          const isNormal = !skill || skill.id === 'slash';
+          const crit = consumeFirestrikeCrit(player, 'player', isNormal);
+          dmg = Math.floor(calcDamage(player, target, skillPower) * crit);
         }
         if (skill.mp > 0) player.mp = clamp(player.mp - skill.mp, 0, player.max_mp);
       } else {
-        dmg = calcDamage(player, target, 1);
+        const crit = consumeFirestrikeCrit(player, 'player', true);
+        dmg = Math.floor(calcDamage(player, target, 1) * crit);
       }
 
       applyDamageToPlayer(target, dmg);
@@ -1363,6 +1507,10 @@ function combatTick() {
           applyPoison(target, 30, calcPoisonTickDamage(target), player.name);
           applyPoisonDebuff(target);
         }
+      }
+      if (skill && skill.id === 'firestrike') {
+        if (!player.status) player.status = {};
+        player.status.firestrikeCrit = true;
       }
       if (skill && ['attack', 'spell', 'cleave', 'dot', 'aoe'].includes(skill.type)) {
         notifyMastery(player, skill);
@@ -1439,11 +1587,14 @@ function combatTick() {
         } else if (skill.type === 'dot') {
           dmg = Math.max(1, Math.floor(player.mag * 0.5 * skillPower));
         } else {
-          dmg = calcDamage(player, mob, skillPower);
+          const isNormal = !skill || skill.id === 'slash';
+          const crit = consumeFirestrikeCrit(player, 'mob', isNormal);
+          dmg = Math.floor(calcDamage(player, mob, skillPower) * crit);
         }
         if (skill.mp > 0) player.mp = clamp(player.mp - skill.mp, 0, player.max_mp);
       } else {
-        dmg = calcDamage(player, mob, 1);
+        const crit = consumeFirestrikeCrit(player, 'mob', true);
+        dmg = Math.floor(calcDamage(player, mob, 1) * crit);
       }
 
       if (skill && skill.type === 'aoe') {
@@ -1483,9 +1634,13 @@ function combatTick() {
           applyPoisonDebuff(mob);
         }
       }
+      if (skill && skill.id === 'firestrike') {
+        if (!player.status) player.status = {};
+        player.status.firestrikeCrit = true;
+      }
       if (skill && skill.type === 'cleave') {
         mobs.filter((m) => m.id !== mob.id).forEach((other) => {
-          applyDamageToMob(other, Math.floor(dmg * 0.5), player.name);
+          applyDamageToMob(other, Math.floor(dmg * 0.3), player.name);
         });
       }
       if (skill && ['attack', 'spell', 'cleave', 'dot', 'aoe'].includes(skill.type)) {

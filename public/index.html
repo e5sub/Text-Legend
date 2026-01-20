@@ -88,17 +88,11 @@
           </div>
         </div>
         <div class="status-card">
-          <div class="status-title">快捷按钮</div>
-          <div class="quick-grid">
-            <button class="quick-btn" data-cmd="look">观察</button>
-            <button class="quick-btn" data-cmd="stats">状态</button>
-            <button class="quick-btn" data-cmd="bag">背包</button>
-            <button class="quick-btn" data-cmd="quests">任务</button>
-            <button class="quick-btn" data-cmd="party">队伍</button>
-            <button class="quick-btn" data-cmd="guild">行会</button>
-            <button class="quick-btn" data-cmd="sabak status">沙巴克</button>
-            <button class="quick-btn" data-cmd="mail list">邮件</button>
-          </div>
+          <div class="status-title">快捷信息</div>
+          <div class="status-row"><span>在线人数</span><strong id="ui-online">-</strong></div>
+          <div class="status-row"><span>队伍成员</span><strong id="ui-party">-</strong></div>
+          <div class="status-row"><span>沙巴克加成</span><strong id="ui-sabak-bonus">-</strong></div>
+          <div class="status-row"><span>VIP</span><strong id="ui-vip">-</strong></div>
         </div>
       </div>
       <div class="game-grid">
@@ -150,6 +144,9 @@
           </div>
         </div>
         <div class="side">
+          <h3>&#x5E38;&#x7528;&#x64CD;&#x4F5C;</h3>
+          <div id="actions-list" class="chip-grid"></div>
+          <div class="divider"></div>
           <h3>&#x884C;&#x52A8;&#x9762;&#x677F;</h3>
           <div class="action-group">
             <div class="action-title">&#x65B9;&#x5411;</div>
@@ -177,8 +174,6 @@
             <div id="training-list" class="chip-grid"></div>
           </div>
           <div class="divider"></div>
-          <h3>&#x5E38;&#x7528;&#x64CD;&#x4F5C;</h3>
-          <div id="actions-list" class="chip-grid"></div>
         </div>
       </div>
     </section>
@@ -207,6 +202,21 @@
       <div id="shop-sell-list" class="shop-sell-list"></div>
       <div class="modal-actions">
         <button id="shop-close">&#x5173;&#x95ED;</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="consign-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-title">&#x5BC4;&#x552E;</div>
+      <div class="modal-text">&#x5BC4;&#x552E;&#x5E02;&#x573A;</div>
+      <div id="consign-market-list" class="consign-list"></div>
+      <div class="modal-text">&#x6211;&#x7684;&#x5BC4;&#x552E;</div>
+      <div id="consign-my-list" class="consign-list"></div>
+      <div class="modal-text">&#x5BC4;&#x552E;&#x80CC;&#x5305;&#x88C5;&#x5907;</div>
+      <div id="consign-inventory-list" class="consign-list"></div>
+      <div class="modal-actions">
+        <button id="consign-close">&#x5173;&#x95ED;</button>
       </div>
     </div>
   </div>

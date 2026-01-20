@@ -650,6 +650,34 @@ button:hover {
   filter: brightness(1.03);
 }
 
+.consign-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.consign-item {
+  border-radius: 12px;
+  border: 1px solid rgba(118, 70, 22, 0.25);
+  background: #f7e2c6;
+  padding: 8px 10px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1.3;
+}
+
+.consign-item:hover {
+  filter: brightness(1.03);
+}
+
+.consign-item small {
+  display: block;
+  color: #6b4a2a;
+  margin-top: 4px;
+}
+
 .bag-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

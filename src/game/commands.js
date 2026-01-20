@@ -286,9 +286,18 @@ function recordMobDamage(mob, attackerName, dmg) {
   if (!mob.status) mob.status = {};
   if (!mob.status.damageBy) mob.status.damageBy = {};
   if (!mob.status.firstHitBy) mob.status.firstHitBy = attackerName;
-  if (attackerName) {
-    mob.status.damageBy[attackerName] = (mob.status.damageBy[attackerName] || 0) + dmg;
-  }
+  if (!attackerName) return;
+  mob.status.damageBy[attackerName] = (mob.status.damageBy[attackerName] || 0) + dmg;
+  const damageBy = mob.status.damageBy;
+  let maxName = attackerName;
+  let maxDamage = -1;
+  Object.entries(damageBy).forEach(([name, total]) => {
+    if (total > maxDamage) {
+      maxDamage = total;
+      maxName = name;
+    }
+  });
+  mob.status.aggroTarget = maxName;
 }
 
 function notifyMastery(player, skill) {
@@ -304,7 +313,7 @@ function partyStatus(party) {
   return `队伍成员: ${party.members.join(', ')}`;
 }
 
-export async function handleCommand({ player, players, input, send, partyApi, guildApi, tradeApi, mailApi }) {
+export async function handleCommand({ player, players, input, send, partyApi, guildApi, tradeApi, mailApi, consignApi }) {
   const [cmdRaw, ...rest] = input.trim().split(' ');
   const cmd = (cmdRaw || '').toLowerCase();
   const args = rest.join(' ').trim();
@@ -313,7 +322,7 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
 
   switch (cmd) {
     case 'help': {
-      send('指令: help, look, go <方向/地点>, say <内容>, who, stats, bag, equip <物品>, unequip <部位>, use <物品>, attack <怪物/玩家>, pk <玩家>, cast <技能> <怪物>, autoskill <技能/off>, autopotion <hp%> <mp%>, shop, buy <物品>, buy list, sell <物品>, train <属性>, quests, accept <id>, complete <id>, party, guild, gsay, sabak, vip, trade, mail, teleport。部位示例: ring_left, ring_right, bracelet_left, bracelet_right。');
+      send('指令: help, look, go <方向/地点>, say <内容>, who, stats, bag, equip <物品>, unequip <部位>, use <物品>, attack <怪物/玩家>, pk <玩家>, cast <技能> <怪物>, autoskill <技能/off>, autopotion <hp%> <mp%>, shop, buy <物品>, buy list, sell <物品>, consign, train <属性>, quests, accept <id>, complete <id>, party, guild, gsay, sabak, vip, trade, mail, teleport。部位示例: ring_left, ring_right, bracelet_left, bracelet_right。');
       return;
     }
     case 'look': {
@@ -794,6 +803,56 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
       const total = price * qty;
       player.gold += total;
       send(`卖出 ${item.name} x${qty}，获得 ${total} 金币。`);
+      return;
+    }
+    case 'consign': {
+      if (!consignApi) return send('寄售系统不可用。');
+      const parts = args.split(' ').filter(Boolean);
+      const sub = (parts.shift() || 'list').toLowerCase();
+      if (sub === 'list') {
+        const items = await consignApi.listMarket(player);
+        if (!items.length) send('寄售市场暂无商品。');
+        return;
+      }
+      if (sub === 'my') {
+        const items = await consignApi.listMine(player);
+        if (!items.length) send('你没有寄售物品。');
+        return;
+      }
+      if (sub === 'sell') {
+        if (parts.length < 3) return send('格式: consign sell <物品> <数量> <单价>');
+        const price = Number(parts.pop());
+        const qty = Number(parts.pop());
+        const name = parts.join(' ');
+        if (!name || Number.isNaN(price) || Number.isNaN(qty)) {
+          return send('格式: consign sell <物品> <数量> <单价>');
+        }
+        const item = Object.values(ITEM_TEMPLATES).find(
+          (i) => i.name.toLowerCase() === name.toLowerCase() || i.id === name
+        );
+        if (!item) return send('未找到物品。');
+        const res = await consignApi.sell(player, item.id, qty, price);
+        send(res.msg);
+        return;
+      }
+      if (sub === 'buy') {
+        if (parts.length < 1) return send('格式: consign buy <编号> [数量]');
+        const id = Number(parts[0]);
+        const qty = parts.length > 1 ? Number(parts[1]) : 1;
+        if (Number.isNaN(id) || Number.isNaN(qty)) return send('格式: consign buy <编号> [数量]');
+        const res = await consignApi.buy(player, id, qty);
+        send(res.msg);
+        return;
+      }
+      if (sub === 'cancel') {
+        if (parts.length < 1) return send('格式: consign cancel <编号>');
+        const id = Number(parts[0]);
+        if (Number.isNaN(id)) return send('格式: consign cancel <编号>');
+        const res = await consignApi.cancel(player, id);
+        send(res.msg);
+        return;
+      }
+      send('寄售指令: consign list | consign my | consign sell <物品> <数量> <单价> | consign buy <编号> [数量] | consign cancel <编号>');
       return;
     }
     case 'quests': {

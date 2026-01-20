@@ -5,9 +5,33 @@ import { randInt } from './utils.js';
 const ROOM_MOBS = new Map();
 const RESPAWN_CACHE = new Map();
 let respawnStore = null;
+const BOSS_SCALE = { hp: 1.18, atk: 1.12, def: 1.12 };
 
 function respawnKey(zoneId, roomId, slotIndex) {
   return `${zoneId}:${roomId}:${slotIndex}`;
+}
+
+function isBossTemplate(tpl) {
+  if (!tpl) return false;
+  return Boolean(
+    tpl.worldBoss ||
+    tpl.id.includes('boss') ||
+    tpl.id.includes('leader') ||
+    tpl.id.includes('demon') ||
+    ['bug_queen', 'huangquan', 'evil_snake', 'pig_white'].includes(tpl.id)
+  );
+}
+
+function scaledStats(tpl) {
+  if (!tpl) return { hp: 0, atk: 0, def: 0 };
+  if (!isBossTemplate(tpl)) {
+    return { hp: tpl.hp, atk: tpl.atk, def: tpl.def };
+  }
+  return {
+    hp: Math.floor(tpl.hp * BOSS_SCALE.hp),
+    atk: Math.floor(tpl.atk * BOSS_SCALE.atk),
+    def: Math.floor(tpl.def * BOSS_SCALE.def)
+  };
 }
 
 function roomKey(zoneId, roomId) {
@@ -60,6 +84,7 @@ export function spawnMobs(zoneId, roomId) {
   room.spawns.forEach((templateId, index) => {
     let mob = mobList.find((m) => m.slotIndex === index);
     const tpl = MOB_TEMPLATES[templateId];
+    const scaled = scaledStats(tpl);
     if (!mob) {
       const cached = RESPAWN_CACHE.get(respawnKey(zoneId, roomId, index));
       if (cached && cached.respawnAt && cached.respawnAt > now && (!cached.templateId || cached.templateId === templateId)) {
@@ -70,9 +95,9 @@ export function spawnMobs(zoneId, roomId) {
           name: tpl.name,
           level: tpl.level,
           hp: 0,
-          max_hp: tpl.hp,
-          atk: tpl.atk,
-          def: tpl.def,
+          max_hp: scaled.hp,
+          atk: scaled.atk,
+          def: scaled.def,
           dex: tpl.dex || 6,
           status: {},
           respawnAt: cached.respawnAt,
@@ -87,10 +112,10 @@ export function spawnMobs(zoneId, roomId) {
         slotIndex: index,
         name: tpl.name,
         level: tpl.level,
-        hp: tpl.hp,
-        max_hp: tpl.hp,
-        atk: tpl.atk,
-        def: tpl.def,
+        hp: scaled.hp,
+        max_hp: scaled.hp,
+        atk: scaled.atk,
+        def: scaled.def,
         dex: tpl.dex || 6,
         status: {},
         respawnAt: null,
@@ -104,10 +129,10 @@ export function spawnMobs(zoneId, roomId) {
       mob.templateId = templateId;
       mob.name = tpl.name;
       mob.level = tpl.level;
-      mob.hp = tpl.hp;
-      mob.max_hp = tpl.hp;
-      mob.atk = tpl.atk;
-      mob.def = tpl.def;
+      mob.hp = scaled.hp;
+      mob.max_hp = scaled.hp;
+      mob.atk = scaled.atk;
+      mob.def = scaled.def;
       mob.dex = tpl.dex || 6;
       mob.status = {};
       mob.respawnAt = null;
