@@ -88,6 +88,7 @@ const authToast = document.getElementById('auth-toast');
 const charMsg = document.getElementById('char-msg');
 const characterList = document.getElementById('character-list');
 const loginUserInput = document.getElementById('login-username');
+let lastSavedLevel = null;
 
 function showToast(message) {
   authToast.textContent = message;
@@ -104,6 +105,25 @@ function show(section) {
   gameSection.classList.add('hidden');
   section.classList.remove('hidden');
   hideItemTooltip();
+}
+
+function updateSavedCharacters(player) {
+  if (!player || !player.name) return;
+  let chars = [];
+  try {
+    chars = JSON.parse(localStorage.getItem('savedCharacters') || '[]');
+  } catch {
+    chars = [];
+  }
+  if (!Array.isArray(chars) || !chars.length) return;
+  const idx = chars.findIndex((c) => c.name === player.name);
+  if (idx === -1) return;
+  if (chars[idx].level === player.level && chars[idx].class === player.classId) return;
+  chars[idx] = { ...chars[idx], level: player.level, class: player.classId };
+  localStorage.setItem('savedCharacters', JSON.stringify(chars));
+  if (!characterSection.classList.contains('hidden')) {
+    renderCharacters(chars);
+  }
 }
 
 function appendLine(text) {
@@ -379,7 +399,7 @@ const TRAINING_OPTIONS = [
 ];
 
 function trainingCost(current, inc) {
-  const base = 10000;
+  const base = 10;
   const steps = Math.floor((current || 0) / inc);
   return Math.max(1, Math.floor(base + steps * (base * 0.2)));
 }
@@ -422,6 +442,12 @@ function renderState(state) {
     ui.name.textContent = state.player.name || '-';
     const classLabel = classNames[state.player.classId] || state.player.classId || '-';
     ui.classLevel.textContent = `${classLabel} | Lv ${state.player.level}`;
+    if (activeChar && state.player.name === activeChar) {
+      if (lastSavedLevel !== state.player.level) {
+        lastSavedLevel = state.player.level;
+        updateSavedCharacters(state.player);
+      }
+    }
   }
   if (state.stats) {
     setBar(ui.hp, state.stats.hp, state.stats.max_hp);
@@ -703,6 +729,7 @@ async function createCharacter() {
 
 function enterGame(name) {
   activeChar = name;
+  lastSavedLevel = null;
   show(gameSection);
   log.innerHTML = '';
   if (chat.log) chat.log.innerHTML = '';
