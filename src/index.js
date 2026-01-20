@@ -609,20 +609,21 @@ function processPotionRegen(player) {
   if (!player.status) return;
   const regen = player.status.regen;
   if (!regen) {
-    if (player.status.potionUntil && player.status.potionUntil <= Date.now()) {
-      delete player.status.potionUntil;
-    }
     return;
   }
   if (regen.ticksRemaining <= 0) {
     delete player.status.regen;
     return;
   }
-  if (regen.hpPerTick) {
-    player.hp = clamp(player.hp + regen.hpPerTick, 1, player.max_hp);
+  if (regen.hpRemaining && regen.hpRemaining > 0) {
+    const amount = Math.ceil(regen.hpRemaining / regen.ticksRemaining);
+    player.hp = clamp(player.hp + amount, 1, player.max_hp);
+    regen.hpRemaining -= amount;
   }
-  if (regen.mpPerTick) {
-    player.mp = clamp(player.mp + regen.mpPerTick, 0, player.max_mp);
+  if (regen.mpRemaining && regen.mpRemaining > 0) {
+    const amount = Math.ceil(regen.mpRemaining / regen.ticksRemaining);
+    player.mp = clamp(player.mp + amount, 0, player.max_mp);
+    regen.mpRemaining -= amount;
   }
   regen.ticksRemaining -= 1;
   if (regen.ticksRemaining <= 0) {
@@ -797,7 +798,7 @@ function checkWorldBossRespawn() {
   const room = zone?.rooms?.[roomId];
   const bossName = respawned[0]?.name || '世界BOSS';
   emitAnnouncement(
-    `${bossName} 已刷新，点击前往。`,
+    `${bossName} 已刷新，点击 世界BOSS领域 - 炎龙巢穴 前往。`,
     'announce',
     {
       zoneId,
@@ -852,10 +853,10 @@ function consumeItem(player, itemId) {
 }
 
 function tryAutoPotion(player) {
-  if (player.status?.potionUntil && player.status.potionUntil > Date.now()) return;
   const hpPct = player.flags?.autoHpPct;
   const mpPct = player.flags?.autoMpPct;
   if (!hpPct && !mpPct) return;
+  const now = Date.now();
 
   const hpRate = player.hp / player.max_hp;
   const mpRate = player.mp / player.max_mp;
@@ -863,7 +864,8 @@ function tryAutoPotion(player) {
   const hpList = ['snow_frost', 'potion_super', 'potion_big', 'potion_mid', 'potion_small', 'sun_water'];
   const mpList = ['snow_frost', 'potion_mana_super', 'potion_mana_big', 'potion_mana_mid', 'potion_mana', 'sun_water'];
 
-  if (hpPct && hpRate <= hpPct / 100) {
+  const potionLock = player.status?.potionLock || {};
+  if (hpPct && hpRate <= hpPct / 100 && (!potionLock.hp || potionLock.hp <= now)) {
     const id = hpList.find((pid) => player.inventory.find((i) => i.id === pid));
     if (id && consumeItem(player, id)) {
       const item = ITEM_TEMPLATES[id];
@@ -873,7 +875,7 @@ function tryAutoPotion(player) {
     }
   }
 
-  if (mpPct && mpRate <= mpPct / 100) {
+  if (mpPct && mpRate <= mpPct / 100 && (!potionLock.mp || potionLock.mp <= now)) {
     const id = mpList.find((pid) => player.inventory.find((i) => i.id === pid));
     if (id && consumeItem(player, id)) {
       const item = ITEM_TEMPLATES[id];

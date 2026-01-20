@@ -481,6 +481,21 @@ button:hover {
   filter: brightness(1.05);
 }
 
+.chat-link-tag {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 214, 160, 0.4);
+  background: #b85c1b;
+  color: #fff2d8;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.chat-link-tag:hover {
+  filter: brightness(1.05);
+}
+
 #chat-input {
   flex: 1;
   font-family: var(--font-mono);

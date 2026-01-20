@@ -185,11 +185,28 @@ function buildLine(payload) {
   return p;
 }
 
+const LOCATION_LOOKUP = {
+  '盟重省 - 盟重入口': { zoneId: 'mg_plains', roomId: 'gate' },
+  '土城集市': { zoneId: 'mg_town', roomId: 'mg_market' },
+  '沃玛寺庙 - 寺庙入口': { zoneId: 'wms', roomId: 'entrance' },
+  '祖玛寺庙 - 祖玛大厅': { zoneId: 'zm', roomId: 'hall' },
+  '赤月峡谷 - 赤月入口': { zoneId: 'cr', roomId: 'valley' },
+  '世界BOSS领域 - 炎龙巢穴': { zoneId: 'wb', roomId: 'lair' }
+};
+
 function parseLocationMessage(text) {
   if (!text) return null;
   const match = text.match(/^\[([^\]]+)\]\s+我在\s+(.+?)\s+-\s+(.+)$/);
   if (!match) return null;
   return { player: match[1], location: `${match[2]} - ${match[3]}` };
+}
+
+function parseStaticLocationLink(text) {
+  if (!text) return null;
+  const normalized = text.trim();
+  const entry = LOCATION_LOOKUP[normalized];
+  if (!entry) return null;
+  return { label: normalized, ...entry };
 }
 
 function appendLine(payload) {
@@ -203,6 +220,7 @@ function appendChatLine(payload) {
   const p = buildLine(payload);
   const loc = parseLocationMessage(normalizePayload(payload).text);
   const data = normalizePayload(payload);
+  const staticLoc = parseStaticLocationLink(data.text);
   if (loc && socket) {
     const btn = document.createElement('button');
     btn.className = 'chat-link-btn';
@@ -213,11 +231,20 @@ function appendChatLine(payload) {
     p.appendChild(btn);
   }
   if (data.location && socket) {
+    const labelBtn = document.createElement('button');
+    labelBtn.className = 'chat-link-tag';
+    labelBtn.textContent = data.location.label || '世界BOSS领域 - 炎龙巢穴';
+    labelBtn.addEventListener('click', () => {
+      socket.emit('cmd', { text: `goto_room ${data.location.zoneId}:${data.location.roomId}` });
+    });
+    p.appendChild(labelBtn);
+  }
+  if (staticLoc && socket) {
     const btn = document.createElement('button');
     btn.className = 'chat-link-btn';
     btn.textContent = '前往';
     btn.addEventListener('click', () => {
-      socket.emit('cmd', { text: `goto_room ${data.location.zoneId}:${data.location.roomId}` });
+      socket.emit('cmd', { text: `goto_room ${staticLoc.zoneId}:${staticLoc.roomId}` });
     });
     p.appendChild(btn);
   }
@@ -448,9 +475,10 @@ function renderShopSellList(items) {
 function parseShopLine(text) {
   if (!text.startsWith('\u5546\u5E97\u5546\u54C1:')) return null;
   const list = [];
+  const cleaned = text.replace('商店商品:', '').trim();
   const regex = /([^,]+)\((\d+)\u91D1\)/g;
   let match;
-  while ((match = regex.exec(text)) !== null) {
+  while ((match = regex.exec(cleaned)) !== null) {
     list.push({ name: match[1].trim(), price: Number(match[2]) });
   }
   return list;

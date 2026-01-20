@@ -452,20 +452,33 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
       }
       if (!player.status) player.status = {};
       const now = Date.now();
-      if (player.status.potionUntil && player.status.potionUntil > now) {
-        addItem(player, item.id, 1);
-        return send('药效持续中，暂时无法再次使用药品。');
+      const instantIds = new Set(['sun_water', 'snow_frost']);
+      const isInstant = instantIds.has(item.id);
+      if (item.hp || item.mp) {
+        const isHpPotion = Boolean(item.hp);
+        const lockKey = isHpPotion ? 'hp' : 'mp';
+        const potionLocks = player.status.potionLock || {};
+        if (!isInstant && potionLocks[lockKey] && potionLocks[lockKey] > now) {
+          addItem(player, item.id, 1);
+          return send('药效持续中，暂时无法再次使用同类药品。');
+        }
+        if (isInstant) {
+          if (item.hp) player.hp = clamp(player.hp + item.hp, 1, player.max_hp);
+          if (item.mp) player.mp = clamp(player.mp + item.mp, 0, player.max_mp);
+          send(`使用了 ${item.name}。`);
+          return;
+        }
+        const ticks = 5;
+        player.status.regen = {
+          ticksRemaining: ticks,
+          hpRemaining: item.hp || 0,
+          mpRemaining: item.mp || 0
+        };
+        if (!player.status.potionLock) player.status.potionLock = {};
+        player.status.potionLock[lockKey] = now + ticks * 1000;
+        send(`使用了 ${item.name}，将持续恢复 5 秒。`);
+        return;
       }
-      const ticks = 5;
-      const hpPerTick = item.hp ? Math.ceil(item.hp / ticks) : 0;
-      const mpPerTick = item.mp ? Math.ceil(item.mp / ticks) : 0;
-      player.status.regen = {
-        ticksRemaining: ticks,
-        hpPerTick,
-        mpPerTick
-      };
-      player.status.potionUntil = now + ticks * 1000;
-      send(`使用了 ${item.name}，将持续恢复 5 秒。`);
       return;
     }
     case 'attack':
