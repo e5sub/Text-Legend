@@ -6,6 +6,7 @@ const ROOM_MOBS = new Map();
 const RESPAWN_CACHE = new Map();
 let respawnStore = null;
 const BOSS_SCALE = { hp: 1.25, atk: 1.18, def: 1.18 };
+const MOB_HP_SCALE = 2;
 
 function respawnKey(zoneId, roomId, slotIndex) {
   return `${zoneId}:${roomId}:${slotIndex}`;
@@ -25,10 +26,10 @@ function isBossTemplate(tpl) {
 function scaledStats(tpl) {
   if (!tpl) return { hp: 0, atk: 0, def: 0 };
   if (!isBossTemplate(tpl)) {
-    return { hp: tpl.hp, atk: tpl.atk, def: tpl.def };
+    return { hp: Math.floor(tpl.hp * MOB_HP_SCALE), atk: tpl.atk, def: tpl.def };
   }
   return {
-    hp: Math.floor(tpl.hp * BOSS_SCALE.hp),
+    hp: Math.floor(tpl.hp * MOB_HP_SCALE * BOSS_SCALE.hp),
     atk: Math.floor(tpl.atk * BOSS_SCALE.atk),
     def: Math.floor(tpl.def * BOSS_SCALE.def)
   };
