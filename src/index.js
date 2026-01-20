@@ -772,6 +772,12 @@ function sendState(player) {
   player.socket.emit('state', buildState(player));
 }
 
+function sendRoomState(zoneId, roomId) {
+  listOnlinePlayers()
+    .filter((p) => p.position.zone === zoneId && p.position.room === roomId)
+    .forEach((p) => sendState(p));
+}
+
 function consumeItem(player, itemId) {
   const slot = player.inventory.find((i) => i.id === itemId);
   if (!slot) return false;
@@ -1218,12 +1224,16 @@ function combatTick() {
           if (deadTargets.some((target) => target.id === mob.id)) {
             player.combat = null;
           }
-          sendState(player);
+          sendRoomState(player.position.zone, player.position.room);
           return;
         }
+        sendRoomState(player.position.zone, player.position.room);
       } else {
         applyDamage(mob, dmg);
         player.send(`你对 ${mob.name} 造成 ${dmg} 点伤害。`);
+        if (mob.hp > 0) {
+          sendRoomState(player.position.zone, player.position.room);
+        }
       }
 
       if (hasEquipped(player, 'ring_magic') && Math.random() <= 0.1) {
@@ -1264,7 +1274,7 @@ function combatTick() {
     if (mob.hp <= 0) {
       processMobDeath(player, mob, online);
       player.combat = null;
-      sendState(player);
+      sendRoomState(player.position.zone, player.position.room);
       return;
     }
 
