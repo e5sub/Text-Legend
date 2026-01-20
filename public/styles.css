@@ -506,6 +506,10 @@ button:hover {
   z-index: 10;
 }
 
+#prompt-modal {
+  z-index: 40;
+}
+
 .modal.hidden {
   display: none;
 }

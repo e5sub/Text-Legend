@@ -4,7 +4,7 @@ import { BOOK_SKILLS, getSkill, getLearnedSkills, hasSkill, ensurePlayerSkills }
 import { QUESTS } from './quests.js';
 import { addItem, removeItem, equipItem, unequipItem, bagLimit, gainExp, computeDerived } from './player.js';
 import { CLASSES, expForLevel } from './constants.js';
-import { getRoom, getRoomMobs, spawnMobs } from './state.js';
+import { getRoom, getAliveMobs, spawnMobs } from './state.js';
 import { clamp } from './utils.js';
 
 const PARTY_LIMIT = 5;
@@ -70,7 +70,8 @@ function roomLabel(player) {
 }
 
 function listMobs(zoneId, roomId) {
-  const mobs = spawnMobs(zoneId, roomId);
+  spawnMobs(zoneId, roomId);
+  const mobs = getAliveMobs(zoneId, roomId);
   if (mobs.length === 0) return '这里没有怪物。';
   return mobs.map((m) => `${m.name} (生命 ${m.hp}/${m.max_hp})`).join(', ');
 }
@@ -336,7 +337,7 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
     case 'attack':
     case 'kill': {
       if (!args) return send('要攻击哪个怪物？');
-      const mobs = getRoomMobs(player.position.zone, player.position.room);
+      const mobs = getAliveMobs(player.position.zone, player.position.room);
       const target = mobs.find((m) => m.name.toLowerCase() === args.toLowerCase() || m.id === args);
       if (!target) {
         const pvpTarget = players.find(
@@ -378,7 +379,7 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         send(`你施放了 ${skill.name}，恢复 ${heal} 点生命。`);
         return;
       }
-      const mobs = getRoomMobs(player.position.zone, player.position.room);
+      const mobs = getAliveMobs(player.position.zone, player.position.room);
       const target = mobs.find((m) => m.name.toLowerCase() === targetName.toLowerCase() || m.id === targetName);
       if (!target) return send('未找到怪物。');
       player.combat = { targetId: target.id, targetType: 'mob', skillId: skill.id };

@@ -20,7 +20,7 @@ import { DEFAULT_SKILLS, getLearnedSkills, getSkill, hasSkill, ensurePlayerSkill
 import { MOB_TEMPLATES } from './game/mobs.js';
 import { ITEM_TEMPLATES } from './game/items.js';
 import { WORLD } from './game/world.js';
-import { getRoomMobs, spawnMobs, removeMob } from './game/state.js';
+import { getRoomMobs, getAliveMobs, spawnMobs, removeMob } from './game/state.js';
 import { calcHitChance, calcDamage, applyDamage, applyPoison, tickStatus } from './game/combat.js';
 import { randInt, clamp } from './game/utils.js';
 import { expForLevel } from './game/constants.js';
@@ -202,11 +202,11 @@ const RARITY_NORMAL = {
   common: 0.15
 };
 const RARITY_BOSS = {
-  legendary: 0.005,
-  epic: 0.02,
-  rare: 0.06,
-  uncommon: 0.15,
-  common: 0.3
+  legendary: 0.007,
+  epic: 0.03,
+  rare: 0.08,
+  uncommon: 0.18,
+  common: 0.35
 };
 
 function rarityByPrice(item) {
@@ -605,7 +605,7 @@ function buildState(player) {
   const zone = WORLD[player.position.zone];
   const room = zone?.rooms[player.position.room];
   if (zone && room) spawnMobs(player.position.zone, player.position.room);
-  const mobs = getRoomMobs(player.position.zone, player.position.room).map((m) => ({
+  const mobs = getAliveMobs(player.position.zone, player.position.room).map((m) => ({
     id: m.id,
     name: m.name,
     hp: m.hp,
@@ -873,7 +873,7 @@ function combatTick() {
     if (!player.combat) {
       regenOutOfCombat(player);
       if (player.flags?.autoSkillId) {
-        const mobs = getRoomMobs(player.position.zone, player.position.room);
+        const mobs = getAliveMobs(player.position.zone, player.position.room);
         const target = mobs[0];
         if (target) {
           player.combat = { targetId: target.id, targetType: 'mob', skillId: null };
@@ -966,7 +966,7 @@ function combatTick() {
       return;
     }
 
-    const mobs = getRoomMobs(player.position.zone, player.position.room);
+    const mobs = getAliveMobs(player.position.zone, player.position.room);
     const mob = mobs.find((m) => m.id === player.combat.targetId);
     if (!mob) {
       player.combat = null;
