@@ -515,14 +515,17 @@ function partyMembersInRoom(party, playersList, zone, room) {
 }
 
 function distributeLoot(party, partyMembers, drops) {
-  if (!drops.length || !party || partyMembers.length === 0) return;
+  if (!drops.length || !party || partyMembers.length === 0) return [];
+  const results = [];
   drops.forEach((itemId) => {
     const target = partyMembers[randInt(0, partyMembers.length - 1)];
     addItem(target, itemId, 1);
+    results.push({ id: itemId, target });
     partyMembers.forEach((member) => {
       member.send(`队伍掉落: ${ITEM_TEMPLATES[itemId].name} -> ${target.name}`);
     });
   });
+  return results;
 }
 
 async function loadSabakState() {
@@ -1138,21 +1141,29 @@ function processMobDeath(player, mob, online) {
     const drops = dropLoot(template, bonus);
     if (!drops.length) return;
     if (party && partyMembers.length > 0) {
-      distributeLoot(party, partyMembers, drops);
+      const distributed = distributeLoot(party, partyMembers, drops);
+      distributed.forEach(({ id, target }) => {
+        const item = ITEM_TEMPLATES[id];
+        if (!item) return;
+        const rarity = rarityByPrice(item);
+        if (['uncommon', 'rare', 'epic', 'legendary'].includes(rarity)) {
+          emitAnnouncement(`${target.name} 击败 ${template.name} 获得${RARITY_LABELS[rarity] || '稀有'}装备 ${item.name}！`, rarity);
+        }
+      });
     } else {
       drops.forEach((id) => {
         addItem(owner, id, 1);
       });
       owner.send(`掉落: ${drops.map((id) => ITEM_TEMPLATES[id].name).join(', ')}`);
+      drops.forEach((id) => {
+        const item = ITEM_TEMPLATES[id];
+        if (!item) return;
+        const rarity = rarityByPrice(item);
+        if (['uncommon', 'rare', 'epic', 'legendary'].includes(rarity)) {
+          emitAnnouncement(`${owner.name} 击败 ${template.name} 获得${RARITY_LABELS[rarity] || '稀有'}装备 ${item.name}！`, rarity);
+        }
+      });
     }
-    drops.forEach((id) => {
-      const item = ITEM_TEMPLATES[id];
-      if (!item) return;
-      const rarity = rarityByPrice(item);
-      if (['uncommon', 'rare', 'epic', 'legendary'].includes(rarity)) {
-        emitAnnouncement(`${owner.name} 击败 ${template.name} 获得${RARITY_LABELS[rarity] || '稀有'}装备 ${item.name}！`, rarity);
-      }
-    });
   });
 }
 
