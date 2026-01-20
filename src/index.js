@@ -645,22 +645,23 @@ function applyOfflineRewards(player) {
   player.send(`离线挂机收益: ${expGain} 经验, ${goldGain} 金币。`);
 }
 
-function dropAllInventory(player) {
-  const items = player.inventory.map((i) => `${ITEM_TEMPLATES[i.id]?.name || i.id} x${i.qty}`);
-  player.inventory = [];
+function transferAllInventory(from, to) {
+  const items = from.inventory.map((i) => `${ITEM_TEMPLATES[i.id]?.name || i.id} x${i.qty}`);
+  from.inventory.forEach((slot) => {
+    addItem(to, slot.id, slot.qty);
+  });
+  from.inventory = [];
   return items;
 }
 
-function dropEquippedChance(player, chance) {
-  const dropped = [];
-  for (const [slot, equipped] of Object.entries(player.equipment)) {
-    if (!equipped) continue;
-    if (Math.random() <= chance) {
-      dropped.push(ITEM_TEMPLATES[equipped.id]?.name || equipped.id);
-      player.equipment[slot] = null;
-    }
-  }
-  return dropped;
+function transferOneEquipmentChance(from, to, chance) {
+  if (Math.random() > chance) return [];
+  const equippedList = Object.entries(from.equipment).filter(([, equipped]) => equipped);
+  if (!equippedList.length) return [];
+  const [slot, equipped] = equippedList[randInt(0, equippedList.length - 1)];
+  addItem(to, equipped.id, 1);
+  from.equipment[slot] = null;
+  return [ITEM_TEMPLATES[equipped.id]?.name || equipped.id];
 }
 
 function buildState(player) {
@@ -1273,8 +1274,8 @@ function combatTick() {
           player.flags.pkValue = (player.flags.pkValue || 0) + 100;
           savePlayer(player);
         }
-        const droppedBag = wasRed ? dropAllInventory(target) : [];
-        const droppedEquip = wasRed ? dropEquippedChance(target, 0.1) : [];
+        const droppedBag = wasRed ? transferAllInventory(target, player) : [];
+        const droppedEquip = wasRed ? transferOneEquipmentChance(target, player, 0.1) : [];
         target.send('你被击败，返回了城里。');
         if (wasRed) {
           target.send('你是红名，背包物品全部掉落。');
