@@ -827,22 +827,18 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         if (!player.guild) return send('你不在行会中。');
         const target = players.find((p) => p.name === nameArg);
         if (!target) return send('玩家不在线。');
-        if (target.guild) return send('对方已在行会中。');
+        if (target.guild) return send('对方已有行会，请先退出行会再邀请。');
         const isLeader = await guildApi.isGuildLeader(player.guild.id, player.userId, player.name);
         if (!isLeader) return send('只有会长可以邀请。');
-        guildApi.invites.set(target.name, { guildId: player.guild.id, guildName: player.guild.name, from: player.name });
-        send(`已邀请 ${target.name} 加入行会。`);
-        target.send(`${player.name} 邀请你加入行会 ${player.guild.name}，输入 guild accept ${player.guild.name} 接受。`);
+        await guildApi.addGuildMember(player.guild.id, target.userId, target.name);
+        target.guild = { id: player.guild.id, name: player.guild.name, role: 'member' };
+        send(`${target.name} 已加入行会。`);
+        target.send(`你已加入行会 ${player.guild.name}。`);
         return;
       }
 
       if (sub === 'accept') {
-        const invite = guildApi.invites.get(player.name);
-        if (!invite || invite.guildName !== nameArg) return send('没有该行会邀请。');
-        await guildApi.addGuildMember(invite.guildId, player.userId, player.name);
-        player.guild = { id: invite.guildId, name: invite.guildName, role: 'member' };
-        guildApi.invites.delete(player.name);
-        send(`已加入行会: ${invite.guildName}`);
+        send('行会邀请无需接受，邀请后会自动加入。');
         return;
       }
 
