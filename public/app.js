@@ -23,6 +23,7 @@ const ui = {
   pk: document.getElementById('ui-pk'),
   vip: document.getElementById('ui-vip'),
   sabakBonus: document.getElementById('ui-sabak-bonus'),
+  online: document.getElementById('ui-online'),
   gold: document.getElementById('ui-gold'),
   hp: document.getElementById('bar-hp'),
   mp: document.getElementById('bar-mp'),
@@ -399,7 +400,7 @@ const TRAINING_OPTIONS = [
 ];
 
 function trainingCost(current, inc) {
-  const base = 10;
+  const base = 10000;
   const steps = Math.floor((current || 0) / inc);
   return Math.max(1, Math.floor(base + steps * (base * 0.2)));
 }
@@ -458,6 +459,9 @@ function renderState(state) {
     ui.vip.textContent = state.stats.vip ? '是' : '否';
     if (ui.sabakBonus) {
       ui.sabakBonus.textContent = state.stats.sabak_bonus ? '已生效' : '无';
+    }
+    if (ui.online) {
+      ui.online.textContent = state.online ? String(state.online.count || 0) : '0';
     }
     ui.guild.textContent = state.guild || '无';
     if (chat.sabakRegisterBtn) {

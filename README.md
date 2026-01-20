@@ -1,27 +1,29 @@
-﻿# Text Legend 1.76 (Web Text Edition)
+﻿# 文字传奇 1.76（网页版文字版）
 
-## Docker
+## Docker 启动
 
 ```
 docker build -t text-legend .
 docker run -p 3000:3000 -e DB_CLIENT=sqlite -e DB_FILENAME=/app/data/game.sqlite -e ADMIN_BOOTSTRAP_SECRET=change_me -v %cd%/data:/app/data text-legend
 ```
 
-Or with docker-compose:
+或使用 docker-compose：
 
 ```
 docker compose up --build
 ```
 
-MySQL compose:
+MySQL compose：
 
 ```
 docker compose -f docker-compose.mysql.yml up --build
 ```
 
-## Notes
-- This is a text-based web game inspired by 1.76 era systems.
-- Commands: `help`, `look`, `go <dir>`, `attack <mob/player>`, `pk <player>`, `cast <skill> <mob>`, `stats`, `bag`, `buy`, `sell`, `quests`, `party`, `guild`, `gsay`, `sabak`, `vip activate <code>`, `mail`, `teleport <zone:room>`.
+## 说明
+- 这是一个致敬 1.76 时代的网页文字版游戏。
+- 功能界面：聊天面板、交易面板、商店弹窗（购买/出售）、修炼面板、在线人数、沙巴克加成提示。
+- 行会：创建行会需要 `woma_horn`（沃玛号角），沙巴克报名需要会长操作。
+- 指令：`help`、`look`、`go <方向>`、`attack <怪物/玩家>`、`pk <玩家>`、`cast <技能> <怪物>`、`autoskill <技能/off>`、`autopotion <hp%> <mp%>`、`stats`、`bag`、`buy`、`sell <物品> [数量]`、`train <属性>`、`quests`、`party`、`guild`、`gsay`、`sabak`、`vip activate <code>`、`trade`、`mail`、`teleport <区域:房间>`。
 
 ## GM 后台
 

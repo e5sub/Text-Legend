@@ -655,6 +655,7 @@ function buildState(player) {
   const sabakBonus = Boolean(
     player.guild && sabakState.ownerGuildId && player.guild.id === sabakState.ownerGuildId
   );
+  const onlineCount = players.size;
   return {
     player: {
       name: player.name,
@@ -684,7 +685,8 @@ function buildState(player) {
     },
     guild: player.guild?.name || null,
     party: party ? { size: party.members.length } : null,
-    training: player.flags?.training || { hp: 0, mp: 0, atk: 0, mag: 0, spirit: 0 }
+    training: player.flags?.training || { hp: 0, mp: 0, atk: 0, mag: 0, spirit: 0 },
+    online: { count: onlineCount }
   };
 }
 
