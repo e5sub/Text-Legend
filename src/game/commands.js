@@ -635,7 +635,7 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
           }
         }
         player.mp -= skill.mp;
-        const heal = Math.floor(player.mag * 0.8 * power + player.level * 4);
+        const heal = Math.floor((player.spirit || 0) * 0.8 * power + player.level * 4);
         if (target.isSummon) {
           player.summon.hp = clamp(player.summon.hp + heal, 1, player.summon.max_hp);
           send(`你为 ${player.summon.name} 施放了 ${skill.name}，恢复 ${heal} 点生命。`);

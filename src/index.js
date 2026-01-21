@@ -1974,10 +1974,11 @@ function combatTick() {
         if (skill && (skill.type === 'attack' || skill.type === 'spell' || skill.type === 'cleave' || skill.type === 'dot' || skill.type === 'aoe')) {
           const skillLevel = getSkillLevel(player, skill.id);
           skillPower = scaledSkillPower(skill, skillLevel);
-          if (skill.type === 'spell' || skill.type === 'aoe') {
+        if (skill.type === 'spell' || skill.type === 'aoe') {
           const mdefMultiplier = getMagicDefenseMultiplier(target);
           const mdef = Math.floor((target.mdef || 0) * mdefMultiplier);
-          dmg = Math.floor((player.mag + randInt(0, player.mag / 2)) * skillPower - mdef * 0.6);
+          const powerStat = skill.id === 'soul' ? (player.spirit || 0) : (player.mag || 0);
+          dmg = Math.floor((powerStat + randInt(0, powerStat / 2)) * skillPower - mdef * 0.6);
           if (dmg < 1) dmg = 1;
         } else if (skill.type === 'dot') {
           dmg = Math.max(1, Math.floor(player.mag * 0.5 * skillPower));
@@ -2097,7 +2098,8 @@ function combatTick() {
         if (skill.type === 'spell' || skill.type === 'aoe') {
           const mdefMultiplier = getMagicDefenseMultiplier(mob);
           const mdef = Math.floor((mob.mdef || 0) * mdefMultiplier);
-          dmg = Math.floor((player.mag + randInt(0, player.mag / 2)) * skillPower - mdef * 0.6);
+          const powerStat = skill.id === 'soul' ? (player.spirit || 0) : (player.mag || 0);
+          dmg = Math.floor((powerStat + randInt(0, powerStat / 2)) * skillPower - mdef * 0.6);
           if (dmg < 1) dmg = 1;
         } else if (skill.type === 'dot') {
           dmg = Math.max(1, Math.floor(player.mag * 0.5 * skillPower));
