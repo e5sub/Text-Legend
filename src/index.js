@@ -1316,12 +1316,7 @@ function getMagicDefenseMultiplier(target) {
   return multiplier;
 }
 
-function tryConsumePoisonPowders(player) {
-  const hasGreen = player.inventory.find((i) => i.id === 'powder_green' && i.qty > 0);
-  const hasRed = player.inventory.find((i) => i.id === 'powder_red' && i.qty > 0);
-  if (!hasGreen || !hasRed) return false;
-  removeItem(player, 'powder_green', 1);
-  removeItem(player, 'powder_red', 1);
+function tryConsumePoisonPowders() {
   return true;
 }
 
