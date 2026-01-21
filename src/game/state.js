@@ -8,6 +8,7 @@ let respawnStore = null;
 const BOSS_SCALE = { hp: 1.25, atk: 1.42, def: 1.18 };
 const MOB_HP_SCALE = 2;
 const MOB_STAT_SCALE = 1.69;
+const MOB_DEF_SCALE = 1.5;
 
 function respawnKey(zoneId, roomId, slotIndex) {
   return `${zoneId}:${roomId}:${slotIndex}`;
@@ -30,13 +31,13 @@ function scaledStats(tpl) {
     return {
       hp: Math.floor(tpl.hp * MOB_HP_SCALE * MOB_STAT_SCALE),
       atk: Math.floor(tpl.atk * MOB_STAT_SCALE),
-      def: Math.floor(tpl.def * MOB_STAT_SCALE)
+      def: Math.floor(tpl.def * MOB_STAT_SCALE * MOB_DEF_SCALE)
     };
   }
   return {
     hp: Math.floor(tpl.hp * MOB_HP_SCALE * BOSS_SCALE.hp * MOB_STAT_SCALE),
     atk: Math.floor(tpl.atk * BOSS_SCALE.atk * MOB_STAT_SCALE),
-    def: Math.floor(tpl.def * BOSS_SCALE.def * MOB_STAT_SCALE)
+    def: Math.floor(tpl.def * BOSS_SCALE.def * MOB_STAT_SCALE * MOB_DEF_SCALE)
   };
 }
 
