@@ -46,6 +46,7 @@ const ui = {
   skills: document.getElementById('skills-list'),
   summon: document.getElementById('summon-panel'),
   items: document.getElementById('items-list'),
+  worldBossRank: document.getElementById('worldboss-rank'),
   training: document.getElementById('training-list'),
   actions: document.getElementById('actions-list')
 };
@@ -1405,6 +1406,32 @@ function renderState(state) {
       renderChips(ui.summon, summonEntry, () => {});
     } else {
       ui.summon.textContent = '\u65e0';
+    }
+  }
+
+  if (ui.worldBossRank) {
+    ui.worldBossRank.innerHTML = '';
+    const ranks = state.worldBossRank || [];
+    if (!ranks.length) {
+      const empty = document.createElement('div');
+      empty.textContent = '暂无排行';
+      ui.worldBossRank.appendChild(empty);
+    } else {
+      ranks.forEach((entry, idx) => {
+        const row = document.createElement('div');
+        row.className = 'rank-item';
+        const name = document.createElement('span');
+        name.textContent = `${entry.name}`;
+        const dmg = document.createElement('span');
+        dmg.textContent = `${entry.damage}`;
+        const pos = document.createElement('span');
+        pos.className = 'rank-pos';
+        pos.textContent = `#${idx + 1}`;
+        row.appendChild(pos);
+        row.appendChild(name);
+        row.appendChild(dmg);
+        ui.worldBossRank.appendChild(row);
+      });
     }
   }
 

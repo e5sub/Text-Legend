@@ -164,6 +164,9 @@ export function computeDerived(player) {
     let spirit = item.spirit || 0;
     let def = item.def || 0;
     let mdef = item.mdef || 0;
+    if (player.classId === 'warrior' && item.type === 'weapon') {
+      atk = Math.floor(atk * 0.5);
+    }
     if (entry.effects?.fury && item.type === 'weapon') {
       atk = Math.floor(atk * 1.25);
       mag = Math.floor(mag * 1.25);
@@ -190,9 +193,9 @@ export function computeDerived(player) {
   player.stats = stats;
   const levelUp = Math.max(0, level - 1);
   const levelBonusMap = {
-    warrior: { hp: 5, mp: 10, atk: 1, def: 1, mag: 0, spirit: 0 },
-    mage: { hp: 3, mp: 20, atk: 0, def: 2, mag: 3, spirit: 0 },
-    taoist: { hp: 3, mp: 10, atk: 0, def: 2, mag: 0, spirit: 3 }
+    warrior: { hp: 3, mp: 10, atk: 0.2, def: 1, mag: 0, spirit: 0 },
+    mage: { hp: 5, mp: 10, atk: 0, def: 2, mag: 2, spirit: 0 },
+    taoist: { hp: 5, mp: 10, atk: 0, def: 2, mag: 0, spirit: 2 }
   };
   const levelBonus = levelBonusMap[player.classId] || levelBonusMap.warrior;
   const bonusHp = levelBonus.hp * levelUp;

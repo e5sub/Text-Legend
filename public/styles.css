@@ -820,6 +820,29 @@ button:hover {
   filter: brightness(1.03);
 }
 
+.rank-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #5b3a1c;
+}
+
+.rank-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 10px;
+  border: 1px solid rgba(118, 70, 22, 0.2);
+  background: #f9e9d4;
+  padding: 4px 10px;
+}
+
+.rank-item .rank-pos {
+  font-weight: 600;
+  color: #8f4a12;
+}
+
 .guild-list {
   display: flex;
   flex-direction: column;

@@ -1134,6 +1134,15 @@ function buildState(player) {
       guild: p.guild?.name || null,
       guildId: p.guild?.id || null
     }));
+  let worldBossRank = [];
+  const bossMob = getAliveMobs(player.position.zone, player.position.room).find((m) => {
+    const tpl = MOB_TEMPLATES[m.templateId];
+    return tpl && tpl.worldBoss;
+  });
+  if (bossMob && bossMob.status?.damageBy) {
+    const { entries } = buildDamageRankMap(bossMob);
+    worldBossRank = entries.slice(0, 5).map(([name, damage]) => ({ name, damage }));
+  }
   return {
     player: {
       name: player.name,
@@ -1192,6 +1201,7 @@ function buildState(player) {
       ownerGuildId: sabakState.ownerGuildId,
       ownerGuildName: sabakState.ownerGuildName
     },
+    worldBossRank,
     players: roomPlayers,
     server_time: Date.now()
   };
@@ -1357,8 +1367,8 @@ function tryApplyPoisonEffect(attacker, target) {
   return true;
 }
 
-function buildDamageRankMap(mob) {
-  const damageBy = mob.status?.damageBy || {};
+function buildDamageRankMap(mob, damageByOverride = null) {
+  const damageBy = damageByOverride || mob.status?.damageBy || {};
   const entries = Object.entries(damageBy).sort((a, b) => b[1] - a[1]);
   const rankMap = {};
   entries.forEach(([name], idx) => {
@@ -1708,6 +1718,8 @@ function handleDeath(player) {
 }
 
 function processMobDeath(player, mob, online) {
+  const damageSnapshot = mob.status?.damageBy ? { ...mob.status.damageBy } : {};
+  const firstHitSnapshot = mob.status?.firstHitBy || null;
   const template = MOB_TEMPLATES[mob.templateId];
   removeMob(player.position.zone, player.position.room, mob.id);
   gainSummonExp(player);
@@ -1720,12 +1732,12 @@ function processMobDeath(player, mob, online) {
   const allInRoom = partyMembers.length > 1;
   const isBoss = isBossMob(template);
   const isWorldBoss = Boolean(template.worldBoss);
-  const { rankMap, entries } = isWorldBoss ? buildDamageRankMap(mob) : { rankMap: {}, entries: [] };
+  const { rankMap, entries } = isWorldBoss ? buildDamageRankMap(mob, damageSnapshot) : { rankMap: {}, entries: [] };
   let lootOwner = player;
   if (!party || partyMembers.length === 0) {
     let ownerName = null;
     if (isBoss) {
-      const damageBy = mob.status?.damageBy || {};
+      const damageBy = damageSnapshot;
       let maxDamage = -1;
       Object.entries(damageBy).forEach(([name, dmg]) => {
         if (dmg > maxDamage) {
@@ -1734,7 +1746,7 @@ function processMobDeath(player, mob, online) {
         }
       });
     } else {
-      ownerName = mob.status?.firstHitBy || null;
+      ownerName = firstHitSnapshot;
     }
     if (!ownerName) ownerName = player.name;
     lootOwner = playersByName(ownerName) || player;
