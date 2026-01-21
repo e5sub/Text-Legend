@@ -274,7 +274,7 @@ function isSetItem(itemId) {
   return item.name.includes('(套)');
 }
 
-const EFFECT_SINGLE_CHANCE = 0.005;
+const EFFECT_SINGLE_CHANCE = 0.009;
 const EFFECT_DOUBLE_CHANCE = 0.001;
 const COMBO_PROC_CHANCE = 0.1;
 const SABAK_TAX_RATE = 0.2;
