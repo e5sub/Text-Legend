@@ -2056,13 +2056,37 @@ function combatTick() {
         player.flags.summonAggro = false;
       }
     }
-    const mobTarget = player.flags?.summonAggro || !summonAlive ? player : player.summon;
+    const mobTemplate = MOB_TEMPLATES[mob.templateId];
+    const isBossAggro = Boolean(mobTemplate?.worldBoss || mobTemplate?.sabakBoss);
+    let mobTarget = player.flags?.summonAggro || !summonAlive ? player : player.summon;
+    if (isBossAggro) {
+      const targetName = mob.status?.aggroTarget;
+      const aggroPlayer = targetName
+        ? online.find(
+            (p) =>
+              p.name === targetName &&
+              p.position.zone === player.position.zone &&
+              p.position.room === player.position.room
+          )
+        : null;
+      if (aggroPlayer) {
+        mobTarget = aggroPlayer;
+      } else {
+        mobTarget = summonAlive ? player.summon : player;
+      }
+    }
     const mobHitChance = calcHitChance(mob, mobTarget);
     if (Math.random() <= mobHitChance) {
       const dmg = calcDamage(mob, mobTarget, 1);
-      if (mobTarget === player) {
-        applyDamageToPlayer(player, dmg);
-        player.send(`${mob.name} 对你造成 ${dmg} 点伤害。`);
+      if (mobTarget && mobTarget.userId) {
+        applyDamageToPlayer(mobTarget, dmg);
+        mobTarget.send(`${mob.name} 对你造成 ${dmg} 点伤害。`);
+        if (mobTarget !== player) {
+          player.send(`${mob.name} 攻击 ${mobTarget.name}，造成 ${dmg} 点伤害。`);
+        }
+        if (mobTarget.hp <= 0 && mobTarget !== player && !tryRevive(mobTarget)) {
+          handleDeath(mobTarget);
+        }
       } else {
         applyDamage(mobTarget, dmg);
         player.send(`${mob.name} 对 ${mobTarget.name} 造成 ${dmg} 点伤害。`);
