@@ -242,6 +242,7 @@ app.get('/admin/vip/list', async (req, res) => {
 const players = new Map();
 const parties = new Map();
 const partyInvites = new Map();
+const partyFollowInvites = new Map();
 const guildInvites = new Map();
 const tradeInvites = new Map();
 const tradesByPlayer = new Map();
@@ -574,7 +575,7 @@ async function savePlayer(player) {
 
 function createParty(leaderName) {
   const partyId = `party-${Date.now()}-${randInt(100, 999)}`;
-  parties.set(partyId, { id: partyId, members: [leaderName], lootIndex: 0 });
+  parties.set(partyId, { id: partyId, leader: leaderName, members: [leaderName], lootIndex: 0 });
   return parties.get(partyId);
 }
 
@@ -594,6 +595,9 @@ function removeFromParty(name) {
   const party = getPartyByMember(name);
   if (!party) return null;
   party.members = party.members.filter((m) => m !== name);
+  if (party.leader === name) {
+    party.leader = party.members[0] || null;
+  }
   if (party.members.length === 0) {
     parties.delete(party.id);
     return null;
@@ -609,6 +613,7 @@ async function updatePartyFlags(name, partyId, members) {
     if (!onlinePlayer.flags) onlinePlayer.flags = {};
     onlinePlayer.flags.partyId = partyId || null;
     onlinePlayer.flags.partyMembers = memberList;
+    onlinePlayer.flags.partyLeader = memberList.length ? (onlinePlayer.flags.partyLeader || null) : null;
     await savePlayer(onlinePlayer);
     return;
   }
@@ -619,6 +624,7 @@ async function updatePartyFlags(name, partyId, members) {
   if (!player.flags) player.flags = {};
   player.flags.partyId = partyId || null;
   player.flags.partyMembers = memberList;
+  player.flags.partyLeader = memberList.length ? (player.flags.partyLeader || null) : null;
   await saveCharacter(row.user_id, player);
 }
 
@@ -630,7 +636,25 @@ async function persistParty(party) {
   if (!party || !party.id) return;
   const members = Array.from(new Set(party.members || []));
   party.members = members;
+  if (!party.leader || !members.includes(party.leader)) {
+    party.leader = members[0] || null;
+  }
   for (const member of members) {
+    const online = playersByName(member);
+    if (online) {
+      if (!online.flags) online.flags = {};
+      online.flags.partyLeader = party.leader;
+    } else {
+      const row = await findCharacterByName(member);
+      if (row) {
+        const stored = await loadCharacter(row.user_id, row.name);
+        if (stored) {
+          if (!stored.flags) stored.flags = {};
+          stored.flags.partyLeader = party.leader;
+          await saveCharacter(row.user_id, stored);
+        }
+      }
+    }
     await updatePartyFlags(member, party.id, members);
   }
 }
@@ -1759,16 +1783,25 @@ io.on('connection', (socket) => {
       const memberList = Array.from(new Set(loaded.flags.partyMembers.concat(loaded.name)));
       let party = getPartyById(partyId);
       if (!party) {
-        parties.set(partyId, { id: partyId, members: memberList, lootIndex: 0 });
+        parties.set(partyId, {
+          id: partyId,
+          leader: loaded.flags.partyLeader || memberList[0] || loaded.name,
+          members: memberList,
+          lootIndex: 0
+        });
         party = parties.get(partyId);
       } else {
         memberList.forEach((member) => {
           if (!party.members.includes(member)) party.members.push(member);
         });
         party.members = Array.from(new Set(party.members));
+        if (!party.leader || !party.members.includes(party.leader)) {
+          party.leader = loaded.flags.partyLeader || party.members[0] || loaded.name;
+        }
       }
       if (!loaded.flags) loaded.flags = {};
       loaded.flags.partyMembers = party.members.slice();
+      loaded.flags.partyLeader = party.leader || null;
     }
 
     const member = await getGuildMember(session.user_id, name);
@@ -1803,6 +1836,7 @@ io.on('connection', (socket) => {
       partyApi: {
         parties,
         invites: partyInvites,
+        followInvites: partyFollowInvites,
         createParty,
         getPartyByMember,
         removeFromParty,

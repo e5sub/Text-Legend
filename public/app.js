@@ -155,6 +155,7 @@ const playerUi = {
   attack: document.getElementById('player-attack'),
   trade: document.getElementById('player-trade'),
   party: document.getElementById('player-party'),
+  follow: document.getElementById('player-follow'),
   guild: document.getElementById('player-guild'),
   close: document.getElementById('player-close')
 };
@@ -427,6 +428,13 @@ function appendChatLine(payload) {
 function parseTradeRequest(text) {
   if (!text) return null;
   const match = text.match(/^(.+?) 请求交易/);
+  if (!match) return null;
+  return match[1];
+}
+
+function parseFollowRequest(text) {
+  if (!text) return null;
+  const match = text.match(/^(.+?) 邀请你跟随/);
   if (!match) return null;
   return match[1];
 }
@@ -1905,6 +1913,19 @@ function enterGame(name) {
         socket.emit('cmd', { text: `trade accept ${targetName}` });
       });
     }
+    const followFrom = parseFollowRequest(payload.text);
+    if (followFrom && socket) {
+      promptModal({
+        title: '跟随邀请',
+        text: `${followFrom} 邀请你跟随，是否前往？`,
+        placeholder: '',
+        extra: { text: '拒绝' },
+        allowEmpty: true
+      }).then((res) => {
+        if (res === '__extra__' || res === null) return;
+        socket.emit('cmd', { text: `party follow accept ${followFrom}` });
+      });
+    }
     const shopItems = parseShopLine(payload.text);
     if (shopItems) {
       lastShopItems = shopItems;
@@ -2285,6 +2306,13 @@ if (playerUi.party) {
   playerUi.party.addEventListener('click', () => {
     if (!socket || !playerUi.selected) return;
     socket.emit('cmd', { text: `party invite ${playerUi.selected.name}` });
+    if (playerUi.modal) playerUi.modal.classList.add('hidden');
+  });
+}
+if (playerUi.follow) {
+  playerUi.follow.addEventListener('click', () => {
+    if (!socket || !playerUi.selected) return;
+    socket.emit('cmd', { text: `party follow ${playerUi.selected.name}` });
     if (playerUi.modal) playerUi.modal.classList.add('hidden');
   });
 }

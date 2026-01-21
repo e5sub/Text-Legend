@@ -1033,15 +1033,64 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         if (partyApi.getPartyByMember(target.name)) {
           return send('对方已有队伍，请先退出组队再邀请。');
         }
+        if (party && party.leader && party.leader !== player.name) {
+          return send('只有队长可以邀请队友。');
+        }
         const myParty = party || partyApi.createParty(player.name);
         if (myParty.members.length >= PARTY_LIMIT) return send('队伍已满。');
         if (myParty.members.includes(target.name)) return send('对方已在队伍中。');
         myParty.members.push(target.name);
+        if (!myParty.leader) myParty.leader = player.name;
         if (partyApi.persistParty) {
           await partyApi.persistParty(myParty);
         }
         send(`${target.name} 已加入队伍。`);
         target.send(`你已加入 ${player.name} 的队伍。`);
+        return;
+      }
+      if (sub === 'kick') {
+        if (!party) return send('你不在队伍中。');
+        if (!party.leader || party.leader !== player.name) return send('只有队长可以踢出队友。');
+        if (!targetName) return send('要踢出谁？');
+        if (!party.members.includes(targetName)) return send('对方不在队伍中。');
+        const updated = partyApi.removeFromParty(targetName);
+        if (partyApi.clearPartyFlags) {
+          await partyApi.clearPartyFlags(targetName);
+        }
+        if (updated && partyApi.persistParty) {
+          await partyApi.persistParty(updated);
+        }
+        send(`已将 ${targetName} 踢出队伍。`);
+        const target = players.find((p) => p.name === targetName);
+        if (target) target.send('你已被队长踢出队伍。');
+        return;
+      }
+      if (sub === 'follow') {
+        const mode = restArgs[0] ? restArgs[0].toLowerCase() : '';
+        if (mode === 'accept') {
+          const leaderName = restArgs.slice(1).join(' ') || (partyApi.followInvites?.get(player.name)?.from || '');
+          const invite = partyApi.followInvites?.get(player.name);
+          if (!invite || (leaderName && invite.from !== leaderName)) return send('没有跟随邀请。');
+          const leader = players.find((p) => p.name === invite.from);
+          if (!leader) return send('队长不在线。');
+          player.position.zone = leader.position.zone;
+          player.position.room = leader.position.room;
+          send(`已跟随队长前往 ${leader.name} 的位置。`);
+          leader.send(`${player.name} 已跟随你。`);
+          partyApi.followInvites?.delete(player.name);
+          return;
+        }
+        if (!party) return send('你不在队伍中。');
+        if (!party.leader || party.leader !== player.name) return send('只有队长可以邀请跟随。');
+        if (!targetName) return send('邀请谁跟随？');
+        if (!party.members.includes(targetName)) return send('对方不在队伍中。');
+        const target = players.find((p) => p.name === targetName);
+        if (!target) return send('玩家不在线。');
+        if (partyApi.followInvites) {
+          partyApi.followInvites.set(target.name, { from: player.name, at: Date.now() });
+        }
+        target.send(`${player.name} 邀请你跟随。`);
+        send(`已发送跟随邀请给 ${target.name}。`);
         return;
       }
       if (sub === 'accept') {
