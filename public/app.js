@@ -1372,6 +1372,9 @@ function renderState(state) {
   if (consignUi.modal && !consignUi.modal.classList.contains('hidden')) {
     renderConsignInventory(state.items || []);
   }
+  if (bagUi.modal && !bagUi.modal.classList.contains('hidden')) {
+    renderBagModal();
+  }
   if (repairUi.modal && !repairUi.modal.classList.contains('hidden')) {
     renderRepairList(state.equipment || []);
   }

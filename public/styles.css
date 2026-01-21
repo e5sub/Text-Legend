@@ -669,7 +669,7 @@ button:hover {
   background: #f5d8b4;
   padding: 6px 12px;
   font-size: 0.85rem;
-  color: #4b2f17;
+  color: #3a2311;
   cursor: pointer;
 }
 
@@ -691,7 +691,7 @@ button:hover {
   background: #f7e2c6;
   padding: 4px 10px;
   font-size: 0.8rem;
-  color: #4b2f17;
+  color: #3a2311;
   cursor: pointer;
 }
 
@@ -802,6 +802,7 @@ button:hover {
   background: #f7e2c6;
   padding: 6px 12px;
   font-size: 0.85rem;
+  color: #3a2311;
   cursor: pointer;
 }
 
@@ -875,14 +876,14 @@ button:hover {
 }
 
 .prefix-announce {
-  background: #9b4b10;
-  color: #fff0d4;
+  background: #b55610;
+  color: #fff7ea;
 }
 
 .line-rare { color: #69b6ff; }
 .line-epic { color: #ff7fc8; }
 .line-legendary { color: #f2c464; }
-.line-announce { color: #f7e6c6; }
+.line-announce { color: #d8792f; }
 
 .chip.rarity-common { border-color: rgba(118, 70, 22, 0.25); }
 .chip.rarity-uncommon { border-color: rgba(60, 130, 70, 0.45); color: #2f6b3b; }

@@ -190,6 +190,8 @@ const tradeInvites = new Map();
 const tradesByPlayer = new Map();
 
 const sabakConfig = {
+  startHour: 20,
+  durationMinutes: 30,
   siegeMinutes: 30
 };
 let sabakState = {
@@ -754,12 +756,26 @@ async function loadSabakState() {
   }
 }
 
-function sabakWindowInfo() {
-  return `攻城时长 ${sabakConfig.siegeMinutes} 分钟`;
-}
-
 function isSabakZone(zoneId) {
   return typeof zoneId === 'string' && zoneId.startsWith('sb_');
+}
+
+function sabakWindowRange(now = new Date()) {
+  const start = new Date(now);
+  start.setHours(sabakConfig.startHour, 0, 0, 0);
+  const end = new Date(start.getTime() + sabakConfig.durationMinutes * 60 * 1000);
+  return { start, end };
+}
+
+function isSabakActive(now = new Date()) {
+  const { start, end } = sabakWindowRange(now);
+  return now >= start && now <= end;
+}
+
+function sabakWindowInfo() {
+  const startHour = String(sabakConfig.startHour).padStart(2, '0');
+  const endMinute = sabakConfig.durationMinutes;
+  return `每天 ${startHour}:00-${startHour}:${String(endMinute).padStart(2, '0')}`;
 }
 
 async function autoCaptureSabak(player) {
@@ -774,8 +790,10 @@ async function autoCaptureSabak(player) {
 
 function startSabakSiege(attackerGuild) {
   if (sabakState.active || !sabakState.ownerGuildId) return;
+  if (!isSabakActive()) return;
+  const { end } = sabakWindowRange(new Date());
   sabakState.active = true;
-  sabakState.siegeEndsAt = Date.now() + sabakConfig.siegeMinutes * 60 * 1000;
+  sabakState.siegeEndsAt = end.getTime();
   sabakState.killStats = {};
   if (sabakState.ownerGuildId) {
     sabakState.killStats[sabakState.ownerGuildId] = {
@@ -2057,7 +2075,7 @@ setInterval(combatTick, 1000);
 
 async function sabakTick() {
   if (!sabakState.active) return;
-  if (sabakState.siegeEndsAt && Date.now() >= sabakState.siegeEndsAt) {
+  if (!isSabakActive() || (sabakState.siegeEndsAt && Date.now() >= sabakState.siegeEndsAt)) {
     await finishSabakSiege();
   }
 }
