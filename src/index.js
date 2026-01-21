@@ -1059,7 +1059,8 @@ function buildState(player) {
     id: m.id,
     name: m.name,
     hp: m.hp,
-    max_hp: m.max_hp
+    max_hp: m.max_hp,
+    mdef: m.mdef || 0
   }));
   const exits = room ? Object.keys(room.exits).map((dir) => {
     const dest = room.exits[dir];

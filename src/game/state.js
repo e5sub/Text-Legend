@@ -5,7 +5,7 @@ import { randInt } from './utils.js';
 const ROOM_MOBS = new Map();
 const RESPAWN_CACHE = new Map();
 let respawnStore = null;
-const BOSS_SCALE = { hp: 1.25, atk: 1.42, def: 1.18 };
+const BOSS_SCALE = { hp: 1.25, atk: 1.42, def: 1.77 };
 const MOB_HP_SCALE = 2;
 const MOB_STAT_SCALE = 1.69;
 const MOB_DEF_SCALE = 1.5;
@@ -26,18 +26,22 @@ function isBossTemplate(tpl) {
 }
 
 function scaledStats(tpl) {
-  if (!tpl) return { hp: 0, atk: 0, def: 0 };
+  if (!tpl) return { hp: 0, atk: 0, def: 0, mdef: 0 };
   if (!isBossTemplate(tpl)) {
+    const def = Math.floor(tpl.def * MOB_STAT_SCALE * MOB_DEF_SCALE);
     return {
       hp: Math.floor(tpl.hp * MOB_HP_SCALE * MOB_STAT_SCALE),
       atk: Math.floor(tpl.atk * MOB_STAT_SCALE),
-      def: Math.floor(tpl.def * MOB_STAT_SCALE * MOB_DEF_SCALE)
+      def,
+      mdef: Math.floor(def * 0.5)
     };
   }
+  const def = Math.floor(tpl.def * BOSS_SCALE.def * MOB_STAT_SCALE * MOB_DEF_SCALE);
   return {
     hp: Math.floor(tpl.hp * MOB_HP_SCALE * BOSS_SCALE.hp * MOB_STAT_SCALE),
     atk: Math.floor(tpl.atk * BOSS_SCALE.atk * MOB_STAT_SCALE),
-    def: Math.floor(tpl.def * BOSS_SCALE.def * MOB_STAT_SCALE * MOB_DEF_SCALE)
+    def,
+    mdef: Math.floor(def * 0.5)
   };
 }
 
@@ -105,6 +109,7 @@ export function spawnMobs(zoneId, roomId) {
           max_hp: scaled.hp,
           atk: scaled.atk,
           def: scaled.def,
+          mdef: scaled.mdef,
           dex: tpl.dex || 6,
           status: {},
           respawnAt: cached.respawnAt,
@@ -123,6 +128,7 @@ export function spawnMobs(zoneId, roomId) {
         max_hp: scaled.hp,
         atk: scaled.atk,
         def: scaled.def,
+        mdef: scaled.mdef,
         dex: tpl.dex || 6,
         status: {},
         respawnAt: null,
@@ -140,6 +146,7 @@ export function spawnMobs(zoneId, roomId) {
       mob.max_hp = scaled.hp;
       mob.atk = scaled.atk;
       mob.def = scaled.def;
+      mob.mdef = scaled.mdef;
       mob.dex = tpl.dex || 6;
       mob.status = {};
       mob.respawnAt = null;
