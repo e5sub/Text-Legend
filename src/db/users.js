@@ -26,11 +26,14 @@ export async function createSession(userId) {
 export async function getSession(token) {
   const session = await knex('sessions').where({ token }).first();
   if (!session) return null;
-  const ttlMs = config.sessionTtlMin * 60 * 1000;
-  const lastSeen = new Date(session.last_seen).getTime();
-  if (Date.now() - lastSeen > ttlMs) {
-    await knex('sessions').where({ token }).del();
-    return null;
+  const ttlMin = Number(config.sessionTtlMin);
+  const ttlMs = Number.isFinite(ttlMin) && ttlMin > 0 ? ttlMin * 60 * 1000 : 0;
+  if (ttlMs > 0) {
+    const lastSeen = new Date(session.last_seen).getTime();
+    if (Date.now() - lastSeen > ttlMs) {
+      await knex('sessions').where({ token }).del();
+      return null;
+    }
   }
   await knex('sessions').where({ token }).update({ last_seen: knex.fn.now() });
   return session;
