@@ -164,9 +164,6 @@ export function computeDerived(player) {
     let spirit = item.spirit || 0;
     let def = item.def || 0;
     let mdef = item.mdef || 0;
-    if (player.classId === 'warrior' && item.type === 'weapon') {
-      atk = Math.floor(atk * 0.5);
-    }
     if (entry.effects?.fury && item.type === 'weapon') {
       atk = Math.floor(atk * 1.25);
       mag = Math.floor(mag * 1.25);
