@@ -1399,43 +1399,56 @@ function renderState(state) {
   });
 
   if (ui.summon) {
-    if (state.summon) {
-      const levelMax = state.summon.levelMax || 8;
-      const summonEntry = [{
-        id: 'summon',
-        label: `${state.summon.name} Lv${state.summon.level}/${levelMax} ${state.summon.hp}/${state.summon.max_hp}`,
-        tooltip: `攻击: ${state.summon.atk} 防御: ${state.summon.def}`,
-        raw: state.summon
-      }];
-      renderChips(ui.summon, summonEntry, () => {});
+    const summonBlock = ui.summon.closest('.action-group');
+    if (state.player && state.player.classId === 'warrior') {
+      if (summonBlock) summonBlock.classList.add('hidden');
     } else {
-      ui.summon.textContent = '\u65e0';
+      if (summonBlock) summonBlock.classList.remove('hidden');
+      if (state.summon) {
+        const levelMax = state.summon.levelMax || 8;
+        const summonEntry = [{
+          id: 'summon',
+          label: `${state.summon.name} Lv${state.summon.level}/${levelMax} ${state.summon.hp}/${state.summon.max_hp}`,
+          tooltip: `攻击: ${state.summon.atk} 防御: ${state.summon.def}`,
+          raw: state.summon
+        }];
+        renderChips(ui.summon, summonEntry, () => {});
+      } else {
+        ui.summon.textContent = '\u65e0';
+      }
     }
   }
 
   if (ui.worldBossRank) {
     ui.worldBossRank.innerHTML = '';
-    const ranks = state.worldBossRank || [];
-    if (!ranks.length) {
-      const empty = document.createElement('div');
-      empty.textContent = '暂无排行';
-      ui.worldBossRank.appendChild(empty);
+    const inWorldBossRoom = state.room && state.room.zoneId === 'wb' && state.room.roomId === 'lair';
+    const rankBlock = ui.worldBossRank.closest('.action-group');
+    if (!inWorldBossRoom) {
+      if (rankBlock) rankBlock.classList.add('hidden');
     } else {
-      ranks.forEach((entry, idx) => {
-        const row = document.createElement('div');
-        row.className = 'rank-item';
-        const name = document.createElement('span');
-        name.textContent = `${entry.name}`;
-        const dmg = document.createElement('span');
-        dmg.textContent = `${entry.damage}`;
-        const pos = document.createElement('span');
-        pos.className = 'rank-pos';
-        pos.textContent = `#${idx + 1}`;
-        row.appendChild(pos);
-        row.appendChild(name);
-        row.appendChild(dmg);
-        ui.worldBossRank.appendChild(row);
-      });
+      if (rankBlock) rankBlock.classList.remove('hidden');
+      const ranks = state.worldBossRank || [];
+      if (!ranks.length) {
+        const empty = document.createElement('div');
+        empty.textContent = '暂无排行';
+        ui.worldBossRank.appendChild(empty);
+      } else {
+        ranks.forEach((entry, idx) => {
+          const row = document.createElement('div');
+          row.className = 'rank-item';
+          const name = document.createElement('span');
+          name.textContent = `${entry.name}`;
+          const dmg = document.createElement('span');
+          dmg.textContent = `${entry.damage}`;
+          const pos = document.createElement('span');
+          pos.className = 'rank-pos';
+          pos.textContent = `#${idx + 1}`;
+          row.appendChild(pos);
+          row.appendChild(name);
+          row.appendChild(dmg);
+          ui.worldBossRank.appendChild(row);
+        });
+      }
     }
   }
 

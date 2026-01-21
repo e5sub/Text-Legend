@@ -36,7 +36,10 @@ function scaledStats(tpl) {
       mdef: Math.floor(def * 0.5)
     };
   }
-  const def = Math.floor(tpl.def * BOSS_SCALE.def * MOB_STAT_SCALE * MOB_DEF_SCALE);
+  let def = Math.floor(tpl.def * BOSS_SCALE.def * MOB_STAT_SCALE * MOB_DEF_SCALE);
+  if (tpl.worldBoss) {
+    def = Math.floor(def * 0.7);
+  }
   return {
     hp: Math.floor(tpl.hp * MOB_HP_SCALE * BOSS_SCALE.hp * MOB_STAT_SCALE),
     atk: Math.floor(tpl.atk * BOSS_SCALE.atk * MOB_STAT_SCALE),
