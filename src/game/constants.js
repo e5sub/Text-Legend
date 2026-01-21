@@ -33,7 +33,9 @@ export function expForLevel(level) {
   if (level < EXP_TABLE.length) return EXP_TABLE[level];
   const base = EXP_TABLE[EXP_TABLE.length - 1];
   const extra = level - (EXP_TABLE.length - 1);
-  return base + extra * extra * 120 + extra * 800;
+  const exp = base + extra * extra * 120 + extra * 800;
+  if (level >= 60) return Math.floor(exp * 5);
+  return exp;
 }
 
 export function maxBagSlots(level) {

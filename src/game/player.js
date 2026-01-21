@@ -170,17 +170,32 @@ export function computeDerived(player) {
   stats.dex += training.dex || 0;
 
   player.stats = stats;
-  player.max_hp = base.con * 10 + cls.hpPerLevel * level + stats.con * 2 + (training.hp || 0);
-  player.max_mp = base.spirit * 8 + cls.mpPerLevel * level + stats.spirit * 2 + (training.mp || 0);
+  const levelUp = Math.max(0, level - 1);
+  const levelBonusMap = {
+    warrior: { hp: 5, mp: 10, atk: 1, def: 1, mag: 0, spirit: 0 },
+    mage: { hp: 3, mp: 10, atk: 0, def: 2, mag: 2, spirit: 0 },
+    taoist: { hp: 3, mp: 10, atk: 0, def: 2, mag: 0, spirit: 2 }
+  };
+  const levelBonus = levelBonusMap[player.classId] || levelBonusMap.warrior;
+  const bonusHp = levelBonus.hp * levelUp;
+  const bonusMp = levelBonus.mp * levelUp;
+  const bonusAtk = levelBonus.atk * levelUp;
+  const bonusDef = levelBonus.def * levelUp;
+  const bonusMag = levelBonus.mag * levelUp;
+  const bonusSpirit = levelBonus.spirit * levelUp;
+
+  player.max_hp = base.con * 10 + cls.hpPerLevel * level + stats.con * 2 + (training.hp || 0) + bonusHp;
+  player.max_mp = base.spirit * 8 + cls.mpPerLevel * level + stats.spirit * 2 + (training.mp || 0) + bonusMp;
+
+  player.atk = stats.str * 1.6 + level * 1.2 + (training.atk || 0) + bonusAtk;
+  player.def = stats.con * 1.1 + level * 0.8 + (training.def || 0) + bonusDef;
+  player.dex = stats.dex;
+  player.mag = stats.int * 1.4 + stats.spirit * 0.6 + (training.mag || 0) + bonusMag;
+  player.spirit = stats.spirit + bonusSpirit;
+  player.mdef = stats.spirit * 1.1 + level * 0.8 + (training.mdef || 0);
+
   player.hp = clamp(player.hp, 1, player.max_hp);
   player.mp = clamp(player.mp, 0, player.max_mp);
-
-  player.atk = stats.str * 1.6 + level * 1.2 + (training.atk || 0);
-  player.def = stats.con * 1.1 + level * 0.8 + (training.def || 0);
-  player.dex = stats.dex;
-  player.mag = stats.int * 1.4 + stats.spirit * 0.6 + (training.mag || 0);
-  player.spirit = stats.spirit;
-  player.mdef = stats.spirit * 1.1 + level * 0.8 + (training.mdef || 0);
 }
 
 export function gainExp(player, amount) {

@@ -1686,7 +1686,7 @@ function processMobDeath(player, mob, online) {
           const item = ITEM_TEMPLATES[id];
           if (!item) return;
           const rarity = rarityByPrice(item);
-          if (['uncommon', 'rare', 'epic', 'legendary'].includes(rarity)) {
+          if (['epic', 'legendary'].includes(rarity)) {
             emitAnnouncement(`${target.name} 击败 ${template.name} 获得${RARITY_LABELS[rarity] || '稀有'}装备 ${formatItemLabel(id, effects)}！`, rarity);
           }
         });
@@ -1699,7 +1699,7 @@ function processMobDeath(player, mob, online) {
           const item = ITEM_TEMPLATES[entry.id];
           if (!item) return;
           const rarity = rarityByPrice(item);
-          if (['uncommon', 'rare', 'epic', 'legendary'].includes(rarity)) {
+          if (['epic', 'legendary'].includes(rarity)) {
             emitAnnouncement(`${owner.name} 击败 ${template.name} 获得${RARITY_LABELS[rarity] || '稀有'}装备 ${formatItemLabel(entry.id, entry.effects)}！`, rarity);
           }
         });
