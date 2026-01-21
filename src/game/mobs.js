@@ -1,9 +1,9 @@
 ﻿export const MOB_TEMPLATES = {
   // Basic field
-  chicken: { id: 'chicken', name: '鸡', level: 1, hp: 30, atk: 4, def: 0, exp: 12, gold: [1, 5], drops: [{ id: 'potion_small', chance: 0.05 }] },
-  deer: { id: 'deer', name: '鹿', level: 2, hp: 45, atk: 6, def: 1, exp: 18, gold: [2, 8], drops: [{ id: 'potion_small', chance: 0.08 }] },
-  sheep: { id: 'sheep', name: '羊', level: 2, hp: 40, atk: 5, def: 1, exp: 16, gold: [2, 6], drops: [{ id: 'potion_small', chance: 0.06 }] },
-  scarecrow: { id: 'scarecrow', name: '稻草人', level: 5, hp: 90, atk: 12, def: 3, exp: 40, gold: [5, 12], drops: [{ id: 'potion_small', chance: 0.1 }] },
+  chicken: { id: 'chicken', name: '鸡', level: 1, hp: 20, atk: 2, def: 0, exp: 8, gold: [1, 5], drops: [{ id: 'potion_small', chance: 0.05 }] },
+  deer: { id: 'deer', name: '鹿', level: 2, hp: 30, atk: 4, def: 0, exp: 12, gold: [2, 8], drops: [{ id: 'potion_small', chance: 0.08 }] },
+  sheep: { id: 'sheep', name: '羊', level: 2, hp: 28, atk: 3, def: 0, exp: 10, gold: [2, 6], drops: [{ id: 'potion_small', chance: 0.06 }] },
+  scarecrow: { id: 'scarecrow', name: '稻草人', level: 5, hp: 60, atk: 8, def: 1, exp: 25, gold: [5, 12], drops: [{ id: 'potion_small', chance: 0.1 }] },
   cat: { id: 'cat', name: '钉耙猫', level: 5, hp: 85, atk: 12, def: 2, exp: 38, gold: [5, 12], drops: [{ id: 'potion_small', chance: 0.1 }] },
   wolf: { id: 'wolf', name: '狼', level: 4, hp: 80, atk: 10, def: 2, exp: 40, gold: [4, 12], drops: [{ id: 'potion_small', chance: 0.1 }, { id: 'boots_leather', chance: 0.02 }] },
   half_orc: { id: 'half_orc', name: '半兽人', level: 7, hp: 140, atk: 16, def: 5, exp: 85, gold: [10, 20], drops: [{ id: 'armor_chain', chance: 0.03 }] },

@@ -64,6 +64,7 @@
   juejudao: { id: 'juejudao', name: '裁决之杖', type: 'weapon', slot: 'weapon', atk: 21, price: 52000 },
   nujian: { id: 'nujian', name: '怒斩', type: 'weapon', slot: 'weapon', atk: 19, dex: 4, price: 72000 },
   wulong: { id: 'wulong', name: '屠龙', type: 'weapon', slot: 'weapon', atk: 31, price: 200000 },
+  kaitian: { id: 'kaitian', name: '开天', type: 'weapon', slot: 'weapon', atk: 47, price: 300000, rarity: 'legendary', bossOnly: true },
 
   // Mage weapons
   staff_apprentice: { id: 'staff_apprentice', name: '学徒法杖', type: 'weapon', slot: 'weapon', atk: 2, mag: 4, price: 380 },
@@ -73,6 +74,7 @@
   magestaff: { id: 'magestaff', name: '魔杖', type: 'weapon', slot: 'weapon', mag: 10, price: 12000 },
   bone_staff: { id: 'bone_staff', name: '骨玉权杖', type: 'weapon', slot: 'weapon', mag: 18, price: 36000 },
   blood_drink: { id: 'blood_drink', name: '血饮', type: 'weapon', slot: 'weapon', mag: 22, price: 52000 },
+  zhentian: { id: 'zhentian', name: '镇天', type: 'weapon', slot: 'weapon', mag: 33, price: 78000, rarity: 'legendary', bossOnly: true },
 
   // Taoist weapons
   talisman_bone: { id: 'talisman_bone', name: '骨符', type: 'weapon', slot: 'weapon', atk: 1, spirit: 3, price: 360 },
@@ -81,6 +83,7 @@
   silver_snake: { id: 'silver_snake', name: '银蛇', type: 'weapon', slot: 'weapon', spirit: 10, price: 14000 },
   wujigun: { id: 'wujigun', name: '无极棍', type: 'weapon', slot: 'weapon', spirit: 14, price: 26000 },
   longwen: { id: 'longwen', name: '龙纹剑', type: 'weapon', slot: 'weapon', spirit: 22, price: 52000 },
+  xuantian: { id: 'xuantian', name: '玄天', type: 'weapon', slot: 'weapon', spirit: 33, price: 78000, rarity: 'legendary', bossOnly: true },
 
   // Armors
   armor_cloth: { id: 'armor_cloth', name: '布衣', type: 'armor', slot: 'chest', def: 2, price: 160 },
@@ -96,8 +99,9 @@
   armor_doom: { id: 'armor_doom', name: '幽灵战衣', type: 'armor', slot: 'chest', def: 21, dex: 2, spirit: 3, price: 12000 },
   armor_magic: { id: 'armor_magic', name: '恶魔长袍', type: 'armor', slot: 'chest', def: 19, dex: 2, mag: 3, price: 12000 },
   armor_taishan: { id: 'armor_taishan', name: '圣战宝甲', type: 'armor', slot: 'chest', def: 22, atk: 2, price: 52000 },
-  armor_fashen2: { id: 'armor_fashen2', name: '法神宝甲', type: 'armor', slot: 'chest', def: 24, dex: 3, mag: 4, price: 52000 },
-  armor_tianzun2: { id: 'armor_tianzun2', name: '天尊宝甲', type: 'armor', slot: 'chest', def: 24, dex: 3, spirit: 4, price: 52000 },
+  armor_thunder: { id: 'armor_thunder', name: '雷霆战甲', type: 'armor', slot: 'chest', def: 33, atk: 3, price: 78000, rarity: 'legendary', bossOnly: true },
+  armor_flame: { id: 'armor_flame', name: '烈焰魔衣', type: 'armor', slot: 'chest', def: 29, dex: 3, mag: 9, price: 27000, rarity: 'legendary', bossOnly: true },
+  armor_glow: { id: 'armor_glow', name: '光芒道袍', type: 'armor', slot: 'chest', def: 32, dex: 3, spirit: 9, price: 27000, rarity: 'legendary', bossOnly: true },
   armor_molong: { id: 'armor_molong', name: '魔龙战甲', type: 'armor', slot: 'chest', def: 24, atk: 2, price: 42000 },
 
   // Helms
@@ -107,31 +111,34 @@
   helm_mystic: { id: 'helm_mystic', name: '道士头盔', type: 'armor', slot: 'head', def: 5, dex: 1, spirit: 1, price: 1600 },
   helm_wizard: { id: 'helm_wizard', name: '法师头盔', type: 'armor', slot: 'head', def: 5, dex: 1, mag: 1, price: 1600 },
   helm_war: { id: 'helm_war', name: '战神头盔', type: 'armor', slot: 'head', def: 6, price: 4800 },
-  helm_mage: { id: 'helm_mage', name: '法神头盔', type: 'armor', slot: 'head', def: 6, dex: 1, mag: 2, price: 4800 },
-  helm_tao: { id: 'helm_tao', name: '天尊头盔', type: 'armor', slot: 'head', def: 6, dex: 1, spirit: 2, price: 4800 },
-  helm_holy: { id: 'helm_holy', name: '圣战头盔', type: 'armor', slot: 'head', def: 7, atk: 1, price: 12000 },
-  helm_fashen: { id: 'helm_fashen', name: '法神头盔(套)', type: 'armor', slot: 'head', def: 8, dex: 2, mag: 1, price: 12000 },
-  helm_tianzun: { id: 'helm_tianzun', name: '天尊头盔(套)', type: 'armor', slot: 'head', def: 8, dex: 2, spirit: 1, price: 12000 },
+  helm_mage: { id: 'helm_mage', name: '法神头盔(套)', type: 'armor', slot: 'head', def: 6, dex: 1, mag: 2, price: 4800 },
+  helm_sacred: { id: 'helm_sacred', name: '圣魔头盔(套)', type: 'armor', slot: 'head', def: 9, dex: 2, mag: 3, price: 7200, rarity: 'legendary', bossOnly: true },
+  helm_tao: { id: 'helm_tao', name: '天尊头盔(套)', type: 'armor', slot: 'head', def: 6, dex: 1, spirit: 2, price: 4800 },
+  helm_true: { id: 'helm_true', name: '真魂头盔(套)', type: 'armor', slot: 'head', def: 9, dex: 2, spirit: 3, price: 7200, rarity: 'legendary', bossOnly: true },
+  helm_holy: { id: 'helm_holy', name: '圣战头盔(套)', type: 'armor', slot: 'head', def: 7, atk: 1, price: 12000 },
+  helm_wargod: { id: 'helm_wargod', name: '战神头盔(套)', type: 'armor', slot: 'head', def: 11, atk: 2, price: 18000, rarity: 'legendary', bossOnly: true },
 
   // Boots
   boots_leather: { id: 'boots_leather', name: '皮靴', type: 'armor', slot: 'feet', def: 1, price: 120 },
   boots_iron: { id: 'boots_iron', name: '铁靴', type: 'armor', slot: 'feet', def: 3, price: 800 },
   boots_war: { id: 'boots_war', name: '战神靴', type: 'armor', slot: 'feet', def: 6, price: 4600 },
-  boots_mage: { id: 'boots_mage', name: '法神靴', type: 'armor', slot: 'feet', def: 6, dex: 1, mag: 2, price: 4600 },
-  boots_tao: { id: 'boots_tao', name: '天尊靴', type: 'armor', slot: 'feet', def: 6, dex: 1, spirit: 2, price: 4600 },
-  boots_holy: { id: 'boots_holy', name: '圣战靴', type: 'armor', slot: 'feet', def: 7, atk: 1, price: 12000 },
-  boots_fashen: { id: 'boots_fashen', name: '法神靴(套)', type: 'armor', slot: 'feet', def: 8, dex: 2, mag: 1, price: 12000 },
-  boots_tianzun: { id: 'boots_tianzun', name: '天尊靴(套)', type: 'armor', slot: 'feet', def: 8, dex: 2, spirit: 1, price: 12000 },
+  boots_mage: { id: 'boots_mage', name: '法神靴(套)', type: 'armor', slot: 'feet', def: 6, dex: 1, mag: 2, price: 4600 },
+  boots_sacred: { id: 'boots_sacred', name: '圣魔靴子(套)', type: 'armor', slot: 'feet', def: 9, dex: 2, mag: 3, price: 6900, rarity: 'legendary', bossOnly: true },
+  boots_tao: { id: 'boots_tao', name: '天尊靴(套)', type: 'armor', slot: 'feet', def: 6, dex: 1, spirit: 2, price: 4600 },
+  boots_true: { id: 'boots_true', name: '真魂靴子(套)', type: 'armor', slot: 'feet', def: 9, dex: 2, spirit: 3, price: 6900, rarity: 'legendary', bossOnly: true },
+  boots_holy: { id: 'boots_holy', name: '圣战靴(套)', type: 'armor', slot: 'feet', def: 7, atk: 1, price: 12000 },
+  boots_wargod: { id: 'boots_wargod', name: '战神靴子(套)', type: 'armor', slot: 'feet', def: 11, atk: 2, price: 18000, rarity: 'legendary', bossOnly: true },
 
   // Belts
   belt_cloth: { id: 'belt_cloth', name: '布腰带', type: 'armor', slot: 'waist', def: 1, price: 160 },
   belt_iron: { id: 'belt_iron', name: '铁腰带', type: 'armor', slot: 'waist', def: 3, price: 900 },
   belt_war: { id: 'belt_war', name: '战神腰带', type: 'armor', slot: 'waist', def: 6, price: 5200 },
-  belt_mage: { id: 'belt_mage', name: '法神腰带', type: 'armor', slot: 'waist', def: 6, dex: 1, mag: 2, price: 5200 },
-  belt_tao: { id: 'belt_tao', name: '天尊腰带', type: 'armor', slot: 'waist', def: 6, dex: 1, spirit: 2, price: 5200 },
-  belt_holy: { id: 'belt_holy', name: '圣战腰带', type: 'armor', slot: 'waist', def: 7, atk: 1, price: 12000 },
-  belt_fashen: { id: 'belt_fashen', name: '法神腰带(套)', type: 'armor', slot: 'waist', def: 8, dex: 2, mag: 1, price: 12000 },
-  belt_tianzun: { id: 'belt_tianzun', name: '天尊腰带(套)', type: 'armor', slot: 'waist', def: 8, dex: 2, spirit: 1, price: 12000 },
+  belt_mage: { id: 'belt_mage', name: '法神腰带(套)', type: 'armor', slot: 'waist', def: 6, dex: 1, mag: 2, price: 5200 },
+  belt_sacred: { id: 'belt_sacred', name: '圣魔腰带(套)', type: 'armor', slot: 'waist', def: 9, dex: 2, mag: 3, price: 7800, rarity: 'legendary', bossOnly: true },
+  belt_tao: { id: 'belt_tao', name: '天尊腰带(套)', type: 'armor', slot: 'waist', def: 6, dex: 1, spirit: 2, price: 5200 },
+  belt_true: { id: 'belt_true', name: '真魂腰带(套)', type: 'armor', slot: 'waist', def: 9, dex: 2, spirit: 3, price: 7800, rarity: 'legendary', bossOnly: true },
+  belt_holy: { id: 'belt_holy', name: '圣战腰带(套)', type: 'armor', slot: 'waist', def: 7, atk: 1, price: 12000 },
+  belt_wargod: { id: 'belt_wargod', name: '战神腰带(套)', type: 'armor', slot: 'waist', def: 11, atk: 2, price: 18000, rarity: 'legendary', bossOnly: true },
 
   // Rings
   ring_copper: { id: 'ring_copper', name: '铜戒指', type: 'accessory', slot: 'ring', atk: 1, price: 260 },
@@ -143,9 +150,12 @@
   ring_strength: { id: 'ring_strength', name: '力量戒指', type: 'accessory', slot: 'ring', atk: 6, price: 26000 },
   ring_bone: { id: 'ring_bone', name: '紫碧螺', type: 'accessory', slot: 'ring', mag: 6, price: 26000 },
   ring_tao: { id: 'ring_tao', name: '泰坦戒指', type: 'accessory', slot: 'ring', spirit: 6, dex: 1, price: 26000 },
-  ring_holy: { id: 'ring_holy', name: '圣战戒指', type: 'accessory', slot: 'ring', atk: 8, price: 48000 },
-  ring_fashen: { id: 'ring_fashen', name: '法神戒指', type: 'accessory', slot: 'ring', mag: 8, dex: 1, price: 48000 },
-  ring_tianzun: { id: 'ring_tianzun', name: '天尊戒指', type: 'accessory', slot: 'ring', spirit: 8, dex: 1, price: 48000 },
+  ring_holy: { id: 'ring_holy', name: '圣战戒指(套)', type: 'accessory', slot: 'ring', atk: 8, price: 48000 },
+  ring_wargod: { id: 'ring_wargod', name: '战神戒指(套)', type: 'accessory', slot: 'ring', atk: 12, price: 72000, rarity: 'legendary', bossOnly: true },
+  ring_fashen: { id: 'ring_fashen', name: '法神戒指(套)', type: 'accessory', slot: 'ring', mag: 8, dex: 1, price: 48000 },
+  ring_sacred: { id: 'ring_sacred', name: '圣魔戒指(套)', type: 'accessory', slot: 'ring', mag: 12, dex: 2, price: 72000, rarity: 'legendary', bossOnly: true },
+  ring_tianzun: { id: 'ring_tianzun', name: '天尊戒指(套)', type: 'accessory', slot: 'ring', spirit: 8, dex: 1, price: 48000 },
+  ring_true: { id: 'ring_true', name: '真魂戒指(套)', type: 'accessory', slot: 'ring', spirit: 12, dex: 2, price: 72000, rarity: 'legendary', bossOnly: true },
   ring_def: { id: 'ring_def', name: '防御戒指', type: 'accessory', slot: 'ring', def: 4, price: 22000 },
   ring_fire: { id: 'ring_fire', name: '火焰戒指', type: 'accessory', slot: 'ring', mag: 4, price: 24000 },
   ring_stealth: { id: 'ring_stealth', name: '隐身戒指', type: 'accessory', slot: 'ring', dex: 4, price: 24000 },
@@ -166,9 +176,12 @@
   necklace_evil: { id: 'necklace_evil', name: '恶魔铃铛', type: 'accessory', slot: 'neck', def: 1, dex: 1, mag: 4, price: 12000 },
   necklace_tao: { id: 'necklace_tao', name: '灵魂项链', type: 'accessory', slot: 'neck', def: 1, dex: 1, spirit: 4, price: 12000 },
   necklace_ghost: { id: 'necklace_ghost', name: '幽灵项链', type: 'accessory', slot: 'neck', def: 1, dex: 1, spirit: 5, price: 16000 },
-  necklace_soldier: { id: 'necklace_soldier', name: '圣战项链', type: 'accessory', slot: 'neck', atk: 6, price: 48000 },
-  necklace_fashen: { id: 'necklace_fashen', name: '法神项链', type: 'accessory', slot: 'neck', def: 1, dex: 1, mag: 6, price: 48000 },
-  necklace_tianzun: { id: 'necklace_tianzun', name: '天尊项链', type: 'accessory', slot: 'neck', def: 1, dex: 1, spirit: 6, price: 48000 },
+  necklace_soldier: { id: 'necklace_soldier', name: '圣战项链(套)', type: 'accessory', slot: 'neck', atk: 6, price: 48000 },
+  necklace_wargod: { id: 'necklace_wargod', name: '战神项链(套)', type: 'accessory', slot: 'neck', atk: 9, price: 72000, rarity: 'legendary', bossOnly: true },
+  necklace_fashen: { id: 'necklace_fashen', name: '法神项链(套)', type: 'accessory', slot: 'neck', def: 1, dex: 1, mag: 6, price: 48000 },
+  necklace_sacred: { id: 'necklace_sacred', name: '圣魔项链(套)', type: 'accessory', slot: 'neck', def: 2, dex: 2, mag: 9, price: 72000, rarity: 'legendary', bossOnly: true },
+  necklace_tianzun: { id: 'necklace_tianzun', name: '天尊项链(套)', type: 'accessory', slot: 'neck', def: 1, dex: 1, spirit: 6, price: 48000 },
+  necklace_true: { id: 'necklace_true', name: '真魂项链(套)', type: 'accessory', slot: 'neck', def: 2, dex: 2, spirit: 9, price: 72000, rarity: 'legendary', bossOnly: true },
   necklace_luck: { id: 'necklace_luck', name: '幸运项链', type: 'accessory', slot: 'neck', dex: 3, price: 26000 },
 
   // Bracelets
@@ -179,9 +192,12 @@
   bracelet_eye: { id: 'bracelet_eye', name: '三眼手镯', type: 'accessory', slot: 'bracelet', def: 1, dex: 1, spirit: 4, price: 6200 },
   bracelet_ghost: { id: 'bracelet_ghost', name: '幽灵手套', type: 'accessory', slot: 'bracelet', def: 1, dex: 1, spirit: 5, price: 12000 },
   bracelet_yanluo: { id: 'bracelet_yanluo', name: '阎罗手套', type: 'accessory', slot: 'bracelet', def: 4, price: 12000 },
-  bracelet_soldier: { id: 'bracelet_soldier', name: '圣战手镯', type: 'accessory', slot: 'bracelet', atk: 6, price: 48000 },
-  bracelet_fashen: { id: 'bracelet_fashen', name: '法神手镯', type: 'accessory', slot: 'bracelet', def: 1, dex: 1, mag: 6, price: 48000 },
-  bracelet_tianzun: { id: 'bracelet_tianzun', name: '天尊手镯', type: 'accessory', slot: 'bracelet', def: 1, dex: 1, spirit: 6, price: 48000 }
+  bracelet_soldier: { id: 'bracelet_soldier', name: '圣战手镯(套)', type: 'accessory', slot: 'bracelet', atk: 6, price: 48000 },
+  bracelet_wargod: { id: 'bracelet_wargod', name: '战神手镯(套)', type: 'accessory', slot: 'bracelet', atk: 9, price: 72000, rarity: 'legendary', bossOnly: true },
+  bracelet_fashen: { id: 'bracelet_fashen', name: '法神手镯(套)', type: 'accessory', slot: 'bracelet', def: 1, dex: 1, mag: 6, price: 48000 },
+  bracelet_sacred: { id: 'bracelet_sacred', name: '圣魔手镯(套)', type: 'accessory', slot: 'bracelet', def: 2, dex: 2, mag: 9, price: 72000, rarity: 'legendary', bossOnly: true },
+  bracelet_tianzun: { id: 'bracelet_tianzun', name: '天尊手镯(套)', type: 'accessory', slot: 'bracelet', def: 1, dex: 1, spirit: 6, price: 48000 },
+  bracelet_true: { id: 'bracelet_true', name: '真魂手镯(套)', type: 'accessory', slot: 'bracelet', def: 2, dex: 2, spirit: 9, price: 72000, rarity: 'legendary', bossOnly: true }
 };
 
 export const SHOP_STOCKS = {

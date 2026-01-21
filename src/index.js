@@ -325,6 +325,11 @@ function formatItemLabel(itemId, effects = null) {
   return tags.length ? `${item.name}·${tags.join('·')}` : item.name;
 }
 
+function formatLegendaryAnnouncement(text, rarity) {
+  if (rarity !== 'legendary') return text;
+  return `传说掉落：${text}`;
+}
+
 function rollEquipmentEffects(itemId) {
   const item = ITEM_TEMPLATES[itemId];
   if (!item || !['weapon', 'armor', 'accessory'].includes(item.type)) return null;
@@ -439,6 +444,8 @@ function dropLoot(mobTemplate, bonus = 1) {
   const finalBonus = (mobTemplate.worldBoss ? bonus * WORLD_BOSS_DROP_BONUS : bonus) * sabakBonus;
   if (mobTemplate.drops) {
     mobTemplate.drops.forEach((drop) => {
+      const dropItem = ITEM_TEMPLATES[drop.id];
+      if (dropItem?.bossOnly && !isBossMob(mobTemplate)) return;
       const chance = Math.min(1, (drop.chance || 0) * finalBonus);
       if (Math.random() <= chance) {
         loot.push({ id: drop.id, effects: rollEquipmentEffects(drop.id) });
@@ -1188,7 +1195,8 @@ function buildState(player) {
       pk: player.flags?.pkValue || 0,
       vip: Boolean(player.flags?.vip),
       autoSkillId: player.flags?.autoSkillId || null,
-      sabak_bonus: sabakBonus
+      sabak_bonus: sabakBonus,
+      set_bonus: Boolean(player.flags?.setBonusActive)
     },
     summon: player.summon
       ? {
@@ -1910,7 +1918,8 @@ function processMobDeath(player, mob, online) {
           if (!item) return;
           const rarity = rarityByPrice(item);
           if (['epic', 'legendary'].includes(rarity)) {
-            emitAnnouncement(`${target.name} 击败 ${template.name} 获得${RARITY_LABELS[rarity] || '稀有'}装备 ${formatItemLabel(id, effects)}！`, rarity);
+            const text = `${target.name} 击败 ${template.name} 获得${RARITY_LABELS[rarity] || '稀有'}装备 ${formatItemLabel(id, effects)}！`;
+            emitAnnouncement(formatLegendaryAnnouncement(text, rarity), rarity);
           }
           if (isEquipmentItem(item) && hasSpecialEffects(effects)) {
             emitAnnouncement(`${target.name} 获得特效装备 ${formatItemLabel(id, effects)}！`, 'announce');
@@ -1926,7 +1935,8 @@ function processMobDeath(player, mob, online) {
           if (!item) return;
           const rarity = rarityByPrice(item);
           if (['epic', 'legendary'].includes(rarity)) {
-            emitAnnouncement(`${owner.name} 击败 ${template.name} 获得${RARITY_LABELS[rarity] || '稀有'}装备 ${formatItemLabel(entry.id, entry.effects)}！`, rarity);
+            const text = `${owner.name} 击败 ${template.name} 获得${RARITY_LABELS[rarity] || '稀有'}装备 ${formatItemLabel(entry.id, entry.effects)}！`;
+            emitAnnouncement(formatLegendaryAnnouncement(text, rarity), rarity);
           }
           if (isEquipmentItem(item) && hasSpecialEffects(entry.effects)) {
             emitAnnouncement(`${owner.name} 获得特效装备 ${formatItemLabel(entry.id, entry.effects)}！`, 'announce');

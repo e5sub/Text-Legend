@@ -145,9 +145,101 @@ export function computeDerived(player) {
   if (!player.flags.training) {
     player.flags.training = { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 };
   }
+  const SET_BONUS_RATE = 1.2;
+  const SET_DEFS = [
+    {
+      id: 'holy',
+      bonusRate: SET_BONUS_RATE,
+      head: 'helm_holy',
+      waist: 'belt_holy',
+      feet: 'boots_holy',
+      neck: 'necklace_soldier',
+      ring: 'ring_holy',
+      bracelet: 'bracelet_soldier'
+    },
+    {
+      id: 'fashen',
+      bonusRate: SET_BONUS_RATE,
+      head: 'helm_mage',
+      waist: 'belt_mage',
+      feet: 'boots_mage',
+      neck: 'necklace_fashen',
+      ring: 'ring_fashen',
+      bracelet: 'bracelet_fashen'
+    },
+    {
+      id: 'tianzun',
+      bonusRate: SET_BONUS_RATE,
+      head: 'helm_tao',
+      waist: 'belt_tao',
+      feet: 'boots_tao',
+      neck: 'necklace_tianzun',
+      ring: 'ring_tianzun',
+      bracelet: 'bracelet_tianzun'
+    },
+    {
+      id: 'thunder',
+      bonusRate: 1.4,
+      head: 'helm_wargod',
+      waist: 'belt_wargod',
+      feet: 'boots_wargod',
+      neck: 'necklace_wargod',
+      ring: 'ring_wargod',
+      bracelet: 'bracelet_wargod'
+    },
+    {
+      id: 'holyflame',
+      bonusRate: 1.4,
+      head: 'helm_sacred',
+      waist: 'belt_sacred',
+      feet: 'boots_sacred',
+      neck: 'necklace_sacred',
+      ring: 'ring_sacred',
+      bracelet: 'bracelet_sacred'
+    },
+    {
+      id: 'soultrue',
+      bonusRate: 1.4,
+      head: 'helm_true',
+      waist: 'belt_true',
+      feet: 'boots_true',
+      neck: 'necklace_true',
+      ring: 'ring_true',
+      bracelet: 'bracelet_true'
+    }
+  ];
   const cls = CLASSES[player.classId];
   const base = cls.base;
   const level = player.level;
+  const equipped = player.equipment || {};
+  const activeSetIds = new Set();
+  const activeSetBonusRates = new Map();
+  SET_DEFS.forEach((setDef) => {
+    const fullSet =
+      equipped.head?.id === setDef.head &&
+      equipped.waist?.id === setDef.waist &&
+      equipped.feet?.id === setDef.feet &&
+      equipped.neck?.id === setDef.neck &&
+      equipped.ring_left?.id === setDef.ring &&
+      equipped.ring_right?.id === setDef.ring &&
+      equipped.bracelet_left?.id === setDef.bracelet &&
+      equipped.bracelet_right?.id === setDef.bracelet;
+    if (fullSet) {
+      const bonusRate = setDef.bonusRate || SET_BONUS_RATE;
+      [
+        setDef.head,
+        setDef.waist,
+        setDef.feet,
+        setDef.neck,
+        setDef.ring,
+        setDef.bracelet
+      ].forEach((id) => {
+        activeSetIds.add(id);
+        activeSetBonusRates.set(id, bonusRate);
+      });
+    }
+  });
+  player.flags.setBonusActive = activeSetIds.size > 0;
   const bonus = Object.values(player.equipment)
     .filter((equipped) => equipped && equipped.id && (equipped.durability == null || equipped.durability > 0))
     .map((equipped) => ({
@@ -161,11 +253,13 @@ export function computeDerived(player) {
   let evadeChance = 0;
   for (const entry of bonus) {
     const item = entry.item;
-    let atk = item.atk || 0;
-    let mag = item.mag || 0;
-    let spirit = item.spirit || 0;
-    let def = item.def || 0;
-    let mdef = item.mdef || 0;
+    const setBonus = activeSetIds.has(item.id) ? (activeSetBonusRates.get(item.id) || SET_BONUS_RATE) : 1;
+    let atk = Math.floor((item.atk || 0) * setBonus);
+    let mag = Math.floor((item.mag || 0) * setBonus);
+    let spirit = Math.floor((item.spirit || 0) * setBonus);
+    let def = Math.floor((item.def || 0) * setBonus);
+    let mdef = Math.floor((item.mdef || 0) * setBonus);
+    const dex = Math.floor((item.dex || 0) * setBonus);
     if (entry.effects?.fury && item.type === 'weapon') {
       atk = Math.floor(atk * 1.25);
       mag = Math.floor(mag * 1.25);
@@ -179,7 +273,7 @@ export function computeDerived(player) {
       evadeChance = 0.2;
     }
     stats.str += atk ? Math.floor(atk / 2) : 0;
-    stats.dex += item.dex || 0;
+    stats.dex += dex || 0;
     stats.int += mag ? Math.floor(mag / 2) : 0;
     stats.con += def ? Math.floor(def / 2) : 0;
     stats.spirit += spirit || 0;

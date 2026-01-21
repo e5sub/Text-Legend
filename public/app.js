@@ -26,6 +26,7 @@ const ui = {
   pk: document.getElementById('ui-pk'),
   vip: document.getElementById('ui-vip'),
   sabakBonus: document.getElementById('ui-sabak-bonus'),
+  setBonus: document.getElementById('ui-set-bonus'),
   online: document.getElementById('ui-online'),
   serverTime: document.getElementById('ui-server-time'),
   party: document.getElementById('ui-party'),
@@ -245,6 +246,9 @@ function buildLine(payload) {
   const p = document.createElement('p');
   p.classList.add('log-line');
   if (data.color) p.classList.add(`line-${data.color}`);
+  if (data.prefix === '公告' || data.prefixColor === 'announce') {
+    p.classList.add('announce-line');
+  }
   if (data.prefix) {
     const prefix = document.createElement('span');
     prefix.classList.add('line-prefix');
@@ -253,6 +257,7 @@ function buildLine(payload) {
     p.appendChild(prefix);
   }
   const text = document.createElement('span');
+  text.classList.add('line-text');
   text.textContent = data.text || '';
   p.appendChild(text);
   return p;
@@ -994,7 +999,7 @@ function showBagModal() {
       `生命: ${stats.hp || 0}/${stats.max_hp || 0}  魔法: ${stats.mp || 0}/${stats.max_mp || 0}`,
       `攻击: ${stats.atk || 0}  防御: ${stats.def || 0}  魔法: ${stats.mag || 0}`,
       `道术: ${stats.spirit || 0}  魔御: ${stats.mdef || 0}  金币: ${stats.gold || 0}`,
-      `PK值: ${stats.pk || 0}  VIP: ${stats.vip ? '是' : '否'}  沙巴克加成: ${stats.sabak_bonus ? '已生效' : '无'}`
+      `PK值: ${stats.pk || 0}  VIP: ${stats.vip ? '是' : '否'}  沙巴克加成: ${stats.sabak_bonus ? '已生效' : '无'}  套装加成: ${stats.set_bonus ? '已激活' : '无'}`
     ];
     if (statsUi.summary) statsUi.summary.textContent = summaryLines.join('\n');
 
@@ -1310,6 +1315,9 @@ function renderState(state) {
     ui.vip.textContent = state.stats.vip ? '是' : '否';
     if (ui.sabakBonus) {
       ui.sabakBonus.textContent = state.stats.sabak_bonus ? '已生效' : '无';
+    }
+    if (ui.setBonus) {
+      ui.setBonus.textContent = state.stats.set_bonus ? '已激活' : '无';
     }
     if (ui.online) {
       ui.online.textContent = state.online ? String(state.online.count || 0) : '0';
