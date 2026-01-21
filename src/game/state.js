@@ -91,8 +91,21 @@ export function spawnMobs(zoneId, roomId) {
   const room = getRoom(zoneId, roomId);
   if (!room || !room.spawns || room.spawns.length === 0) return [];
   const mobList = getRoomMobs(zoneId, roomId);
+  let spawnList = room.spawns.slice();
+  if (spawnList.length < 5) {
+    const bossIds = spawnList.filter((id) => isBossTemplate(MOB_TEMPLATES[id]));
+    const normalIds = spawnList.filter((id) => !isBossTemplate(MOB_TEMPLATES[id]));
+    if (normalIds.length) {
+      while (spawnList.length < 5) {
+        spawnList.push(normalIds[randInt(0, normalIds.length - 1)]);
+      }
+    }
+    if (bossIds.length && spawnList.length > 5) {
+      spawnList = bossIds.concat(spawnList.filter((id) => !bossIds.includes(id)).slice(0, 5 - bossIds.length));
+    }
+  }
   const now = Date.now();
-  room.spawns.forEach((templateId, index) => {
+  spawnList.forEach((templateId, index) => {
     let mob = mobList.find((m) => m.slotIndex === index);
     const tpl = MOB_TEMPLATES[templateId];
     const scaled = scaledStats(tpl);

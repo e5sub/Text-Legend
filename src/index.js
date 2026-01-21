@@ -320,6 +320,7 @@ function formatItemLabel(itemId, effects = null) {
   if (effects.defense) tags.push('守护');
   if (effects.dodge) tags.push('闪避');
   if (effects.poison) tags.push('毒');
+  if (effects.healblock) tags.push('禁疗');
   return tags.length ? `${item.name}·${tags.join('·')}` : item.name;
 }
 
@@ -336,6 +337,7 @@ function rollEquipmentEffects(itemId) {
   }
   candidates.push('dodge');
   candidates.push('unbreakable');
+  candidates.push('healblock');
   if (candidates.length < 1) return null;
   if (Math.random() <= EFFECT_DOUBLE_CHANCE && candidates.length >= 2) {
     const first = randInt(0, candidates.length - 1);
@@ -368,6 +370,7 @@ function forceEquipmentEffects(itemId) {
   }
   candidates.push('dodge');
   candidates.push('unbreakable');
+  candidates.push('healblock');
   const pick = candidates[randInt(0, candidates.length - 1)];
   return { [pick]: true };
 }
@@ -520,6 +523,7 @@ function normalizeEffects(effects) {
   if (effects.defense) normalized.defense = true;
   if (effects.dodge) normalized.dodge = true;
   if (effects.poison) normalized.poison = true;
+  if (effects.healblock) normalized.healblock = true;
   return Object.keys(normalized).length ? normalized : null;
 }
 
@@ -943,6 +947,10 @@ function hasComboWeapon(player) {
   return Boolean(weapon && weapon.effects && weapon.effects.combo);
 }
 
+function hasHealBlockEffect(player) {
+  return Object.values(player.equipment || {}).some((eq) => eq && eq.effects && eq.effects.healblock);
+}
+
 function applyDamageToPlayer(target, dmg) {
   if (target.status?.buffs?.magicShield) {
     const buff = target.status.buffs.magicShield;
@@ -988,7 +996,8 @@ function regenOutOfCombat(player) {
   if (now - lastCombatAt < 5000) return;
   const hpRegen = Math.max(1, Math.floor(player.max_hp * 0.01));
   const mpRegen = Math.max(1, Math.floor(player.max_mp * 0.015));
-  player.hp = clamp(player.hp + hpRegen, 1, player.max_hp);
+  const hpGain = Math.max(1, Math.floor(hpRegen * getHealMultiplier(player)));
+  player.hp = clamp(player.hp + hpGain, 1, player.max_hp);
   player.mp = clamp(player.mp + mpRegen, 0, player.max_mp);
 }
 
@@ -1004,7 +1013,8 @@ function processPotionRegen(player) {
   }
   if (regen.hpRemaining && regen.hpRemaining > 0) {
     const amount = Math.ceil(regen.hpRemaining / regen.ticksRemaining);
-    player.hp = clamp(player.hp + amount, 1, player.max_hp);
+    const hpGain = Math.max(1, Math.floor(amount * getHealMultiplier(player)));
+    player.hp = clamp(player.hp + hpGain, 1, player.max_hp);
     regen.hpRemaining -= amount;
   }
   if (regen.mpRemaining && regen.mpRemaining > 0) {
@@ -1341,6 +1351,33 @@ function applyPoisonEffectDebuff(target) {
   };
 }
 
+function applyHealBlockDebuff(target) {
+  if (!target.status) target.status = {};
+  if (!target.status.debuffs) target.status.debuffs = {};
+  target.status.debuffs.healBlock = {
+    healMultiplier: 0.1,
+    expiresAt: Date.now() + 5000
+  };
+}
+
+function getHealMultiplier(target) {
+  const debuff = target.status?.debuffs?.healBlock;
+  if (!debuff) return 1;
+  if (debuff.expiresAt && debuff.expiresAt < Date.now()) {
+    delete target.status.debuffs.healBlock;
+    return 1;
+  }
+  return debuff.healMultiplier || 1;
+}
+
+function tryApplyHealBlockEffect(attacker, target) {
+  if (!attacker || !target) return false;
+  if (!hasHealBlockEffect(attacker)) return false;
+  if (Math.random() > 0.2) return false;
+  applyHealBlockDebuff(target);
+  return true;
+}
+
 function calcPoisonTickDamage(target) {
   const maxHp = Math.max(1, target.max_hp || 1);
   const total = Math.max(1, Math.floor(maxHp * 0.2));
@@ -1414,18 +1451,21 @@ function tryAutoPotion(player) {
     const lockActive = potionLock.hp && potionLock.hp > now;
     const candidates = hpList.filter((pid) => player.inventory.find((i) => i.id === pid));
     const id = (lockActive ? candidates.filter((pid) => instantIds.has(pid)) : candidates)[0];
-    if (id && consumeItem(player, id)) {
-      const item = ITEM_TEMPLATES[id];
-      const isInstant = instantIds.has(id);
-      if (isInstant) {
-        if (item.hp) player.hp = clamp(player.hp + item.hp, 1, player.max_hp);
-        if (item.mp) player.mp = clamp(player.mp + item.mp, 0, player.max_mp);
-      } else if (!lockActive) {
-        player.status.regen = {
-          ticksRemaining: ticks,
-          hpRemaining: item.hp || 0,
-          mpRemaining: item.mp || 0
-        };
+      if (id && consumeItem(player, id)) {
+        const item = ITEM_TEMPLATES[id];
+        const isInstant = instantIds.has(id);
+        if (isInstant) {
+          if (item.hp) {
+            const hpGain = Math.max(1, Math.floor(item.hp * getHealMultiplier(player)));
+            player.hp = clamp(player.hp + hpGain, 1, player.max_hp);
+          }
+          if (item.mp) player.mp = clamp(player.mp + item.mp, 0, player.max_mp);
+        } else if (!lockActive) {
+          player.status.regen = {
+            ticksRemaining: ticks,
+            hpRemaining: item.hp || 0,
+            mpRemaining: item.mp || 0
+          };
         potionLock.hp = now + ticks * 1000;
       }
       player.send(`自动使用 ${item.name}。`);
@@ -1911,7 +1951,9 @@ function combatTick() {
       }
       if (player.flags?.autoSkillId) {
         if (!player.combat) {
-          const target = mobs.length ? mobs[randInt(0, mobs.length - 1)] : null;
+          const idle = mobs.filter((m) => !m.status?.aggroTarget);
+          const pool = idle.length ? idle : mobs;
+          const target = pool.length ? pool[randInt(0, pool.length - 1)] : null;
           if (target) {
             player.combat = { targetId: target.id, targetType: 'mob', skillId: null };
           }
@@ -1975,9 +2017,9 @@ function combatTick() {
           const mdef = Math.floor((target.mdef || 0) * mdefMultiplier);
           const powerStat = skill.id === 'soul' ? (player.spirit || 0) : (player.mag || 0);
           dmg = Math.floor((powerStat + randInt(0, powerStat / 2)) * skillPower - mdef * 0.6);
-          if (dmg < 1) dmg = 1;
+          if (dmg < 10) dmg = 10;
         } else if (skill.type === 'dot') {
-          dmg = Math.max(1, Math.floor(player.mag * 0.5 * skillPower));
+          dmg = Math.max(10, Math.floor(player.mag * 0.5 * skillPower));
         } else {
           const isNormal = !skill || skill.id === 'slash';
           const crit = consumeFirestrikeCrit(player, 'player', isNormal);
@@ -1998,6 +2040,10 @@ function combatTick() {
           target.flags.lastCombatAt = Date.now();
           player.send(`连击触发，对 ${target.name} 造成 ${dmg} 点伤害。`);
           target.send(`${player.name} 连击对你造成 ${dmg} 点伤害。`);
+        }
+        if (tryApplyHealBlockEffect(player, target)) {
+          target.send('你受到禁疗影响，回血降低。');
+          player.send(`禁疗效果作用于 ${target.name}。`);
         }
         if (!target.combat || target.combat.targetType !== 'player' || target.combat.targetId !== player.name) {
           target.combat = { targetId: player.name, targetType: 'player', skillId: 'slash' };
@@ -2077,6 +2123,10 @@ function combatTick() {
     if (mob.status && mob.status.stunTurns > 0) {
       mob.status.stunTurns -= 1;
     }
+    if (mob.hp > 0 && mob.max_hp) {
+      const regen = Math.max(1, Math.floor(mob.max_hp * 0.01));
+      mob.hp = Math.min(mob.max_hp, mob.hp + regen);
+    }
     let chosenSkillId = pickCombatSkillId(player, player.combat.skillId);
     let skill = skillForPlayer(player, chosenSkillId);
     if (skill && player.mp < skill.mp) {
@@ -2096,9 +2146,9 @@ function combatTick() {
           const mdef = Math.floor((mob.mdef || 0) * mdefMultiplier);
           const powerStat = skill.id === 'soul' ? (player.spirit || 0) : (player.mag || 0);
           dmg = Math.floor((powerStat + randInt(0, powerStat / 2)) * skillPower - mdef * 0.6);
-          if (dmg < 1) dmg = 1;
+          if (dmg < 10) dmg = 10;
         } else if (skill.type === 'dot') {
-          dmg = Math.max(1, Math.floor(player.mag * 0.5 * skillPower));
+          dmg = Math.max(10, Math.floor(player.mag * 0.5 * skillPower));
         } else {
           const isNormal = !skill || skill.id === 'slash';
           const crit = consumeFirestrikeCrit(player, 'mob', isNormal);
@@ -2113,6 +2163,9 @@ function combatTick() {
       if (skill && skill.type === 'aoe') {
         mobs.forEach((target) => {
           applyDamageToMob(target, dmg, player.name);
+          if (tryApplyHealBlockEffect(player, target)) {
+            player.send(`禁疗效果作用于 ${target.name}。`);
+          }
         });
         player.send(`你施放了 ${skill.name}，造成范围伤害 ${dmg}。`);
         const deadTargets = mobs.filter((target) => target.hp <= 0);
@@ -2131,6 +2184,9 @@ function combatTick() {
         if (hasComboWeapon(player) && mob.hp > 0 && Math.random() <= COMBO_PROC_CHANCE) {
           applyDamageToMob(mob, dmg, player.name);
           player.send(`连击触发，对 ${mob.name} 造成 ${dmg} 点伤害。`);
+        }
+        if (tryApplyHealBlockEffect(player, mob)) {
+          player.send(`禁疗效果作用于 ${mob.name}。`);
         }
         if (mob.hp > 0) {
           sendRoomState(player.position.zone, player.position.room);
@@ -2202,6 +2258,11 @@ function combatTick() {
     if (mob.status && mob.status.stunTurns > 0) {
       player.send(`${mob.name} 被麻痹，无法行动。`);
       return;
+    }
+
+    if (mob.hp > 0 && mob.max_hp) {
+      const regen = Math.max(1, Math.floor(mob.max_hp * 0.01));
+      mob.hp = Math.min(mob.max_hp, mob.hp + regen);
     }
 
     const now = Date.now();

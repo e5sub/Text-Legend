@@ -283,6 +283,16 @@ function trainingCost(player, key) {
   return Math.max(1, Math.floor(base + steps * (base * 0.2)));
 }
 
+function getHealMultiplier(target) {
+  const debuff = target.status?.debuffs?.healBlock;
+  if (!debuff) return 1;
+  if (debuff.expiresAt && debuff.expiresAt < Date.now()) {
+    delete target.status.debuffs.healBlock;
+    return 1;
+  }
+  return debuff.healMultiplier || 1;
+}
+
 export function summonStats(player, skill, summonLevelOverride = null) {
   const base = skill.summon;
   const skillLevel = getSkillLevel(player, skill.id);
@@ -527,7 +537,10 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
           return send('药效持续中，暂时无法再次使用同类药品。');
         }
         if (isInstant) {
-          if (item.hp) player.hp = clamp(player.hp + item.hp, 1, player.max_hp);
+          if (item.hp) {
+            const hpGain = Math.max(1, Math.floor(item.hp * getHealMultiplier(player)));
+            player.hp = clamp(player.hp + hpGain, 1, player.max_hp);
+          }
           if (item.mp) player.mp = clamp(player.mp + item.mp, 0, player.max_mp);
           send(`使用了 ${item.name}。`);
           return;
@@ -635,11 +648,12 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
           }
         }
         player.mp -= skill.mp;
-        const heal = Math.floor((player.spirit || 0) * 0.8 * power + player.level * 4);
+        const baseHeal = Math.floor((player.spirit || 0) * 0.8 * power + player.level * 4);
         if (target.isSummon) {
-          player.summon.hp = clamp(player.summon.hp + heal, 1, player.summon.max_hp);
-          send(`你为 ${player.summon.name} 施放了 ${skill.name}，恢复 ${heal} 点生命。`);
+          player.summon.hp = clamp(player.summon.hp + baseHeal, 1, player.summon.max_hp);
+          send(`你为 ${player.summon.name} 施放了 ${skill.name}，恢复 ${baseHeal} 点生命。`);
         } else {
+          const heal = Math.max(1, Math.floor(baseHeal * getHealMultiplier(target)));
           target.hp = clamp(target.hp + heal, 1, target.max_hp);
           if (target.name === player.name) {
           send(`你施放了 ${skill.name}，恢复 ${heal} 点生命。`);

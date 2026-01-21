@@ -22,6 +22,7 @@ function normalizeEffects(effects) {
   if (effects.defense) normalized.defense = true;
   if (effects.dodge) normalized.dodge = true;
   if (effects.poison) normalized.poison = true;
+  if (effects.healblock) normalized.healblock = true;
   return Object.keys(normalized).length ? normalized : null;
 }
 
@@ -34,6 +35,7 @@ function effectsKey(effects) {
   if (effects.defense) parts.push('defense');
   if (effects.dodge) parts.push('dodge');
   if (effects.poison) parts.push('poison');
+  if (effects.healblock) parts.push('healblock');
   return parts.join('+');
 }
 
@@ -190,9 +192,9 @@ export function computeDerived(player) {
   player.stats = stats;
   const levelUp = Math.max(0, level - 1);
   const levelBonusMap = {
-    warrior: { hp: 3, mp: 10, atk: 0.2, def: 1, mag: 0, spirit: 0 },
-    mage: { hp: 5, mp: 10, atk: 0, def: 2, mag: 2, spirit: 0 },
-    taoist: { hp: 5, mp: 10, atk: 0, def: 2, mag: 0, spirit: 2 }
+    warrior: { hp: 3, mp: 10, atk: 0.2, def: 1, mag: 0, spirit: 0, mdef: 2 },
+    mage: { hp: 5, mp: 10, atk: 0, def: 2, mag: 2, spirit: 0, mdef: 1 },
+    taoist: { hp: 5, mp: 10, atk: 0, def: 2, mag: 0, spirit: 2, mdef: 1 }
   };
   const levelBonus = levelBonusMap[player.classId] || levelBonusMap.warrior;
   const bonusHp = levelBonus.hp * levelUp;
@@ -201,6 +203,7 @@ export function computeDerived(player) {
   const bonusDef = levelBonus.def * levelUp;
   const bonusMag = levelBonus.mag * levelUp;
   const bonusSpirit = levelBonus.spirit * levelUp;
+  const bonusMdef = levelBonus.mdef * levelUp;
 
   player.max_hp = base.con * 10 + cls.hpPerLevel * level + stats.con * 2 + (training.hp || 0) + bonusHp;
   player.max_mp = base.spirit * 8 + cls.mpPerLevel * level + stats.spirit * 2 + (training.mp || 0) + bonusMp;
@@ -210,7 +213,7 @@ export function computeDerived(player) {
   player.dex = stats.dex;
   player.mag = stats.int * 1.4 + stats.spirit * 0.6 + (training.mag || 0) + bonusMag;
   player.spirit = stats.spirit + bonusSpirit;
-  player.mdef = stats.spirit * 1.1 + level * 0.8 + (training.mdef || 0) + mdefBonus;
+  player.mdef = stats.spirit * 1.1 + level * 0.8 + (training.mdef || 0) + mdefBonus + bonusMdef;
   player.evadeChance = evadeChance;
 
   player.hp = clamp(player.hp, 1, player.max_hp);

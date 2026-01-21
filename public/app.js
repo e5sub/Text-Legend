@@ -1178,6 +1178,9 @@ function formatItemTooltip(item) {
   if (item.effects && item.effects.poison) {
     lines.push('\u7279\u6548: \u6bd2(10%\u6982\u7387\u65bd\u6bd2\uff0c10\u79d2\u5185\u6389\u8840\uff0c\u9632\u5fa1/\u9b54\u5fa1-5%)');
   }
+  if (item.effects && item.effects.healblock) {
+    lines.push('\u7279\u6548: \u7981\u7597(20%\u6982\u7387\u51cf\u5c11\u76ee\u6807\u56de\u884090%\uff0c\u6301\u7eed5\u79d2)');
+  }
   const typeLabel = ITEM_TYPE_LABELS[item.type] || ITEM_TYPE_LABELS.unknown;
   lines.push(`\u7c7b\u578b: ${typeLabel}`);
   if (item.slot) {
@@ -1260,6 +1263,7 @@ function formatItemName(item) {
   if (item.effects && item.effects.defense) tags.push('\u5b88\u62a4');
   if (item.effects && item.effects.dodge) tags.push('\u95ea\u907f');
   if (item.effects && item.effects.poison) tags.push('\u6bd2');
+  if (item.effects && item.effects.healblock) tags.push('\u7981\u7597');
   return tags.length ? `${item.name}\u00b7${tags.join('\u00b7')}` : item.name;
 }
 
