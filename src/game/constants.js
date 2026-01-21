@@ -34,6 +34,8 @@ export function expForLevel(level) {
   const base = EXP_TABLE[EXP_TABLE.length - 1];
   const extra = level - (EXP_TABLE.length - 1);
   const exp = base + extra * extra * 120 + extra * 800;
+  if (level >= 100) return Math.floor(exp * 20);
+  if (level >= 80) return Math.floor(exp * 12);
   if (level >= 60) return Math.floor(exp * 5);
   return exp;
 }

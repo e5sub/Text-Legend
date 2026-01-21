@@ -23,7 +23,7 @@ import {
   deleteConsignment
 } from './db/consignments.js';
 import { runMigrations } from './db/migrate.js';
-import { newCharacter, computeDerived, gainExp, addItem, removeItem, getItemKey } from './game/player.js';
+import { newCharacter, computeDerived, gainExp, addItem, removeItem, getItemKey, normalizeInventory, normalizeEquipment } from './game/player.js';
 import { handleCommand, awardKill, summonStats } from './game/commands.js';
 import {
   DEFAULT_SKILLS,
@@ -157,6 +157,13 @@ app.post('/admin/characters/update', async (req, res) => {
   Object.assign(player, patch || {});
   await saveCharacter(user.id, player);
   res.json({ ok: true });
+});
+
+app.post('/admin/characters/cleanup', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const result = await cleanupInvalidItems();
+  res.json({ ok: true, ...result });
 });
 
 app.post('/admin/mail/send', async (req, res) => {
@@ -311,6 +318,57 @@ function parseJson(value, fallback = null) {
   } catch {
     return fallback;
   }
+}
+
+async function cleanupInvalidItems() {
+  const validIds = new Set(Object.keys(ITEM_TEMPLATES));
+  const rows = await knex('characters').select('id', 'inventory_json', 'equipment_json');
+  let updated = 0;
+  let removedSlots = 0;
+  let clearedEquip = 0;
+  for (const row of rows) {
+    const inventory = parseJson(row.inventory_json, []);
+    const equipment = parseJson(row.equipment_json, {});
+    const beforeInv = JSON.stringify(inventory);
+    const beforeEquip = JSON.stringify(equipment);
+    const cleanedInv = (Array.isArray(inventory) ? inventory : []).filter((slot) => {
+      if (!slot || !slot.id || !validIds.has(slot.id)) {
+        removedSlots += 1;
+        return false;
+      }
+      const qty = Number(slot.qty || 0);
+      if (qty <= 0) {
+        removedSlots += 1;
+        return false;
+      }
+      return true;
+    });
+    const player = { inventory: cleanedInv, equipment };
+    if (player.equipment && typeof player.equipment === 'object') {
+      Object.keys(player.equipment).forEach((key) => {
+        const equipped = player.equipment[key];
+        if (equipped && equipped.id && !validIds.has(equipped.id)) {
+          player.equipment[key] = null;
+          clearedEquip += 1;
+        }
+      });
+    }
+    normalizeInventory(player);
+    normalizeEquipment(player);
+    const afterInv = JSON.stringify(player.inventory);
+    const afterEquip = JSON.stringify(player.equipment);
+    if (beforeInv !== afterInv || beforeEquip !== afterEquip) {
+      await knex('characters')
+        .where({ id: row.id })
+        .update({
+          inventory_json: afterInv,
+          equipment_json: afterEquip,
+          updated_at: knex.fn.now()
+        });
+      updated += 1;
+    }
+  }
+  return { checked: rows.length, updated, removedSlots, clearedEquip };
 }
 
 function formatItemLabel(itemId, effects = null) {
@@ -472,6 +530,11 @@ function createParty(leaderName) {
   return parties.get(partyId);
 }
 
+function getPartyById(partyId) {
+  if (!partyId) return null;
+  return parties.get(partyId) || null;
+}
+
 function getPartyByMember(name) {
   for (const party of parties.values()) {
     if (party.members.includes(name)) return party;
@@ -481,10 +544,46 @@ function getPartyByMember(name) {
 
 function removeFromParty(name) {
   const party = getPartyByMember(name);
-  if (!party) return;
+  if (!party) return null;
   party.members = party.members.filter((m) => m !== name);
   if (party.members.length === 0) {
     parties.delete(party.id);
+    return null;
+  }
+  return party;
+}
+
+async function updatePartyFlags(name, partyId, members) {
+  if (!name) return;
+  const memberList = Array.isArray(members) ? Array.from(new Set(members)) : [];
+  const onlinePlayer = playersByName(name);
+  if (onlinePlayer) {
+    if (!onlinePlayer.flags) onlinePlayer.flags = {};
+    onlinePlayer.flags.partyId = partyId || null;
+    onlinePlayer.flags.partyMembers = memberList;
+    await savePlayer(onlinePlayer);
+    return;
+  }
+  const row = await findCharacterByName(name);
+  if (!row) return;
+  const player = await loadCharacter(row.user_id, row.name);
+  if (!player) return;
+  if (!player.flags) player.flags = {};
+  player.flags.partyId = partyId || null;
+  player.flags.partyMembers = memberList;
+  await saveCharacter(row.user_id, player);
+}
+
+async function clearPartyFlags(name) {
+  await updatePartyFlags(name, null, []);
+}
+
+async function persistParty(party) {
+  if (!party || !party.id) return;
+  const members = Array.from(new Set(party.members || []));
+  party.members = members;
+  for (const member of members) {
+    await updatePartyFlags(member, party.id, members);
   }
 }
 
@@ -597,7 +696,7 @@ const tradeApi = {
       return { ok: false, msg: '对方已有交易请求。' };
     }
     tradeInvites.set(target.name, { from: player.name, at: Date.now() });
-    target.send(`${player.name} 请求交易，输入 trade accept ${player.name} 接受。`);
+    target.send(`${player.name} 请求交易。`);
     return { ok: true, msg: `交易请求已发送给 ${target.name}。` };
   },
   acceptTrade(player, fromName) {
@@ -609,9 +708,8 @@ const tradeApi = {
     if (getTradeByPlayer(inviter.name)) return { ok: false, msg: '对方正在交易中。' };
     tradeInvites.delete(player.name);
     const trade = createTrade(inviter, player);
-    const tip = '交易建立。使用 trade add item <物品> <数量> / trade add gold <数量> / trade lock / trade confirm / trade cancel。';
-    inviter.send(tip);
-    player.send(tip);
+    inviter.send('交易建立。');
+    player.send('交易建立。');
     return { ok: true, trade };
   },
   addItem(player, itemId, qty, effects = null) {
@@ -1315,6 +1413,64 @@ function applyDamageToMob(mob, dmg, attackerName) {
   applyDamage(mob, dmg);
 }
 
+function retaliateMobAgainstPlayer(mob, player, online) {
+  if (!mob || mob.hp <= 0) return;
+  if (mob.status && mob.status.stunTurns > 0) return;
+  const summonAlive = Boolean(player.summon && player.summon.hp > 0);
+  const mobTemplate = MOB_TEMPLATES[mob.templateId];
+  const isBossAggro = Boolean(mobTemplate?.worldBoss || mobTemplate?.sabakBoss);
+  let mobTarget = player.flags?.summonAggro || !summonAlive ? player : player.summon;
+  if (isBossAggro) {
+    const targetName = mob.status?.aggroTarget;
+    const aggroPlayer = targetName
+      ? online.find(
+          (p) =>
+            p.name === targetName &&
+            p.position.zone === player.position.zone &&
+            p.position.room === player.position.room
+        )
+      : null;
+    if (aggroPlayer) {
+      mobTarget = aggroPlayer;
+    } else {
+      mobTarget = summonAlive ? player.summon : player;
+    }
+  }
+  const mobHitChance = calcHitChance(mob, mobTarget);
+  if (Math.random() > mobHitChance) return;
+  if (mobTarget && mobTarget.evadeChance && Math.random() <= mobTarget.evadeChance) {
+    if (mobTarget.userId) {
+      mobTarget.send(`你闪避了 ${mob.name} 的攻击。`);
+    } else {
+      player.send(`${mobTarget.name} 闪避了 ${mob.name} 的攻击。`);
+    }
+    return;
+  }
+  let dmg = calcDamage(mob, mobTarget, 1);
+  if (mobTemplate && isBossMob(mobTemplate)) {
+    const magicBase = Math.floor(mob.atk * 0.3);
+    const spiritBase = Math.floor(mob.atk * 0.3);
+    dmg += calcMagicDamageFromValue(magicBase, mobTarget);
+    dmg += calcMagicDamageFromValue(spiritBase, mobTarget);
+  }
+  if (mobTarget && mobTarget.userId) {
+    applyDamageToPlayer(mobTarget, dmg);
+    mobTarget.send(`${mob.name} 对你造成 ${dmg} 点伤害。`);
+    if (mobTarget !== player) {
+      player.send(`${mob.name} 攻击 ${mobTarget.name}，造成 ${dmg} 点伤害。`);
+    }
+    if (mobTarget.hp <= 0 && mobTarget !== player && !tryRevive(mobTarget)) {
+      handleDeath(mobTarget);
+    }
+    return;
+  }
+  applyDamage(mobTarget, dmg);
+  player.send(`${mob.name} 对 ${mobTarget.name} 造成 ${dmg} 点伤害。`);
+  if (mobTarget.hp <= 0) {
+    player.send(`${mobTarget.name} 被击败。`);
+  }
+}
+
 function tickMobRegen(mob) {
   if (!mob || mob.hp <= 0 || !mob.max_hp) return;
   const template = MOB_TEMPLATES[mob.templateId];
@@ -1408,7 +1564,7 @@ function calcMagicDamageFromValue(value, target) {
   const mdefMultiplier = getMagicDefenseMultiplier(target);
   const mdef = Math.floor((target.mdef || 0) * mdefMultiplier);
   const dmg = Math.floor((base + randInt(0, base / 2)) - mdef * 0.6);
-  return Math.max(10, dmg);
+  return Math.max(1, dmg);
 }
 
 function calcPoisonTickDamage(target) {
@@ -1550,6 +1706,22 @@ io.on('connection', (socket) => {
     loaded.send = (msg) => sendTo(loaded, msg);
     loaded.combat = null;
     loaded.guild = null;
+    if (loaded.flags?.partyId && Array.isArray(loaded.flags.partyMembers) && loaded.flags.partyMembers.length) {
+      const partyId = loaded.flags.partyId;
+      const memberList = Array.from(new Set(loaded.flags.partyMembers.concat(loaded.name)));
+      let party = getPartyById(partyId);
+      if (!party) {
+        parties.set(partyId, { id: partyId, members: memberList, lootIndex: 0 });
+        party = parties.get(partyId);
+      } else {
+        memberList.forEach((member) => {
+          if (!party.members.includes(member)) party.members.push(member);
+        });
+        party.members = Array.from(new Set(party.members));
+      }
+      if (!loaded.flags) loaded.flags = {};
+      loaded.flags.partyMembers = party.members.slice();
+    }
 
     const member = await getGuildMember(session.user_id, name);
     if (member && member.guild) {
@@ -1586,7 +1758,9 @@ io.on('connection', (socket) => {
         invites: partyInvites,
         createParty,
         getPartyByMember,
-        removeFromParty
+        removeFromParty,
+        persistParty,
+        clearPartyFlags
       },
       guildApi: {
         invites: guildInvites,
@@ -2053,9 +2227,9 @@ function combatTick() {
           const mdef = Math.floor((target.mdef || 0) * mdefMultiplier);
           const powerStat = skill.id === 'soul' ? (player.spirit || 0) : (player.mag || 0);
           dmg = Math.floor((powerStat + randInt(0, powerStat / 2)) * skillPower - mdef * 0.6);
-          if (dmg < 10) dmg = 10;
+          if (dmg < 1) dmg = 1;
         } else if (skill.type === 'dot') {
-          dmg = Math.max(10, Math.floor(player.mag * 0.5 * skillPower));
+          dmg = Math.max(1, Math.floor(player.mag * 0.5 * skillPower));
         } else {
           const isNormal = !skill || skill.id === 'slash';
           const crit = consumeFirestrikeCrit(player, 'player', isNormal);
@@ -2071,6 +2245,9 @@ function combatTick() {
         target.flags.lastCombatAt = Date.now();
         player.send(`你对 ${target.name} 造成 ${dmg} 点伤害。`);
         target.send(`${player.name} 对你造成 ${dmg} 点伤害。`);
+        if (skill && (skill.type === 'aoe' || skill.type === 'cleave')) {
+          target.send('你受到群体技能伤害。');
+        }
         if (hasComboWeapon(player) && target.hp > 0 && Math.random() <= COMBO_PROC_CHANCE) {
           applyDamageToPlayer(target, dmg);
           target.flags.lastCombatAt = Date.now();
@@ -2106,7 +2283,7 @@ function combatTick() {
         );
         if (extraTargets.length) {
           const extraTarget = extraTargets[randInt(0, extraTargets.length - 1)];
-          const extraDmg = Math.max(10, Math.floor(dmg * ASSASSINATE_SECONDARY_DAMAGE_RATE));
+          const extraDmg = Math.max(1, Math.floor(dmg * ASSASSINATE_SECONDARY_DAMAGE_RATE));
           applyDamageToPlayer(extraTarget, extraDmg);
           extraTarget.flags.lastCombatAt = Date.now();
           player.send(`刺杀剑术波及 ${extraTarget.name}，造成 ${extraDmg} 点伤害。`);
@@ -2231,9 +2408,9 @@ function combatTick() {
           const mdef = Math.floor((mob.mdef || 0) * mdefMultiplier);
           const powerStat = skill.id === 'soul' ? (player.spirit || 0) : (player.mag || 0);
           dmg = Math.floor((powerStat + randInt(0, powerStat / 2)) * skillPower - mdef * 0.6);
-          if (dmg < 10) dmg = 10;
+          if (dmg < 1) dmg = 1;
         } else if (skill.type === 'dot') {
-          dmg = Math.max(10, Math.floor(player.mag * 0.5 * skillPower));
+          dmg = Math.max(1, Math.floor(player.mag * 0.5 * skillPower));
         } else {
           const isNormal = !skill || skill.id === 'slash';
           const crit = consumeFirestrikeCrit(player, 'mob', isNormal);
@@ -2248,8 +2425,12 @@ function combatTick() {
       if (skill && skill.type === 'aoe') {
         mobs.forEach((target) => {
           applyDamageToMob(target, dmg, player.name);
+          player.send(`你对 ${target.name} 造成 ${dmg} 点伤害。`);
           if (tryApplyHealBlockEffect(player, target)) {
             player.send(`禁疗效果作用于 ${target.name}。`);
+          }
+          if (target.id !== mob.id) {
+            retaliateMobAgainstPlayer(target, player, online);
           }
         });
         player.send(`你施放了 ${skill.name}，造成范围伤害 ${dmg}。`);
@@ -2277,7 +2458,7 @@ function combatTick() {
           const extraTargets = mobs.filter((m) => m.id !== mob.id);
           if (extraTargets.length) {
             const extraTarget = extraTargets[randInt(0, extraTargets.length - 1)];
-            const extraDmg = Math.max(10, Math.floor(dmg * ASSASSINATE_SECONDARY_DAMAGE_RATE));
+            const extraDmg = Math.max(1, Math.floor(dmg * ASSASSINATE_SECONDARY_DAMAGE_RATE));
             applyDamageToMob(extraTarget, extraDmg, player.name);
             player.send(`刺杀剑术波及 ${extraTarget.name}，造成 ${extraDmg} 点伤害。`);
             if (tryApplyHealBlockEffect(player, extraTarget)) {
@@ -2315,7 +2496,10 @@ function combatTick() {
       }
       if (skill && skill.type === 'cleave') {
         mobs.filter((m) => m.id !== mob.id).forEach((other) => {
-          applyDamageToMob(other, Math.floor(dmg * 0.3), player.name);
+          const cleaveDmg = Math.max(1, Math.floor(dmg * 0.3));
+          applyDamageToMob(other, cleaveDmg, player.name);
+          player.send(`你对 ${other.name} 造成 ${cleaveDmg} 点伤害。`);
+          retaliateMobAgainstPlayer(other, player, online);
         });
       }
       if (skill && ['attack', 'spell', 'cleave', 'dot', 'aoe'].includes(skill.type)) {
@@ -2479,6 +2663,15 @@ async function start() {
     }
   }
   seedRespawnCache(activeRespawns);
+  try {
+    const result = await cleanupInvalidItems();
+    console.log(
+      `Cleaned items: checked=${result.checked}, updated=${result.updated}, removed=${result.removedSlots}, clearedEquip=${result.clearedEquip}`
+    );
+  } catch (err) {
+    console.warn('Failed to cleanup invalid items on startup.');
+    console.warn(err);
+  }
   await loadSabakState();
   checkWorldBossRespawn();
   setInterval(() => checkWorldBossRespawn(), 5000);

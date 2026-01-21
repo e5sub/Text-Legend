@@ -37,7 +37,7 @@ export function calcDamage(attacker, defender, power = 1) {
   }
   const baseDef = (defender.def || 0) + defBonus;
   const def = Math.floor(baseDef * defMultiplier) + randInt(0, Math.max(0, baseDef / 2));
-  const dmg = Math.max(10, Math.floor((atk - def) * power));
+  const dmg = Math.max(1, Math.floor((atk - def) * power));
   return dmg;
 }
 

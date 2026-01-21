@@ -73,7 +73,8 @@ const tradeUi = {
   confirmBtn: document.getElementById('trade-confirm'),
   cancelBtn: document.getElementById('trade-cancel'),
   status: document.getElementById('trade-status'),
-  panel: document.getElementById('trade-panel')
+  panel: document.getElementById('trade-panel'),
+  modal: document.getElementById('trade-modal')
 };
 const guildUi = {
   modal: document.getElementById('guild-modal'),
@@ -152,6 +153,7 @@ const playerUi = {
   attack: document.getElementById('player-attack'),
   trade: document.getElementById('player-trade'),
   party: document.getElementById('player-party'),
+  guild: document.getElementById('player-guild'),
   close: document.getElementById('player-close')
 };
 const itemTooltip = document.getElementById('item-tooltip');
@@ -256,10 +258,39 @@ function buildLine(payload) {
     prefix.textContent = data.prefix;
     p.appendChild(prefix);
   }
-  const text = document.createElement('span');
-  text.classList.add('line-text');
-  text.textContent = data.text || '';
-  p.appendChild(text);
+  const textValue = data.text || '';
+  const guildMatch = textValue.match(/^\[(行会)\]\[([^\]]+)\]\s*(.*)$/);
+  const normalMatch = textValue.match(/^\[([^\]]+)\]\s*(.*)$/);
+  if (guildMatch) {
+    const tag = document.createElement('span');
+    tag.className = 'chat-tag';
+    tag.textContent = `[${guildMatch[1]}]`;
+    p.appendChild(tag);
+    const nameBtn = document.createElement('button');
+    nameBtn.className = 'chat-name-btn';
+    nameBtn.textContent = `[${guildMatch[2]}]`;
+    nameBtn.addEventListener('click', () => openPlayerActions(guildMatch[2]));
+    p.appendChild(nameBtn);
+    const text = document.createElement('span');
+    text.classList.add('line-text');
+    text.textContent = ` ${guildMatch[3] || ''}`.trimStart();
+    p.appendChild(text);
+  } else if (normalMatch) {
+    const nameBtn = document.createElement('button');
+    nameBtn.className = 'chat-name-btn';
+    nameBtn.textContent = `[${normalMatch[1]}]`;
+    nameBtn.addEventListener('click', () => openPlayerActions(normalMatch[1]));
+    p.appendChild(nameBtn);
+    const text = document.createElement('span');
+    text.classList.add('line-text');
+    text.textContent = ` ${normalMatch[2] || ''}`.trimStart();
+    p.appendChild(text);
+  } else {
+    const text = document.createElement('span');
+    text.classList.add('line-text');
+    text.textContent = textValue;
+    p.appendChild(text);
+  }
   return p;
 }
 
@@ -415,17 +446,17 @@ function loadChatCache(name) {
 function setTradeStatus(text) {
   if (!tradeUi.status) return;
   tradeUi.status.textContent = text;
-  if (!tradeUi.panel) return;
+  if (!tradeUi.modal) return;
   if (!text) return;
   if (text.includes('交易建立')) {
-    tradeUi.panel.classList.remove('hidden');
+    tradeUi.modal.classList.remove('hidden');
   } else if (
     text.includes('交易完成') ||
     text.includes('交易已取消') ||
     text.includes('交易失败') ||
     text.includes('未在交易中')
   ) {
-    tradeUi.panel.classList.add('hidden');
+    tradeUi.modal.classList.add('hidden');
   }
 }
 
@@ -786,13 +817,21 @@ function showPlayerModal(player) {
   if (!playerUi.modal || !playerUi.info) return;
   const lines = [
     `姓名: ${player.name}`,
-    `职业: ${classNames[player.classId] || player.classId}`,
-    `等级: Lv ${player.level}`,
+    `职业: ${classNames[player.classId] || player.classId || '未知'}`,
+    `等级: Lv ${player.level || '?'}`,
     `行会: ${player.guild || '无'}`
   ];
   playerUi.info.textContent = lines.join('\n');
   playerUi.selected = player;
   playerUi.modal.classList.remove('hidden');
+}
+
+function openPlayerActions(name) {
+  if (!name) return;
+  const player =
+    (lastState?.players || []).find((p) => p.name === name) ||
+    { name };
+  showPlayerModal(player);
 }
 
 function renderShopSellList(items) {
@@ -2164,6 +2203,13 @@ if (playerUi.party) {
   playerUi.party.addEventListener('click', () => {
     if (!socket || !playerUi.selected) return;
     socket.emit('cmd', { text: `party invite ${playerUi.selected.name}` });
+    if (playerUi.modal) playerUi.modal.classList.add('hidden');
+  });
+}
+if (playerUi.guild) {
+  playerUi.guild.addEventListener('click', () => {
+    if (!socket || !playerUi.selected) return;
+    socket.emit('cmd', { text: `guild invite ${playerUi.selected.name}` });
     if (playerUi.modal) playerUi.modal.classList.add('hidden');
   });
 }

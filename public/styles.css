@@ -481,6 +481,25 @@ button:hover {
   filter: brightness(1.05);
 }
 
+.chat-name-btn {
+  border: none;
+  background: transparent;
+  color: #7a4a1f;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.chat-name-btn:hover {
+  color: #9b5a26;
+  text-decoration: underline;
+}
+
+.chat-tag {
+  color: #a25d28;
+  font-weight: 600;
+}
+
 .chat-link-tag {
   margin-left: 8px;
   padding: 2px 8px;
@@ -503,9 +522,9 @@ button:hover {
 }
 
 .trade-panel {
-  padding: 10px 14px 14px;
-  border-top: 1px dashed #e3c6a4;
-  background: #fff9f0;
+  padding: 0;
+  border-top: none;
+  background: transparent;
 }
 
 .trade-title {

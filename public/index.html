@@ -64,8 +64,6 @@
           <div class="status-row"><span>行会</span><strong id="ui-guild">-</strong></div>
           <div class="status-row"><span>PK/状态</span><strong id="ui-pk">-</strong></div>
           <div class="status-row"><span>VIP</span><strong id="ui-vip">-</strong></div>
-          <div class="status-row"><span>沙巴克加成</span><strong id="ui-sabak-bonus">-</strong></div>
-          <div class="status-row"><span>套装加成</span><strong id="ui-set-bonus">-</strong></div>
           <div class="status-row"><span>在线人数</span><strong id="ui-online">-</strong></div>
           <div class="status-row"><span>服务器时间</span><strong id="ui-server-time">-</strong></div>
           <div class="status-row"><span>队伍成员</span><strong id="ui-party">-</strong></div>
@@ -87,6 +85,8 @@
             <div class="status-row compact"><span>魔法</span><strong id="ui-mag">0</strong></div>
             <div class="status-row compact"><span>道术</span><strong id="ui-spirit">0</strong></div>
             <div class="status-row compact"><span>魔御</span><strong id="ui-mdef">0</strong></div>
+            <div class="status-row compact"><span>沙巴克加成</span><strong id="ui-sabak-bonus">-</strong></div>
+            <div class="status-row compact"><span>套装加成</span><strong id="ui-set-bonus">-</strong></div>
           </div>
         </div>
         <div class="status-card">
@@ -121,24 +121,6 @@
             <div class="chat-input-row">
               <input id="chat-input" type="text" placeholder="&#x8BF4;&#x70B9;&#x4EC0;&#x4E48;">
               <button id="chat-send">&#x53D1;&#x9001;</button>
-            </div>
-            <div id="trade-panel" class="trade-panel hidden">
-              <div class="trade-title">&#x4EA4;&#x6613;&#x9762;&#x677F;</div>
-              <div class="trade-row">
-                <select id="trade-item"></select>
-                <input id="trade-qty" type="number" min="1" value="1">
-                <button id="trade-add-item">&#x653E;&#x5165;&#x7269;&#x54C1;</button>
-              </div>
-              <div class="trade-row">
-                <input id="trade-gold" type="number" min="1" value="0">
-                <button id="trade-add-gold">&#x653E;&#x5165;&#x91D1;&#x5E01;</button>
-              </div>
-              <div class="trade-row">
-                <button id="trade-lock">&#x9501;&#x5B9A;</button>
-                <button id="trade-confirm">&#x786E;&#x8BA4;</button>
-                <button id="trade-cancel">&#x53D6;&#x6D88;</button>
-              </div>
-              <div id="trade-status" class="trade-status">&#x672A;&#x5728;&#x4EA4;&#x6613;&#x4E2D;</div>
             </div>
           </div>
         </div>
@@ -307,7 +289,31 @@
         <button id="player-attack">攻击</button>
         <button id="player-trade">交易</button>
         <button id="player-party">组队</button>
+        <button id="player-guild">行会邀请</button>
         <button id="player-close">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="trade-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-title">&#x4EA4;&#x6613;&#x9762;&#x677F;</div>
+      <div id="trade-panel" class="trade-panel">
+        <div class="trade-row">
+          <select id="trade-item"></select>
+          <input id="trade-qty" type="number" min="1" value="1">
+          <button id="trade-add-item">&#x653E;&#x5165;&#x7269;&#x54C1;</button>
+        </div>
+        <div class="trade-row">
+          <input id="trade-gold" type="number" min="1" value="0">
+          <button id="trade-add-gold">&#x653E;&#x5165;&#x91D1;&#x5E01;</button>
+        </div>
+        <div class="trade-row">
+          <button id="trade-lock">&#x9501;&#x5B9A;</button>
+          <button id="trade-confirm">&#x786E;&#x8BA4;</button>
+          <button id="trade-cancel">&#x53D6;&#x6D88;</button>
+        </div>
+        <div id="trade-status" class="trade-status">&#x672A;&#x5728;&#x4EA4;&#x6613;&#x4E2D;</div>
       </div>
     </div>
   </div>

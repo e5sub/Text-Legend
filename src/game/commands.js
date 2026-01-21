@@ -366,7 +366,6 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
 
   switch (cmd) {
     case 'help': {
-      send('指令: help, look, go <方向/地点>, say <内容>, who, stats, bag, equip <物品>, unequip <部位>, use <物品>, attack <怪物/玩家>, pk <玩家>, cast <技能> <怪物>, autoskill <技能/off>, autopotion <hp%> <mp%>, shop, buy <物品>, buy list, sell <物品>, consign, train <属性>, quests, accept <id>, complete <id>, party, guild, guild kick <玩家>, gsay, sabak, vip, trade, mail, teleport。部位示例: ring_left, ring_right, bracelet_left, bracelet_right。');
       return;
     }
     case 'look': {
@@ -819,7 +818,7 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
       const parts = args.split(' ').filter(Boolean);
       const hpPct = Number(parts[0]);
       const mpPct = Number(parts[1]);
-      if (Number.isNaN(hpPct) || Number.isNaN(mpPct)) return send('格式: autopotion <hp%> <mp%>');
+      if (Number.isNaN(hpPct) || Number.isNaN(mpPct)) return;
       if (hpPct < 5 || hpPct > 95 || mpPct < 5 || mpPct > 95) return send('阈值范围: 5-95');
       if (!player.flags) player.flags = {};
       player.flags.autoHpPct = hpPct;
@@ -863,7 +862,6 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
       const stock = getShopStock(player);
       if (!stock.length) return send('商店暂无商品。');
       send(`商店商品: ${stock.map((i) => `${i.name}(${i.price}金)`).join(', ')}`);
-      send('购买指令: buy <物品名> [数量] 或 buy list 查看。');
       return;
     }
     case 'sell': {
@@ -901,12 +899,12 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         return;
       }
         if (sub === 'sell') {
-          if (parts.length < 3) return send('格式: consign sell <物品> <数量> <单价>');
+          if (parts.length < 3) return;
           const price = Number(parts.pop());
           const qty = Number(parts.pop());
           const name = parts.join(' ');
           if (!name || Number.isNaN(price) || Number.isNaN(qty)) {
-            return send('格式: consign sell <物品> <数量> <单价>');
+            return;
           }
           const resolved = resolveInventoryItem(player, name);
           if (!resolved.slot || !resolved.item) return send('背包里没有该物品。');
@@ -915,23 +913,22 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
           return;
         }
       if (sub === 'buy') {
-        if (parts.length < 1) return send('格式: consign buy <编号> [数量]');
+        if (parts.length < 1) return;
         const id = Number(parts[0]);
         const qty = parts.length > 1 ? Number(parts[1]) : 1;
-        if (Number.isNaN(id) || Number.isNaN(qty)) return send('格式: consign buy <编号> [数量]');
+        if (Number.isNaN(id) || Number.isNaN(qty)) return;
         const res = await consignApi.buy(player, id, qty);
         send(res.msg);
         return;
       }
       if (sub === 'cancel') {
-        if (parts.length < 1) return send('格式: consign cancel <编号>');
+        if (parts.length < 1) return;
         const id = Number(parts[0]);
-        if (Number.isNaN(id)) return send('格式: consign cancel <编号>');
+        if (Number.isNaN(id)) return;
         const res = await consignApi.cancel(player, id);
         send(res.msg);
         return;
       }
-      send('寄售指令: consign list | consign my | consign sell <物品> <数量> <单价> | consign buy <编号> [数量] | consign cancel <编号>');
       return;
     }
     case 'repair': {
@@ -1000,7 +997,6 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         player.flags.training = { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 };
       }
       if (!args) {
-        send('修炼指令: train <属性>');
         Object.keys(TRAINING_OPTIONS).forEach((key) => {
           const info = TRAINING_OPTIONS[key];
           const cost = trainingCost(player, key);
@@ -1065,7 +1061,10 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
       const party = partyApi.getPartyByMember(player.name);
       if (sub === 'create') {
         if (party) return send('你已经在队伍中。');
-        partyApi.createParty(player.name);
+        const created = partyApi.createParty(player.name);
+        if (partyApi.persistParty) {
+          await partyApi.persistParty(created);
+        }
         send('已创建队伍。');
         return;
       }
@@ -1080,6 +1079,9 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         if (myParty.members.length >= PARTY_LIMIT) return send('队伍已满。');
         if (myParty.members.includes(target.name)) return send('对方已在队伍中。');
         myParty.members.push(target.name);
+        if (partyApi.persistParty) {
+          await partyApi.persistParty(myParty);
+        }
         send(`${target.name} 已加入队伍。`);
         target.send(`你已加入 ${player.name} 的队伍。`);
         return;
@@ -1090,7 +1092,13 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
       }
       if (sub === 'leave') {
         if (!party) return send('你不在队伍中。');
-        partyApi.removeFromParty(player.name);
+        const updated = partyApi.removeFromParty(player.name);
+        if (partyApi.clearPartyFlags) {
+          await partyApi.clearPartyFlags(player.name);
+        }
+        if (updated && partyApi.persistParty) {
+          await partyApi.persistParty(updated);
+        }
         send('你已离开队伍。');
         return;
       }
@@ -1171,7 +1179,6 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         return;
       }
 
-      send('行会指令: guild create <名>, guild invite <玩家>, guild kick <玩家>, guild accept <名>, guild leave, guild info');
       return;
     }
     case 'gsay': {
@@ -1204,7 +1211,6 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         }
         return;
       }
-      send('沙巴克指令: sabak status | sabak register');
       return;
     }
     case 'vip': {
@@ -1224,14 +1230,13 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         send('VIP 已开通。');
         return;
       }
-      send('VIP指令: vip status | vip activate <code>');
       return;
     }
     case 'teleport': {
       if (!player.equipment || !Object.values(player.equipment).some((e) => e && e.id === 'ring_teleport')) {
         return send('需要佩戴传送戒指。');
       }
-      if (!args) return send('格式: teleport <区域:房间> 或 teleport <区域> <房间>');
+      if (!args) return;
       let zoneId = '';
       let roomId = '';
       if (args.includes(':')) {
@@ -1281,7 +1286,6 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         await mailApi.markMailRead(player.userId, mailId);
         return;
       }
-      send('邮件指令: mail list | mail read <id>');
       return;
     }
     case 'trade': {
@@ -1309,7 +1313,7 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
       if (sub === 'add') {
         if (!trade) return send('你不在交易中。');
         const [kind, ...restOffer] = restArgs;
-        if (!kind) return send('格式: trade add item <物品> <数量> | trade add gold <数量>');
+        if (!kind) return;
         if (kind.toLowerCase() === 'gold') {
           const amount = Number(restOffer[0]);
           if (!amount || amount <= 0) return send('请输入金币数量。');
@@ -1322,7 +1326,7 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
           if (other) other.send(`${player.name} 放入金币: ${amount}`);
           return;
         }
-        if (kind.toLowerCase() !== 'item') return send('格式: trade add item <物品> <数量>');
+        if (kind.toLowerCase() !== 'item') return;
         const offerParts = restOffer.slice();
         if (offerParts.length === 0) return send('请输入物品名称或ID。');
         let qty = 1;
@@ -1357,8 +1361,8 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         send('你已锁定交易。');
         if (other) other.send(`${player.name} 已锁定交易。`);
         if (trade.locked[trade.a.name] && trade.locked[trade.b.name]) {
-          send('双方已锁定，请输入 trade confirm 确认交易。');
-          if (other) other.send('双方已锁定，请输入 trade confirm 确认交易。');
+          send('双方已锁定。');
+          if (other) other.send('双方已锁定。');
         }
         return;
       }
@@ -1383,7 +1387,7 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         return;
       }
 
-      send('交易指令: trade request <玩家> | trade accept <玩家> | trade add item <物品> <数量> | trade add gold <数量> | trade lock | trade confirm | trade cancel');
+      send('交易指令不可用。');
       return;
     }
     case 'rest': {
