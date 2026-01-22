@@ -98,7 +98,7 @@
   armor_tao: { id: 'armor_tao', name: '天尊道袍', type: 'armor', slot: 'chest', def: 21, dex: 2, spirit: 6, price: 18000, bossOnly: true },
   armor_doom: { id: 'armor_doom', name: '幽灵战衣', type: 'armor', slot: 'chest', def: 21, dex: 2, spirit: 3, price: 12000 },
   armor_magic: { id: 'armor_magic', name: '恶魔长袍', type: 'armor', slot: 'chest', def: 19, dex: 2, mag: 3, price: 12000 },
-  armor_taishan: { id: 'armor_taishan', name: '圣战宝甲', type: 'armor', slot: 'chest', def: 22, atk: 2, price: 52000 },
+  armor_taishan: { id: 'armor_taishan', name: '圣战宝甲', type: 'armor', slot: 'chest', def: 22, atk: 2, price: 52000, bossOnly: true },
   armor_thunder: { id: 'armor_thunder', name: '雷霆战甲', type: 'armor', slot: 'chest', def: 33, atk: 3, price: 78000, rarity: 'legendary', bossOnly: true },
   armor_flame: { id: 'armor_flame', name: '烈焰魔衣', type: 'armor', slot: 'chest', def: 29, dex: 3, mag: 9, price: 27000, rarity: 'legendary', bossOnly: true },
   armor_glow: { id: 'armor_glow', name: '光芒道袍', type: 'armor', slot: 'chest', def: 32, dex: 3, spirit: 9, price: 27000, rarity: 'legendary', bossOnly: true },
