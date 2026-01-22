@@ -1485,7 +1485,10 @@ function checkBossRespawn() {
           tpl.id === 'chiyue_demon' ||
           tpl.id === 'tree_demon' ||
           tpl.id === 'fmg_demon' ||
-          tpl.id === 'huangquan'
+          tpl.id === 'huangquan' ||
+          tpl.id === 'nm_boss' ||
+          tpl.id === 'chiyue_guard' ||
+          tpl.id === 'chiyue_blood'
         );
 
         // 所有BOSS刷新时发送公告
