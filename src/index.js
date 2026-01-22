@@ -1481,7 +1481,11 @@ function checkBossRespawn() {
           tpl.worldBoss ||
           tpl.sabakBoss ||
           tpl.id.includes('boss') ||
-          tpl.id.includes('leader')
+          tpl.id.includes('leader') ||
+          tpl.id === 'chiyue_demon' ||
+          tpl.id === 'tree_demon' ||
+          tpl.id === 'fmg_demon' ||
+          tpl.id === 'huangquan'
         );
 
         // 所有BOSS刷新时发送公告
