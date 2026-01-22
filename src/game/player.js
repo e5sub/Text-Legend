@@ -215,16 +215,15 @@ export function computeDerived(player) {
   const activeSetIds = new Set();
   const activeSetBonusRates = new Map();
   SET_DEFS.forEach((setDef) => {
-    const fullSet =
+    const partialSet =
       equipped.head?.id === setDef.head &&
       equipped.waist?.id === setDef.waist &&
       equipped.feet?.id === setDef.feet &&
       equipped.neck?.id === setDef.neck &&
-      equipped.ring_left?.id === setDef.ring &&
-      equipped.ring_right?.id === setDef.ring &&
+      (equipped.ring_left?.id === setDef.ring || equipped.ring_right?.id === setDef.ring) &&
       equipped.bracelet_left?.id === setDef.bracelet &&
       equipped.bracelet_right?.id === setDef.bracelet;
-    if (fullSet) {
+    if (partialSet) {
       const bonusRate = setDef.bonusRate || SET_BONUS_RATE;
       [
         setDef.head,
