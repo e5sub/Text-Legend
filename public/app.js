@@ -1255,7 +1255,13 @@ function showBagModal() {
           btn.className = 'bag-item';
           const slotLabel = slotLabels[entry.slot] || entry.slot;
           btn.textContent = `${slotLabel}: ${formatItemName(entry.item)}`;
-          const tooltip = formatItemTooltip(entry.item);
+          // 合并耐久度信息到item对象用于tooltip显示
+          const itemWithDurability = { 
+            ...entry.item, 
+            durability: entry.durability, 
+            max_durability: entry.max_durability 
+          };
+          const tooltip = formatItemTooltip(itemWithDurability);
           if (tooltip) {
             btn.addEventListener('mouseenter', (evt) => showItemTooltip(tooltip, evt));
             btn.addEventListener('mousemove', (evt) => positionTooltip(evt.clientX, evt.clientY));

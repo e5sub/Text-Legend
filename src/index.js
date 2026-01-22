@@ -1339,6 +1339,8 @@ function buildState(player) {
       mag: item.mag || 0,
       spirit: item.spirit || 0,
       dex: item.dex || 0,
+      durability: i.durability ?? null,
+      max_durability: i.max_durability ?? null,
       effects
     };
   });
