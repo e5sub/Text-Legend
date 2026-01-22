@@ -1394,7 +1394,7 @@ function buildState(player) {
     equipment,
     guild: player.guild?.name || null,
     guild_role: player.guild?.role || null,
-    party: party ? { size: party.members.length, members: partyMembers } : null,
+    party: party ? { size: party.members.length, leader: party.leader, members: partyMembers } : null,
     training: player.flags?.training || { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 },
     online: { count: onlineCount },
     sabak: {
@@ -1436,7 +1436,7 @@ function checkWorldBossRespawn() {
   const room = zone?.rooms?.[roomId];
   const bossName = respawned[0]?.name || '世界BOSS';
   emitAnnouncement(
-    `${bossName} 已刷新，点击 世界BOSS领域 - 炎龙巢穴 前往。`,
+    `${bossName} 已刷新，点击前往。`,
     'announce',
     {
       zoneId,
@@ -1810,6 +1810,7 @@ io.on('connection', (socket) => {
     loaded.send = (msg) => sendTo(loaded, msg);
     loaded.combat = null;
     loaded.guild = null;
+    if (!loaded.flags) loaded.flags = {};
     if (loaded.flags?.partyId && Array.isArray(loaded.flags.partyMembers) && loaded.flags.partyMembers.length) {
       const partyId = loaded.flags.partyId;
       const memberList = Array.from(new Set(loaded.flags.partyMembers.concat(loaded.name)));
@@ -2049,7 +2050,7 @@ function reduceDurabilityOnAttack(player) {
   if (!player || !player.equipment) return;
   if (!player.flags) player.flags = {};
   player.flags.attackCount = (player.flags.attackCount || 0) + 1;
-  const threshold = player.flags.vip ? 100 : 50;
+  const threshold = player.flags.vip ? 400 : 200;
   if (player.flags.attackCount < threshold) return;
   player.flags.attackCount = 0;
   let broken = false;

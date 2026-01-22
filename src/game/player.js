@@ -333,14 +333,17 @@ export function bagLimit(player) {
   return maxBagSlots(player.level);
 }
 
-export function addItem(player, itemId, qty = 1, effects = null) {
+export function addItem(player, itemId, qty = 1, effects = null, durability = null, max_durability = null) {
   if (!player.inventory) player.inventory = [];
   const normalized = normalizeEffects(effects);
   const slot = player.inventory.find((i) => i.id === itemId && sameEffects(i.effects, normalized));
   if (slot) {
     slot.qty += qty;
   } else {
-    player.inventory.push({ id: itemId, qty, effects: normalized });
+    const item = { id: itemId, qty, effects: normalized };
+    if (durability !== null) item.durability = durability;
+    if (max_durability !== null) item.max_durability = max_durability;
+    player.inventory.push(item);
   }
 }
 
@@ -436,7 +439,7 @@ export function unequipItem(player, slot) {
   }
   const current = player.equipment[slot];
   if (!current) return { ok: false, msg: '\u8BE5\u90E8\u4F4D\u6CA1\u6709\u88C5\u5907\u3002' };
-  addItem(player, current.id, 1, current.effects);
+  addItem(player, current.id, 1, current.effects, current.durability, current.max_durability);
   player.equipment[slot] = null;
   computeDerived(player);
   return { ok: true, msg: `\u5DF2\u5378\u4E0B${ITEM_TEMPLATES[current.id].name}\u3002` };

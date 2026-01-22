@@ -29,8 +29,8 @@
   // Wugong cave
   centipede: { id: 'centipede', name: '蜈蚣', level: 14, hp: 280, atk: 28, def: 10, exp: 220, gold: [20, 40], drops: [{ id: 'potion_mid', chance: 0.1 }] },
   scorpion: { id: 'scorpion', name: '钳虫', level: 16, hp: 340, atk: 32, def: 12, exp: 260, gold: [22, 46], drops: [{ id: 'potion_mid', chance: 0.12 }] },
-  ghoul: { id: 'ghoul', name: '邪恶钳虫', level: 20, hp: 520, atk: 40, def: 16, exp: 420, gold: [40, 80], drops: [{ id: 'moonblade', chance: 0.03 }, { id: 'armor_chain', chance: 0.05 }] },
-  bug_queen: { id: 'bug_queen', name: '触龙神', level: 24, hp: 1200, atk: 56, def: 22, exp: 900, gold: [120, 220], drops: [{ id: 'necklace_green', chance: 0.08 }, { id: 'ring_tiger', chance: 0.08 }] },
+  ghoul: { id: 'ghoul', name: '邪恶钳虫', level: 20, hp: 520, atk: 40, def: 16, exp: 420, gold: [40, 80], drops: [{ id: 'moonblade', chance: 0.03 }, { id: 'armor_chain', chance: 0.05 }, { id: 'book_war_attack', chance: 0.02 }, { id: 'book_mage_resist', chance: 0.02 }, { id: 'book_tao_poison', chance: 0.02 }] },
+  bug_queen: { id: 'bug_queen', name: '触龙神', level: 24, hp: 1200, atk: 56, def: 22, exp: 900, gold: [120, 220], drops: [{ id: 'necklace_green', chance: 0.08 }, { id: 'ring_tiger', chance: 0.08 }, { id: 'book_war_assassinate', chance: 0.03 }, { id: 'book_mage_inferno', chance: 0.03 }, { id: 'book_tao_soul', chance: 0.03 }] },
 
   // Stone tomb
   pig_red: { id: 'pig_red', name: '红野猪', level: 18, hp: 420, atk: 34, def: 14, exp: 320, gold: [26, 52], drops: [{ id: 'potion_mid', chance: 0.12 }] },
@@ -47,7 +47,10 @@
     { id: 'magestaff', chance: 0.05 },
     { id: 'silver_snake', chance: 0.05 },
     { id: 'woma_horn', chance: 0.2 },
-    { id: 'ring_revival', chance: 0.005 }
+    { id: 'ring_revival', chance: 0.005 },
+    { id: 'book_war_halfmoon', chance: 0.04 },
+    { id: 'book_mage_explode', chance: 0.04 },
+    { id: 'book_tao_invis', chance: 0.04 }
   ] },
 
   // Zuma
@@ -62,7 +65,10 @@
     { id: 'lianyu', chance: 0.08 },
     { id: 'gold_bar', chance: 0.08 },
     { id: 'ring_def', chance: 0.008 },
-    { id: 'ring_fire', chance: 0.008 }
+    { id: 'ring_fire', chance: 0.008 },
+    { id: 'book_war_fire', chance: 0.04 },
+    { id: 'book_mage_lightning', chance: 0.04 },
+    { id: 'book_tao_armor', chance: 0.04 }
   ] },
 
   // Chiyue
@@ -105,7 +111,10 @@
     { id: 'ring_stealth', chance: 0.008 },
     { id: 'ring_heal', chance: 0.008 },
     { id: 'ring_recall', chance: 0.005 },
-    { id: 'ring_rebirth', chance: 0.003 }
+    { id: 'ring_rebirth', chance: 0.003 },
+    { id: 'book_war_savage', chance: 0.03 },
+    { id: 'book_mage_flash', chance: 0.03 },
+    { id: 'book_tao_group_invis', chance: 0.03 }
   ] },
 
   // Fengmo
@@ -129,7 +138,7 @@
   // Cangyue island
   bone_soldier: { id: 'bone_soldier', name: '骷髅战士', level: 30, hp: 1000, atk: 70, def: 30, exp: 820, gold: [100, 200], drops: [{ id: 'ring_tiger', chance: 0.05 }] },
   bone_general: { id: 'bone_general', name: '骷髅将军', level: 34, hp: 1400, atk: 82, def: 36, exp: 1200, gold: [160, 260], drops: [{ id: 'necklace_green', chance: 0.06 }] },
-  huangquan: { id: 'huangquan', name: '黄泉教主', level: 38, hp: 2600, atk: 96, def: 44, exp: 2000, gold: [260, 420], drops: [{ id: 'ring_holy', chance: 0.04 }, { id: 'ring_fashen', chance: 0.04 }, { id: 'ring_tianzun', chance: 0.04 }] },
+  huangquan: { id: 'huangquan', name: '黄泉教主', level: 38, hp: 2600, atk: 96, def: 44, exp: 2000, gold: [260, 420], drops: [{ id: 'ring_holy', chance: 0.04 }, { id: 'ring_fashen', chance: 0.04 }, { id: 'ring_tianzun', chance: 0.04 }, { id: 'book_war_savage', chance: 0.03 }, { id: 'book_mage_flash', chance: 0.03 }, { id: 'book_tao_shield', chance: 0.03 }] },
 
   // Niumo temple
   nmmob: { id: 'nmmob', name: '牛魔将军', level: 38, hp: 1800, atk: 92, def: 42, exp: 1600, gold: [200, 360], drops: [{ id: 'ring_strength', chance: 0.06 }] },
@@ -141,7 +150,9 @@
     { id: 'gold_bar', chance: 0.1 },
     { id: 'ring_dodge', chance: 0.008 },
     { id: 'ring_teleport', chance: 0.006 },
-    { id: 'ring_magic', chance: 0.005 }
+    { id: 'ring_magic', chance: 0.005 },
+    { id: 'book_mage_thunder', chance: 0.03 },
+    { id: 'book_tao_skeleton', chance: 0.03 }
   ] },
 
   // Molong
@@ -188,7 +199,9 @@
     { id: 'ring_magic', chance: 0.003 },
     { id: 'ring_teleport', chance: 0.003 },
     { id: 'ring_protect', chance: 0.003 },
-    { id: 'ring_revival', chance: 0.003 }
+    { id: 'ring_revival', chance: 0.003 },
+    { id: 'book_mage_shield', chance: 0.04 },
+    { id: 'book_tao_summon', chance: 0.04 }
   ] }
   ,
   world_boss: {
@@ -261,7 +274,8 @@
       { id: 'ring_protect', chance: 0.01 },
       { id: 'ring_revival', chance: 0.01 },
       { id: 'ring_recall', chance: 0.008 },
-      { id: 'ring_rebirth', chance: 0.006 }
+      { id: 'ring_rebirth', chance: 0.006 },
+      { id: 'book_mage_ice', chance: 0.05 }
     ]
   },
   sabak_boss: {

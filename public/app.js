@@ -91,6 +91,14 @@ const guildUi = {
   invite: document.getElementById('guild-invite'),
   close: document.getElementById('guild-close')
 };
+const partyUi = {
+  modal: document.getElementById('party-modal'),
+  title: document.getElementById('party-title'),
+  list: document.getElementById('party-list'),
+  invite: document.getElementById('party-invite'),
+  leave: document.getElementById('party-leave'),
+  close: document.getElementById('party-close')
+};
 const promptUi = {
   modal: document.getElementById('prompt-modal'),
   title: document.getElementById('prompt-title'),
@@ -1510,6 +1518,56 @@ function renderGuildModal() {
   guildUi.modal.classList.remove('hidden');
 }
 
+function renderPartyModal() {
+  if (!partyUi.modal || !partyUi.list) return;
+  partyUi.list.innerHTML = '';
+  const party = lastState?.party;
+  const isLeader = party?.leader === lastState?.name;
+
+  if (partyUi.title) {
+    const leaderName = party?.leader || '无';
+    partyUi.title.textContent = `队伍 (${party?.members?.length || 0}/5) - 队长: ${leaderName}`;
+  }
+
+  if (partyUi.kick) {
+    partyUi.kick.classList.toggle('hidden', !isLeader);
+  }
+
+  if (!party || !party.members || !party.members.length) {
+    const empty = document.createElement('div');
+    empty.textContent = '你不在队伍中。';
+    partyUi.list.appendChild(empty);
+  } else {
+    party.members.forEach((member) => {
+      const row = document.createElement('div');
+      row.className = 'guild-member';
+      const name = document.createElement('div');
+      const online = member.online ? '在线' : '离线';
+      const isLeaderName = member.name === party.leader;
+      const role = isLeaderName ? '队长' : '队员';
+      name.textContent = `${member.name} (${role}/${online})`;
+      row.appendChild(name);
+
+      const tag = document.createElement('span');
+      tag.className = 'tag';
+      tag.textContent = role;
+      row.appendChild(tag);
+
+      if (isLeader && !isLeaderName) {
+        const kickBtn = document.createElement('button');
+        kickBtn.textContent = '踢出';
+        kickBtn.addEventListener('click', () => {
+          if (socket) socket.emit('cmd', { text: `party kick ${member.name}` });
+        });
+        row.appendChild(kickBtn);
+      }
+
+      partyUi.list.appendChild(row);
+    });
+  }
+  partyUi.modal.classList.remove('hidden');
+}
+
 function showGuildModal() {
   hideItemTooltip();
   if (socket) socket.emit('guild_members');
@@ -1590,8 +1648,14 @@ function renderState(state) {
       if (state.party && Array.isArray(state.party.members) && state.party.members.length) {
         const names = state.party.members.map((m) => m.online ? m.name : `${m.name}(离线)`);
         ui.party.textContent = names.join('、');
+        ui.party.style.cursor = 'pointer';
+        ui.party.style.color = '#4a90e2';
+        ui.party.style.textDecoration = 'underline';
       } else {
         ui.party.textContent = '无';
+        ui.party.style.cursor = 'default';
+        ui.party.style.color = '';
+        ui.party.style.textDecoration = '';
       }
     }
     ui.guild.textContent = state.guild || '无';
@@ -2449,6 +2513,35 @@ if (guildUi.close) {
     if (guildUi.modal) guildUi.modal.classList.add('hidden');
   });
 }
+if (partyUi.modal) {
+  partyUi.modal.addEventListener('click', (e) => {
+    if (e.target === partyUi.modal) {
+      partyUi.modal.classList.add('hidden');
+    }
+  });
+}
+if (partyUi.close) {
+  partyUi.close.addEventListener('click', () => {
+    if (partyUi.modal) partyUi.modal.classList.add('hidden');
+  });
+}
+if (partyUi.invite) {
+  partyUi.invite.addEventListener('click', async () => {
+    const name = await promptModal({
+      title: '邀请队员',
+      text: '请输入玩家名',
+      placeholder: '玩家名'
+    });
+    if (!name) return;
+    if (socket) socket.emit('cmd', { text: `party invite ${name.trim()}` });
+  });
+}
+if (partyUi.leave) {
+  partyUi.leave.addEventListener('click', () => {
+    if (socket) socket.emit('cmd', { text: 'party leave' });
+    if (partyUi.modal) partyUi.modal.classList.add('hidden');
+  });
+}
 if (playerUi.attack) {
   playerUi.attack.addEventListener('click', () => {
     if (!socket || !playerUi.selected) return;
@@ -2484,6 +2577,16 @@ if (playerUi.guild) {
     if (playerUi.modal) playerUi.modal.classList.add('hidden');
   });
 }
+if (ui.party) {
+  ui.party.addEventListener('click', () => {
+    if (!socket) return;
+    renderPartyModal();
+  });
+}
+
+
+
+
 
 
 
