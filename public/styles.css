@@ -1260,6 +1260,7 @@ li {
   border-radius: 8px;
   border: 1px solid rgba(118, 70, 22, 0.25);
   background: #f7e2c6;
+  color: var(--ink);
   cursor: pointer;
   font-size: 0.85rem;
   transition: all 0.12s ease;

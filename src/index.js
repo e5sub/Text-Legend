@@ -2747,9 +2747,19 @@ function combatTick() {
 setInterval(combatTick, 1000);
 
 async function sabakTick() {
-  if (!sabakState.active) return;
-  if (!isSabakActive() || (sabakState.siegeEndsAt && Date.now() >= sabakState.siegeEndsAt)) {
-    await finishSabakSiege();
+  const now = Date.now();
+  const nowDate = new Date(now);
+
+  // 自动开始攻城战
+  if (!sabakState.active && isSabakActive(nowDate) && sabakState.ownerGuildId) {
+    startSabakSiege(null);
+  }
+
+  // 结束攻城战
+  if (sabakState.active) {
+    if (!isSabakActive(nowDate) || (sabakState.siegeEndsAt && now >= sabakState.siegeEndsAt)) {
+      await finishSabakSiege();
+    }
   }
 }
 
