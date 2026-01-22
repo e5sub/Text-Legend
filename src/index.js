@@ -1538,6 +1538,52 @@ function gainSummonExp(player) {
 }
 
 function applyDamageToMob(mob, dmg, attackerName) {
+  const mobTemplate = MOB_TEMPLATES[mob.templateId];
+  const isSpecialBoss = mobTemplate?.id === 'molong_boss' || mobTemplate?.worldBoss || mobTemplate?.sabakBoss;
+  
+  // 特殊BOSS防御效果：受到攻击时触发
+  if (isSpecialBoss) {
+    const now = Date.now();
+    
+    // 检查无敌状态
+    if (mob.status?.invincible && mob.status.invincible > now) {
+      // 无敌状态，伤害为0
+      if (attackerName) {
+        const attacker = playersByName(attackerName);
+        if (attacker) {
+          attacker.send(`${mob.name} 处于无敌状态，免疫了所有伤害！`);
+        }
+      }
+      return;
+    }
+    
+    // 10%几率触发无敌效果（持续3秒）
+    if (Math.random() <= 0.1) {
+      if (!mob.status) mob.status = {};
+      mob.status.invincible = now + 3000;
+      if (attackerName) {
+        const attacker = playersByName(attackerName);
+        if (attacker) {
+          attacker.send(`${mob.name} 触发了无敌效果，3秒内免疫所有伤害！`);
+        }
+      }
+      // 这次攻击无效
+      return;
+    }
+    
+    // 10%几率触发50%减伤
+    if (Math.random() <= 0.1) {
+      const originalDmg = dmg;
+      dmg = Math.floor(dmg * 0.5);
+      if (attackerName) {
+        const attacker = playersByName(attackerName);
+        if (attacker) {
+          attacker.send(`${mob.name} 触发了减伤效果，伤害从 ${originalDmg} 降低到 ${dmg}！`);
+        }
+      }
+    }
+  }
+  
   recordMobDamage(mob, attackerName, dmg);
   applyDamage(mob, dmg);
 }
@@ -1582,6 +1628,27 @@ function retaliateMobAgainstPlayer(mob, player, online) {
     dmg += calcMagicDamageFromValue(magicBase, mobTarget);
     dmg += calcMagicDamageFromValue(spiritBase, mobTarget);
   }
+  
+  // 特殊BOSS破防效果：魔龙教主、世界BOSS、沙巴克BOSS攻击时有20%几率破防
+  const isSpecialBoss = mobTemplate?.id === 'molong_boss' || mobTemplate?.worldBoss || mobTemplate?.sabakBoss;
+  if (isSpecialBoss && Math.random() <= 0.2) {
+    if (!mobTarget.status) mobTarget.status = {};
+    if (!mobTarget.status.debuffs) mobTarget.status.debuffs = {};
+    const now = Date.now();
+    mobTarget.status.debuffs.armorBreak = {
+      defMultiplier: 0.5,
+      expiresAt: now + 3000
+    };
+    if (mobTarget.userId) {
+      mobTarget.send(`${mob.name} 破防攻击！你的防御和魔御降低50%，持续3秒。`);
+      if (mobTarget !== player) {
+        player.send(`${mob.name} 对 ${mobTarget.name} 造成破防效果！`);
+      }
+    } else {
+      player.send(`${mob.name} 对 ${mobTarget.name} 造成破防效果！`);
+    }
+  }
+  
   if (mobTarget && mobTarget.userId) {
     applyDamageToPlayer(mobTarget, dmg);
     mobTarget.send(`${mob.name} 对你造成 ${dmg} 点伤害。`);
@@ -1591,10 +1658,94 @@ function retaliateMobAgainstPlayer(mob, player, online) {
     if (mobTarget.hp <= 0 && mobTarget !== player && !tryRevive(mobTarget)) {
       handleDeath(mobTarget);
     }
+    
+    // 特殊BOSS溅射效果：对房间所有其他玩家和召唤物造成50%溅射伤害
+    if (isSpecialBoss && online && online.length > 0) {
+      const splashDmg = Math.floor(dmg * 0.5);
+      const roomPlayers = online.filter((p) => 
+        p.name !== mobTarget.name &&
+        p.position.zone === player.position.zone &&
+        p.position.room === player.position.room &&
+        p.hp > 0
+      );
+      
+      roomPlayers.forEach((splashTarget) => {
+        applyDamageToPlayer(splashTarget, splashDmg);
+        splashTarget.send(`${mob.name} 的攻击溅射到你，造成 ${splashDmg} 点伤害。`);
+        if (splashTarget.hp <= 0 && !tryRevive(splashTarget)) {
+          handleDeath(splashTarget);
+        }
+        
+        // 溅射到召唤物
+        if (splashTarget.summon && splashTarget.summon.hp > 0) {
+          applyDamage(splashTarget.summon, splashDmg);
+          splashTarget.send(`${mob.name} 的攻击溅射到 ${splashTarget.summon.name}，造成 ${splashDmg} 点伤害。`);
+          if (splashTarget.summon.hp <= 0) {
+            splashTarget.send(`${splashTarget.summon.name} 被击败。`);
+            splashTarget.summon = null;
+            autoResummon(splashTarget);
+          }
+        }
+      });
+      
+      // 溅射到主目标的召唤物（如果主目标是玩家且有召唤物）
+      if (mobTarget.summon && mobTarget.summon.hp > 0 && mobTarget !== mobTarget.summon) {
+        applyDamage(mobTarget.summon, splashDmg);
+        mobTarget.send(`${mob.name} 的攻击溅射到 ${mobTarget.summon.name}，造成 ${splashDmg} 点伤害。`);
+        if (mobTarget.summon.hp <= 0) {
+          mobTarget.send(`${mobTarget.summon.name} 被击败。`);
+          mobTarget.summon = null;
+          autoResummon(mobTarget);
+        }
+      }
+    }
+    
     return;
   }
   applyDamage(mobTarget, dmg);
   player.send(`${mob.name} 对 ${mobTarget.name} 造成 ${dmg} 点伤害。`);
+  
+  // 特殊BOSS溅射效果：主目标是召唤物时，对玩家和房间所有其他玩家及召唤物造成50%溅射伤害
+  if (isSpecialBoss && online && online.length > 0) {
+    const splashDmg = Math.floor(dmg * 0.5);
+    
+    // 溅射到召唤物的主人
+    if (player && player.hp > 0) {
+      applyDamageToPlayer(player, splashDmg);
+      player.send(`${mob.name} 的攻击溅射到你，造成 ${splashDmg} 点伤害。`);
+      if (player.hp <= 0 && !tryRevive(player)) {
+        handleDeath(player);
+      }
+    }
+    
+    // 溅射到房间所有其他玩家和召唤物
+    const roomPlayers = online.filter((p) => 
+      p.name !== player.name &&
+      p.position.zone === player.position.zone &&
+      p.position.room === player.position.room &&
+      p.hp > 0
+    );
+    
+    roomPlayers.forEach((splashTarget) => {
+      applyDamageToPlayer(splashTarget, splashDmg);
+      splashTarget.send(`${mob.name} 的攻击溅射到你，造成 ${splashDmg} 点伤害。`);
+      if (splashTarget.hp <= 0 && !tryRevive(splashTarget)) {
+        handleDeath(splashTarget);
+      }
+      
+      // 溅射到其他玩家的召唤物
+      if (splashTarget.summon && splashTarget.summon.hp > 0) {
+        applyDamage(splashTarget.summon, splashDmg);
+        splashTarget.send(`${mob.name} 的攻击溅射到 ${splashTarget.summon.name}，造成 ${splashDmg} 点伤害。`);
+        if (splashTarget.summon.hp <= 0) {
+          splashTarget.send(`${splashTarget.summon.name} 被击败。`);
+          splashTarget.summon = null;
+          autoResummon(splashTarget);
+        }
+      }
+    });
+  }
+  
   if (mobTarget.hp <= 0) {
     player.send(`${mobTarget.name} 被击败。`);
   }
@@ -1632,6 +1783,15 @@ function getMagicDefenseMultiplier(target) {
       delete debuffs.poisonEffect;
     } else {
       multiplier *= poisonEffect.mdefMultiplier || 1;
+    }
+  }
+  // 检查破防效果（影响魔御）
+  const armorBreak = debuffs.armorBreak;
+  if (armorBreak) {
+    if (armorBreak.expiresAt && armorBreak.expiresAt < now) {
+      delete debuffs.armorBreak;
+    } else {
+      multiplier *= armorBreak.defMultiplier || 1;
     }
   }
   return multiplier;
@@ -2872,6 +3032,24 @@ function combatTick() {
           player.send(`${mob.name} 麻痹了 ${mobTarget.name}。`);
         }
       }
+      // 特殊BOSS破防效果：魔龙教主、世界BOSS、沙巴克BOSS攻击时有20%几率破防，降低目标50%防御/魔御持续3秒
+      if (isSpecialBoss && Math.random() <= 0.2) {
+        if (!mobTarget.status) mobTarget.status = {};
+        if (!mobTarget.status.debuffs) mobTarget.status.debuffs = {};
+        const now = Date.now();
+        mobTarget.status.debuffs.armorBreak = {
+          defMultiplier: 0.5,
+          expiresAt: now + 3000
+        };
+        if (mobTarget.userId) {
+          mobTarget.send(`${mob.name} 破防攻击！你的防御和魔御降低50%，持续3秒。`);
+          if (mobTarget !== player) {
+            player.send(`${mob.name} 对 ${mobTarget.name} 造成破防效果！`);
+          }
+        } else {
+          player.send(`${mob.name} 对 ${mobTarget.name} 造成破防效果！`);
+        }
+      }
       // 特殊BOSS暴击效果：魔龙教主、世界BOSS、沙巴克BOSS攻击时有15%几率造成2倍暴击伤害
       if (isSpecialBoss && Math.random() <= 0.15) {
         dmg = Math.floor(dmg * 2);
@@ -2893,9 +3071,92 @@ function combatTick() {
         if (mobTarget.hp <= 0 && mobTarget !== player && !tryRevive(mobTarget)) {
           handleDeath(mobTarget);
         }
+        
+        // 特殊BOSS溅射效果：对房间所有其他玩家和召唤物造成50%溅射伤害
+        if (isSpecialBoss && online && online.length > 0) {
+          const splashDmg = Math.floor(dmg * 0.5);
+          const roomPlayers = online.filter((p) => 
+            p.name !== mobTarget.name &&
+            p.position.zone === player.position.zone &&
+            p.position.room === player.position.room &&
+            p.hp > 0
+          );
+          
+          roomPlayers.forEach((splashTarget) => {
+            applyDamageToPlayer(splashTarget, splashDmg);
+            splashTarget.send(`${mob.name} 的攻击溅射到你，造成 ${splashDmg} 点伤害。`);
+            if (splashTarget.hp <= 0 && !tryRevive(splashTarget)) {
+              handleDeath(splashTarget);
+            }
+            
+            // 溅射到召唤物
+            if (splashTarget.summon && splashTarget.summon.hp > 0) {
+              applyDamage(splashTarget.summon, splashDmg);
+              splashTarget.send(`${mob.name} 的攻击溅射到 ${splashTarget.summon.name}，造成 ${splashDmg} 点伤害。`);
+              if (splashTarget.summon.hp <= 0) {
+                splashTarget.send(`${splashTarget.summon.name} 被击败。`);
+                splashTarget.summon = null;
+                autoResummon(splashTarget);
+              }
+            }
+          });
+          
+          // 溅射到主目标的召唤物（如果主目标是玩家且有召唤物）
+          if (mobTarget.summon && mobTarget.summon.hp > 0 && mobTarget !== mobTarget.summon) {
+            applyDamage(mobTarget.summon, splashDmg);
+            mobTarget.send(`${mob.name} 的攻击溅射到 ${mobTarget.summon.name}，造成 ${splashDmg} 点伤害。`);
+            if (mobTarget.summon.hp <= 0) {
+              mobTarget.send(`${mobTarget.summon.name} 被击败。`);
+              mobTarget.summon = null;
+              autoResummon(mobTarget);
+            }
+          }
+        }
       } else {
         applyDamage(mobTarget, dmg);
         player.send(`${mob.name} 对 ${mobTarget.name} 造成 ${dmg} 点伤害。`);
+        
+        // 特殊BOSS溅射效果：主目标是召唤物时，对玩家和房间所有其他玩家及召唤物造成50%溅射伤害
+        if (isSpecialBoss && online && online.length > 0) {
+          const splashDmg = Math.floor(dmg * 0.5);
+          
+          // 溅射到召唤物的主人
+          if (player && player.hp > 0) {
+            applyDamageToPlayer(player, splashDmg);
+            player.send(`${mob.name} 的攻击溅射到你，造成 ${splashDmg} 点伤害。`);
+            if (player.hp <= 0 && !tryRevive(player)) {
+              handleDeath(player);
+            }
+          }
+          
+          // 溅射到房间所有其他玩家和召唤物
+          const roomPlayers = online.filter((p) => 
+            p.name !== player.name &&
+            p.position.zone === player.position.zone &&
+            p.position.room === player.position.room &&
+            p.hp > 0
+          );
+          
+          roomPlayers.forEach((splashTarget) => {
+            applyDamageToPlayer(splashTarget, splashDmg);
+            splashTarget.send(`${mob.name} 的攻击溅射到你，造成 ${splashDmg} 点伤害。`);
+            if (splashTarget.hp <= 0 && !tryRevive(splashTarget)) {
+              handleDeath(splashTarget);
+            }
+            
+            // 溅射到其他玩家的召唤物
+            if (splashTarget.summon && splashTarget.summon.hp > 0) {
+              applyDamage(splashTarget.summon, splashDmg);
+              splashTarget.send(`${mob.name} 的攻击溅射到 ${splashTarget.summon.name}，造成 ${splashDmg} 点伤害。`);
+              if (splashTarget.summon.hp <= 0) {
+                splashTarget.send(`${splashTarget.summon.name} 被击败。`);
+                splashTarget.summon = null;
+                autoResummon(splashTarget);
+              }
+            }
+          });
+        }
+        
         if (mobTarget.hp <= 0) {
           player.send(`${mobTarget.name} 被击败。`);
           player.summon = null;

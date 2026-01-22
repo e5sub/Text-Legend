@@ -28,6 +28,15 @@ export function calcDamage(attacker, defender, power = 1) {
       defMultiplier *= poisonEffect.defMultiplier || 1;
     }
   }
+  // 检查破防效果
+  const armorBreak = debuffs.armorBreak;
+  if (armorBreak) {
+    if (armorBreak.expiresAt && armorBreak.expiresAt < now) {
+      delete debuffs.armorBreak;
+    } else {
+      defMultiplier *= armorBreak.defMultiplier || 1;
+    }
+  }
   if (buff) {
     if (buff.expiresAt && buff.expiresAt < Date.now()) {
       delete defender.status.buffs.defBuff;
