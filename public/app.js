@@ -2031,9 +2031,12 @@ function renderState(state) {
     { id: 'repair', label: '\u4FEE\u7406' },
     { id: 'consign', label: '\u5BC4\u552E' },
     { id: 'drops', label: '\u5957\u88c5\u6389\u843d' },
-    { id: 'vip activate', label: 'VIP\u6fc0\u6d3b' },
     { id: 'logout', label: '\u9000\u51fa\u6e38\u620f' }
   ];
+  // 只对非VIP玩家显示VIP激活按钮
+  if (!state.stats || !state.stats.vip) {
+    actions.splice(actions.length - 1, 0, { id: 'vip activate', label: 'VIP\u6fc0\u6d3b' });
+  }
   const afkLabel = state.stats && state.stats.autoSkillId ? '\u505c\u6b62\u6302\u673a' : '\u6302\u673a';
   actions.push({ id: 'afk', label: afkLabel });
   renderChips(ui.actions, actions, async (a) => {
