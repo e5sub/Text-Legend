@@ -2382,6 +2382,11 @@ if (chat.emojiPanel) {
 }
 
 document.addEventListener('click', (evt) => {
+  // 如果promptModal正在显示，不关闭其他modal
+  if (promptUi.modal && !promptUi.modal.classList.contains('hidden')) {
+    return;
+  }
+
   const modals = [
     shopUi?.modal,
     repairUi?.modal,
