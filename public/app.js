@@ -1892,6 +1892,10 @@ function renderState(state) {
       showBagModal();
       return;
     }
+    if (a.id === 'party') {
+      renderPartyModal();
+      return;
+    }
     if (a.id === 'guild') {
       showGuildModal();
       return;
@@ -2515,6 +2519,13 @@ if (guildUi.invite) {
 if (guildUi.close) {
   guildUi.close.addEventListener('click', () => {
     if (guildUi.modal) guildUi.modal.classList.add('hidden');
+  });
+}
+if (guildUi.modal) {
+  guildUi.modal.addEventListener('click', (e) => {
+    if (e.target === guildUi.modal) {
+      guildUi.modal.classList.add('hidden');
+    }
   });
 }
 if (partyUi.modal) {

@@ -744,178 +744,179 @@ button:hover {
 
 @media (max-width: 640px) {
   #app {
-    padding: 16px 12px 24px;
+    padding: 16px 8px 24px;
   }
-  
+
   header {
     margin-bottom: 16px;
   }
-  
+
   header h1 {
     font-size: 1.8rem;
     margin-bottom: 4px;
   }
-  
+
   header p {
     font-size: 0.9rem;
   }
-  
+
   .panel {
     padding: 16px;
     border-radius: 12px;
   }
-  
+
   .status-card {
     padding: 12px;
   }
-  
+
   .status-row {
     font-size: 0.85rem;
   }
-  
+
   .status-row span {
     min-width: 60px;
   }
-  
+
   .bar {
     height: 8px;
   }
-  
+
   .bar-label {
     font-size: 0.8rem;
     margin: 4px 0 2px;
   }
-  
+
   .log-wrap {
     border-radius: 12px;
   }
-  
+
   .log-header {
     padding: 8px 12px;
     font-size: 0.85rem;
   }
-  
+
   .log {
     padding: 12px;
     min-height: 250px;
     max-height: 350px;
     font-size: 0.85rem;
   }
-  
+
   .chat-wrap {
     border-radius: 12px;
   }
-  
+
   .chat-header {
     padding: 8px 12px;
     font-size: 0.85rem;
   }
-  
+
   .chat-log {
     padding: 10px 12px;
     min-height: 140px;
     max-height: 200px;
     font-size: 0.85rem;
   }
-  
+
   .chat-actions {
     gap: 6px;
     padding: 8px 12px 4px;
   }
-  
+
   .chat-btn {
     padding: 5px 8px;
     font-size: 0.75rem;
   }
-  
+
   .chat-input-row {
     padding: 8px 12px 10px;
   }
-  
+
   .chat-input-row input {
     flex: 1;
     min-width: 0;
   }
-  
+
   .action-group {
     margin-bottom: 12px;
   }
-  
+
   .action-title {
     font-size: 0.9rem;
     margin-bottom: 6px;
   }
-  
+
   .chip {
     padding: 6px 10px;
     font-size: 0.8rem;
   }
-  
+
   .chip-grid {
     gap: 6px;
   }
-  
+
   .modal-card {
-    width: 100%;
+    width: calc(100vw - 16px);
     max-width: none;
-    max-height: 90vh;
+    max-height: 85vh;
     border-radius: 12px;
-    padding: 16px;
+    padding: 16px 12px;
+    margin: 0 8px;
   }
-  
+
   .modal-title {
     font-size: 1.1rem;
   }
-  
+
   .modal-text {
     font-size: 0.9rem;
   }
-  
+
   .modal-actions {
     gap: 8px;
     flex-wrap: wrap;
   }
-  
+
   .modal-actions button {
     flex: 1;
     min-width: calc(50% - 4px);
     padding: 10px;
     font-size: 0.9rem;
   }
-  
+
   .bag-item {
     padding: 8px;
     font-size: 0.85rem;
   }
-  
+
   .bag-item-name {
     font-size: 0.9rem;
   }
-  
+
   .bag-item-meta {
     font-size: 0.75rem;
   }
-  
+
   #trade-item,
   #trade-qty,
   #trade-gold {
     padding: 8px;
     font-size: 0.9rem;
   }
-  
+
   .trade-panel {
     gap: 12px;
   }
-  
+
   .trade-row {
     flex-wrap: wrap;
     gap: 8px;
   }
-  
+
   .afk-skill-list {
     gap: 8px;
   }
-  
+
   .afk-skill-item {
     padding: 8px;
     font-size: 0.85rem;
@@ -924,68 +925,77 @@ button:hover {
 
 @media (max-width: 480px) {
   #app {
-    padding: 12px 8px 20px;
+    padding: 12px 4px 20px;
   }
-  
+
   header h1 {
     font-size: 1.5rem;
   }
-  
+
   .panel {
-    padding: 12px;
+    padding: 12px 8px;
   }
-  
+
   .status-grid-3 {
     grid-template-columns: 1fr 1fr;
   }
-  
+
   .status-row {
     font-size: 0.8rem;
   }
-  
+
   .status-row span {
     min-width: 50px;
   }
-  
+
   .log {
     min-height: 200px;
     max-height: 300px;
     font-size: 0.8rem;
   }
-  
+
   .chat-log {
     min-height: 120px;
     max-height: 180px;
     font-size: 0.8rem;
   }
-  
+
   .chat-btn {
     padding: 4px 6px;
     font-size: 0.7rem;
   }
-  
+
   .chat-actions {
     gap: 4px;
   }
-  
+
   .chip {
     padding: 5px 8px;
     font-size: 0.75rem;
   }
-  
+
+  .modal-card {
+    width: calc(100vw - 8px);
+    max-width: none;
+    max-height: 85vh;
+    border-radius: 12px;
+    padding: 12px 8px;
+    margin: 0 4px;
+  }
+
   .modal-actions button {
     min-width: 100%;
   }
-  
+
   .item-tooltip {
     max-width: 200px;
     font-size: 0.85rem;
   }
-  
+
   .guild-member {
     font-size: 0.85rem;
   }
-  
+
   .guild-member button {
     padding: 4px 8px;
     font-size: 0.75rem;
@@ -1192,178 +1202,179 @@ button:hover {
 
 @media (max-width: 640px) {
   #app {
-    padding: 16px 12px 24px;
+    padding: 16px 8px 24px;
   }
-  
+
   header {
     margin-bottom: 16px;
   }
-  
+
   header h1 {
     font-size: 1.8rem;
     margin-bottom: 4px;
   }
-  
+
   header p {
     font-size: 0.9rem;
   }
-  
+
   .panel {
     padding: 16px;
     border-radius: 12px;
   }
-  
+
   .status-card {
     padding: 12px;
   }
-  
+
   .status-row {
     font-size: 0.85rem;
   }
-  
+
   .status-row span {
     min-width: 60px;
   }
-  
+
   .bar {
     height: 8px;
   }
-  
+
   .bar-label {
     font-size: 0.8rem;
     margin: 4px 0 2px;
   }
-  
+
   .log-wrap {
     border-radius: 12px;
   }
-  
+
   .log-header {
     padding: 8px 12px;
     font-size: 0.85rem;
   }
-  
+
   .log {
     padding: 12px;
     min-height: 250px;
     max-height: 350px;
     font-size: 0.85rem;
   }
-  
+
   .chat-wrap {
     border-radius: 12px;
   }
-  
+
   .chat-header {
     padding: 8px 12px;
     font-size: 0.85rem;
   }
-  
+
   .chat-log {
     padding: 10px 12px;
     min-height: 140px;
     max-height: 200px;
     font-size: 0.85rem;
   }
-  
+
   .chat-actions {
     gap: 6px;
     padding: 8px 12px 4px;
   }
-  
+
   .chat-btn {
     padding: 5px 8px;
     font-size: 0.75rem;
   }
-  
+
   .chat-input-row {
     padding: 8px 12px 10px;
   }
-  
+
   .chat-input-row input {
     flex: 1;
     min-width: 0;
   }
-  
+
   .action-group {
     margin-bottom: 12px;
   }
-  
+
   .action-title {
     font-size: 0.9rem;
     margin-bottom: 6px;
   }
-  
+
   .chip {
     padding: 6px 10px;
     font-size: 0.8rem;
   }
-  
+
   .chip-grid {
     gap: 6px;
   }
-  
+
   .modal-card {
-    width: 100%;
+    width: calc(100vw - 16px);
     max-width: none;
-    max-height: 90vh;
+    max-height: 85vh;
     border-radius: 12px;
-    padding: 16px;
+    padding: 16px 12px;
+    margin: 0 8px;
   }
-  
+
   .modal-title {
     font-size: 1.1rem;
   }
-  
+
   .modal-text {
     font-size: 0.9rem;
   }
-  
+
   .modal-actions {
     gap: 8px;
     flex-wrap: wrap;
   }
-  
+
   .modal-actions button {
     flex: 1;
     min-width: calc(50% - 4px);
     padding: 10px;
     font-size: 0.9rem;
   }
-  
+
   .bag-item {
     padding: 8px;
     font-size: 0.85rem;
   }
-  
+
   .bag-item-name {
     font-size: 0.9rem;
   }
-  
+
   .bag-item-meta {
     font-size: 0.75rem;
   }
-  
+
   #trade-item,
   #trade-qty,
   #trade-gold {
     padding: 8px;
     font-size: 0.9rem;
   }
-  
+
   .trade-panel {
     gap: 12px;
   }
-  
+
   .trade-row {
     flex-wrap: wrap;
     gap: 8px;
   }
-  
+
   .afk-skill-list {
     gap: 8px;
   }
-  
+
   .afk-skill-item {
     padding: 8px;
     font-size: 0.85rem;
@@ -1372,68 +1383,77 @@ button:hover {
 
 @media (max-width: 480px) {
   #app {
-    padding: 12px 8px 20px;
+    padding: 12px 4px 20px;
   }
-  
+
   header h1 {
     font-size: 1.5rem;
   }
-  
+
   .panel {
-    padding: 12px;
+    padding: 12px 8px;
   }
-  
+
   .status-grid-3 {
     grid-template-columns: 1fr 1fr;
   }
-  
+
   .status-row {
     font-size: 0.8rem;
   }
-  
+
   .status-row span {
     min-width: 50px;
   }
-  
+
   .log {
     min-height: 200px;
     max-height: 300px;
     font-size: 0.8rem;
   }
-  
+
   .chat-log {
     min-height: 120px;
     max-height: 180px;
     font-size: 0.8rem;
   }
-  
+
   .chat-btn {
     padding: 4px 6px;
     font-size: 0.7rem;
   }
-  
+
   .chat-actions {
     gap: 4px;
   }
-  
+
   .chip {
     padding: 5px 8px;
     font-size: 0.75rem;
   }
-  
+
+  .modal-card {
+    width: calc(100vw - 8px);
+    max-width: none;
+    max-height: 85vh;
+    border-radius: 12px;
+    padding: 12px 8px;
+    margin: 0 4px;
+  }
+
   .modal-actions button {
     min-width: 100%;
   }
-  
+
   .item-tooltip {
     max-width: 200px;
     font-size: 0.85rem;
   }
-  
+
   .guild-member {
     font-size: 0.85rem;
   }
-  
+
   .guild-member button {
     padding: 4px 8px;
     font-size: 0.75rem;
@@ -1501,178 +1521,179 @@ button:hover {
 
 @media (max-width: 640px) {
   #app {
-    padding: 16px 12px 24px;
+    padding: 16px 8px 24px;
   }
-  
+
   header {
     margin-bottom: 16px;
   }
-  
+
   header h1 {
     font-size: 1.8rem;
     margin-bottom: 4px;
   }
-  
+
   header p {
     font-size: 0.9rem;
   }
-  
+
   .panel {
     padding: 16px;
     border-radius: 12px;
   }
-  
+
   .status-card {
     padding: 12px;
   }
-  
+
   .status-row {
     font-size: 0.85rem;
   }
-  
+
   .status-row span {
     min-width: 60px;
   }
-  
+
   .bar {
     height: 8px;
   }
-  
+
   .bar-label {
     font-size: 0.8rem;
     margin: 4px 0 2px;
   }
-  
+
   .log-wrap {
     border-radius: 12px;
   }
-  
+
   .log-header {
     padding: 8px 12px;
     font-size: 0.85rem;
   }
-  
+
   .log {
     padding: 12px;
     min-height: 250px;
     max-height: 350px;
     font-size: 0.85rem;
   }
-  
+
   .chat-wrap {
     border-radius: 12px;
   }
-  
+
   .chat-header {
     padding: 8px 12px;
     font-size: 0.85rem;
   }
-  
+
   .chat-log {
     padding: 10px 12px;
     min-height: 140px;
     max-height: 200px;
     font-size: 0.85rem;
   }
-  
+
   .chat-actions {
     gap: 6px;
     padding: 8px 12px 4px;
   }
-  
+
   .chat-btn {
     padding: 5px 8px;
     font-size: 0.75rem;
   }
-  
+
   .chat-input-row {
     padding: 8px 12px 10px;
   }
-  
+
   .chat-input-row input {
     flex: 1;
     min-width: 0;
   }
-  
+
   .action-group {
     margin-bottom: 12px;
   }
-  
+
   .action-title {
     font-size: 0.9rem;
     margin-bottom: 6px;
   }
-  
+
   .chip {
     padding: 6px 10px;
     font-size: 0.8rem;
   }
-  
+
   .chip-grid {
     gap: 6px;
   }
-  
+
   .modal-card {
-    width: 100%;
+    width: calc(100vw - 16px);
     max-width: none;
-    max-height: 90vh;
+    max-height: 85vh;
     border-radius: 12px;
-    padding: 16px;
+    padding: 16px 12px;
+    margin: 0 8px;
   }
-  
+
   .modal-title {
     font-size: 1.1rem;
   }
-  
+
   .modal-text {
     font-size: 0.9rem;
   }
-  
+
   .modal-actions {
     gap: 8px;
     flex-wrap: wrap;
   }
-  
+
   .modal-actions button {
     flex: 1;
     min-width: calc(50% - 4px);
     padding: 10px;
     font-size: 0.9rem;
   }
-  
+
   .bag-item {
     padding: 8px;
     font-size: 0.85rem;
   }
-  
+
   .bag-item-name {
     font-size: 0.9rem;
   }
-  
+
   .bag-item-meta {
     font-size: 0.75rem;
   }
-  
+
   #trade-item,
   #trade-qty,
   #trade-gold {
     padding: 8px;
     font-size: 0.9rem;
   }
-  
+
   .trade-panel {
     gap: 12px;
   }
-  
+
   .trade-row {
     flex-wrap: wrap;
     gap: 8px;
   }
-  
+
   .afk-skill-list {
     gap: 8px;
   }
-  
+
   .afk-skill-item {
     padding: 8px;
     font-size: 0.85rem;
@@ -1681,68 +1702,77 @@ button:hover {
 
 @media (max-width: 480px) {
   #app {
-    padding: 12px 8px 20px;
+    padding: 12px 4px 20px;
   }
-  
+
   header h1 {
     font-size: 1.5rem;
   }
-  
+
   .panel {
-    padding: 12px;
+    padding: 12px 8px;
   }
-  
+
   .status-grid-3 {
     grid-template-columns: 1fr 1fr;
   }
-  
+
   .status-row {
     font-size: 0.8rem;
   }
-  
+
   .status-row span {
     min-width: 50px;
   }
-  
+
   .log {
     min-height: 200px;
     max-height: 300px;
     font-size: 0.8rem;
   }
-  
+
   .chat-log {
     min-height: 120px;
     max-height: 180px;
     font-size: 0.8rem;
   }
-  
+
   .chat-btn {
     padding: 4px 6px;
     font-size: 0.7rem;
   }
-  
+
   .chat-actions {
     gap: 4px;
   }
-  
+
   .chip {
     padding: 5px 8px;
     font-size: 0.75rem;
   }
-  
+
+  .modal-card {
+    width: calc(100vw - 8px);
+    max-width: none;
+    max-height: 85vh;
+    border-radius: 12px;
+    padding: 12px 8px;
+    margin: 0 4px;
+  }
+
   .modal-actions button {
     min-width: 100%;
   }
-  
+
   .item-tooltip {
     max-width: 200px;
     font-size: 0.85rem;
   }
-  
+
   .guild-member {
     font-size: 0.85rem;
   }
-  
+
   .guild-member button {
     padding: 4px 8px;
     font-size: 0.75rem;
