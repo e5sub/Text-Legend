@@ -1608,6 +1608,12 @@ function formatItemTooltip(item) {
     const slotLabel = ITEM_SLOT_LABELS[item.slot] || item.slot;
     lines.push(`\u90e8\u4f4d: ${slotLabel}`);
   }
+  // 显示耐久度信息
+  if (item.slot && (item.durability != null || item.max_durability != null)) {
+    const maxDur = item.max_durability || 100;
+    const curDur = item.durability != null ? item.durability : maxDur;
+    lines.push(`\u8010\u4e45\u5ea6: ${curDur}/${maxDur}`);
+  }
   const stats = [];
   if (item.atk) stats.push(`\u653b\u51fb+${item.atk}`);
   if (item.def) stats.push(`\u9632\u5fa1+${item.def}`);
