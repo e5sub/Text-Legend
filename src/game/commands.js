@@ -123,6 +123,13 @@ function isWorldBossRoom(zoneId, roomId) {
   return room.spawns.some((mobId) => MOB_TEMPLATES[mobId]?.worldBoss);
 }
 
+function isSabakBossRoom(zoneId, roomId) {
+  const zone = WORLD[zoneId];
+  const room = zone?.rooms?.[roomId];
+  if (!room || !room.spawns) return false;
+  return room.spawns.some((mobId) => MOB_TEMPLATES[mobId]?.sabakBoss);
+}
+
 function formatInventory(player) {
   if (player.inventory.length === 0) return '背包为空。';
   return player.inventory
@@ -439,6 +446,14 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
       }
       if (!zoneId || !roomId || !WORLD[zoneId] || !WORLD[zoneId].rooms[roomId]) {
         return send('目标地点无效。');
+      }
+      if (isSabakBossRoom(zoneId, roomId)) {
+        // 检查是否是沙巴克行会成员
+        const sabakOwner = guildApi.sabakState.ownerGuildId;
+        const playerGuild = player.guild?.id;
+        if (playerGuild !== sabakOwner) {
+          return send('只有沙巴克行会成员才能前往沙巴克BOSS房间。');
+        }
       }
       if (!isWorldBossRoom(zoneId, roomId)) {
         return send('该地点无法直接前往。');

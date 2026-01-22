@@ -1424,26 +1424,43 @@ const WORLD_BOSS_ROOM = { zoneId: 'wb', roomId: 'lair' };
 const SUMMON_MAX_LEVEL = 8;
 const SUMMON_EXP_PER_LEVEL = 5;
 
-function checkWorldBossRespawn() {
-  const { zoneId, roomId } = WORLD_BOSS_ROOM;
-  const mobs = spawnMobs(zoneId, roomId);
-  const respawned = mobs.filter((m) => m.justRespawned);
-  if (!respawned.length) return;
-  respawned.forEach((mob) => {
-    mob.justRespawned = false;
+function checkBossRespawn() {
+  // 检查所有房间的BOSS刷新
+  Object.keys(WORLD).forEach((zoneId) => {
+    const zone = WORLD[zoneId];
+    if (!zone?.rooms) return;
+
+    Object.keys(zone.rooms).forEach((roomId) => {
+      const room = zone.rooms[roomId];
+      const mobs = spawnMobs(zoneId, roomId);
+      const respawned = mobs.filter((m) => m.justRespawned);
+
+      if (respawned.length) {
+        respawned.forEach((mob) => {
+          mob.justRespawned = false;
+        });
+
+        const bossName = respawned[0]?.name || 'BOSS';
+        const tpl = MOB_TEMPLATES[respawned[0]?.templateId];
+        const isWorldBoss = tpl?.worldBoss;
+        const isSabakBoss = tpl?.sabakBoss;
+        const isMolongBoss = tpl?.id === 'molong_boss';
+
+        // 只有魔龙教主、世界BOSS和沙巴克BOSS刷新时发送公告
+        if (isWorldBoss || isSabakBoss || isMolongBoss) {
+          emitAnnouncement(
+            `${bossName} 已刷新，点击前往。`,
+            'announce',
+            {
+              zoneId,
+              roomId,
+              label: `${zone.name} - ${room.name}`
+            }
+          );
+        }
+      }
+    });
   });
-  const zone = WORLD[zoneId];
-  const room = zone?.rooms?.[roomId];
-  const bossName = respawned[0]?.name || '世界BOSS';
-  emitAnnouncement(
-    `${bossName} 已刷新，点击前往。`,
-    'announce',
-    {
-      zoneId,
-      roomId,
-      label: zone && room ? `${zone.name} - ${room.name}` : `${zoneId}:${roomId}`
-    }
-  );
 }
 
 function recordMobDamage(mob, attackerName, dmg) {
@@ -2797,8 +2814,8 @@ async function start() {
     console.warn(err);
   }
   await loadSabakState();
-  checkWorldBossRespawn();
-  setInterval(() => checkWorldBossRespawn(), 5000);
+  checkBossRespawn();
+  setInterval(() => checkBossRespawn(), 5000);
   setInterval(() => sabakTick().catch(() => {}), 5000);
   if (config.adminBootstrapSecret && config.adminBootstrapUser) {
     const admins = await knex('users').where({ is_admin: true }).first();

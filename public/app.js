@@ -563,6 +563,47 @@ function promptModal({ title, text, placeholder, value, extra, allowEmpty }) {
   });
 }
 
+function confirmModal({ title, text }) {
+  if (!promptUi.modal || !promptUi.ok || !promptUi.cancel) return Promise.resolve(false);
+  return new Promise((resolve) => {
+    const onCancel = () => {
+      cleanup();
+      resolve(false);
+    };
+    const onOk = () => {
+      cleanup();
+      resolve(true);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Enter') onOk();
+      if (e.key === 'Escape') onCancel();
+    };
+    const cleanup = () => {
+      promptUi.ok.removeEventListener('click', onOk);
+      promptUi.cancel.removeEventListener('click', onCancel);
+      promptUi.modal.removeEventListener('keydown', onKey);
+      promptUi.modal.classList.add('hidden');
+      promptUi.input.classList.remove('hidden');
+      if (promptUi.extra) {
+        promptUi.extra.classList.add('hidden');
+        promptUi.extra.textContent = '';
+      }
+    };
+
+    promptUi.title.textContent = title || '确认';
+    promptUi.text.textContent = text || '';
+    promptUi.input.classList.add('hidden');
+    if (promptUi.extra) {
+      promptUi.extra.classList.add('hidden');
+      promptUi.extra.textContent = '';
+    }
+    promptUi.ok.addEventListener('click', onOk);
+    promptUi.cancel.addEventListener('click', onCancel);
+    promptUi.modal.addEventListener('keydown', onKey);
+    promptUi.modal.classList.remove('hidden');
+  });
+}
+
 function showShopModal(items) {
   if (!shopUi.modal || !shopUi.list) return;
   hideItemTooltip();
@@ -643,6 +684,11 @@ function renderConsignMarket(items) {
         qty = Math.max(1, Number(qtyText || 1));
         if (Number.isNaN(qty) || qty <= 0) return;
       }
+      const confirmed = await confirmModal({
+        title: '\u786E\u8BA4\u8D2D\u4E70',
+        text: `\u786E\u8BA4\u8D2D\u4E70 ${formatItemName(entry.item)} x${qty}\uFF1F\n\u4EF7\u683C: ${entry.price * qty}\u91D1`
+      });
+      if (!confirmed) return;
       socket.emit('cmd', { text: `consign buy ${entry.id} ${qty}` });
       socket.emit('cmd', { text: 'consign list' });
     });

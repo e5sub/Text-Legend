@@ -157,7 +157,7 @@
 
   // Molong
   molong_guard: { id: 'molong_guard', name: '魔龙力士', level: 48, hp: 4600, atk: 130, def: 70, exp: 3600, gold: [800, 1200], drops: [{ id: 'armor_molong', chance: 0.06 }] },
-  molong_boss: { id: 'molong_boss', name: '魔龙教主', level: 52, hp: 30000, atk: 300, def: 160, exp: 8400, gold: [2000, 3200], drops: [
+  molong_boss: { id: 'molong_boss', name: '魔龙教主', level: 52, hp: 6000, atk: 90, def: 55, exp: 4500, gold: [1000, 1600], respawnMs: 3 * 60 * 60 * 1000, drops: [
     { id: 'armor_molong', chance: 0.12 },
     { id: 'armor_taishan', chance: 0.06 },
     { id: 'armor_doom', chance: 0.06 },
@@ -214,6 +214,7 @@
     exp: 9000,
     gold: [2000, 3200],
     worldBoss: true,
+    respawnMs: 6 * 60 * 60 * 1000,
     drops: [
       { id: 'kaitian', chance: 0.015 },
       { id: 'zhentian', chance: 0.015 },

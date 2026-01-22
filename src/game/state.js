@@ -166,7 +166,7 @@ export function spawnMobs(zoneId, roomId) {
       mob.dex = tpl.dex || 6;
       mob.status = {};
       mob.respawnAt = null;
-      mob.justRespawned = Boolean(tpl.worldBoss);
+      mob.justRespawned = Boolean(tpl.worldBoss || tpl.sabakBoss || tpl.respawnMs);
       RESPAWN_CACHE.delete(respawnKey(zoneId, roomId, index));
       if (respawnStore && respawnStore.clear) {
         respawnStore.clear(zoneId, roomId, index);
@@ -186,6 +186,7 @@ export function removeMob(zoneId, roomId, mobId) {
     const tpl = MOB_TEMPLATES[mob.templateId];
     const isBoss = tpl && (
       tpl.worldBoss ||
+      tpl.sabakBoss ||
       tpl.id.includes('boss') ||
       tpl.id.includes('leader') ||
       tpl.id.includes('demon') ||
@@ -193,7 +194,7 @@ export function removeMob(zoneId, roomId, mobId) {
     );
     const delayMs = tpl && tpl.respawnMs
       ? tpl.respawnMs
-      : (tpl && tpl.worldBoss ? 60 * 60 * 1000 : (isBoss ? 60 * 1000 : 0));
+      : (tpl && (tpl.worldBoss || tpl.sabakBoss) ? 60 * 60 * 1000 : (isBoss ? 10 * 60 * 1000 : 0));
     mob.respawnAt = Date.now() + delayMs;
     if (delayMs > 0) {
       RESPAWN_CACHE.set(respawnKey(zoneId, roomId, mob.slotIndex), {
