@@ -206,7 +206,7 @@ export const SHOP_STOCKS = {
   bq_tao: ['talisman_bone', 'potion_mana', 'potion_mana_mid', 'scroll_return'],
   bq_mage: ['staff_apprentice', 'potion_mana', 'potion_mana_mid', 'scroll_return'],
   mg_shop: ['potion_mid', 'potion_big', 'potion_mana_mid', 'potion_mana_big', 'sun_water', 'snow_frost', 'scroll_return', 'scroll_random'],
-  mg_blacksmith: ['moonblade', 'lianyu', 'armor_plate', 'armor_war', 'boots_war', 'helm_war', 'belt_war'],
-  mg_magic: ['magestaff', 'bone_staff', 'necklace_evil', 'ring_ruby', 'bracelet_fashen', 'helm_mage', 'belt_mage'],
-  mg_tao: ['silver_snake', 'wujigun', 'necklace_tao', 'ring_tao', 'bracelet_tianzun', 'helm_tao', 'belt_tao']
+  mg_blacksmith: ['moonblade', 'armor_plate', 'boots_iron', 'helm_skull', 'belt_iron'],
+  mg_magic: ['wand_ocean', 'crescent_staff', 'necklace_jade', 'necklace_light', 'bracelet_iron'],
+  mg_tao: ['bronze_talisman', 'daosword', 'necklace_ghost', 'bracelet_death']
 };

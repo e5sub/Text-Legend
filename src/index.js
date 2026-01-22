@@ -518,8 +518,13 @@ function rollRarityDrop(mobTemplate, bonus = 1) {
       const pool = allowSet
         ? ITEM_POOLS[rarity]
         : ITEM_POOLS[rarity].filter((id) => !isSetItem(id));
-      if (!pool.length) return null;
-      return pool[randInt(0, pool.length - 1)];
+      // 排除bossOnly标记的装备，这些应该只在特定BOSS掉落
+      const filteredPool = pool.filter((id) => {
+        const item = ITEM_TEMPLATES[id];
+        return !item?.bossOnly;
+      });
+      if (!filteredPool.length) return null;
+      return filteredPool[randInt(0, filteredPool.length - 1)];
     }
   }
   return null;
@@ -538,8 +543,13 @@ function rollRarityEquipmentDrop(mobTemplate, bonus = 1) {
         const item = ITEM_TEMPLATES[id];
         return item && ['weapon', 'armor', 'accessory'].includes(item.type);
       });
-      if (!equipPool.length) return null;
-      return equipPool[randInt(0, equipPool.length - 1)];
+      // 排除bossOnly标记的装备
+      const filteredPool = equipPool.filter((id) => {
+        const item = ITEM_TEMPLATES[id];
+        return !item?.bossOnly;
+      });
+      if (!filteredPool.length) return null;
+      return filteredPool[randInt(0, filteredPool.length - 1)];
     }
   }
   return null;

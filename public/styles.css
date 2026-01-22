@@ -711,6 +711,18 @@ button:hover {
   box-shadow: inset 0 0 0 1px rgba(118, 70, 22, 0.25);
 }
 
+#shop-modal .modal-card {
+  max-height: 78vh;
+  overflow: auto;
+}
+
+#shop-modal .modal-actions {
+  position: sticky;
+  bottom: 0;
+  background: #fff5e8;
+  padding-top: 10px;
+}
+
 .shop-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -856,6 +868,18 @@ button:hover {
 }
 
 #consign-modal .modal-actions {
+  position: sticky;
+  bottom: 0;
+  background: #fff5e8;
+  padding-top: 10px;
+}
+
+#bag-modal .modal-card {
+  max-height: 78vh;
+  overflow: auto;
+}
+
+#bag-modal .modal-actions {
   position: sticky;
   bottom: 0;
   background: #fff5e8;
