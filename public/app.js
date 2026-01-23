@@ -9,6 +9,86 @@ let serverTimeLocal = null;
 let serverTimeTimer = null;
 let vipSelfClaimEnabled = true;
 
+// 屏蔽F12开发者工具
+(function() {
+  'use strict';
+
+  // 屏蔽F12
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'F12' || e.keyCode === 123) {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+  });
+
+  // 屏蔽Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
+  document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+        (e.ctrlKey && e.altKey && e.key === 'I')) {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+  });
+
+  // 屏蔽右键菜单
+  document.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  });
+
+  // 检测开发者工具
+  const devtools = {
+    open: false,
+    threshold: 160
+  };
+
+  const checkDevtools = () => {
+    const widthThreshold = window.outerWidth - window.innerWidth > devtools.threshold;
+    const heightThreshold = window.outerHeight - window.innerHeight > devtools.threshold;
+
+    if (widthThreshold || heightThreshold) {
+      if (!devtools.open) {
+        devtools.open = true;
+        alert('开发者工具已禁用，请勿尝试打开！');
+        window.location.reload();
+      }
+    } else {
+      devtools.open = false;
+    }
+  };
+
+  setInterval(checkDevtools, 1000);
+
+  // 禁用常见的调试快捷键
+  document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.key === 'u') {
+      e.preventDefault();
+      return false;
+    }
+    if (e.ctrlKey && e.shiftKey && e.key === 'u') {
+      e.preventDefault();
+      return false;
+    }
+  });
+
+  // 禁用拖拽
+  document.addEventListener('dragstart', function(e) {
+    e.preventDefault();
+  });
+
+  // 禁用选择文本
+  document.addEventListener('selectstart', function(e) {
+    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+    }
+  });
+
+  console.log('开发者工具已禁用');
+})();
+
 // 主题和日志折叠
 let isDarkMode = localStorage.getItem('darkMode') === 'true';
 let isLogCollapsed = localStorage.getItem('logCollapsed') === 'true';
