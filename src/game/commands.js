@@ -16,6 +16,15 @@ import { CLASSES, expForLevel } from './constants.js';
 import { getRoom, getAliveMobs, spawnMobs } from './state.js';
 import { clamp } from './utils.js';
 import { applyDamage } from './combat.js';
+import {
+  validateNumber,
+  validateItemId,
+  validateItemQty,
+  validateGold,
+  validateEffects,
+  validatePlayerHasItem,
+  validatePlayerHasGold
+} from './validator.js';
 
 const PARTY_LIMIT = 5;
 const DIR_LABELS = {
@@ -884,19 +893,29 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
       if (parts.length > 1 && /^\d+$/.test(parts[parts.length - 1])) {
         qty = Math.max(1, Number(parts.pop()));
       }
-      if (Number.isNaN(qty) || qty <= 0) return send('购买数量无效。');
+      
+      // 验证数量
+      const qtyResult = validateItemQty(qty);
+      if (!qtyResult.ok) return send(qtyResult.error);
+      
       const name = parts.join(' ');
       const stock = getShopStock(player);
       const item = stock.find((i) => i.name.toLowerCase() === name.toLowerCase() || i.id === name);
       if (!item) return send('这里不卖该物品。');
-        let totalPrice = item.price * qty;
-        if (isSabakOwnerMember(player, guildApi) && item.type === 'consumable' && (item.hp || item.mp)) {
-          totalPrice = Math.max(1, Math.floor(totalPrice * 0.8));
-        }
-        if (player.gold < totalPrice) return send('金币不足。');
-      player.gold -= totalPrice;
-      addItem(player, item.id, qty);
-      send(`购买了 ${item.name} x${qty}，花费 ${totalPrice} 金币。`);
+      
+      // 服务端重新计算总价，防止客户端篡改
+      let totalPrice = item.price * qtyResult.value;
+      if (isSabakOwnerMember(player, guildApi) && item.type === 'consumable' && (item.hp || item.mp)) {
+        totalPrice = Math.max(1, Math.floor(totalPrice * 0.8));
+      }
+      
+      // 验证玩家金币
+      const goldResult = validatePlayerHasGold(player, totalPrice);
+      if (!goldResult.ok) return send(goldResult.error);
+      
+      player.gold -= goldResult.value;
+      addItem(player, item.id, qtyResult.value);
+      send(`购买了 ${item.name} x${qtyResult.value}，花费 ${goldResult.value} 金币。`);
       return;
     }
     case 'shop': {
@@ -914,16 +933,28 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
       if (parts.length > 1 && /^\d+$/.test(parts[parts.length - 1])) {
         qty = Math.max(1, Number(parts.pop()));
       }
+      
+      // 验证数量
+      const qtyResult = validateItemQty(qty);
+      if (!qtyResult.ok) return send(qtyResult.error);
+      
       const name = parts.join(' ');
       const resolved = resolveInventoryItem(player, name);
       if (!resolved.slot || !resolved.item) return send('背包里没有该物品。');
       const item = resolved.item;
       if (item.type === 'currency') return send('金币无法出售。');
-      if (!removeItem(player, item.id, qty, resolved.slot.effects)) return send('背包里没有足够数量。');
+      
+      // 验证玩家拥有该物品
+      const hasItemResult = validatePlayerHasItem(player, item.id, qtyResult.value, resolved.slot.effects);
+      if (!hasItemResult.ok) return send(hasItemResult.error);
+      
+      if (!removeItem(player, item.id, qtyResult.value, resolved.slot.effects)) return send('背包里没有足够数量。');
+      
+      // 服务端重新计算总价
       const price = Math.max(1, Math.floor((item.price || 10) * 0.5));
-      const total = price * qty;
+      const total = price * qtyResult.value;
       player.gold += total;
-      send(`卖出 ${item.name} x${qty}，获得 ${total} 金币。`);
+      send(`卖出 ${item.name} x${qtyResult.value}，获得 ${total} 金币。`);
       return;
     }
     case 'consign': {

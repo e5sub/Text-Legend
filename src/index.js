@@ -31,6 +31,17 @@ import { runMigrations } from './db/migrate.js';
 import { newCharacter, computeDerived, gainExp, addItem, removeItem, getItemKey, normalizeInventory, normalizeEquipment } from './game/player.js';
 import { handleCommand, awardKill, summonStats } from './game/commands.js';
 import {
+  validateNumber,
+  validateItemId,
+  validateItemQty,
+  validateGold,
+  validateEffects,
+  validateDurability,
+  validateMaxDurability,
+  validatePlayerHasItem,
+  validatePlayerHasGold
+} from './game/validator.js';
+import {
   DEFAULT_SKILLS,
   getLearnedSkills,
   getSkill,
@@ -806,13 +817,27 @@ const tradeApi = {
     if (trade.locked[player.name] || trade.locked[trade.a.name === player.name ? trade.b.name : trade.a.name]) {
       return { ok: false, msg: '交易已锁定，无法修改。' };
     }
-    if (!qty || qty <= 0) return { ok: false, msg: '数量无效。' };
-    const inv = findInventorySlot(player, itemId, effects);
-    if (!inv || inv.qty < qty) return { ok: false, msg: '背包里没有足够的物品。' };
+    
+    // 验证物品ID
+    const itemResult = validateItemId(itemId);
+    if (!itemResult.ok) return { ok: false, msg: '无效的物品ID。' };
+    
+    // 验证数量
+    const qtyResult = validateItemQty(qty);
+    if (!qtyResult.ok) return { ok: false, msg: qtyResult.error };
+    
+    // 验证effects
+    const effectsResult = validateEffects(effects);
+    if (!effectsResult.ok) return { ok: false, msg: effectsResult.error };
+    
+    // 验证玩家拥有该物品
+    const hasItemResult = validatePlayerHasItem(player, itemId, qtyResult.value, effectsResult.value);
+    if (!hasItemResult.ok) return { ok: false, msg: hasItemResult.error };
+    
     const offer = ensureOffer(trade, player.name);
     const existing = offer.items.find((i) => i.id === itemId && sameEffects(i.effects, effects));
-    if (existing) existing.qty += qty;
-    else offer.items.push({ id: itemId, qty, effects: normalizeEffects(effects) });
+    if (existing) existing.qty += qtyResult.value;
+    else offer.items.push({ id: itemId, qty: qtyResult.value, effects: normalizeEffects(effects) });
     return { ok: true, trade };
   },
   addGold(player, amount) {
@@ -821,10 +846,17 @@ const tradeApi = {
     if (trade.locked[player.name] || trade.locked[trade.a.name === player.name ? trade.b.name : trade.a.name]) {
       return { ok: false, msg: '交易已锁定，无法修改。' };
     }
-    if (!amount || amount <= 0) return { ok: false, msg: '数量无效。' };
-    if (player.gold < amount) return { ok: false, msg: '金币不足。' };
+    
+    // 验证金币数量
+    const goldResult = validateGold(amount);
+    if (!goldResult.ok || goldResult.value <= 0) return { ok: false, msg: '金币数量无效。' };
+    
+    // 验证玩家拥有足够的金币
+    const hasGoldResult = validatePlayerHasGold(player, goldResult.value);
+    if (!hasGoldResult.ok) return { ok: false, msg: hasGoldResult.error };
+    
     const offer = ensureOffer(trade, player.name);
-    offer.gold += amount;
+    offer.gold += goldResult.value;
     return { ok: true, trade };
   },
   lock(player) {
@@ -867,13 +899,24 @@ const tradeApi = {
       clearTrade(trade, '交易失败，对方已离线。');
       return { ok: false };
     }
+
+    // 服务端重新获取offer数据，防止客户端篡改
     const offerA = ensureOffer(trade, playerA.name);
     const offerB = ensureOffer(trade, playerB.name);
+
+    // 双方再次验证金币和物品（防止锁定后客户端修改数据）
     if (playerA.gold < offerA.gold || playerB.gold < offerB.gold ||
       !hasOfferItems(playerA, offerA) || !hasOfferItems(playerB, offerB)) {
       clearTrade(trade, '交易失败，物品或金币不足。');
       return { ok: false };
     }
+
+    // 再次验证交易状态（防止重复提交）
+    if (!trade.locked[playerA.name] || !trade.locked[playerB.name]) {
+      clearTrade(trade, '交易失败，未完全锁定。');
+      return { ok: false };
+    }
+
     playerA.gold -= offerA.gold;
     playerB.gold += offerA.gold;
     playerB.gold -= offerB.gold;
@@ -917,22 +960,39 @@ const consignApi = {
       return items;
     },
     async sell(player, itemId, qty, price, effects = null) {
+      // 验证物品ID
+      const itemResult = validateItemId(itemId);
+      if (!itemResult.ok) return { ok: false, msg: '未找到物品。' };
       const item = ITEM_TEMPLATES[itemId];
-      if (!item) return { ok: false, msg: '未找到物品。' };
+      
       if (!CONSIGN_EQUIPMENT_TYPES.has(item.type)) return { ok: false, msg: '仅可寄售装备。' };
-      if (qty <= 0 || price <= 0) return { ok: false, msg: '数量或价格无效。' };
-      const invSlot = findInventorySlot(player, itemId, effects);
-      if (!invSlot) return { ok: false, msg: '背包里没有该物品。' };
-      if (invSlot.qty < qty) return { ok: false, msg: '背包里没有足够数量。' };
-      const durability = invSlot.durability ?? null;
-      const maxDurability = invSlot.max_durability ?? null;
-      if (!removeItem(player, itemId, qty, effects)) return { ok: false, msg: '背包里没有足够数量。' };
+      
+      // 验证数量和价格
+      const qtyResult = validateItemQty(qty);
+      if (!qtyResult.ok) return { ok: false, msg: '数量无效。' };
+      
+      const priceResult = validateGold(price, 99999999);
+      if (!priceResult.ok || priceResult.value <= 0) return { ok: false, msg: '价格无效。' };
+      
+      // 验证effects
+      const effectsResult = validateEffects(effects);
+      if (!effectsResult.ok) return { ok: false, msg: effectsResult.error };
+      
+      // 验证玩家拥有该物品
+      const hasItemResult = validatePlayerHasItem(player, itemId, qtyResult.value, effectsResult.value);
+      if (!hasItemResult.ok) return { ok: false, msg: hasItemResult.error };
+      
+      const invSlot = hasItemResult.slot;
+      const durability = validateDurability(invSlot.durability).value ?? null;
+      const maxDurability = validateMaxDurability(invSlot.max_durability).value ?? null;
+      
+      if (!removeItem(player, itemId, qtyResult.value, effectsResult.value)) return { ok: false, msg: '背包里没有足够数量。' };
       const id = await createConsignment({
         sellerName: player.name,
         itemId,
-        qty,
-        price,
-        effectsJson: effects ? JSON.stringify(effects) : null,
+        qty: qtyResult.value,
+        price: priceResult.value,
+        effectsJson: effectsResult.value ? JSON.stringify(effectsResult.value) : null,
         durability,
         maxDurability
       });
@@ -941,22 +1001,31 @@ const consignApi = {
       return { ok: true, msg: `寄售成功，编号 ${id}。` };
     },
   async buy(player, listingId, qty) {
-    if (qty <= 0) return { ok: false, msg: '购买数量无效。' };
-    const row = await getConsignment(listingId);
+    // 验证listingId和qty
+    const idResult = validateNumber(listingId, 1, Number.MAX_SAFE_INTEGER);
+    if (!idResult.ok) return { ok: false, msg: '寄售ID无效。' };
+    
+    const qtyResult = validateItemQty(qty);
+    if (!qtyResult.ok) return { ok: false, msg: '购买数量无效。' };
+    
+    const row = await getConsignment(idResult.value);
     if (!row) return { ok: false, msg: '寄售不存在。' };
     if (row.seller_name === player.name) return { ok: false, msg: '不能购买自己的寄售。' };
-    if (row.qty < qty) return { ok: false, msg: '寄售数量不足。' };
-    const total = row.price * qty;
-    if (player.gold < total) return { ok: false, msg: '金币不足。' };
+    if (row.qty < qtyResult.value) return { ok: false, msg: '寄售数量不足。' };
 
-    player.gold -= total;
-      addItem(player, row.item_id, qty, parseJson(row.effects_json), row.durability, row.max_durability);
+    // 服务端重新计算总价，防止客户端篡改价格
+    const serverTotal = row.price * qtyResult.value;
+    const hasGoldResult = validatePlayerHasGold(player, serverTotal);
+    if (!hasGoldResult.ok) return { ok: false, msg: hasGoldResult.error };
 
-    const remain = row.qty - qty;
+    player.gold -= serverTotal;
+      addItem(player, row.item_id, qtyResult.value, parseJson(row.effects_json), row.durability, row.max_durability);
+
+    const remain = row.qty - qtyResult.value;
     if (remain > 0) {
-      await updateConsignmentQty(listingId, remain);
+      await updateConsignmentQty(idResult.value, remain);
     } else {
-      await deleteConsignment(listingId);
+      await deleteConsignment(idResult.value);
     }
 
     // 记录寄售历史
@@ -964,7 +1033,7 @@ const consignApi = {
       sellerName: row.seller_name,
       buyerName: player.name,
       itemId: row.item_id,
-      qty,
+      qty: qtyResult.value,
       price: row.price,
       effectsJson: row.effects_json,
       durability: row.durability,
@@ -973,8 +1042,8 @@ const consignApi = {
 
     const seller = playersByName(row.seller_name);
     if (seller) {
-      seller.gold += total;
-      seller.send(`寄售成交: ${ITEM_TEMPLATES[row.item_id]?.name || row.item_id} x${qty}，获得 ${total} 金币。`);
+      seller.gold += serverTotal;
+      seller.send(`寄售成交: ${ITEM_TEMPLATES[row.item_id]?.name || row.item_id} x${qtyResult.value}，获得 ${serverTotal} 金币。`);
       savePlayer(seller);
       await consignApi.listMine(seller);
       await consignApi.listMarket(seller);
@@ -983,21 +1052,25 @@ const consignApi = {
       if (sellerRow) {
         const sellerPlayer = await loadCharacter(sellerRow.user_id, sellerRow.name);
         if (sellerPlayer) {
-          sellerPlayer.gold += total;
+          sellerPlayer.gold += serverTotal;
           await saveCharacter(sellerRow.user_id, sellerPlayer);
         }
       }
     }
     await consignApi.listMine(player);
     await consignApi.listMarket(player);
-    return { ok: true, msg: `购买成功，花费 ${total} 金币。` };
+    return { ok: true, msg: `购买成功，花费 ${serverTotal} 金币。` };
   },
   async cancel(player, listingId) {
-    const row = await getConsignment(listingId);
+    // 验证listingId
+    const idResult = validateNumber(listingId, 1, Number.MAX_SAFE_INTEGER);
+    if (!idResult.ok) return { ok: false, msg: '寄售ID无效。' };
+    
+    const row = await getConsignment(idResult.value);
     if (!row) return { ok: false, msg: '寄售不存在。' };
     if (row.seller_name !== player.name) return { ok: false, msg: '只能取消自己的寄售。' };
       addItem(player, row.item_id, row.qty, parseJson(row.effects_json), row.durability, row.max_durability);
-    await deleteConsignment(listingId);
+    await deleteConsignment(idResult.value);
     await consignApi.listMine(player);
     await consignApi.listMarket(player);
     return { ok: true, msg: '寄售已取消，物品已返回背包。' };
