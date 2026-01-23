@@ -2188,7 +2188,7 @@ function renderState(state) {
     ui.worldBossRank.innerHTML = '';
     const inWorldBossRoom = state.room && state.room.zoneId === 'wb' && state.room.roomId === 'lair';
     const inMolongRoom = state.room && state.room.zoneId === 'plains' && state.room.roomId === 'boss';
-    const inSabakBossRoom = state.room && state.room.zoneId === 'sabak' && state.room.roomId === 'lair';
+    const inSabakBossRoom = state.room && state.room.zoneId === 'sb_guild' && state.room.roomId === 'sanctum';
     const inSpecialBossRoom = inWorldBossRoom || inMolongRoom || inSabakBossRoom;
     const rankBlock = ui.worldBossRank.closest('.action-group');
 
