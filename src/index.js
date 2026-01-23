@@ -50,7 +50,8 @@ import {
   gainSkillMastery,
   scaledSkillPower,
   hasSkill,
-  ensurePlayerSkills
+  ensurePlayerSkills,
+  SKILL_MASTERY_LEVELS
 } from './game/skills.js';
 import { MOB_TEMPLATES } from './game/mobs.js';
 import { ITEM_TEMPLATES } from './game/items.js';
