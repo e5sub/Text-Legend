@@ -30,7 +30,7 @@
   centipede: { id: 'centipede', name: '蜈蚣', level: 14, hp: 280, atk: 28, def: 10, mdef: 10, exp: 220, gold: [20, 40], drops: [{ id: 'potion_mid', chance: 0.1 }] },
   scorpion: { id: 'scorpion', name: '钳虫', level: 16, hp: 340, atk: 32, def: 12, mdef: 12, exp: 260, gold: [22, 46], drops: [{ id: 'potion_mid', chance: 0.12 }] },
   ghoul: { id: 'ghoul', name: '邪恶钳虫', level: 20, hp: 520, atk: 40, def: 16, mdef: 16, exp: 420, gold: [40, 80], drops: [{ id: 'moonblade', chance: 0.03 }, { id: 'armor_chain', chance: 0.05 }, { id: 'book_war_attack', chance: 0.02 }, { id: 'book_mage_resist', chance: 0.02 }, { id: 'book_tao_poison', chance: 0.02 }] },
-  bug_queen: { id: 'bug_queen', name: '触龙神', level: 24, hp: 1200, atk: 56, def: 22, mdef: 22, exp: 900, gold: [120, 220], drops: [{ id: 'necklace_green', chance: 0.08 }, { id: 'ring_tiger', chance: 0.08 }, { id: 'book_war_assassinate', chance: 0.03 }, { id: 'book_mage_inferno', chance: 0.03 }, { id: 'book_tao_soul', chance: 0.03 }] },
+  bug_queen: { id: 'bug_queen', name: '触龙神', level: 24, hp: 1200, atk: 56, def: 22, mdef: 22, exp: 900, gold: [120, 220], respawnMs: 5 * 60 * 1000, drops: [{ id: 'necklace_green', chance: 0.08 }, { id: 'ring_tiger', chance: 0.08 }, { id: 'book_war_assassinate', chance: 0.03 }, { id: 'book_mage_inferno', chance: 0.03 }, { id: 'book_tao_soul', chance: 0.03 }] },
 
   // Stone tomb
   pig_red: { id: 'pig_red', name: '红野猪', level: 18, hp: 420, atk: 34, def: 14, mdef: 14, exp: 320, gold: [26, 52], drops: [{ id: 'potion_mid', chance: 0.12 }] },
@@ -41,7 +41,7 @@
   woma_guard: { id: 'woma_guard', name: '沃玛卫士', level: 22, hp: 620, atk: 48, def: 22, mdef: 22, exp: 520, gold: [60, 120], drops: [{ id: 'necklace_life', chance: 0.02 }, { id: 'ring_ruby', chance: 0.02 }] },
   woma_warrior: { id: 'woma_warrior', name: '沃玛战士', level: 24, hp: 720, atk: 54, def: 24, mdef: 24, exp: 580, gold: [70, 140], drops: [{ id: 'ring_ruby', chance: 0.02 }] },
   woma_mage: { id: 'woma_mage', name: '沃玛战将', level: 25, hp: 760, atk: 56, def: 24, mdef: 24, exp: 620, gold: [80, 150], drops: [{ id: 'necklace_life', chance: 0.03 }] },
-  woma_leader: { id: 'woma_leader', name: '沃玛教主', level: 28, hp: 1950, atk: 91, def: 39, mdef: 39, exp: 1560, gold: [260, 520], drops: [
+  woma_leader: { id: 'woma_leader', name: '沃玛教主', level: 28, hp: 1950, atk: 91, def: 39, mdef: 39, exp: 1560, gold: [260, 520], respawnMs: 5 * 60 * 1000, drops: [
     { id: 'necklace_life', chance: 0.12 },
     { id: 'ring_ruby', chance: 0.1 },
     { id: 'magestaff', chance: 0.05 },
@@ -56,7 +56,7 @@
   zuma_archer: { id: 'zuma_archer', name: '祖玛弓箭手', level: 28, hp: 820, atk: 64, def: 28, mdef: 28, exp: 680, gold: [90, 180], drops: [{ id: 'ring_tiger', chance: 0.04 }] },
   zuma_guard: { id: 'zuma_guard', name: '祖玛卫士', level: 30, hp: 960, atk: 70, def: 32, mdef: 32, exp: 760, gold: [100, 200], drops: [{ id: 'necklace_green', chance: 0.04 }] },
   zuma_statue: { id: 'zuma_statue', name: '祖玛雕像', level: 31, hp: 980, atk: 72, def: 33, mdef: 33, exp: 780, gold: [110, 210], drops: [{ id: 'necklace_green', chance: 0.05 }, { id: 'ring_tiger', chance: 0.05 }] },
-  zuma_leader: { id: 'zuma_leader', name: '祖玛教主', level: 35, hp: 2860, atk: 117, def: 52, mdef: 52, exp: 2340, gold: [390, 650], drops: [
+  zuma_leader: { id: 'zuma_leader', name: '祖玛教主', level: 35, hp: 2860, atk: 117, def: 52, mdef: 52, exp: 2340, gold: [390, 650], respawnMs: 5 * 60 * 1000, drops: [
     { id: 'necklace_green', chance: 0.12 },
     { id: 'ring_tiger', chance: 0.12 },
     { id: 'bone_staff', chance: 0.05 },
@@ -83,7 +83,7 @@
     { id: 'ring_fashen', chance: 0.06 },
     { id: 'ring_tianzun', chance: 0.06 }
   ] },
-  chiyue_demon: { id: 'chiyue_demon', name: '赤月恶魔', level: 42, hp: 4160, atk: 143, def: 68, mdef: 68, exp: 3380, gold: [520, 910], drops: [
+  chiyue_demon: { id: 'chiyue_demon', name: '赤月恶魔', level: 42, hp: 4160, atk: 143, def: 68, mdef: 68, exp: 3380, gold: [520, 910], respawnMs: 5 * 60 * 1000, drops: [
     { id: 'armor_war', chance: 0.06 },
     { id: 'armor_mage', chance: 0.06 },
     { id: 'armor_tao', chance: 0.06 },
@@ -149,7 +149,7 @@
   ] },
 
   // Molong
-  molong_guard: { id: 'molong_guard', name: '魔龙力士', level: 48, hp: 4600, atk: 130, def: 70, mdef: 70, exp: 3600, gold: [800, 1200], drops: [{ id: 'armor_molong', chance: 0.06 }] },
+  molong_guard: { id: 'molong_guard', name: '魔龙力士', level: 48, hp: 4600, atk: 130, def: 70, mdef: 70, exp: 3600, gold: [800, 1200], respawnMs: 5 * 60 * 1000, drops: [{ id: 'armor_molong', chance: 0.06 }] },
   molong_boss: { id: 'molong_boss', name: '魔龙教主', level: 52, hp: 6000, atk: 90, def: 55, mdef: 55, exp: 4500, gold: [1000, 1600], respawnMs: 3 * 60 * 60 * 1000, drops: [
     { id: 'armor_molong', chance: 0.12 },
     { id: 'armor_taishan', chance: 0.06 },

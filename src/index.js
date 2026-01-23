@@ -555,6 +555,10 @@ function isBossMob(mobTemplate) {
   );
 }
 
+function isSpecialBoss(mobTemplate) {
+  return mobTemplate?.id === 'molong_boss' || mobTemplate?.worldBoss || mobTemplate?.sabakBoss;
+}
+
 function isEquipmentItem(item) {
   return Boolean(item && ['weapon', 'armor', 'accessory'].includes(item.type));
 }
@@ -619,6 +623,13 @@ function dropLoot(mobTemplate, bonus = 1) {
     mobTemplate.drops.forEach((drop) => {
       const dropItem = ITEM_TEMPLATES[drop.id];
       if (dropItem?.bossOnly && !isBossMob(mobTemplate)) return;
+      // 史诗和传说级别的bossOnly装备只能在魔龙教主、世界BOSS、沙巴克BOSS掉落
+      if (dropItem?.bossOnly) {
+        const rarity = rarityByPrice(dropItem);
+        if ((rarity === 'epic' || rarity === 'legendary') && !isSpecialBoss(mobTemplate)) {
+          return;
+        }
+      }
       const chance = Math.min(1, (drop.chance || 0) * finalBonus);
       if (Math.random() <= chance) {
         loot.push({ id: drop.id, effects: rollEquipmentEffects(drop.id) });
@@ -1141,6 +1152,11 @@ function partyMembersInRoom(party, playersList, zone, room) {
     .filter((p) => p && p.position.zone === zone && p.position.room === room);
 }
 
+// 获取队伍中所有成员的数量（包括离线的），用于计算经验金币加成
+function partyMembersTotalCount(party) {
+  return party ? party.members.length : 0;
+}
+
 function distributeLoot(party, partyMembers, drops) {
   if (!drops.length || !party || partyMembers.length === 0) return [];
   const results = [];
@@ -1435,6 +1451,16 @@ async function buildState(player) {
     max_hp: m.max_hp,
     mdef: m.mdef || 0
   }));
+
+  // 检查房间是否有特殊BOSS，获取下次刷新时间
+  const roomMobs = getRoomMobs(player.position.zone, player.position.room);
+  const deadBosses = roomMobs.filter((m) => {
+    const tpl = MOB_TEMPLATES[m.templateId];
+    return tpl && m.hp <= 0 && (tpl.worldBoss || tpl.sabakBoss || tpl.id === 'molong_boss');
+  });
+  const nextRespawn = deadBosses.length > 0
+    ? deadBosses.sort((a, b) => (a.respawnAt || Infinity) - (b.respawnAt || Infinity))[0]?.respawnAt
+    : null;
   const exits = room ? Object.keys(room.exits).map((dir) => {
     const dest = room.exits[dir];
     let zoneId = player.position.zone;
@@ -1513,7 +1539,7 @@ async function buildState(player) {
   let worldBossRank = [];
   const bossMob = getAliveMobs(player.position.zone, player.position.room).find((m) => {
     const tpl = MOB_TEMPLATES[m.templateId];
-    return tpl && (tpl.worldBoss || tpl.sabakBoss || tpl.id === 'molong_boss');
+    return tpl && (tpl.id === 'molong_boss' || tpl.sabakBoss);
   });
   if (bossMob && bossMob.status?.damageBy) {
     const { entries } = buildDamageRankMap(bossMob);
@@ -1580,6 +1606,7 @@ async function buildState(player) {
     },
     worldBossRank,
     players: roomPlayers,
+    bossRespawn: nextRespawn,
     server_time: Date.now(),
     vip_self_claim_enabled: await getVipSelfClaimEnabled()
   };
@@ -1631,11 +1658,15 @@ function checkBossRespawn() {
           tpl.id === 'huangquan' ||
           tpl.id === 'nm_boss' ||
           tpl.id === 'chiyue_guard' ||
-          tpl.id === 'chiyue_blood'
+          tpl.id === 'chiyue_blood' ||
+          tpl.id === 'bug_queen'
+        );
+        const isSpecialBoss = tpl && (
+          tpl.id === 'molong_boss' || tpl.worldBoss || tpl.sabakBoss
         );
 
-        // 所有BOSS刷新时发送公告
-        if (isBoss) {
+        // 非特殊BOSS（魔龙教主、世界BOSS、沙巴克BOSS除外）刷新时发送公告
+        if (isBoss && !isSpecialBoss) {
           const locationData = {
             zoneId,
             roomId,
@@ -2104,8 +2135,22 @@ function tryAutoPotion(player) {
   const hpRate = player.hp / player.max_hp;
   const mpRate = player.mp / player.max_mp;
 
-  const hpList = ['snow_frost', 'potion_super', 'potion_big', 'potion_mid', 'potion_small', 'sun_water'];
-  const mpList = ['snow_frost', 'potion_mana_super', 'potion_mana_big', 'potion_mana_mid', 'potion_mana', 'sun_water'];
+  // 检查是否在特殊BOSS房间（魔龙教主、世界BOSS、沙巴克BOSS）
+  const zone = WORLD[player.position.zone];
+  const room = zone?.rooms[player.position.room];
+  const roomMobs = getAliveMobs(player.position.zone, player.position.room);
+  const isSpecialBossRoom = roomMobs.some((m) => {
+    const tpl = MOB_TEMPLATES[m.templateId];
+    return tpl && (tpl.id === 'molong_boss' || tpl.worldBoss || tpl.sabakBoss);
+  });
+
+  // 特殊BOSS房间优先使用太阳水和万年雪霜
+  const hpList = isSpecialBossRoom
+    ? ['sun_water', 'snow_frost', 'potion_super', 'potion_big', 'potion_mid', 'potion_small']
+    : ['potion_big', 'potion_mid', 'potion_small', 'sun_water', 'snow_frost', 'potion_super'];
+  const mpList = isSpecialBossRoom
+    ? ['sun_water', 'snow_frost', 'potion_mana_big', 'potion_mana_mid', 'potion_mana', 'potion_mana_super']
+    : ['potion_mana_big', 'potion_mana_mid', 'potion_mana', 'potion_mana_super', 'sun_water', 'snow_frost'];
 
   if (!player.status) player.status = {};
   if (!player.status.potionLock) player.status.potionLock = {};
@@ -2540,9 +2585,10 @@ function processMobDeath(player, mob, online) {
   const party = getPartyByMember(player.name);
   // 物品分配使用同房间的队友
   let partyMembersInSameRoom = party ? partyMembersInRoom(party, online, player.position.zone, player.position.room) : [];
-  // 经验金币分配使用全图在线的队友
+  // 经验金币分配使用全图在线的队友（用于实际奖励分配）
   let partyMembersForReward = party ? partyMembersOnline(party, online) : [];
-  const onlineCount = partyMembersForReward.length || 1;
+  // 计算加成使用队伍总人数（包括离线的）
+  const totalPartyCount = partyMembersTotalCount(party) || 1;
   const hasParty = partyMembersForReward.length > 1;
   const isBoss = isBossMob(template);
   const isWorldBoss = Boolean(template.worldBoss);
@@ -2571,7 +2617,7 @@ function processMobDeath(player, mob, online) {
     partyMembersInSameRoom = [lootOwner];
   }
   const eligibleCount = hasParty ? 1 : onlineCount;
-  const bonus = onlineCount > 1 ? Math.min(0.2 * onlineCount, 1.0) : 0;
+  const bonus = totalPartyCount > 1 ? Math.min(0.2 * totalPartyCount, 1.0) : 0;
   const totalExp = Math.floor(exp * (1 + bonus));
   const totalGold = Math.floor(gold * (1 + bonus));
   const shareExp = hasParty ? totalExp : Math.floor(totalExp / eligibleCount);

@@ -989,7 +989,7 @@ function showPlayerModal(player) {
   const lines = [
     `姓名: ${player.name}`,
     `职业: ${classNames[player.classId] || player.classId || '未知'}`,
-    `等级: Lv ${player.level || '?'}`,
+    `等级: Lv${player.level}`,
     `行会: ${player.guild || '无'}`
   ];
   playerUi.info.textContent = lines.join('\n');
@@ -2465,9 +2465,9 @@ function showObserveModal(data) {
   html += `<div class="observe-stat-row"><span class="observe-stat-label">魔法</span><span class="observe-stat-value">${data.mp}/${data.maxMp}</span></div>`;
   html += `<div class="observe-stat-row"><span class="observe-stat-label">攻击</span><span class="observe-stat-value">${data.atk}</span></div>`;
   html += `<div class="observe-stat-row"><span class="observe-stat-label">防御</span><span class="observe-stat-value">${data.def}</span></div>`;
-  html += `<div class="observe-stat-row"><span class="observe-stat-label">魔攻</span><span class="observe-stat-value">${data.matk}</span></div>`;
+  html += `<div class="observe-stat-row"><span class="observe-stat-label">魔法</span><span class="observe-stat-value">${data.matk}</span></div>`;
   html += `<div class="observe-stat-row"><span class="observe-stat-label">魔防</span><span class="observe-stat-value">${data.mdef}</span></div>`;
-  html += `<div class="observe-stat-row"><span class="observe-stat-label">暴击</span><span class="observe-stat-value">${data.crit}%</span></div>`;
+  html += `<div class="observe-stat-row"><span class="observe-stat-label">道术</span><span class="observe-stat-value">${data.spirit}</span></div>`;
   html += `<div class="observe-stat-row"><span class="observe-stat-label">闪避</span><span class="observe-stat-value">${data.evade}%</span></div>`;
   html += '</div>';
   html += '</div>';

@@ -316,7 +316,7 @@ export function computeDerived(player) {
   player.mag = stats.int * 1.4 + stats.spirit * 0.6 + (training.mag || 0) + bonusMag;
   player.spirit = stats.spirit + bonusSpirit;
   player.mdef = stats.spirit * 1.1 + level * 0.8 + (training.mdef || 0) + mdefBonus + bonusMdef;
-  player.evadeChance = evadeChance;
+  player.evadeChance = evadeChance + (player.dex || 0) * 0.001; // 1点敏捷增加0.1%闪避
 
   player.hp = clamp(player.hp, 1, player.max_hp);
   player.mp = clamp(player.mp, 0, player.max_mp);

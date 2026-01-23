@@ -59,7 +59,7 @@ const TRAINING_OPTIONS = {
   mag: { label: '魔法', inc: 1 },
   mdef: { label: '魔御', inc: 1 },
   spirit: { label: '道术', inc: 1 },
-  dex: { label: '躲闪', inc: 1 }
+  dex: { label: '敏捷', inc: 1 }
 };
 const TRAINING_ALIASES = {
   hp: 'hp',
@@ -78,8 +78,7 @@ const TRAINING_ALIASES = {
   道术: 'spirit',
   spirit: 'spirit',
   dex: 'dex',
-  敏捷: 'dex',
-  躲闪: 'dex'
+  敏捷: 'dex'
 };
 
 function dirLabel(dir) {
@@ -551,7 +550,7 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         def: Math.floor(target.def),
         matk: Math.floor(target.matk || target.mag || 0),
         mdef: Math.floor(target.mdef || 0),
-        crit: Math.round(target.crit * 100),
+        spirit: Math.floor(target.spirit || 0),
         evade: Math.round((target.evadeChance || 0) * 100),
         equipment: [],
         summons: []
@@ -1183,11 +1182,25 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         if (!targetName) return send('邀请谁加入队伍？');
         const target = players.find((p) => p.name === targetName);
         if (!target) return send('玩家不在线。');
-        if (partyApi.getPartyByMember(target.name)) {
-          return send('对方已有队伍，请先退出组队再邀请。');
-        }
+        const targetParty = partyApi.getPartyByMember(target.name);
         if (party && party.leader && party.leader !== player.name) {
           return send('只有队长可以邀请队友。');
+        }
+        // 如果目标有队伍且队伍未满员，且玩家没有队伍，直接加入目标的队伍
+        if (targetParty && targetParty.members.length < PARTY_LIMIT && !party) {
+          if (partyApi.persistParty) {
+            await partyApi.persistParty(targetParty);
+          }
+          send(`你已加入 ${target.name} 的队伍。`);
+          target.send(`${player.name} 已加入你的队伍。`);
+          return;
+        }
+        // 如果目标已有队伍且队伍已满员，或者玩家已有队伍，按原逻辑处理
+        if (targetParty) {
+          if (targetParty.members.length >= PARTY_LIMIT) {
+            return send('对方队伍已满。');
+          }
+          return send('对方已有队伍，请先退出组队再邀请。');
         }
         const myParty = party || partyApi.createParty(player.name);
         if (myParty.members.length >= PARTY_LIMIT) return send('队伍已满。');
