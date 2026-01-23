@@ -1629,8 +1629,8 @@ const WORLD_BOSS_ROOM = { zoneId: 'wb', roomId: 'lair' };
 const SUMMON_MAX_LEVEL = 8;
 const SUMMON_EXP_PER_LEVEL = 5;
 
-function checkBossRespawn() {
-  // 检查所有房间的BOSS刷新
+function checkMobRespawn() {
+  // 检查所有房间的怪物刷新（包括BOSS和普通怪物）
   Object.keys(WORLD).forEach((zoneId) => {
     const zone = WORLD[zoneId];
     if (!zone?.rooms) return;
@@ -1645,38 +1645,39 @@ function checkBossRespawn() {
           mob.justRespawned = false;
         });
 
-        const bossName = respawned[0]?.name || 'BOSS';
-        const tpl = MOB_TEMPLATES[respawned[0]?.templateId];
-        const isBoss = tpl && (
-          tpl.worldBoss ||
-          tpl.sabakBoss ||
-          tpl.id.includes('boss') ||
-          tpl.id.includes('leader') ||
-          tpl.id === 'chiyue_demon' ||
-          tpl.id === 'tree_demon' ||
-          tpl.id === 'fmg_demon' ||
-          tpl.id === 'huangquan' ||
-          tpl.id === 'nm_boss' ||
-          tpl.id === 'chiyue_guard' ||
-          tpl.id === 'chiyue_blood' ||
-          tpl.id === 'bug_queen'
-        );
-        const isSpecialBoss = tpl && (
-          tpl.id === 'molong_boss' || tpl.worldBoss || tpl.sabakBoss
-        );
-
-        // 非特殊BOSS（魔龙教主、世界BOSS、沙巴克BOSS除外）刷新时发送公告
-        if (isBoss && !isSpecialBoss) {
-          const locationData = {
-            zoneId,
-            roomId,
-            label: `${zone.name} - ${room.name}`
-          };
-          emitAnnouncement(
-            `${bossName} 已刷新，点击前往。`,
-            'announce',
-            locationData
+        // 检查是否有BOSS刷新
+        const bossRespawned = respawned.find(m => {
+          const tpl = MOB_TEMPLATES[m?.templateId];
+          return tpl && (
+            tpl.worldBoss ||
+            tpl.sabakBoss ||
+            tpl.id.includes('boss') ||
+            tpl.id.includes('leader') ||
+            tpl.id.includes('demon') ||
+            tpl.id === 'bug_queen'
           );
+        });
+
+        if (bossRespawned) {
+          const bossName = bossRespawned.name || 'BOSS';
+          const tpl = MOB_TEMPLATES[bossRespawned.templateId];
+          const isSpecialBoss = tpl && (
+            tpl.id === 'molong_boss' || tpl.worldBoss || tpl.sabakBoss
+          );
+
+          // 非特殊BOSS（魔龙教主、世界BOSS、沙巴克BOSS除外）刷新时发送公告
+          if (!isSpecialBoss) {
+            const locationData = {
+              zoneId,
+              roomId,
+              label: `${zone.name} - ${room.name}`
+            };
+            emitAnnouncement(
+              `${bossName} 已刷新，点击前往。`,
+              'announce',
+              locationData
+            );
+          }
         }
       }
     });
@@ -3553,8 +3554,8 @@ async function start() {
     console.warn(err);
   }
   await loadSabakState();
-  checkBossRespawn();
-  setInterval(() => checkBossRespawn(), 5000);
+  checkMobRespawn();
+  setInterval(() => checkMobRespawn(), 5000);
   setInterval(() => sabakTick().catch(() => {}), 5000);
   if (config.adminBootstrapSecret && config.adminBootstrapUser) {
     const admins = await knex('users').where({ is_admin: true }).first();

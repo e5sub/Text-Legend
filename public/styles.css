@@ -909,6 +909,23 @@ button:hover {
   gap: 10px;
 }
 
+.log-filter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.log-filter input {
+  cursor: pointer;
+}
+
+.log-filter span {
+  color: #f7e9d6;
+}
+
 .log-toggle {
   background: rgba(255, 255, 255, 0.15);
   color: #f7e9d6;

@@ -12,6 +12,8 @@ let vipSelfClaimEnabled = true;
 // 主题和日志折叠
 let isDarkMode = localStorage.getItem('darkMode') === 'true';
 let isLogCollapsed = localStorage.getItem('logCollapsed') === 'true';
+let showDamage = localStorage.getItem('showDamage') !== 'false';
+let showExpGold = localStorage.getItem('showExpGold') !== 'false';
 const directionLabels = {
   north: '北',
   south: '南',
@@ -411,6 +413,24 @@ function parseStaticLocationLink(text) {
 }
 
 function appendLine(payload) {
+  // 过滤聊天信息，不显示在实时日志中
+  if (isChatLine(payload.text)) {
+    return;
+  }
+
+  // 过滤伤害信息
+  const text = payload.text;
+  const isDamageLine = /对.*造成.*点伤害|受到.*点伤害/.test(text);
+  if (!showDamage && isDamageLine) {
+    return;
+  }
+
+  // 过滤经验和金币信息
+  const isExpGoldLine = /获得.*点经验|获得.*金币/.test(text);
+  if (!showExpGold && isExpGoldLine) {
+    return;
+  }
+
   const p = buildLine(payload);
   log.appendChild(p);
   log.scrollTop = log.scrollHeight;
@@ -2992,6 +3012,9 @@ if (themeToggle) {
 // 日志折叠功能
 const logWrap = document.getElementById('log-wrap');
 const logToggle = document.getElementById('log-toggle');
+const logShowDamage = document.getElementById('log-show-damage');
+const logShowExpGold = document.getElementById('log-show-exp-gold');
+
 if (logWrap && logToggle) {
   // 应用初始状态
   function applyLogCollapsed(collapsed) {
@@ -3010,6 +3033,24 @@ if (logWrap && logToggle) {
     isLogCollapsed = !isLogCollapsed;
     localStorage.setItem('logCollapsed', isLogCollapsed.toString());
     applyLogCollapsed(isLogCollapsed);
+  });
+}
+
+// 伤害信息开关
+if (logShowDamage) {
+  logShowDamage.checked = showDamage;
+  logShowDamage.addEventListener('change', () => {
+    showDamage = logShowDamage.checked;
+    localStorage.setItem('showDamage', showDamage.toString());
+  });
+}
+
+// 经验金币信息开关
+if (logShowExpGold) {
+  logShowExpGold.checked = showExpGold;
+  logShowExpGold.addEventListener('change', () => {
+    showExpGold = logShowExpGold.checked;
+    localStorage.setItem('showExpGold', showExpGold.toString());
   });
 }
 
