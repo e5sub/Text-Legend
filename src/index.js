@@ -2261,10 +2261,12 @@ io.on('connection', (socket) => {
     }
 
     // 检查是否已有同名角色在线，如果有则踢掉之前的连接
-    const existingPlayer = Array.from(players.values()).find(p => p.name === name);
-    if (existingPlayer) {
-      const existingSocketId = Object.keys(players).find(key => players.get(key)?.name === name);
-      if (existingSocketId) {
+    const existingSocketId = Array.from(players.keys()).find(key => players.get(key)?.name === name);
+    if (existingSocketId) {
+      const existingPlayer = players.get(existingSocketId);
+      if (existingPlayer) {
+        // 通知旧连接被踢下线
+        existingPlayer.send('您的账号在别处登录，您已被强制下线。');
         // 保存并移除之前的会话
         await savePlayer(existingPlayer);
         // 断开旧连接
