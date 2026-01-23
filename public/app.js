@@ -45,6 +45,7 @@ const ui = {
   mag: document.getElementById('ui-mag'),
   spirit: document.getElementById('ui-spirit'),
   mdef: document.getElementById('ui-mdef'),
+  dodge: document.getElementById('ui-dodge'),
   hp: document.getElementById('bar-hp'),
   mp: document.getElementById('bar-mp'),
   exp: document.getElementById('bar-exp'),
@@ -2046,6 +2047,7 @@ function renderState(state) {
     if (ui.mag) ui.mag.textContent = state.stats.mag ?? '-';
     if (ui.spirit) ui.spirit.textContent = state.stats.spirit ?? '-';
     if (ui.mdef) ui.mdef.textContent = state.stats.mdef ?? '-';
+    if (ui.dodge) ui.dodge.textContent = state.stats.dodge ?? '-';
     ui.pk.textContent = `${state.stats.pk} (${state.stats.pk >= 100 ? '红名' : '正常'})`;
     ui.vip.textContent = state.stats.vip ? '是' : '否';
     if (ui.bonusLine) {

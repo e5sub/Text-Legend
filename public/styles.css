@@ -810,13 +810,26 @@ button:hover {
 
 .status-row.compact {
   margin: 1px 0;
-  gap: 4px;
+  gap: 8px;
+}
+
+.status-row.gold-row {
+  margin: 4px 0;
+  gap: 10px;
+}
+
+.status-row.gold-row strong {
+  flex: 1;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .status-grid-3 {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 4px 6px;
+  gap: 4px 8px;
 }
 
 .status-grid-3 .status-row {
@@ -835,6 +848,8 @@ button:hover {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
+  text-align: right;
 }
 
 .status-grid-3 .status-row.wide {
