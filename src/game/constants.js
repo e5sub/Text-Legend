@@ -42,7 +42,7 @@ export function expForLevel(level) {
 }
 
 export function maxBagSlots(level) {
-  return 500;
+  return 5000;
 }
 
 export function getStartPosition() {

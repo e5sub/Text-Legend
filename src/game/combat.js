@@ -1,4 +1,5 @@
 import { clamp, randInt } from './utils.js';
+import { MOB_TEMPLATES } from './mobs.js';
 
 export function calcHitChance(attacker, defender) {
   const base = 0.75 + (attacker.dex - defender.dex) * 0.01;
@@ -64,7 +65,18 @@ export function applyHealing(target, amount) {
 }
 
 export function applyPoison(target, turns, tickDamage, sourceName = null) {
+  // 特殊BOSS（魔龙教主、世界BOSS、沙巴克BOSS）免疫毒伤害
+  const isSpecialBoss = Boolean(
+    target.templateId &&
+    (MOB_TEMPLATES[target.templateId]?.id === 'molong_boss' ||
+     MOB_TEMPLATES[target.templateId]?.worldBoss ||
+     MOB_TEMPLATES[target.templateId]?.sabakBoss)
+  );
+  if (isSpecialBoss) {
+    return false;
+  }
   target.status.poison = { turns, tickDamage, sourceName };
+  return true;
 }
 
 export function tickStatus(target) {

@@ -1553,7 +1553,7 @@ async function buildState(player) {
     const tpl = MOB_TEMPLATES[m.templateId];
     return tpl && (tpl.id === 'molong_boss' || tpl.worldBoss || tpl.sabakBoss);
   });
-  if (bossMob && bossMob.status?.damageBy) {
+  if (bossMob) {
     const { entries } = buildDamageRankMap(bossMob);
     worldBossRank = entries.slice(0, 5).map(([name, damage]) => ({ name, damage }));
   }
