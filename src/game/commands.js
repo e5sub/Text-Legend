@@ -130,6 +130,28 @@ function isSabakBossRoom(zoneId, roomId) {
   return room.spawns.some((mobId) => MOB_TEMPLATES[mobId]?.sabakBoss);
 }
 
+function isMolongBossRoom(zoneId, roomId) {
+  const zone = WORLD[zoneId];
+  const room = zone?.rooms?.[roomId];
+  if (!room || !room.spawns) return false;
+  return room.spawns.some((mobId) => MOB_TEMPLATES[mobId]?.id === 'molong_boss');
+}
+
+function isBossRoom(zoneId, roomId) {
+  const zone = WORLD[zoneId];
+  const room = zone?.rooms?.[roomId];
+  if (!room || !room.spawns) return false;
+  return room.spawns.some((mobId) => {
+    const tpl = MOB_TEMPLATES[mobId];
+    if (!tpl) return false;
+    return tpl.worldBoss || tpl.sabakBoss || tpl.id.includes('boss') ||
+           tpl.id.includes('leader') || tpl.id === 'chiyue_demon' ||
+           tpl.id === 'tree_demon' || tpl.id === 'fmg_demon' ||
+           tpl.id === 'huangquan' || tpl.id === 'nm_boss' ||
+           tpl.id === 'chiyue_guard' || tpl.id === 'chiyue_blood';
+  });
+}
+
 function formatInventory(player) {
   if (player.inventory.length === 0) return '背包为空。';
   return player.inventory
@@ -459,12 +481,16 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
           return send('只有沙巴克行会成员才能前往沙巴克BOSS房间。');
         }
       }
-      if (!isWorldBossRoom(zoneId, roomId)) {
+      if (!isBossRoom(zoneId, roomId)) {
         return send('该地点无法直接前往。');
       }
       player.position.zone = zoneId;
       player.position.room = roomId;
-      send('你已前往世界BOSS房间。');
+
+      // 根据不同的房间类型发送不同的消息
+      const room = WORLD[zoneId].rooms[roomId];
+      const bossName = room.spawns?.map(id => MOB_TEMPLATES[id]?.name).filter(Boolean).join('、') || 'BOSS';
+      send(`你已前往 ${bossName} 的房间。`);
       sendRoomDescription(player, send);
       return;
     }

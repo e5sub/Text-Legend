@@ -371,7 +371,8 @@ const LOCATION_LOOKUP = {
   '沃玛寺庙 - 寺庙入口': { zoneId: 'wms', roomId: 'entrance' },
   '祖玛寺庙 - 祖玛大厅': { zoneId: 'zm', roomId: 'hall' },
   '赤月峡谷 - 赤月入口': { zoneId: 'cr', roomId: 'valley' },
-  '世界BOSS领域 - 炎龙巢穴': { zoneId: 'wb', roomId: 'lair' }
+  '世界BOSS领域 - 炎龙巢穴': { zoneId: 'wb', roomId: 'lair' },
+  '魔龙城 - 魔龙深处': { zoneId: 'molong', roomId: 'deep' }
 };
 
 function parseLocationMessage(text) {
