@@ -2706,10 +2706,10 @@ function processMobDeath(player, mob, online) {
 
 async function combatTick() {
   const online = listOnlinePlayers();
-  online.forEach((player) => {
+  for (const player of online) {
     if (player.hp <= 0) {
       handleDeath(player);
-      return;
+      continue;
     }
 
     refreshBuffs(player);
@@ -2752,7 +2752,7 @@ async function combatTick() {
           }
         }
       }
-      if (!player.combat) return;
+      if (!player.combat) continue;
     }
     if (!player.flags) player.flags = {};
     player.flags.lastCombatAt = Date.now();
@@ -2763,7 +2763,7 @@ async function combatTick() {
     if (player.status && player.status.stunTurns > 0) {
       player.status.stunTurns -= 1;
       player.send('你被麻痹，无法行动。');
-      return;
+      continue;
     }
 
       if (player.combat.targetType === 'player') {
@@ -2771,14 +2771,14 @@ async function combatTick() {
         if (!target || target.position.zone !== player.position.zone || target.position.room !== player.position.room) {
           player.combat = null;
           player.send('目标已消失。');
-          return;
+          continue;
         }
         if (isSabakZone(player.position.zone)) {
           const sameGuild = player.guild && target.guild && player.guild.id === target.guild.id;
           if (sameGuild) {
             player.combat = null;
             player.send('沙巴克内不能攻击同一行会成员。');
-            return;
+            continue;
           }
         }
         if (!target.flags) target.flags = {};
@@ -2799,7 +2799,7 @@ async function combatTick() {
       if (target.evadeChance && Math.random() <= target.evadeChance) {
         player.send(`${target.name} 闪避了你的攻击。`);
         target.send(`你闪避了 ${player.name} 的攻击。`);
-        return;
+        continue;
       }
       let dmg = 0;
       let skillPower = 1;
@@ -2996,7 +2996,7 @@ async function combatTick() {
       }
       await sendState(player);
       await sendState(target);
-      return;
+      continue;
     }
 
     const mobs = roomMobs;
@@ -3004,7 +3004,7 @@ async function combatTick() {
     if (!mob) {
       player.combat = null;
       player.send('目标已消失。');
-      return;
+      continue;
     }
 
     reduceDurabilityOnAttack(player);
@@ -3069,7 +3069,7 @@ async function combatTick() {
             player.combat = null;
           }
           sendRoomState(player.position.zone, player.position.room);
-          return;
+          continue;
         }
         sendRoomState(player.position.zone, player.position.room);
       } else {
@@ -3183,12 +3183,12 @@ async function combatTick() {
       processMobDeath(player, mob, online);
       player.combat = null;
       sendRoomState(player.position.zone, player.position.room);
-      return;
+      continue;
     }
 
     if (mob.status && mob.status.stunTurns > 0) {
       player.send(`${mob.name} 被麻痹，无法行动。`);
-      return;
+      continue;
     }
 
 
@@ -3227,7 +3227,7 @@ async function combatTick() {
         } else {
           player.send(`${mobTarget.name} 闪避了 ${mob.name} 的攻击。`);
         }
-        return;
+        continue;
       }
       let dmg = calcDamage(mob, mobTarget, 1);
       if (mobTemplate && isBossMob(mobTemplate)) {
@@ -3416,7 +3416,7 @@ async function combatTick() {
       handleDeath(player);
     }
     await sendState(player);
-  });
+  }
 }
 
 setInterval(combatTick, 1000);
