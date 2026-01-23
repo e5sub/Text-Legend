@@ -12,7 +12,7 @@ import {
   ensurePlayerSkills
 } from './skills.js';
 import { addItem, removeItem, equipItem, unequipItem, bagLimit, gainExp, computeDerived, getDurabilityMax, getRepairCost, getItemKey } from './player.js';
-import { CLASSES, expForLevel } from './constants.js';
+import { CLASSES, expForLevel, getStartPosition } from './constants.js';
 import { getRoom, getAliveMobs, spawnMobs } from './state.js';
 import { clamp } from './utils.js';
 import { applyDamage } from './combat.js';
@@ -37,7 +37,25 @@ const DIR_LABELS = {
   southeast: '东南',
   southwest: '西南',
   up: '上',
-  down: '下'
+  down: '下',
+  north1: '北1',
+  south1: '南1',
+  east1: '东1',
+  west1: '西1',
+  northeast1: '东北1',
+  northwest1: '西北1',
+  north2: '北2',
+  south2: '南2',
+  east2: '东2',
+  west2: '西2',
+  northeast2: '东北2',
+  northwest2: '西北2',
+  north3: '北3',
+  south3: '南3',
+  east3: '东3',
+  west3: '西3',
+  northeast3: '东北3',
+  northwest3: '西北3'
 };
 const DIR_ALIASES = {
   北: 'north',
@@ -49,7 +67,25 @@ const DIR_ALIASES = {
   东南: 'southeast',
   西南: 'southwest',
   上: 'up',
-  下: 'down'
+  下: 'down',
+  北1: 'north1',
+  南1: 'south1',
+  东1: 'east1',
+  西1: 'west1',
+  东北1: 'northeast1',
+  西北1: 'northwest1',
+  北2: 'north2',
+  南2: 'south2',
+  东2: 'east2',
+  西2: 'west2',
+  东北2: 'northeast2',
+  西北2: 'northwest2',
+  北3: 'north3',
+  南3: 'south3',
+  东3: 'east3',
+  西3: 'west3',
+  东北3: 'northeast3',
+  西北3: 'northwest3'
 };
 const TRAINING_OPTIONS = {
   hp: { label: '生命', inc: 10 },
@@ -647,7 +683,12 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         return send('该物品无法使用。');
       }
       if (item.teleport && !item.hp && !item.mp) {
-        player.position = { ...item.teleport };
+        // 如果回城到比奇城，改为随机传送到平原变体
+        if (item.teleport.zone === 'bq_town' && item.teleport.room === 'gate') {
+          player.position = { ...getStartPosition() };
+        } else {
+          player.position = { ...item.teleport };
+        }
         send(`使用了 ${item.name}。`);
         return;
       }

@@ -2569,9 +2569,12 @@ function reduceDurabilityOnAttack(player) {
 function handleDeath(player) {
   player.hp = Math.floor(player.max_hp * 0.5);
   player.mp = Math.floor(player.max_mp * 0.3);
-  player.position = { zone: 'bq_town', room: 'gate' };
+  // 随机分配到4个平原变体
+  const plainsVariants = ['plains', 'plains1', 'plains2', 'plains3'];
+  const randomPlains = plainsVariants[Math.floor(Math.random() * plainsVariants.length)];
+  player.position = { zone: 'bq_plains', room: randomPlains };
   player.combat = null;
-  player.send('你被击败，返回了城里。');
+  player.send('你被击败，返回了平原。');
 }
 
 function processMobDeath(player, mob, online) {
