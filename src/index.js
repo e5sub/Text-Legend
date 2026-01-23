@@ -2616,7 +2616,7 @@ function processMobDeath(player, mob, online) {
     partyMembersForReward = [lootOwner];
     partyMembersInSameRoom = [lootOwner];
   }
-  const eligibleCount = hasParty ? 1 : onlineCount;
+  const eligibleCount = hasParty ? 1 : partyMembersForReward.length;
   const bonus = totalPartyCount > 1 ? Math.min(0.2 * totalPartyCount, 1.0) : 0;
   const totalExp = Math.floor(exp * (1 + bonus));
   const totalGold = Math.floor(gold * (1 + bonus));
