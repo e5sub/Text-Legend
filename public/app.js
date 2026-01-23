@@ -989,7 +989,7 @@ function showPlayerModal(player) {
   const lines = [
     `姓名: ${player.name}`,
     `职业: ${classNames[player.classId] || player.classId || '未知'}`,
-    `等级: Lv${player.level}`,
+    `等级: Lv${player.level || 1}`,
     `行会: ${player.guild || '无'}`
   ];
   playerUi.info.textContent = lines.join('\n');

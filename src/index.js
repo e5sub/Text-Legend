@@ -1452,11 +1452,11 @@ async function buildState(player) {
     mdef: m.mdef || 0
   }));
 
-  // 检查房间是否有特殊BOSS，获取下次刷新时间
+  // 检查房间是否有BOSS，获取下次刷新时间
   const roomMobs = getRoomMobs(player.position.zone, player.position.room);
   const deadBosses = roomMobs.filter((m) => {
     const tpl = MOB_TEMPLATES[m.templateId];
-    return tpl && m.hp <= 0 && (tpl.worldBoss || tpl.sabakBoss || tpl.id === 'molong_boss');
+    return tpl && m.hp <= 0 && isBossMob(tpl);
   });
   const nextRespawn = deadBosses.length > 0
     ? deadBosses.sort((a, b) => (a.respawnAt || Infinity) - (b.respawnAt || Infinity))[0]?.respawnAt
