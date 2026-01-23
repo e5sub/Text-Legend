@@ -74,39 +74,82 @@ export function applyPoison(target, turns, tickDamage, sourceName = null) {
   );
 
   if (isSpecialBoss) {
-    // 特殊BOSS中毒冷却检查：1分钟内不能再次中毒
+    // 特殊BOSS：每个玩家独立的毒效果，每玩家1分钟冷却
     const now = Date.now();
-    if (target.status.poisonCooldown && target.status.poisonCooldown > now) {
-      return false;
+    if (!target.status.poisonsBySource) {
+      target.status.poisonsBySource = {};
     }
-    // 设置冷却时间为1分钟后
-    target.status.poisonCooldown = now + 60000;
+
+    if (sourceName && target.status.poisonsBySource[sourceName]) {
+      const cooldownUntil = target.status.poisonsBySource[sourceName];
+      if (now < cooldownUntil) {
+        // 该玩家的毒效果还在冷却中
+        return false;
+      }
+    }
+
+    // 设置该玩家的毒冷却时间为1分钟后
+    if (sourceName) {
+      target.status.poisonsBySource[sourceName] = now + 60000;
+    }
+
+    // 添加新的毒效果
+    if (!target.status.activePoisons) {
+      target.status.activePoisons = [];
+    }
+    target.status.activePoisons.push({ turns, tickDamage, sourceName });
+    return true;
   }
 
-  // 如果已经有中毒效果，不叠加（直接替换或保持）
+  // 普通怪物：单一毒效果
   if (target.status.poison) {
     return false;
   }
-
   target.status.poison = { turns, tickDamage, sourceName };
   return true;
 }
 
 export function tickStatus(target) {
-  if (target.status.poison && target.status.poison.turns > 0) {
-    let damage = target.status.poison.tickDamage;
-
-    // 特殊BOSS（魔龙教主、世界BOSS、沙巴克BOSS）中毒伤害上限为1000
+  // 特殊BOSS的多个毒效果处理
+  if (target.status.activePoisons && target.status.activePoisons.length > 0) {
     const isSpecialBoss = Boolean(
       target.templateId &&
       (MOB_TEMPLATES[target.templateId]?.id === 'molong_boss' ||
        MOB_TEMPLATES[target.templateId]?.worldBoss ||
        MOB_TEMPLATES[target.templateId]?.sabakBoss)
     );
-    if (isSpecialBoss && damage > 1000) {
-      damage = 1000;
+
+    let totalDamage = 0;
+    const remainingPoisons = [];
+
+    for (const poison of target.status.activePoisons) {
+      let damage = poison.tickDamage;
+      // 特殊BOSS中毒伤害上限为1000
+      if (isSpecialBoss && damage > 1000) {
+        damage = 1000;
+      }
+
+      applyDamage(target, damage);
+      totalDamage += damage;
+      poison.turns -= 1;
+
+      if (poison.turns > 0) {
+        remainingPoisons.push(poison);
+      }
     }
 
+    target.status.activePoisons = remainingPoisons;
+
+    if (target.status.activePoisons.length === 0) {
+      delete target.status.activePoisons;
+    }
+
+    return { type: 'poison', dmg: totalDamage };
+  }
+
+  // 普通怪物/玩家的单一毒效果处理
+  if (target.status.poison && target.status.poison.turns > 0) {
+    const damage = target.status.poison.tickDamage;
     applyDamage(target, damage);
     target.status.poison.turns -= 1;
     if (target.status.poison.turns <= 0) {
@@ -117,8 +160,15 @@ export function tickStatus(target) {
 
   // 清理过期的中毒冷却
   const now = Date.now();
-  if (target.status.poisonCooldown && target.status.poisonCooldown <= now) {
-    delete target.status.poisonCooldown;
+  if (target.status.poisonsBySource) {
+    for (const [sourceName, cooldownUntil] of Object.entries(target.status.poisonsBySource)) {
+      if (now >= cooldownUntil) {
+        delete target.status.poisonsBySource[sourceName];
+      }
+    }
+    if (Object.keys(target.status.poisonsBySource).length === 0) {
+      delete target.status.poisonsBySource;
+    }
   }
 
   return null;
