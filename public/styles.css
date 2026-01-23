@@ -3226,3 +3226,54 @@ li {
   z-index: 10;
 }
 
+/* 技能进度条样式 */
+.skill-progress {
+  margin-top: 4px;
+  height: 4px;
+  background: #e8d4b9;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.skill-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #1f6b3b, #35b36c);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+body.dark .skill-progress {
+  background: #3a3028;
+}
+
+body.dark .skill-progress-bar {
+  background: linear-gradient(90deg, #2a8a5a, #4ac77a);
+}
+
+/* BOSS刷新时间样式 */
+.boss-respawn-time {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #fff4e2;
+  border: 1px solid #ead0ad;
+  font-size: 0.85rem;
+  color: #6b4a2a;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+body.dark .boss-respawn-time {
+  background: #2a2420;
+  border-color: #4a3828;
+  color: #a89888;
+}
+
+.boss-respawn-time #boss-respawn-timer {
+  color: #c86b2a;
+  font-weight: 600;
+}
+
+body.dark .boss-respawn-time #boss-respawn-timer {
+  color: #e8a058;
+}
+

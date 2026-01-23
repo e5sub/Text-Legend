@@ -16,7 +16,7 @@ export const SKILLS = {
     flash: { id: 'flash', name: '\u75be\u5149\u7535\u5f71', mp: 18, power: 1.5, type: 'spell' },
     thunder: { id: 'thunder', name: '\u5730\u72f1\u96f7\u5149', mp: 20, power: 1.3, type: 'aoe' },
     shield: { id: 'shield', name: '\u9b54\u6cd5\u76fe', mp: 22, power: 1.0, type: 'buff_shield' },
-    iceblast: { id: 'iceblast', name: '\u51b0\u54c1\u5578', mp: 24, power: 2.0, type: 'spell' }
+    iceblast: { id: 'iceblast', name: '\u51b0\u5481\u54ee', mp: 24, power: 2.0, type: 'spell' }
   },
   taoist: {
     heal: { id: 'heal', name: '\u6cbb\u6108\u672f', mp: 12, power: 1.0, type: 'heal' },

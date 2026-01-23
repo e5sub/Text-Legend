@@ -1215,6 +1215,18 @@ function handleItemAction(item) {
     }
     btn.addEventListener('click', () => onClick(item));
     container.appendChild(btn);
+
+    // 技能进度条
+    if (container === ui.skills && item.exp !== undefined) {
+      const progressContainer = document.createElement('div');
+      progressContainer.className = 'skill-progress';
+      const progressBar = document.createElement('div');
+      progressBar.className = 'skill-progress-bar';
+      const percent = Math.min(100, (item.exp / item.expNext) * 100);
+      progressBar.style.width = `${percent}%`;
+      progressContainer.appendChild(progressBar);
+      container.appendChild(progressContainer);
+    }
   });
     if (container === ui.items) {
       container.onclick = (evt) => {
@@ -1954,7 +1966,9 @@ function renderState(state) {
   const skills = (state.skills || []).map((s) => ({
     id: s.id,
     label: s.level ? `${s.name} Lv${s.level}` : s.name,
-    raw: s
+    raw: s,
+    exp: s.exp || 0,
+    expNext: s.expNext || 100
   }));
   renderChips(ui.skills, skills, (s) => {
     if (s.raw.type === 'heal') {
@@ -1997,13 +2011,40 @@ function renderState(state) {
   if (ui.worldBossRank) {
     ui.worldBossRank.innerHTML = '';
     const inWorldBossRoom = state.room && state.room.zoneId === 'wb' && state.room.roomId === 'lair';
+    const inMolongRoom = state.room && state.room.zoneId === 'plains' && state.room.roomId === 'boss';
+    const inSabakBossRoom = state.room && state.room.zoneId === 'sabak' && state.room.roomId === 'lair';
+    const inSpecialBossRoom = inWorldBossRoom || inMolongRoom || inSabakBossRoom;
     const rankBlock = ui.worldBossRank.closest('.action-group');
-    if (!inWorldBossRoom) {
+    if (!inSpecialBossRoom) {
       if (rankBlock) rankBlock.classList.add('hidden');
     } else {
       if (rankBlock) rankBlock.classList.remove('hidden');
       const ranks = state.worldBossRank || [];
-      if (!ranks.length) {
+      const nextRespawn = state.worldBossNextRespawn;
+
+      // 如果有下次刷新时间，显示刷新倒计时
+      if (nextRespawn && nextRespawn > Date.now()) {
+        const respawnDiv = document.createElement('div');
+        respawnDiv.className = 'boss-respawn-time';
+        respawnDiv.innerHTML = `下次刷新: <span id="boss-respawn-timer">计算中...</span>`;
+        ui.worldBossRank.appendChild(respawnDiv);
+
+        // 倒计时更新函数
+        const updateTimer = () => {
+          const remaining = Math.max(0, nextRespawn - Date.now());
+          const timerEl = document.getElementById('boss-respawn-timer');
+          if (timerEl && remaining > 0) {
+            const minutes = Math.floor(remaining / 60000);
+            const seconds = Math.floor((remaining % 60000) / 1000);
+            timerEl.textContent = `${minutes}分${seconds}秒`;
+          } else if (timerEl) {
+            timerEl.textContent = '即将刷新';
+          }
+        };
+        updateTimer();
+        const timerInterval = setInterval(updateTimer, 1000);
+        setTimeout(() => clearInterval(timerInterval), remaining + 2000);
+      } else if (!ranks.length) {
         const empty = document.createElement('div');
         empty.textContent = '暂无排行';
         ui.worldBossRank.appendChild(empty);

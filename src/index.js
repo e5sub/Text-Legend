@@ -1480,7 +1480,9 @@ async function buildState(player) {
     name: s.name,
     mp: s.mp,
     type: s.type,
-    level: getSkillLevel(player, s.id)
+    level: getSkillLevel(player, s.id),
+    exp: player.flags?.skillMastery?.[s.id]?.exp || 0,
+    expNext: player.flags?.skillMastery?.[s.id]?.level ? SKILL_MASTERY_LEVELS[player.flags.skillMastery[s.id].level] : SKILL_MASTERY_LEVELS[1]
   }));
   const items = player.inventory.map((i) => {
     const item = ITEM_TEMPLATES[i.id] || { id: i.id, name: i.id, type: 'unknown' };
@@ -1537,9 +1539,18 @@ async function buildState(player) {
       guildId: p.guild?.id || null
     }));
   let worldBossRank = [];
+  let worldBossNextRespawn = null;
+  // 检查魔龙教主、世界BOSS、沙巴克BOSS的刷新时间
+  const deadSpecialBosses = deadBosses.filter((m) => {
+    const tpl = MOB_TEMPLATES[m.templateId];
+    return tpl && (tpl.id === 'molong_boss' || tpl.worldBoss || tpl.sabakBoss);
+  });
+  if (deadSpecialBosses.length > 0) {
+    worldBossNextRespawn = deadSpecialBosses.sort((a, b) => (a.respawnAt || Infinity) - (b.respawnAt || Infinity))[0]?.respawnAt;
+  }
   const bossMob = getAliveMobs(player.position.zone, player.position.room).find((m) => {
     const tpl = MOB_TEMPLATES[m.templateId];
-    return tpl && (tpl.id === 'molong_boss' || tpl.sabakBoss);
+    return tpl && (tpl.id === 'molong_boss' || tpl.worldBoss || tpl.sabakBoss);
   });
   if (bossMob && bossMob.status?.damageBy) {
     const { entries } = buildDamageRankMap(bossMob);
@@ -1605,6 +1616,7 @@ async function buildState(player) {
       ownerGuildName: sabakState.ownerGuildName
     },
     worldBossRank,
+    worldBossNextRespawn,
     players: roomPlayers,
     bossRespawn: nextRespawn,
     server_time: Date.now(),
@@ -3502,6 +3514,7 @@ async function combatTick() {
       handleDeath(player);
     }
     await sendState(player);
+    savePlayer(player);
   }
 }
 
