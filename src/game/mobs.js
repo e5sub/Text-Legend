@@ -150,7 +150,7 @@
 
   // Molong
   molong_guard: { id: 'molong_guard', name: '魔龙力士', level: 48, hp: 4600, atk: 130, def: 70, mdef: 70, exp: 3600, gold: [800, 1200], respawnMs: 5 * 60 * 1000, drops: [{ id: 'armor_molong', chance: 0.06 }] },
-  molong_boss: { id: 'molong_boss', name: '魔龙教主', level: 52, hp: 6000, atk: 90, def: 55, mdef: 55, exp: 4500, gold: [1000, 1600], respawnMs: 3 * 60 * 60 * 1000, drops: [
+  molong_boss: { id: 'molong_boss', name: '魔龙教主', level: 52, hp: 60000, atk: 180, def: 110, mdef: 110, exp: 4500, gold: [1000, 1600], respawnMs: 3 * 60 * 60 * 1000, specialBoss: true, drops: [
     { id: 'armor_molong', chance: 0.12 },
     { id: 'armor_taishan', chance: 0.06 },
     { id: 'armor_doom', chance: 0.06 },
@@ -203,13 +203,14 @@
     id: 'world_boss',
     name: '世界BOSS·炎龙',
     level: 60,
-    hp: 12000,
+    hp: 120000,
     atk: 180,
     def: 110,
     mdef: 110,
     exp: 9000,
     gold: [2000, 3200],
     worldBoss: true,
+    specialBoss: true,
     respawnMs: 6 * 60 * 60 * 1000,
     drops: [
       { id: 'kaitian', chance: 0.015 },
@@ -278,13 +279,14 @@
     id: 'sabak_boss',
     name: '沙巴克守护·玄武',
     level: 55,
-    hp: 5600,
+    hp: 56000,
     atk: 112,
     def: 67,
     mdef: 67,
     exp: 4200,
     gold: [1050, 1820],
     sabakBoss: true,
+    specialBoss: true,
     respawnMs: 6 * 60 * 60 * 1000,
     drops: [
       { id: 'kaitian', chance: 0.02 },

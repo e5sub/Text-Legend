@@ -1162,6 +1162,26 @@ button:hover {
   color: #6b4a2a;
 }
 
+.trade-partner-status {
+  font-size: 0.85rem;
+  color: #8b6a4a;
+  margin-top: 4px;
+}
+
+.trade-partner-status .locked {
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.trade-partner-status .confirmed {
+  color: #d32f2f;
+  font-weight: 600;
+}
+
+.trade-partner-status .unlocked {
+  color: #6b4a2a;
+}
+
 .modal {
   position: fixed;
   inset: 0;

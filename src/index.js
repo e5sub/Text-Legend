@@ -1658,39 +1658,24 @@ function checkMobRespawn() {
           mob.justRespawned = false;
         });
 
-        // 检查是否有BOSS刷新
-        const bossRespawned = respawned.find(m => {
+        // 检查是否有特殊BOSS刷新（魔龙教主、世界BOSS、沙巴克BOSS）
+        const specialBossRespawned = respawned.find(m => {
           const tpl = MOB_TEMPLATES[m?.templateId];
-          return tpl && (
-            tpl.worldBoss ||
-            tpl.sabakBoss ||
-            tpl.id.includes('boss') ||
-            tpl.id.includes('leader') ||
-            tpl.id.includes('demon') ||
-            tpl.id === 'bug_queen'
-          );
+          return tpl && tpl.specialBoss;
         });
 
-        if (bossRespawned) {
-          const bossName = bossRespawned.name || 'BOSS';
-          const tpl = MOB_TEMPLATES[bossRespawned.templateId];
-          const isSpecialBoss = tpl && (
-            tpl.id === 'molong_boss' || tpl.worldBoss || tpl.sabakBoss
+        if (specialBossRespawned) {
+          const bossName = specialBossRespawned.name || 'BOSS';
+          const locationData = {
+            zoneId,
+            roomId,
+            label: `${zone.name} - ${room.name}`
+          };
+          emitAnnouncement(
+            `${bossName} 已刷新，点击前往。`,
+            'announce',
+            locationData
           );
-
-          // 非特殊BOSS（魔龙教主、世界BOSS、沙巴克BOSS除外）刷新时发送公告
-          if (!isSpecialBoss) {
-            const locationData = {
-              zoneId,
-              roomId,
-              label: `${zone.name} - ${room.name}`
-            };
-            emitAnnouncement(
-              `${bossName} 已刷新，点击前往。`,
-              'announce',
-              locationData
-            );
-          }
         }
       }
     });
@@ -1744,13 +1729,13 @@ function gainSummonExp(player) {
 
 function applyDamageToMob(mob, dmg, attackerName) {
   const mobTemplate = MOB_TEMPLATES[mob.templateId];
-  const isSpecialBoss = mobTemplate?.id === 'molong_boss' || mobTemplate?.worldBoss || mobTemplate?.sabakBoss;
-  
+  const isSpecialBoss = Boolean(mobTemplate?.specialBoss);
+
   // 特殊BOSS防御效果：受到攻击时触发
   if (isSpecialBoss) {
     const now = Date.now();
-    
-    // 检查无敌状态
+
+    // 检查无敌状态（免疫伤害、毒、麻痹、降攻击、降防效果）
     if (mob.status?.invincible && mob.status.invincible > now) {
       // 无敌状态，伤害为0
       if (attackerName) {
@@ -1761,21 +1746,21 @@ function applyDamageToMob(mob, dmg, attackerName) {
       }
       return;
     }
-    
-    // 10%几率触发无敌效果（持续3秒）
+
+    // 10%几率触发无敌效果（持续10秒）
     if (Math.random() <= 0.1) {
       if (!mob.status) mob.status = {};
-      mob.status.invincible = now + 3000;
+      mob.status.invincible = now + 10000;
       if (attackerName) {
         const attacker = playersByName(attackerName);
         if (attacker) {
-          attacker.send(`${mob.name} 触发了无敌效果，3秒内免疫所有伤害！`);
+          attacker.send(`${mob.name} 触发了无敌效果，10秒内免疫所有伤害、毒、麻痹、降攻击、降防效果！`);
         }
       }
       // 这次攻击无效
       return;
     }
-    
+
     // 10%几率触发50%减伤
     if (Math.random() <= 0.1) {
       const originalDmg = dmg;
@@ -1791,6 +1776,25 @@ function applyDamageToMob(mob, dmg, attackerName) {
   
   recordMobDamage(mob, attackerName, dmg);
   applyDamage(mob, dmg);
+
+  // 特殊BOSS血量百分比公告
+  if (isSpecialBoss && mob.hp > 0) {
+    const hpPct = mob.hp / mob.max_hp;
+    if (!mob.status) mob.status = {};
+
+    // 检查是否需要公告50%、30%、10%血量
+    const thresholds = [0.5, 0.3, 0.1];
+    for (const threshold of thresholds) {
+      const key = `announced${threshold * 100}`;
+      if (hpPct <= threshold && !mob.status[key]) {
+        mob.status[key] = true;
+        emitAnnouncement(
+          `${mob.name} 剩余 ${Math.floor(hpPct * 100)}% 血量！`,
+          'warn'
+        );
+      }
+    }
+  }
 }
 
 function retaliateMobAgainstPlayer(mob, player, online) {
@@ -1985,13 +1989,25 @@ function retaliateMobAgainstPlayer(mob, player, online) {
 function tickMobRegen(mob) {
   if (!mob || mob.hp <= 0 || !mob.max_hp) return;
   const template = MOB_TEMPLATES[mob.templateId];
-  const isBoss = Boolean(template?.worldBoss || template?.sabakBoss);
+  const isSpecialBoss = Boolean(template?.specialBoss);
   const now = Date.now();
   if (!mob.status) mob.status = {};
-  const interval = isBoss ? 10000 : 1000;
+
+  // 特殊BOSS（魔龙教主、世界BOSS、沙巴克BOSS）每20秒恢复1%气血
+  const interval = isSpecialBoss ? 20000 : 1000;
   const last = mob.status.lastRegenAt || 0;
   if (now - last < interval) return;
-  const regen = Math.max(1, Math.floor(mob.max_hp * 0.01));
+
+  // 检查禁疗效果
+  let regen = isSpecialBoss
+    ? Math.max(1, Math.floor(mob.max_hp * 0.01))  // 1%气血
+    : Math.max(1, Math.floor(mob.max_hp * 0.005));  // 普通怪物0.5%气血
+
+  // 禁疗效果降低恢复量
+  if (mob.status?.debuffs?.healBlock) {
+    regen = Math.max(1, Math.floor(regen * 0.3));  // 禁疗状态下只恢复30%
+  }
+
   mob.hp = Math.min(mob.max_hp, mob.hp + regen);
   mob.status.lastRegenAt = now;
 }
@@ -2089,7 +2105,7 @@ function calcMagicDamageFromValue(value, target) {
 
 function calcPoisonTickDamage(target) {
   const maxHp = Math.max(1, target.max_hp || 1);
-  const total = Math.max(1, Math.floor(maxHp * 0.2));
+  const total = Math.max(1, Math.floor(maxHp * 0.4));  // 提升到40%
   return Math.max(1, Math.floor(total / 30));
 }
 
@@ -2602,7 +2618,7 @@ function processMobDeath(player, mob, online) {
   const party = getPartyByMember(player.name);
   // 物品分配使用同房间的队友
   let partyMembersInSameRoom = party ? partyMembersInRoom(party, online, player.position.zone, player.position.room) : [];
-  // 经验金币分配使用全图在线的队友（用于实际奖励分配）
+  // 经验金币分配使用全图在线的队友
   let partyMembersForReward = party ? partyMembersOnline(party, online) : [];
   // 计算加成使用队伍总人数（包括离线的）
   const totalPartyCount = partyMembersTotalCount(party) || 1;
@@ -2803,8 +2819,80 @@ function processMobDeath(player, mob, online) {
     });
 }
 
+function updateSpecialBossStatsBasedOnPlayers() {
+  const online = listOnlinePlayers();
+
+  // 检查所有房间的特殊BOSS
+  Object.keys(WORLD).forEach((zoneId) => {
+    const zone = WORLD[zoneId];
+    if (!zone?.rooms) return;
+
+    Object.keys(zone.rooms).forEach((roomId) => {
+      const roomMobs = getAliveMobs(zoneId, roomId);
+      const specialBoss = roomMobs.find((m) => {
+        const tpl = MOB_TEMPLATES[m.templateId];
+        return tpl && tpl.specialBoss;
+      });
+
+      if (!specialBoss) return;
+
+      // 统计房间内玩家人数
+      const playersInRoom = online.filter(
+        (p) => p.position.zone === zoneId && p.position.room === roomId
+      ).length;
+
+      const tpl = MOB_TEMPLATES[specialBoss.templateId];
+      const baseAtk = tpl.atk;
+      const baseDef = tpl.def;
+      const baseMdef = tpl.mdef;
+
+      let atkBonus = 0;
+      let defBonus = 0;
+      let mdefBonus = 0;
+
+      // 房间人数少于2人时，增加1000攻击、5000防御、5000魔御
+      if (playersInRoom < 2) {
+        atkBonus = 1000;
+        defBonus = 5000;
+        mdefBonus = 5000;
+        if (!specialBoss.status?.enhancedMode) {
+          specialBoss.status.enhancedMode = true;
+          specialBoss.atk = baseAtk + atkBonus;
+          specialBoss.def = baseDef + defBonus;
+          specialBoss.mdef = baseMdef + mdefBonus;
+        }
+      }
+      // 房间人数超过3人时，只增加1000攻击
+      else if (playersInRoom > 3) {
+        atkBonus = 1000;
+        defBonus = 0;
+        mdefBonus = 0;
+        if (specialBoss.status?.enhancedMode !== 'partial') {
+          specialBoss.status.enhancedMode = 'partial';
+          specialBoss.atk = baseAtk + atkBonus;
+          specialBoss.def = baseDef + defBonus;
+          specialBoss.mdef = baseMdef + mdefBonus;
+        }
+      }
+      // 房间人数2-3人时，恢复基础属性
+      else {
+        if (specialBoss.status?.enhancedMode) {
+          specialBoss.status.enhancedMode = false;
+          specialBoss.atk = baseAtk;
+          specialBoss.def = baseDef;
+          specialBoss.mdef = baseMdef;
+        }
+      }
+    });
+  });
+}
+
 async function combatTick() {
   const online = listOnlinePlayers();
+
+  // 更新特殊BOSS属性
+  updateSpecialBossStatsBasedOnPlayers();
+
   for (const player of online) {
     if (player.hp <= 0) {
       handleDeath(player);

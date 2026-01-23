@@ -39,6 +39,7 @@ const ui = {
   gold: document.getElementById('ui-gold'),
   hpValue: document.getElementById('ui-hp'),
   mpValue: document.getElementById('ui-mp'),
+  expValue: document.getElementById('ui-exp'),
   atk: document.getElementById('ui-atk'),
   def: document.getElementById('ui-def'),
   mag: document.getElementById('ui-mag'),
@@ -55,6 +56,7 @@ const ui = {
   summonDetails: document.getElementById('summon-details'),
   items: document.getElementById('items-list'),
   worldBossRank: document.getElementById('worldboss-rank'),
+  worldBossRankTitle: document.getElementById('worldboss-rank-title'),
   training: document.getElementById('training-list'),
   actions: document.getElementById('actions-list')
 };
@@ -89,6 +91,7 @@ const tradeUi = {
   confirmBtn: document.getElementById('trade-confirm'),
   cancelBtn: document.getElementById('trade-cancel'),
   status: document.getElementById('trade-status'),
+  partnerStatus: document.getElementById('trade-partner-status'),
   panel: document.getElementById('trade-panel'),
   modal: document.getElementById('trade-modal')
 };
@@ -562,6 +565,37 @@ function setTradeStatus(text) {
     text.includes('未在交易中')
   ) {
     tradeUi.modal.classList.add('hidden');
+  }
+}
+
+function setTradePartnerStatus(text) {
+  if (!tradeUi.partnerStatus) return;
+  tradeUi.partnerStatus.textContent = text;
+}
+
+function updateTradePartnerStatus(text) {
+  // 解析交易消息并更新对方锁定/确认状态
+  if (!activeChar) return;
+
+  if (text.includes('已锁定交易')) {
+    // 提取玩家名
+    const match = text.match(/^(.+?) 已锁定/);
+    if (match && match[1] !== activeChar) {
+      // 对方锁定了
+      setTradePartnerStatus(`对方（${match[1]}）已锁定交易`);
+    }
+  } else if (text.includes('已确认交易')) {
+    const match = text.match(/^(.+?) 已确认/);
+    if (match && match[1] !== activeChar) {
+      // 对方确认了
+      setTradePartnerStatus(`对方（${match[1]}）已确认交易`);
+    }
+  } else if (text.includes('双方已锁定')) {
+    setTradePartnerStatus('双方已锁定');
+  } else if (text.includes('交易建立')) {
+    setTradePartnerStatus('');
+  } else if (text.includes('交易完成') || text.includes('交易已取消') || text.includes('交易失败')) {
+    setTradePartnerStatus('');
   }
 }
 
@@ -1868,10 +1902,23 @@ function renderState(state) {
   if (state.stats) {
     setBar(ui.hp, state.stats.hp, state.stats.max_hp);
     setBar(ui.mp, state.stats.mp, state.stats.max_mp);
-    setBar(ui.exp, state.stats.exp, state.stats.exp_next);
+
+    // 经验条：满级时隐藏
+    const isMaxLevel = state.player && state.player.level >= 100;
+    if (isMaxLevel) {
+      ui.exp.style.width = '0%';
+      ui.exp.style.display = 'none';
+    } else {
+      ui.exp.style.display = '';
+      setBar(ui.exp, state.stats.exp, state.stats.exp_next);
+    }
+
     ui.gold.textContent = state.stats.gold;
     if (ui.hpValue) ui.hpValue.textContent = `${state.stats.hp}/${state.stats.max_hp}`;
     if (ui.mpValue) ui.mpValue.textContent = `${state.stats.mp}/${state.stats.max_mp}`;
+    if (ui.expValue) {
+      ui.expValue.textContent = isMaxLevel ? '已满级' : `${state.stats.exp}/${state.stats.exp_next}`;
+    }
     if (ui.atk) ui.atk.textContent = state.stats.atk ?? '-';
     if (ui.def) ui.def.textContent = state.stats.def ?? '-';
     if (ui.mag) ui.mag.textContent = state.stats.mag ?? '-';
@@ -2015,6 +2062,18 @@ function renderState(state) {
     const inSabakBossRoom = state.room && state.room.zoneId === 'sabak' && state.room.roomId === 'lair';
     const inSpecialBossRoom = inWorldBossRoom || inMolongRoom || inSabakBossRoom;
     const rankBlock = ui.worldBossRank.closest('.action-group');
+
+    // 根据所在的BOSS房间设置不同的标题
+    if (ui.worldBossRankTitle) {
+      if (inWorldBossRoom) {
+        ui.worldBossRankTitle.textContent = '世界BOSS·炎龙伤害排行';
+      } else if (inMolongRoom) {
+        ui.worldBossRankTitle.textContent = '魔龙教主伤害排行';
+      } else if (inSabakBossRoom) {
+        ui.worldBossRankTitle.textContent = '沙巴克守护·玄武伤害排行';
+      }
+    }
+
     if (!inSpecialBossRoom) {
       if (rankBlock) rankBlock.classList.add('hidden');
     } else {
@@ -2475,6 +2534,7 @@ function enterGame(name) {
     if (payload.text.startsWith('\u4ea4\u6613')) {
       appendChatLine(payload);
       setTradeStatus(payload.text);
+      updateTradePartnerStatus(payload.text);
     }
   });
   socket.on('guild_members', (payload) => {
@@ -2934,6 +2994,13 @@ if (playerUi.close) {
 if (observeUi.close) {
   observeUi.close.addEventListener('click', () => {
     if (observeUi.modal) observeUi.modal.classList.add('hidden');
+  });
+}
+if (observeUi.modal) {
+  observeUi.modal.addEventListener('click', (e) => {
+    if (e.target === observeUi.modal) {
+      observeUi.modal.classList.add('hidden');
+    }
   });
 }
 if (guildUi.invite) {
