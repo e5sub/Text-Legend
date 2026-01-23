@@ -1047,7 +1047,11 @@ function isChatLine(text) {
   const match = text.match(/^\[([^\]]+)\]/);
   if (!match) return false;
   const head = match[1];
-  return !/^\d+$/.test(head);
+  // 允许纯数字玩家名(检查后面是否有空格和消息内容)
+  if (/^\d+$/.test(head)) {
+    return /^\[\d+\]\s+\S/.test(text);
+  }
+  return true;
 }
 
 function isAnnouncement(payload) {
