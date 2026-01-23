@@ -94,12 +94,25 @@ export function applyPoison(target, turns, tickDamage, sourceName = null) {
 
 export function tickStatus(target) {
   if (target.status.poison && target.status.poison.turns > 0) {
-    applyDamage(target, target.status.poison.tickDamage);
+    let damage = target.status.poison.tickDamage;
+
+    // 特殊BOSS（魔龙教主、世界BOSS、沙巴克BOSS）中毒伤害上限为1000
+    const isSpecialBoss = Boolean(
+      target.templateId &&
+      (MOB_TEMPLATES[target.templateId]?.id === 'molong_boss' ||
+       MOB_TEMPLATES[target.templateId]?.worldBoss ||
+       MOB_TEMPLATES[target.templateId]?.sabakBoss)
+    );
+    if (isSpecialBoss && damage > 1000) {
+      damage = 1000;
+    }
+
+    applyDamage(target, damage);
     target.status.poison.turns -= 1;
     if (target.status.poison.turns <= 0) {
       delete target.status.poison;
     }
-    return { type: 'poison', dmg: target.status.poison?.tickDamage || 0 };
+    return { type: 'poison', dmg: damage };
   }
 
   // 清理过期的中毒冷却
