@@ -172,6 +172,15 @@ tbody tr:hover {
   box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3);
 }
 
+.btn-delete {
+  background: #6c757d;
+  box-shadow: 0 4px 10px rgba(108, 117, 125, 0.3);
+}
+
+.btn-delete:hover {
+  background: #5a6268;
+}
+
 @media (max-width: 768px) {
   .wrap {
     padding: 20px 12px;

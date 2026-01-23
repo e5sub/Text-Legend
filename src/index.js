@@ -11,7 +11,7 @@ import knex from './db/index.js';
 import { createUser, verifyUser, createSession, getSession, getUserByName, setAdminFlag } from './db/users.js';
 import { listCharacters, loadCharacter, saveCharacter, findCharacterByName } from './db/characters.js';
 import { addGuildMember, createGuild, getGuildByName, getGuildMember, getSabakOwner, isGuildLeader, listGuildMembers, listSabakRegistrations, registerSabak, removeGuildMember, setSabakOwner, clearSabakRegistrations } from './db/guilds.js';
-import { createAdminSession, listUsers, verifyAdminSession } from './db/admin.js';
+import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
 import { sendMail, listMail, markMailRead } from './db/mail.js';
 import { createVipCodes, listVipCodes, useVipCode } from './db/vip.js';
 import { getVipSelfClaimEnabled, setVipSelfClaimEnabled, canUserClaimVip, incrementUserVipClaimCount } from './db/settings.js';
@@ -196,8 +196,29 @@ app.post('/admin/bootstrap', async (req, res) => {
 app.get('/admin/users', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
-  const users = await listUsers();
-  res.json({ ok: true, users });
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
+  const result = await listUsers(page, limit);
+  res.json({ ok: true, ...result });
+});
+
+app.post('/admin/users/delete', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const { userId } = req.body || {};
+  if (!userId) return res.status(400).json({ error: '缺少用户ID。' });
+  
+  // 防止删除自己
+  if (admin.user.id === userId) {
+    return res.status(400).json({ error: '不能删除自己的账号。' });
+  }
+  
+  try {
+    await deleteUser(userId);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: '删除失败: ' + err.message });
+  }
 });
 
 app.post('/admin/users/promote', async (req, res) => {

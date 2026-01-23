@@ -121,7 +121,7 @@
           <div class="chat-wrap">
             <div class="chat-header">
               <span>&#x73A9;&#x5BB6;&#x804A;&#x5929;</span>
-              <span class="tag">&#x7EC4;&#x961F;</span>
+              <span class="tag">&#x5168;&#x670D;</span>
             </div>
             <div class="chat-log" id="chat-log"></div>
             <div class="chat-actions">
@@ -321,10 +321,10 @@
       <div class="modal-title">玩家信息</div>
       <div class="modal-text" id="player-info"></div>
       <div class="modal-actions">
+        <button id="player-observe">观察</button>
         <button id="player-attack">攻击</button>
         <button id="player-trade">交易</button>
         <button id="player-party">组队</button>
-        <button id="player-follow">跟随</button>
         <button id="player-guild">邀请</button>
         <button id="player-close">关闭</button>
       </div>
@@ -414,6 +414,16 @@
   </div>
 
   <div id="item-tooltip" class="item-tooltip hidden"></div>
+
+  <div id="observe-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-title" id="observe-title">玩家信息</div>
+      <div class="observe-content" id="observe-content"></div>
+      <div class="modal-actions">
+        <button id="observe-close">关闭</button>
+      </div>
+    </div>
+  </div>
 
   <footer style="display: flex; justify-content: center; align-items: center; gap: 30px; padding: 12px; background: rgba(120, 64, 20, 0.9); color: #fff3df; font-size: 0.85rem; margin-top: 20px;">
     <a href="https://github.com/e5sub/Text-Legend" target="_blank" rel="noopener noreferrer" style="color: #ffd699; text-decoration: none;">

@@ -530,6 +530,80 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
       send(formatStats(player, partyApi));
       return;
     }
+    case 'observe':
+    case 'inspect': {
+      if (!args) return send('观察谁？');
+      const targetName = args.trim();
+      const target = players.find((p) => p.name === targetName);
+      if (!target) return send('该玩家不在线或不存在。');
+      
+      // 构建玩家信息对象
+      const className = CLASSES[target.classId]?.name || target.classId;
+      const observeData = {
+        name: target.name,
+        level: target.level,
+        class: className,
+        hp: target.hp,
+        maxHp: target.max_hp,
+        mp: target.mp,
+        maxMp: target.max_mp,
+        atk: Math.floor(target.atk),
+        def: Math.floor(target.def),
+        matk: Math.floor(target.matk || target.mag || 0),
+        mdef: Math.floor(target.mdef || 0),
+        crit: Math.round(target.crit * 100),
+        evade: Math.round((target.evadeChance || 0) * 100),
+        equipment: [],
+        summons: []
+      };
+      
+      // 装备信息
+      if (target.equipment && Object.keys(target.equipment).length > 0) {
+        const slots = ['weapon', 'chest', 'head', 'waist', 'feet', 'ring_left', 'ring_right', 'bracelet_left', 'bracelet_right', 'neck'];
+        const slotNames = { 
+          weapon: '武器', 
+          chest: '护甲', 
+          head: '头盔', 
+          waist: '腰带',
+          feet: '靴子',
+          ring_left: '戒指(左)', 
+          ring_right: '戒指(右)',
+          bracelet_left: '手镯(左)',
+          bracelet_right: '手镯(右)',
+          neck: '项链'
+        };
+        slots.forEach((slot) => {
+          const item = target.equipment[slot];
+          if (item) {
+            const template = ITEM_TEMPLATES[item.id];
+            if (template) {
+              observeData.equipment.push({
+                slot: slotNames[slot] || slot,
+                name: template.name,
+                durability: item.durability,
+                maxDurability: item.max_durability || getDurabilityMax(item.id)
+              });
+            }
+          }
+        });
+      }
+      
+      // 召唤物信息
+      if (target.summon) {
+        observeData.summons.push({
+          name: target.summon.name,
+          level: target.summon.level,
+          hp: target.summon.hp,
+          maxHp: target.summon.max_hp
+        });
+      }
+      
+      // 通过socket发送observe事件给玩家
+      if (player.socket) {
+        player.socket.emit('observe_data', observeData);
+      }
+      return;
+    }
     case 'bag': {
       send(`背包 (${player.inventory.length}/${bagLimit(player)}): ${formatInventory(player)}`);
       return;

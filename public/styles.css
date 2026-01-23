@@ -372,6 +372,39 @@ body.dark .summon-stat-value {
   color: #c8b8a8;
 }
 
+/* 暗黑模式 - 观察弹窗 */
+body.dark .observe-content {
+  background: rgba(32, 28, 24, 0.95);
+}
+
+body.dark .observe-section-title {
+  color: #e8a058;
+  border-bottom-color: rgba(232, 160, 88, 0.3);
+}
+
+body.dark .observe-stat-label {
+  color: #c8b8a8;
+}
+
+body.dark .observe-stat-value {
+  color: #e8a058;
+}
+
+body.dark .observe-equipment-item,
+body.dark .observe-summon-item {
+  background: rgba(74, 58, 40, 0.6);
+}
+
+body.dark .observe-equipment-name,
+body.dark .observe-summon-name {
+  color: #e8e0d4;
+}
+
+body.dark .observe-equipment-durability,
+body.dark .observe-summon-stats {
+  color: #c8b8a8;
+}
+
 body.dark .item-tooltip {
   background: rgba(20, 16, 12, 0.96);
   border-color: rgba(180, 140, 100, 0.5);
@@ -2941,6 +2974,86 @@ button:hover {
 .item-tooltip.show {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* 观察弹窗样式 */
+.observe-content {
+  background: var(--panel);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 12px 0;
+  font-size: 0.95rem;
+  line-height: 1.8;
+}
+
+.observe-section {
+  margin-bottom: 16px;
+}
+
+.observe-section:last-child {
+  margin-bottom: 0;
+}
+
+.observe-section-title {
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 8px;
+  font-size: 1rem;
+  border-bottom: 1px solid var(--accent-soft);
+  padding-bottom: 4px;
+}
+
+.observe-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.observe-stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.observe-stat-label {
+  color: var(--ink);
+  opacity: 0.7;
+}
+
+.observe-stat-value {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.observe-equipment-list,
+.observe-summon-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.observe-equipment-item,
+.observe-summon-item {
+  background: var(--accent-soft);
+  padding: 8px 12px;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.observe-equipment-name,
+.observe-summon-name {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.observe-equipment-durability,
+.observe-summon-stats {
+  font-size: 0.85rem;
+  color: var(--ink);
+  opacity: 0.7;
 }
 
 .target-label {

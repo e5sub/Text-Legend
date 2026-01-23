@@ -10,8 +10,11 @@ const vipCodesList = document.getElementById('vip-codes-list');
 const vipCodesTableContainer = document.getElementById('vip-codes-table-container');
 const vipSelfClaimStatus = document.getElementById('vip-self-claim-status');
 const vipSelfClaimMsg = document.getElementById('vip-self-claim-msg');
+const usersPaginationInfo = document.getElementById('users-pagination-info');
 
 let adminToken = localStorage.getItem('adminToken');
+let currentUsersPage = 1;
+let totalUsersPages = 1;
 
 function showDashboard() {
   loginSection.classList.add('hidden');
@@ -48,14 +51,21 @@ async function login() {
   }
 }
 
-async function refreshUsers() {
+async function refreshUsers(page = 1) {
   try {
-    const data = await api('/admin/users', 'GET');
+    const data = await api(`/admin/users?page=${page}&limit=10`, 'GET');
+    currentUsersPage = data.page;
+    totalUsersPages = data.totalPages;
+    
     usersList.innerHTML = '';
     if (!data.users || data.users.length === 0) {
       usersList.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #999;">暂无用户</td></tr>';
+      usersPaginationInfo.textContent = '';
       return;
     }
+    
+    usersPaginationInfo.textContent = `第 ${data.page} / ${data.totalPages} 页 (共 ${data.total} 个用户)`;
+    
     data.users.forEach((u) => {
       const tr = document.createElement('tr');
       
@@ -98,6 +108,16 @@ async function refreshUsers() {
         btnPromote.addEventListener('click', () => quickToggleGM(u.username, true));
         tdAction.appendChild(btnPromote);
       }
+      
+      // 删除按钮
+      const btnDelete = document.createElement('button');
+      btnDelete.className = 'btn-small btn-delete';
+      btnDelete.textContent = '删除';
+      btnDelete.style.background = '#6c757d';
+      btnDelete.style.boxShadow = '0 4px 10px rgba(108, 117, 125, 0.3)';
+      btnDelete.addEventListener('click', () => deleteUserAccount(u.id, u.username));
+      tdAction.appendChild(btnDelete);
+      
       tr.appendChild(tdAction);
       
       usersList.appendChild(tr);
@@ -110,9 +130,27 @@ async function refreshUsers() {
 async function quickToggleGM(username, isAdmin) {
   try {
     await api('/admin/users/promote', 'POST', { username, isAdmin });
-    await refreshUsers();
+    await refreshUsers(currentUsersPage);
   } catch (err) {
     alert(`操作失败: ${err.message}`);
+  }
+}
+
+async function deleteUserAccount(userId, username) {
+  if (!confirm(`确定要删除用户 "${username}" 吗？\n\n此操作将删除该用户的所有数据（角色、邮件、行会等），且无法恢复！`)) {
+    return;
+  }
+  
+  if (!confirm(`再次确认：真的要删除用户 "${username}" 吗？`)) {
+    return;
+  }
+  
+  try {
+    await api('/admin/users/delete', 'POST', { userId });
+    alert('用户已删除');
+    await refreshUsers(currentUsersPage);
+  } catch (err) {
+    alert(`删除失败: ${err.message}`);
   }
 }
 
@@ -124,7 +162,7 @@ async function promoteUser() {
       isAdmin: document.getElementById('promote-flag').value === 'true'
     });
     promoteMsg.textContent = '已更新 GM 权限。';
-    await refreshUsers();
+    await refreshUsers(currentUsersPage);
   } catch (err) {
     promoteMsg.textContent = err.message;
   }
@@ -256,7 +294,17 @@ if (adminToken) {
 }
 
 document.getElementById('admin-login-btn').addEventListener('click', login);
-document.getElementById('refresh-users').addEventListener('click', refreshUsers);
+document.getElementById('refresh-users').addEventListener('click', () => refreshUsers(currentUsersPage));
+document.getElementById('users-prev-page').addEventListener('click', () => {
+  if (currentUsersPage > 1) {
+    refreshUsers(currentUsersPage - 1);
+  }
+});
+document.getElementById('users-next-page').addEventListener('click', () => {
+  if (currentUsersPage < totalUsersPages) {
+    refreshUsers(currentUsersPage + 1);
+  }
+});
 document.getElementById('promote-btn').addEventListener('click', promoteUser);
 document.getElementById('char-update-btn').addEventListener('click', updateCharacter);
 document.getElementById('mail-send-btn').addEventListener('click', sendMail);

@@ -177,12 +177,18 @@ const afkUi = {
 const playerUi = {
   modal: document.getElementById('player-modal'),
   info: document.getElementById('player-info'),
+  observe: document.getElementById('player-observe'),
   attack: document.getElementById('player-attack'),
   trade: document.getElementById('player-trade'),
   party: document.getElementById('player-party'),
-  follow: document.getElementById('player-follow'),
   guild: document.getElementById('player-guild'),
   close: document.getElementById('player-close')
+};
+const observeUi = {
+  modal: document.getElementById('observe-modal'),
+  title: document.getElementById('observe-title'),
+  content: document.getElementById('observe-content'),
+  close: document.getElementById('observe-close')
 };
 const itemTooltip = document.getElementById('item-tooltip');
 let lastShopItems = [];
@@ -2436,6 +2442,75 @@ function enterGame(name) {
   socket.on('state', (payload) => {
     renderState(payload);
   });
+  
+  socket.on('observe_data', (data) => {
+    showObserveModal(data);
+  });
+}
+
+function showObserveModal(data) {
+  if (!observeUi || !observeUi.modal || !observeUi.content) return;
+  
+  observeUi.title.textContent = `${data.name} 的信息`;
+  
+  let html = '';
+  
+  // 基础信息
+  html += '<div class="observe-section">';
+  html += '<div class="observe-section-title">基础属性</div>';
+  html += '<div class="observe-stats">';
+  html += `<div class="observe-stat-row"><span class="observe-stat-label">等级</span><span class="observe-stat-value">${data.level}</span></div>`;
+  html += `<div class="observe-stat-row"><span class="observe-stat-label">职业</span><span class="observe-stat-value">${data.class}</span></div>`;
+  html += `<div class="observe-stat-row"><span class="observe-stat-label">生命</span><span class="observe-stat-value">${data.hp}/${data.maxHp}</span></div>`;
+  html += `<div class="observe-stat-row"><span class="observe-stat-label">魔法</span><span class="observe-stat-value">${data.mp}/${data.maxMp}</span></div>`;
+  html += `<div class="observe-stat-row"><span class="observe-stat-label">攻击</span><span class="observe-stat-value">${data.atk}</span></div>`;
+  html += `<div class="observe-stat-row"><span class="observe-stat-label">防御</span><span class="observe-stat-value">${data.def}</span></div>`;
+  html += `<div class="observe-stat-row"><span class="observe-stat-label">魔攻</span><span class="observe-stat-value">${data.matk}</span></div>`;
+  html += `<div class="observe-stat-row"><span class="observe-stat-label">魔防</span><span class="observe-stat-value">${data.mdef}</span></div>`;
+  html += `<div class="observe-stat-row"><span class="observe-stat-label">暴击</span><span class="observe-stat-value">${data.crit}%</span></div>`;
+  html += `<div class="observe-stat-row"><span class="observe-stat-label">闪避</span><span class="observe-stat-value">${data.evade}%</span></div>`;
+  html += '</div>';
+  html += '</div>';
+  
+  // 装备信息
+  if (data.equipment && data.equipment.length > 0) {
+    html += '<div class="observe-section">';
+    html += '<div class="observe-section-title">装备</div>';
+    html += '<div class="observe-equipment-list">';
+    data.equipment.forEach(eq => {
+      html += '<div class="observe-equipment-item">';
+      html += `<span class="observe-equipment-name">${eq.slot}: ${eq.name}</span>`;
+      if (eq.durability != null) {
+        html += `<span class="observe-equipment-durability">[${eq.durability}/${eq.maxDurability}]</span>`;
+      }
+      html += '</div>';
+    });
+    html += '</div>';
+    html += '</div>';
+  } else {
+    html += '<div class="observe-section">';
+    html += '<div class="observe-section-title">装备</div>';
+    html += '<div style="color: var(--ink); opacity: 0.6; padding: 8px;">无装备</div>';
+    html += '</div>';
+  }
+  
+  // 召唤物信息
+  if (data.summons && data.summons.length > 0) {
+    html += '<div class="observe-section">';
+    html += '<div class="observe-section-title">召唤物</div>';
+    html += '<div class="observe-summon-list">';
+    data.summons.forEach(summon => {
+      html += '<div class="observe-summon-item">';
+      html += `<span class="observe-summon-name">${summon.name} (Lv ${summon.level})</span>`;
+      html += `<span class="observe-summon-stats">HP: ${summon.hp}/${summon.maxHp}</span>`;
+      html += '</div>';
+    });
+    html += '</div>';
+    html += '</div>';
+  }
+  
+  observeUi.content.innerHTML = html;
+  observeUi.modal.classList.remove('hidden');
 }
 
 document.getElementById('login-btn').addEventListener('click', login);
@@ -2784,6 +2859,11 @@ if (playerUi.close) {
     if (playerUi.modal) playerUi.modal.classList.add('hidden');
   });
 }
+if (observeUi.close) {
+  observeUi.close.addEventListener('click', () => {
+    if (observeUi.modal) observeUi.modal.classList.add('hidden');
+  });
+}
 if (guildUi.invite) {
   guildUi.invite.addEventListener('click', async () => {
     const name = await promptModal({
@@ -2842,6 +2922,13 @@ if (partyUi.followLeader) {
     if (socket) socket.emit('cmd', { text: `party follow ${party.leader}` });
   });
 }
+if (playerUi.observe) {
+  playerUi.observe.addEventListener('click', () => {
+    if (!socket || !playerUi.selected) return;
+    socket.emit('cmd', { text: `observe ${playerUi.selected.name}` });
+    if (playerUi.modal) playerUi.modal.classList.add('hidden');
+  });
+}
 if (playerUi.attack) {
   playerUi.attack.addEventListener('click', () => {
     if (!socket || !playerUi.selected) return;
@@ -2860,13 +2947,6 @@ if (playerUi.party) {
   playerUi.party.addEventListener('click', () => {
     if (!socket || !playerUi.selected) return;
     socket.emit('cmd', { text: `party invite ${playerUi.selected.name}` });
-    if (playerUi.modal) playerUi.modal.classList.add('hidden');
-  });
-}
-if (playerUi.follow) {
-  playerUi.follow.addEventListener('click', () => {
-    if (!socket || !playerUi.selected) return;
-    socket.emit('cmd', { text: `party follow ${playerUi.selected.name}` });
     if (playerUi.modal) playerUi.modal.classList.add('hidden');
   });
 }
