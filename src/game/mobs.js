@@ -1,47 +1,47 @@
 ﻿export const MOB_TEMPLATES = {
   // Basic field
-  chicken: { id: 'chicken', name: '鸡', level: 1, hp: 20, atk: 2, def: 0, exp: 8, gold: [1, 5], drops: [{ id: 'potion_small', chance: 0.05 }] },
-  deer: { id: 'deer', name: '鹿', level: 2, hp: 30, atk: 4, def: 0, exp: 12, gold: [2, 8], drops: [{ id: 'potion_small', chance: 0.08 }] },
-  sheep: { id: 'sheep', name: '羊', level: 2, hp: 28, atk: 3, def: 0, exp: 10, gold: [2, 6], drops: [{ id: 'potion_small', chance: 0.06 }] },
-  scarecrow: { id: 'scarecrow', name: '稻草人', level: 5, hp: 60, atk: 8, def: 1, exp: 25, gold: [5, 12], drops: [{ id: 'potion_small', chance: 0.1 }] },
-  cat: { id: 'cat', name: '钉耙猫', level: 5, hp: 85, atk: 12, def: 2, exp: 38, gold: [5, 12], drops: [{ id: 'potion_small', chance: 0.1 }] },
-  wolf: { id: 'wolf', name: '狼', level: 4, hp: 80, atk: 10, def: 2, exp: 40, gold: [4, 12], drops: [{ id: 'potion_small', chance: 0.1 }, { id: 'boots_leather', chance: 0.02 }] },
-  half_orc: { id: 'half_orc', name: '半兽人', level: 7, hp: 140, atk: 16, def: 5, exp: 85, gold: [10, 20], drops: [{ id: 'armor_chain', chance: 0.03 }] },
-  half_orc_warrior: { id: 'half_orc_warrior', name: '半兽战士', level: 9, hp: 180, atk: 20, def: 6, exp: 120, gold: [12, 24], drops: [{ id: 'bronze_sword', chance: 0.03 }] },
-  half_orc_elite: { id: 'half_orc_elite', name: '半兽勇士', level: 12, hp: 260, atk: 26, def: 9, exp: 200, gold: [18, 40], drops: [{ id: 'great_sword', chance: 0.02 }] },
-  bee: { id: 'bee', name: '毒蜂', level: 5, hp: 60, atk: 12, def: 1, exp: 35, gold: [3, 10], drops: [{ id: 'potion_small', chance: 0.1 }] },
-  spider: { id: 'spider', name: '蜘蛛', level: 8, hp: 120, atk: 18, def: 4, exp: 95, gold: [10, 22], drops: [{ id: 'potion_small', chance: 0.1 }] },
+  chicken: { id: 'chicken', name: '鸡', level: 1, hp: 20, atk: 2, def: 0, mdef: 0, exp: 8, gold: [1, 5], drops: [{ id: 'potion_small', chance: 0.05 }] },
+  deer: { id: 'deer', name: '鹿', level: 2, hp: 30, atk: 4, def: 0, mdef: 0, exp: 12, gold: [2, 8], drops: [{ id: 'potion_small', chance: 0.08 }] },
+  sheep: { id: 'sheep', name: '羊', level: 2, hp: 28, atk: 3, def: 0, mdef: 0, exp: 10, gold: [2, 6], drops: [{ id: 'potion_small', chance: 0.06 }] },
+  scarecrow: { id: 'scarecrow', name: '稻草人', level: 5, hp: 60, atk: 8, def: 1, mdef: 1, exp: 25, gold: [5, 12], drops: [{ id: 'potion_small', chance: 0.1 }] },
+  cat: { id: 'cat', name: '钉耙猫', level: 5, hp: 85, atk: 12, def: 2, mdef: 2, exp: 38, gold: [5, 12], drops: [{ id: 'potion_small', chance: 0.1 }] },
+  wolf: { id: 'wolf', name: '狼', level: 4, hp: 80, atk: 10, def: 2, mdef: 2, exp: 40, gold: [4, 12], drops: [{ id: 'potion_small', chance: 0.1 }, { id: 'boots_leather', chance: 0.02 }] },
+  half_orc: { id: 'half_orc', name: '半兽人', level: 7, hp: 140, atk: 16, def: 5, mdef: 5, exp: 85, gold: [10, 20], drops: [{ id: 'armor_chain', chance: 0.03 }] },
+  half_orc_warrior: { id: 'half_orc_warrior', name: '半兽战士', level: 9, hp: 180, atk: 20, def: 6, mdef: 6, exp: 120, gold: [12, 24], drops: [{ id: 'bronze_sword', chance: 0.03 }] },
+  half_orc_elite: { id: 'half_orc_elite', name: '半兽勇士', level: 12, hp: 260, atk: 26, def: 9, mdef: 9, exp: 200, gold: [18, 40], drops: [{ id: 'great_sword', chance: 0.02 }] },
+  bee: { id: 'bee', name: '毒蜂', level: 5, hp: 60, atk: 12, def: 1, mdef: 1, exp: 35, gold: [3, 10], drops: [{ id: 'potion_small', chance: 0.1 }] },
+  spider: { id: 'spider', name: '蜘蛛', level: 8, hp: 120, atk: 18, def: 4, mdef: 4, exp: 95, gold: [10, 22], drops: [{ id: 'potion_small', chance: 0.1 }] },
 
   // Snake valley
-  red_snake: { id: 'red_snake', name: '红蛇', level: 10, hp: 160, atk: 20, def: 5, exp: 130, gold: [12, 26], drops: [{ id: 'potion_mid', chance: 0.08 }] },
-  tiger_snake: { id: 'tiger_snake', name: '虎蛇', level: 11, hp: 180, atk: 22, def: 6, exp: 150, gold: [14, 28], drops: [{ id: 'potion_mid', chance: 0.08 }] },
-  evil_snake: { id: 'evil_snake', name: '邪恶毒蛇', level: 26, hp: 980, atk: 60, def: 24, exp: 820, gold: [120, 240], drops: [{ id: 'necklace_green', chance: 0.1 }, { id: 'ring_tiger', chance: 0.1 }] },
+  red_snake: { id: 'red_snake', name: '红蛇', level: 10, hp: 160, atk: 20, def: 5, mdef: 5, exp: 130, gold: [12, 26], drops: [{ id: 'potion_mid', chance: 0.08 }] },
+  tiger_snake: { id: 'tiger_snake', name: '虎蛇', level: 11, hp: 180, atk: 22, def: 6, mdef: 6, exp: 150, gold: [14, 28], drops: [{ id: 'potion_mid', chance: 0.08 }] },
+  evil_snake: { id: 'evil_snake', name: '邪恶毒蛇', level: 26, hp: 980, atk: 60, def: 24, mdef: 24, exp: 820, gold: [120, 240], drops: [{ id: 'necklace_green', chance: 0.1 }, { id: 'ring_tiger', chance: 0.1 }] },
 
   // Mine / cave
-  skeleton: { id: 'skeleton', name: '骷髅', level: 6, hp: 120, atk: 14, def: 4, exp: 70, gold: [8, 18], drops: [{ id: 'potion_small', chance: 0.12 }, { id: 'sword_wood', chance: 0.03 }] },
-  zombie: { id: 'zombie', name: '僵尸', level: 8, hp: 160, atk: 18, def: 6, exp: 110, gold: [12, 26], drops: [{ id: 'potion_small', chance: 0.12 }, { id: 'armor_cloth', chance: 0.03 }] },
-  elec_zombie: { id: 'elec_zombie', name: '电僵尸', level: 10, hp: 200, atk: 22, def: 7, exp: 140, gold: [14, 30], drops: [{ id: 'potion_mid', chance: 0.1 }] },
-  craw_zombie: { id: 'craw_zombie', name: '爬行僵尸', level: 11, hp: 220, atk: 24, def: 8, exp: 160, gold: [16, 34], drops: [{ id: 'potion_mid', chance: 0.1 }] },
-  cave_bat: { id: 'cave_bat', name: '洞蛆', level: 9, hp: 150, atk: 18, def: 5, exp: 120, gold: [12, 26], drops: [{ id: 'potion_small', chance: 0.12 }] },
-  black_worm: { id: 'black_worm', name: '黑色恶蛆', level: 12, hp: 240, atk: 26, def: 9, exp: 180, gold: [18, 36], drops: [{ id: 'potion_mid', chance: 0.1 }] },
-  moth: { id: 'moth', name: '楔蛾', level: 12, hp: 220, atk: 24, def: 8, exp: 170, gold: [16, 34], drops: [{ id: 'potion_mid', chance: 0.1 }] },
+  skeleton: { id: 'skeleton', name: '骷髅', level: 6, hp: 120, atk: 14, def: 4, mdef: 4, exp: 70, gold: [8, 18], drops: [{ id: 'potion_small', chance: 0.12 }, { id: 'sword_wood', chance: 0.03 }] },
+  zombie: { id: 'zombie', name: '僵尸', level: 8, hp: 160, atk: 18, def: 6, mdef: 6, exp: 110, gold: [12, 26], drops: [{ id: 'potion_small', chance: 0.12 }, { id: 'armor_cloth', chance: 0.03 }] },
+  elec_zombie: { id: 'elec_zombie', name: '电僵尸', level: 10, hp: 200, atk: 22, def: 7, mdef: 7, exp: 140, gold: [14, 30], drops: [{ id: 'potion_mid', chance: 0.1 }] },
+  craw_zombie: { id: 'craw_zombie', name: '爬行僵尸', level: 11, hp: 220, atk: 24, def: 8, mdef: 8, exp: 160, gold: [16, 34], drops: [{ id: 'potion_mid', chance: 0.1 }] },
+  cave_bat: { id: 'cave_bat', name: '洞蛆', level: 9, hp: 150, atk: 18, def: 5, mdef: 5, exp: 120, gold: [12, 26], drops: [{ id: 'potion_small', chance: 0.12 }] },
+  black_worm: { id: 'black_worm', name: '黑色恶蛆', level: 12, hp: 240, atk: 26, def: 9, mdef: 9, exp: 180, gold: [18, 36], drops: [{ id: 'potion_mid', chance: 0.1 }] },
+  moth: { id: 'moth', name: '楔蛾', level: 12, hp: 220, atk: 24, def: 8, mdef: 8, exp: 170, gold: [16, 34], drops: [{ id: 'potion_mid', chance: 0.1 }] },
 
   // Wugong cave
-  centipede: { id: 'centipede', name: '蜈蚣', level: 14, hp: 280, atk: 28, def: 10, exp: 220, gold: [20, 40], drops: [{ id: 'potion_mid', chance: 0.1 }] },
-  scorpion: { id: 'scorpion', name: '钳虫', level: 16, hp: 340, atk: 32, def: 12, exp: 260, gold: [22, 46], drops: [{ id: 'potion_mid', chance: 0.12 }] },
-  ghoul: { id: 'ghoul', name: '邪恶钳虫', level: 20, hp: 520, atk: 40, def: 16, exp: 420, gold: [40, 80], drops: [{ id: 'moonblade', chance: 0.03 }, { id: 'armor_chain', chance: 0.05 }, { id: 'book_war_attack', chance: 0.02 }, { id: 'book_mage_resist', chance: 0.02 }, { id: 'book_tao_poison', chance: 0.02 }] },
-  bug_queen: { id: 'bug_queen', name: '触龙神', level: 24, hp: 1200, atk: 56, def: 22, exp: 900, gold: [120, 220], drops: [{ id: 'necklace_green', chance: 0.08 }, { id: 'ring_tiger', chance: 0.08 }, { id: 'book_war_assassinate', chance: 0.03 }, { id: 'book_mage_inferno', chance: 0.03 }, { id: 'book_tao_soul', chance: 0.03 }] },
+  centipede: { id: 'centipede', name: '蜈蚣', level: 14, hp: 280, atk: 28, def: 10, mdef: 10, exp: 220, gold: [20, 40], drops: [{ id: 'potion_mid', chance: 0.1 }] },
+  scorpion: { id: 'scorpion', name: '钳虫', level: 16, hp: 340, atk: 32, def: 12, mdef: 12, exp: 260, gold: [22, 46], drops: [{ id: 'potion_mid', chance: 0.12 }] },
+  ghoul: { id: 'ghoul', name: '邪恶钳虫', level: 20, hp: 520, atk: 40, def: 16, mdef: 16, exp: 420, gold: [40, 80], drops: [{ id: 'moonblade', chance: 0.03 }, { id: 'armor_chain', chance: 0.05 }, { id: 'book_war_attack', chance: 0.02 }, { id: 'book_mage_resist', chance: 0.02 }, { id: 'book_tao_poison', chance: 0.02 }] },
+  bug_queen: { id: 'bug_queen', name: '触龙神', level: 24, hp: 1200, atk: 56, def: 22, mdef: 22, exp: 900, gold: [120, 220], drops: [{ id: 'necklace_green', chance: 0.08 }, { id: 'ring_tiger', chance: 0.08 }, { id: 'book_war_assassinate', chance: 0.03 }, { id: 'book_mage_inferno', chance: 0.03 }, { id: 'book_tao_soul', chance: 0.03 }] },
 
   // Stone tomb
-  pig_red: { id: 'pig_red', name: '红野猪', level: 18, hp: 420, atk: 34, def: 14, exp: 320, gold: [26, 52], drops: [{ id: 'potion_mid', chance: 0.12 }] },
-  pig_black: { id: 'pig_black', name: '黑野猪', level: 20, hp: 480, atk: 38, def: 16, exp: 360, gold: [30, 60], drops: [{ id: 'potion_mid', chance: 0.12 }] },
-  pig_white: { id: 'pig_white', name: '白野猪', level: 26, hp: 980, atk: 56, def: 22, exp: 760, gold: [100, 200], drops: [{ id: 'ring_strength', chance: 0.08 }, { id: 'ring_bone', chance: 0.08 }, { id: 'ring_tao', chance: 0.08 }] },
+  pig_red: { id: 'pig_red', name: '红野猪', level: 18, hp: 420, atk: 34, def: 14, mdef: 14, exp: 320, gold: [26, 52], drops: [{ id: 'potion_mid', chance: 0.12 }] },
+  pig_black: { id: 'pig_black', name: '黑野猪', level: 20, hp: 480, atk: 38, def: 16, mdef: 16, exp: 360, gold: [30, 60], drops: [{ id: 'potion_mid', chance: 0.12 }] },
+  pig_white: { id: 'pig_white', name: '白野猪', level: 26, hp: 980, atk: 56, def: 22, mdef: 22, exp: 760, gold: [100, 200], drops: [{ id: 'ring_strength', chance: 0.08 }, { id: 'ring_bone', chance: 0.08 }, { id: 'ring_tao', chance: 0.08 }] },
 
   // Woma
-  woma_guard: { id: 'woma_guard', name: '沃玛卫士', level: 22, hp: 620, atk: 48, def: 22, exp: 520, gold: [60, 120], drops: [{ id: 'necklace_life', chance: 0.02 }, { id: 'ring_ruby', chance: 0.02 }] },
-  woma_warrior: { id: 'woma_warrior', name: '沃玛战士', level: 24, hp: 720, atk: 54, def: 24, exp: 580, gold: [70, 140], drops: [{ id: 'ring_ruby', chance: 0.02 }] },
-  woma_mage: { id: 'woma_mage', name: '沃玛战将', level: 25, hp: 760, atk: 56, def: 24, exp: 620, gold: [80, 150], drops: [{ id: 'necklace_life', chance: 0.03 }] },
-  woma_leader: { id: 'woma_leader', name: '沃玛教主', level: 28, hp: 1950, atk: 91, def: 39, exp: 1560, gold: [260, 520], drops: [
+  woma_guard: { id: 'woma_guard', name: '沃玛卫士', level: 22, hp: 620, atk: 48, def: 22, mdef: 22, exp: 520, gold: [60, 120], drops: [{ id: 'necklace_life', chance: 0.02 }, { id: 'ring_ruby', chance: 0.02 }] },
+  woma_warrior: { id: 'woma_warrior', name: '沃玛战士', level: 24, hp: 720, atk: 54, def: 24, mdef: 24, exp: 580, gold: [70, 140], drops: [{ id: 'ring_ruby', chance: 0.02 }] },
+  woma_mage: { id: 'woma_mage', name: '沃玛战将', level: 25, hp: 760, atk: 56, def: 24, mdef: 24, exp: 620, gold: [80, 150], drops: [{ id: 'necklace_life', chance: 0.03 }] },
+  woma_leader: { id: 'woma_leader', name: '沃玛教主', level: 28, hp: 1950, atk: 91, def: 39, mdef: 39, exp: 1560, gold: [260, 520], drops: [
     { id: 'necklace_life', chance: 0.12 },
     { id: 'ring_ruby', chance: 0.1 },
     { id: 'magestaff', chance: 0.05 },
@@ -54,10 +54,10 @@
   ] },
 
   // Zuma
-  zuma_archer: { id: 'zuma_archer', name: '祖玛弓箭手', level: 28, hp: 820, atk: 64, def: 28, exp: 680, gold: [90, 180], drops: [{ id: 'ring_tiger', chance: 0.04 }] },
-  zuma_guard: { id: 'zuma_guard', name: '祖玛卫士', level: 30, hp: 960, atk: 70, def: 32, exp: 760, gold: [100, 200], drops: [{ id: 'necklace_green', chance: 0.04 }] },
-  zuma_statue: { id: 'zuma_statue', name: '祖玛雕像', level: 31, hp: 980, atk: 72, def: 33, exp: 780, gold: [110, 210], drops: [{ id: 'necklace_green', chance: 0.05 }, { id: 'ring_tiger', chance: 0.05 }] },
-  zuma_leader: { id: 'zuma_leader', name: '祖玛教主', level: 35, hp: 2860, atk: 117, def: 52, exp: 2340, gold: [390, 650], drops: [
+  zuma_archer: { id: 'zuma_archer', name: '祖玛弓箭手', level: 28, hp: 820, atk: 64, def: 28, mdef: 28, exp: 680, gold: [90, 180], drops: [{ id: 'ring_tiger', chance: 0.04 }] },
+  zuma_guard: { id: 'zuma_guard', name: '祖玛卫士', level: 30, hp: 960, atk: 70, def: 32, mdef: 32, exp: 760, gold: [100, 200], drops: [{ id: 'necklace_green', chance: 0.04 }] },
+  zuma_statue: { id: 'zuma_statue', name: '祖玛雕像', level: 31, hp: 980, atk: 72, def: 33, mdef: 33, exp: 780, gold: [110, 210], drops: [{ id: 'necklace_green', chance: 0.05 }, { id: 'ring_tiger', chance: 0.05 }] },
+  zuma_leader: { id: 'zuma_leader', name: '祖玛教主', level: 35, hp: 2860, atk: 117, def: 52, mdef: 52, exp: 2340, gold: [390, 650], drops: [
     { id: 'necklace_green', chance: 0.12 },
     { id: 'ring_tiger', chance: 0.12 },
     { id: 'bone_staff', chance: 0.05 },
@@ -72,19 +72,19 @@
   ] },
 
   // Chiyue
-  chiyue_spider: { id: 'chiyue_spider', name: '月魔蜘蛛', level: 36, hp: 1200, atk: 86, def: 36, exp: 900, gold: [120, 220], drops: [{ id: 'ring_strength', chance: 0.04 }] },
-  chiyue_flower: { id: 'chiyue_flower', name: '花吻蜘蛛', level: 36, hp: 1200, atk: 84, def: 35, exp: 900, gold: [120, 220], drops: [{ id: 'ring_bone', chance: 0.04 }] },
-  chiyue_guard: { id: 'chiyue_guard', name: '双头金刚', level: 40, hp: 2600, atk: 100, def: 46, exp: 2200, gold: [300, 500], drops: [
+  chiyue_spider: { id: 'chiyue_spider', name: '月魔蜘蛛', level: 36, hp: 1200, atk: 86, def: 36, mdef: 36, exp: 900, gold: [120, 220], drops: [{ id: 'ring_strength', chance: 0.04 }] },
+  chiyue_flower: { id: 'chiyue_flower', name: '花吻蜘蛛', level: 36, hp: 1200, atk: 84, def: 35, mdef: 35, exp: 900, gold: [120, 220], drops: [{ id: 'ring_bone', chance: 0.04 }] },
+  chiyue_guard: { id: 'chiyue_guard', name: '双头金刚', level: 40, hp: 2600, atk: 100, def: 46, mdef: 46, exp: 2200, gold: [300, 500], drops: [
     { id: 'armor_war', chance: 0.08 },
     { id: 'armor_mage', chance: 0.08 },
     { id: 'armor_tao', chance: 0.08 }
   ] },
-  chiyue_blood: { id: 'chiyue_blood', name: '双头血魔', level: 40, hp: 2600, atk: 100, def: 46, exp: 2200, gold: [300, 500], drops: [
+  chiyue_blood: { id: 'chiyue_blood', name: '双头血魔', level: 40, hp: 2600, atk: 100, def: 46, mdef: 46, exp: 2200, gold: [300, 500], drops: [
     { id: 'ring_holy', chance: 0.06 },
     { id: 'ring_fashen', chance: 0.06 },
     { id: 'ring_tianzun', chance: 0.06 }
   ] },
-  chiyue_demon: { id: 'chiyue_demon', name: '赤月恶魔', level: 42, hp: 4160, atk: 143, def: 68, exp: 3380, gold: [520, 910], drops: [
+  chiyue_demon: { id: 'chiyue_demon', name: '赤月恶魔', level: 42, hp: 4160, atk: 143, def: 68, mdef: 68, exp: 3380, gold: [520, 910], drops: [
     { id: 'armor_war', chance: 0.06 },
     { id: 'armor_mage', chance: 0.06 },
     { id: 'armor_tao', chance: 0.06 },
@@ -118,16 +118,16 @@
   ] },
 
   // Fengmo
-  fmg_pig: { id: 'fmg_pig', name: '虹魔猪卫', level: 34, hp: 1500, atk: 80, def: 34, exp: 1200, gold: [180, 300], drops: [{ id: 'ring_strength', chance: 0.05 }] },
-  fmg_scorpion: { id: 'fmg_scorpion', name: '虹魔蝎卫', level: 34, hp: 1500, atk: 80, def: 34, exp: 1200, gold: [180, 300], drops: [{ id: 'ring_bone', chance: 0.05 }] },
-  fmg_demon: { id: 'fmg_demon', name: '虹魔教主', level: 38, hp: 3380, atk: 125, def: 57, exp: 2600, gold: [338, 546], drops: [
+  fmg_pig: { id: 'fmg_pig', name: '虹魔猪卫', level: 34, hp: 1500, atk: 80, def: 34, mdef: 34, exp: 1200, gold: [180, 300], drops: [{ id: 'ring_strength', chance: 0.05 }] },
+  fmg_scorpion: { id: 'fmg_scorpion', name: '虹魔蝎卫', level: 34, hp: 1500, atk: 80, def: 34, mdef: 34, exp: 1200, gold: [180, 300], drops: [{ id: 'ring_bone', chance: 0.05 }] },
+  fmg_demon: { id: 'fmg_demon', name: '虹魔教主', level: 38, hp: 3380, atk: 125, def: 57, mdef: 57, exp: 2600, gold: [338, 546], drops: [
     { id: 'ring_strength', chance: 0.06 },
     { id: 'ring_bone', chance: 0.06 },
     { id: 'ring_tao', chance: 0.06 }
   ] },
 
   // Baibimu / jungle
-  tree_demon: { id: 'tree_demon', name: '千年树妖', level: 32, hp: 1800, atk: 78, def: 38, exp: 1400, gold: [200, 320], drops: [
+  tree_demon: { id: 'tree_demon', name: '千年树妖', level: 32, hp: 1800, atk: 78, def: 38, mdef: 38, exp: 1400, gold: [200, 320], drops: [
     { id: 'necklace_luck', chance: 0.12 },
     { id: 'necklace_green', chance: 0.06 },
     { id: 'ring_tiger', chance: 0.05 },
@@ -136,14 +136,14 @@
   ] },
 
   // Cangyue island
-  bone_soldier: { id: 'bone_soldier', name: '骷髅战士', level: 30, hp: 1000, atk: 70, def: 30, exp: 820, gold: [100, 200], drops: [{ id: 'ring_tiger', chance: 0.05 }] },
-  bone_general: { id: 'bone_general', name: '骷髅将军', level: 34, hp: 1400, atk: 82, def: 36, exp: 1200, gold: [160, 260], drops: [{ id: 'necklace_green', chance: 0.06 }] },
-  huangquan: { id: 'huangquan', name: '黄泉教主', level: 38, hp: 3380, atk: 125, def: 57, exp: 2600, gold: [338, 546], drops: [{ id: 'ring_holy', chance: 0.04 }, { id: 'ring_fashen', chance: 0.04 }, { id: 'ring_tianzun', chance: 0.04 }, { id: 'book_war_savage', chance: 0.03 }, { id: 'book_mage_flash', chance: 0.03 }, { id: 'book_tao_shield', chance: 0.03 }] },
+  bone_soldier: { id: 'bone_soldier', name: '骷髅战士', level: 30, hp: 1000, atk: 70, def: 30, mdef: 30, exp: 820, gold: [100, 200], drops: [{ id: 'ring_tiger', chance: 0.05 }] },
+  bone_general: { id: 'bone_general', name: '骷髅将军', level: 34, hp: 1400, atk: 82, def: 36, mdef: 36, exp: 1200, gold: [160, 260], drops: [{ id: 'necklace_green', chance: 0.06 }] },
+  huangquan: { id: 'huangquan', name: '黄泉教主', level: 38, hp: 3380, atk: 125, def: 57, mdef: 57, exp: 2600, gold: [338, 546], drops: [{ id: 'ring_holy', chance: 0.04 }, { id: 'ring_fashen', chance: 0.04 }, { id: 'ring_tianzun', chance: 0.04 }, { id: 'book_war_savage', chance: 0.03 }, { id: 'book_mage_flash', chance: 0.03 }, { id: 'book_tao_shield', chance: 0.03 }] },
 
   // Niumo temple
-  nmmob: { id: 'nmmob', name: '牛魔将军', level: 38, hp: 1800, atk: 92, def: 42, exp: 1600, gold: [200, 360], drops: [{ id: 'ring_strength', chance: 0.06 }] },
-  nm_mage: { id: 'nm_mage', name: '牛魔法师', level: 36, hp: 1500, atk: 86, def: 38, exp: 1400, gold: [180, 320], drops: [{ id: 'ring_bone', chance: 0.06 }] },
-  nm_boss: { id: 'nm_boss', name: '牛魔王', level: 45, hp: 5200, atk: 156, def: 78, exp: 4160, gold: [780, 1300], drops: [
+  nmmob: { id: 'nmmob', name: '牛魔将军', level: 38, hp: 1800, atk: 92, def: 42, mdef: 42, exp: 1600, gold: [200, 360], drops: [{ id: 'ring_strength', chance: 0.06 }] },
+  nm_mage: { id: 'nm_mage', name: '牛魔法师', level: 36, hp: 1500, atk: 86, def: 38, mdef: 38, exp: 1400, gold: [180, 320], drops: [{ id: 'ring_bone', chance: 0.06 }] },
+  nm_boss: { id: 'nm_boss', name: '牛魔王', level: 45, hp: 5200, atk: 156, def: 78, mdef: 78, exp: 4160, gold: [780, 1300], drops: [
     { id: 'juejudao', chance: 0.04 },
     { id: 'blood_drink', chance: 0.04 },
     { id: 'longwen', chance: 0.04 },
@@ -156,8 +156,8 @@
   ] },
 
   // Molong
-  molong_guard: { id: 'molong_guard', name: '魔龙力士', level: 48, hp: 4600, atk: 130, def: 70, exp: 3600, gold: [800, 1200], drops: [{ id: 'armor_molong', chance: 0.06 }] },
-  molong_boss: { id: 'molong_boss', name: '魔龙教主', level: 52, hp: 6000, atk: 90, def: 55, exp: 4500, gold: [1000, 1600], respawnMs: 3 * 60 * 60 * 1000, drops: [
+  molong_guard: { id: 'molong_guard', name: '魔龙力士', level: 48, hp: 4600, atk: 130, def: 70, mdef: 70, exp: 3600, gold: [800, 1200], drops: [{ id: 'armor_molong', chance: 0.06 }] },
+  molong_boss: { id: 'molong_boss', name: '魔龙教主', level: 52, hp: 6000, atk: 90, def: 55, mdef: 55, exp: 4500, gold: [1000, 1600], respawnMs: 3 * 60 * 60 * 1000, drops: [
     { id: 'armor_molong', chance: 0.12 },
     { id: 'armor_taishan', chance: 0.06 },
     { id: 'armor_doom', chance: 0.06 },
@@ -211,6 +211,7 @@
     hp: 12000,
     atk: 180,
     def: 110,
+    mdef: 110,
     exp: 9000,
     gold: [2000, 3200],
     worldBoss: true,
@@ -286,6 +287,7 @@
     hp: 5600,
     atk: 112,
     def: 67,
+    mdef: 67,
     exp: 4200,
     gold: [1050, 1820],
     sabakBoss: true,

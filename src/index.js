@@ -44,7 +44,7 @@ import { MOB_TEMPLATES } from './game/mobs.js';
 import { ITEM_TEMPLATES } from './game/items.js';
 import { WORLD } from './game/world.js';
 import { getRoomMobs, getAliveMobs, spawnMobs, removeMob, seedRespawnCache, setRespawnStore } from './game/state.js';
-import { calcHitChance, calcDamage, applyDamage, applyPoison, tickStatus } from './game/combat.js';
+import { calcHitChance, calcDamage, applyDamage, applyPoison, tickStatus, getDefenseMultiplier } from './game/combat.js';
 import { randInt, clamp } from './game/utils.js';
 import { expForLevel } from './game/constants.js';
 
@@ -342,7 +342,7 @@ const COMBO_PROC_CHANCE = 0.1;
 const ASSASSINATE_SECONDARY_DAMAGE_RATE = 0.3;
 const SABAK_TAX_RATE = 0.2;
 
-function buildItemView(itemId, effects = null) {
+function buildItemView(itemId, effects = null, durability = null, max_durability = null) {
   const item = ITEM_TEMPLATES[itemId] || { id: itemId, name: itemId, type: 'unknown' };
   return {
     id: itemId,
@@ -360,6 +360,8 @@ function buildItemView(itemId, effects = null) {
     mag: item.mag || 0,
     spirit: item.spirit || 0,
     dex: item.dex || 0,
+    durability: durability ?? null,
+    max_durability: max_durability ?? null,
     effects: effects || null
   };
 }
@@ -897,7 +899,7 @@ const consignApi = {
         seller: row.seller_name,
         qty: row.qty,
         price: row.price,
-        item: buildItemView(row.item_id, parseJson(row.effects_json))
+        item: buildItemView(row.item_id, parseJson(row.effects_json), row.durability, row.max_durability)
       }));
       player.socket.emit('consign_list', { type: 'market', items });
       return items;
@@ -909,7 +911,7 @@ const consignApi = {
         seller: row.seller_name,
         qty: row.qty,
         price: row.price,
-        item: buildItemView(row.item_id, parseJson(row.effects_json))
+        item: buildItemView(row.item_id, parseJson(row.effects_json), row.durability, row.max_durability)
       }));
       player.socket.emit('consign_list', { type: 'mine', items });
       return items;
@@ -919,13 +921,20 @@ const consignApi = {
       if (!item) return { ok: false, msg: '未找到物品。' };
       if (!CONSIGN_EQUIPMENT_TYPES.has(item.type)) return { ok: false, msg: '仅可寄售装备。' };
       if (qty <= 0 || price <= 0) return { ok: false, msg: '数量或价格无效。' };
+      const invSlot = findInventorySlot(player, itemId, effects);
+      if (!invSlot) return { ok: false, msg: '背包里没有该物品。' };
+      if (invSlot.qty < qty) return { ok: false, msg: '背包里没有足够数量。' };
+      const durability = invSlot.durability ?? null;
+      const maxDurability = invSlot.max_durability ?? null;
       if (!removeItem(player, itemId, qty, effects)) return { ok: false, msg: '背包里没有足够数量。' };
       const id = await createConsignment({
         sellerName: player.name,
         itemId,
         qty,
         price,
-        effectsJson: effects ? JSON.stringify(effects) : null
+        effectsJson: effects ? JSON.stringify(effects) : null,
+        durability,
+        maxDurability
       });
       await consignApi.listMine(player);
       await consignApi.listMarket(player);
@@ -941,7 +950,7 @@ const consignApi = {
     if (player.gold < total) return { ok: false, msg: '金币不足。' };
 
     player.gold -= total;
-      addItem(player, row.item_id, qty, parseJson(row.effects_json));
+      addItem(player, row.item_id, qty, parseJson(row.effects_json), row.durability, row.max_durability);
 
     const remain = row.qty - qty;
     if (remain > 0) {
@@ -957,7 +966,9 @@ const consignApi = {
       itemId: row.item_id,
       qty,
       price: row.price,
-      effectsJson: row.effects_json
+      effectsJson: row.effects_json,
+      durability: row.durability,
+      maxDurability: row.max_durability
     });
 
     const seller = playersByName(row.seller_name);
@@ -985,7 +996,7 @@ const consignApi = {
     const row = await getConsignment(listingId);
     if (!row) return { ok: false, msg: '寄售不存在。' };
     if (row.seller_name !== player.name) return { ok: false, msg: '只能取消自己的寄售。' };
-      addItem(player, row.item_id, row.qty, parseJson(row.effects_json));
+      addItem(player, row.item_id, row.qty, parseJson(row.effects_json), row.durability, row.max_durability);
     await deleteConsignment(listingId);
     await consignApi.listMine(player);
     await consignApi.listMarket(player);
@@ -1000,7 +1011,7 @@ const consignApi = {
       qty: row.qty,
       price: row.price,
       total: row.price * row.qty,
-      item: buildItemView(row.item_id, parseJson(row.effects_json)),
+      item: buildItemView(row.item_id, parseJson(row.effects_json), row.durability, row.max_durability),
       soldAt: row.sold_at
     }));
     player.socket.emit('consign_history', { items });
@@ -1495,14 +1506,15 @@ function checkBossRespawn() {
 
         // 所有BOSS刷新时发送公告
         if (isBoss) {
+          const locationData = {
+            zoneId,
+            roomId,
+            label: `${zone.name} - ${room.name}`
+          };
           emitAnnouncement(
             `${bossName} 已刷新，点击前往。`,
             'announce',
-            {
-              zoneId,
-              roomId,
-              label: `${zone.name} - ${room.name}`
-            }
+            locationData
           );
         }
       }
@@ -2689,10 +2701,23 @@ function combatTick() {
           const mdefMultiplier = getMagicDefenseMultiplier(target);
           const mdef = Math.floor((target.mdef || 0) * mdefMultiplier);
           const powerStat = skill.id === 'soul' ? (player.spirit || 0) : (player.mag || 0);
-          dmg = Math.floor((powerStat + randInt(0, powerStat / 2)) * skillPower - mdef * 0.6);
+          // 道士的soul技能受防御和魔御各50%影响
+          if (skill.id === 'soul') {
+            const defMultiplier = getDefenseMultiplier(target);
+            const def = Math.floor((target.def || 0) * defMultiplier);
+            dmg = Math.floor((powerStat + randInt(0, powerStat / 2)) * skillPower - mdef * 0.3 - def * 0.3);
+          } else {
+            dmg = Math.floor((powerStat + randInt(0, powerStat / 2)) * skillPower - mdef * 0.6);
+          }
           if (dmg < 1) dmg = 1;
         } else if (skill.type === 'dot') {
-          dmg = Math.max(1, Math.floor(player.mag * 0.5 * skillPower));
+          const mdefMultiplier = getMagicDefenseMultiplier(target);
+          const defMultiplier = getDefenseMultiplier(target);
+          const mdef = Math.floor((target.mdef || 0) * mdefMultiplier);
+          const def = Math.floor((target.def || 0) * defMultiplier);
+          const spirit = player.spirit || 0;
+          // 道术攻击受防御和魔御各50%影响
+          dmg = Math.max(1, Math.floor((spirit + randInt(0, spirit / 2)) * skillPower - mdef * 0.3 - def * 0.3));
         } else {
           const isNormal = !skill || skill.id === 'slash';
           const crit = consumeFirestrikeCrit(player, 'player', isNormal);

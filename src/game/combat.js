@@ -5,19 +5,16 @@ export function calcHitChance(attacker, defender) {
   return clamp(base, 0.2, 0.95);
 }
 
-export function calcDamage(attacker, defender, power = 1) {
-  const atk = attacker.atk + randInt(0, Math.max(1, attacker.atk / 2));
-  let defBonus = 0;
-  const buff = defender.status?.buffs?.defBuff;
-  const debuffs = defender.status?.debuffs || {};
+export function getDefenseMultiplier(target) {
+  const debuffs = target.status?.debuffs || {};
   const now = Date.now();
-  let defMultiplier = 1;
+  let multiplier = 1;
   const poison = debuffs.poison;
   if (poison) {
     if (poison.expiresAt && poison.expiresAt < now) {
       delete debuffs.poison;
     } else {
-      defMultiplier *= poison.defMultiplier || 1;
+      multiplier *= poison.defMultiplier || 1;
     }
   }
   const poisonEffect = debuffs.poisonEffect;
@@ -25,7 +22,7 @@ export function calcDamage(attacker, defender, power = 1) {
     if (poisonEffect.expiresAt && poisonEffect.expiresAt < now) {
       delete debuffs.poisonEffect;
     } else {
-      defMultiplier *= poisonEffect.defMultiplier || 1;
+      multiplier *= poisonEffect.defMultiplier || 1;
     }
   }
   // 检查破防效果
@@ -34,9 +31,17 @@ export function calcDamage(attacker, defender, power = 1) {
     if (armorBreak.expiresAt && armorBreak.expiresAt < now) {
       delete debuffs.armorBreak;
     } else {
-      defMultiplier *= armorBreak.defMultiplier || 1;
+      multiplier *= armorBreak.defMultiplier || 1;
     }
   }
+  return multiplier;
+}
+
+export function calcDamage(attacker, defender, power = 1) {
+  const atk = attacker.atk + randInt(0, Math.max(1, attacker.atk / 2));
+  let defBonus = 0;
+  const buff = defender.status?.buffs?.defBuff;
+  const defMultiplier = getDefenseMultiplier(defender);
   if (buff) {
     if (buff.expiresAt && buff.expiresAt < Date.now()) {
       delete defender.status.buffs.defBuff;
