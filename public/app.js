@@ -2284,7 +2284,7 @@ function renderState(state) {
   if (ui.worldBossRank) {
     ui.worldBossRank.innerHTML = '';
     const inWorldBossRoom = state.room && state.room.zoneId === 'wb' && state.room.roomId === 'lair';
-    const inMolongRoom = state.room && state.room.zoneId === 'plains' && state.room.roomId === 'boss';
+    const inMolongRoom = state.room && state.room.zoneId === 'molong' && state.room.roomId === 'deep';
     const inSabakBossRoom = state.room && state.room.zoneId === 'sb_guild' && state.room.roomId === 'sanctum';
     const inDarkWomaRoom = state.room && state.room.zoneId === 'dark_bosses' && state.room.roomId === 'dark_woma_lair';
     const inDarkZumaRoom = state.room && state.room.zoneId === 'dark_bosses' && state.room.roomId === 'dark_zuma_lair';
