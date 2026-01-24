@@ -1367,6 +1367,41 @@ function hasEquipped(player, itemId) {
   return Object.values(player.equipment || {}).some((eq) => eq && eq.id === itemId);
 }
 
+// 检查装备的特戒，多个相同特戒只计算一个效果
+function hasSpecialRingEquipped(player, itemId) {
+  if (!player.equipment) return false;
+
+  const ringSlots = ['ring_left', 'ring_right'];
+  const equippedRings = ringSlots
+    .map(slot => player.equipment[slot])
+    .filter(eq => eq !== undefined);
+
+  // 检查是否有该特戒，如果左右都装备了相同特戒，只算一个
+  const hasThisRing = equippedRings.some(eq => eq.id === itemId);
+
+  // 统计该特戒的数量
+  const count = equippedRings.filter(eq => eq.id === itemId).length;
+
+  // 如果有多个相同特戒，给玩家发送提示（带冷却，避免重复提示）
+  if (count > 1) {
+    const now = Date.now();
+    const lastWarning = player.flags?.ringWarningTime || {};
+    const lastTime = lastWarning[itemId] || 0;
+    const cooldown = 30000; // 30秒冷却
+
+    if (now - lastTime >= cooldown) {
+      if (!player.flags) player.flags = {};
+      if (!player.flags.ringWarningTime) player.flags.ringWarningTime = {};
+      player.flags.ringWarningTime[itemId] = now;
+
+      const ringName = ITEM_TEMPLATES[itemId]?.name || itemId;
+      player.send(`注意：你装备了多个${ringName}，只有第一个会生效。`);
+    }
+  }
+
+  return hasThisRing;
+}
+
 function hasComboWeapon(player) {
   const weapon = player?.equipment?.weapon;
   return Boolean(weapon && weapon.effects && weapon.effects.combo);
@@ -1389,7 +1424,7 @@ function applyDamageToPlayer(target, dmg) {
     }
   }
   // 护身戒指：受到攻击时10%几率减免伤害20%，持续2秒
-  if (hasEquipped(target, 'ring_protect') && Math.random() <= 0.1) {
+  if (hasSpecialRingEquipped(target, 'ring_protect') && Math.random() <= 0.1) {
     const now = Date.now();
     if (!target.status.buffs) target.status.buffs = {};
     target.status.buffs.protectShield = { expiresAt: now + 2000, dmgReduction: 0.2 };
@@ -1408,7 +1443,7 @@ function applyDamageToPlayer(target, dmg) {
 
 function tryRevive(player) {
   if (player.hp > 0) return false;
-  if (hasEquipped(player, 'ring_revival')) {
+  if (hasSpecialRingEquipped(player, 'ring_revival')) {
     const now = Date.now();
     const lastRevive = player.flags?.lastReviveAt || 0;
     const reviveCooldown = 60 * 1000; // 1分钟CD
@@ -3506,14 +3541,14 @@ async function combatTick() {
       if (skill && ['attack', 'spell', 'cleave', 'dot', 'aoe'].includes(skill.type)) {
         notifyMastery(player, skill);
       }
-      if (hasEquipped(player, 'ring_magic') && Math.random() <= 0.1) {
+      if (hasSpecialRingEquipped(player, 'ring_magic') && Math.random() <= 0.1) {
         if (!target.status) target.status = {};
         target.status.stunTurns = 2;
         player.send(`${target.name} 被麻痹戒指定身。`);
         target.send('你被麻痹了，无法行动。');
       }
       // 弱化戒指：攻击时10%几率使目标伤害降低20%，持续2秒
-      if (hasEquipped(player, 'ring_teleport') && Math.random() <= 0.1) {
+      if (hasSpecialRingEquipped(player, 'ring_teleport') && Math.random() <= 0.1) {
         if (!target.status) target.status = {};
         if (!target.status.debuffs) target.status.debuffs = {};
         target.status.debuffs.weak = { expiresAt: Date.now() + 2000, dmgReduction: 0.2 };
@@ -3521,7 +3556,7 @@ async function combatTick() {
         target.send('你受到弱化效果，伤害降低20%！');
       }
       // 破防戒指：攻击时10%几率使目标防御魔御降低20%，持续2秒
-      if (hasEquipped(player, 'ring_break') && Math.random() <= 0.1) {
+      if (hasSpecialRingEquipped(player, 'ring_break') && Math.random() <= 0.1) {
         if (!target.status) target.status = {};
         if (!target.status.debuffs) target.status.debuffs = {};
         target.status.debuffs.armorBreak = { expiresAt: Date.now() + 2000, defMultiplier: 0.8 };
@@ -3711,20 +3746,20 @@ async function combatTick() {
         }
       }
 
-      if (hasEquipped(player, 'ring_magic') && Math.random() <= 0.1) {
+      if (hasSpecialRingEquipped(player, 'ring_magic') && Math.random() <= 0.1) {
         if (!mob.status) mob.status = {};
         mob.status.stunTurns = 2;
         player.send(`${mob.name} 被麻痹戒指定身。`);
       }
       // 弱化戒指：攻击时10%几率使目标伤害降低20%，持续2秒
-      if (hasEquipped(player, 'ring_teleport') && Math.random() <= 0.1) {
+      if (hasSpecialRingEquipped(player, 'ring_teleport') && Math.random() <= 0.1) {
         if (!mob.status) mob.status = {};
         if (!mob.status.debuffs) mob.status.debuffs = {};
         mob.status.debuffs.weak = { expiresAt: Date.now() + 2000, dmgReduction: 0.2 };
         player.send(`弱化戒指生效，${mob.name} 伤害降低20%！`);
       }
       // 破防戒指：攻击时10%几率使目标防御魔御降低20%，持续2秒
-      if (hasEquipped(player, 'ring_break') && Math.random() <= 0.1) {
+      if (hasSpecialRingEquipped(player, 'ring_break') && Math.random() <= 0.1) {
         if (!mob.status) mob.status = {};
         if (!mob.status.debuffs) mob.status.debuffs = {};
         mob.status.debuffs.armorBreak = { expiresAt: Date.now() + 2000, defMultiplier: 0.8 };
