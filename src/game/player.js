@@ -320,8 +320,19 @@ export function computeDerived(player) {
     mdefBonus += mdef;
   }
   const training = player.flags.training;
-  stats.spirit += training.spirit || 0;
-  stats.dex += training.dex || 0;
+  // 修炼加成：等级 * 每级增长率
+  const trainingBonus = {
+    hp: (training.hp || 0) * 0.1,
+    mp: (training.mp || 0) * 0.1,
+    atk: (training.atk || 0) * 0.01,
+    def: (training.def || 0) * 0.01,
+    mag: (training.mag || 0) * 0.01,
+    mdef: (training.mdef || 0) * 0.01,
+    spirit: (training.spirit || 0) * 0.01,
+    dex: (training.dex || 0) * 0.01
+  };
+  stats.spirit += trainingBonus.spirit;
+  stats.dex += trainingBonus.dex;
 
   player.stats = stats;
   const levelUp = Math.max(0, level - 1);
@@ -339,15 +350,15 @@ export function computeDerived(player) {
   const bonusSpirit = levelBonus.spirit * levelUp;
   const bonusMdef = levelBonus.mdef * levelUp;
 
-  player.max_hp = base.con * 10 + cls.hpPerLevel * level + stats.con * 2 + (training.hp || 0) + bonusHp;
-  player.max_mp = base.spirit * 8 + cls.mpPerLevel * level + stats.spirit * 2 + (training.mp || 0) + bonusMp;
+  player.max_hp = base.con * 10 + cls.hpPerLevel * level + stats.con * 2 + trainingBonus.hp + bonusHp;
+  player.max_mp = base.spirit * 8 + cls.mpPerLevel * level + stats.spirit * 2 + trainingBonus.mp + bonusMp;
 
-  player.atk = stats.str * 1.6 + level * 1.2 + (training.atk || 0) + bonusAtk;
-  player.def = stats.con * 1.1 + level * 0.8 + (training.def || 0) + bonusDef;
+  player.atk = stats.str * 1.6 + level * 1.2 + trainingBonus.atk + bonusAtk;
+  player.def = stats.con * 1.1 + level * 0.8 + trainingBonus.def + bonusDef;
   player.dex = stats.dex;
-  player.mag = stats.int * 1.4 + stats.spirit * 0.6 + (training.mag || 0) + bonusMag;
+  player.mag = stats.int * 1.4 + stats.spirit * 0.6 + trainingBonus.mag + bonusMag;
   player.spirit = stats.spirit + bonusSpirit;
-  player.mdef = stats.spirit * 1.1 + level * 0.8 + (training.mdef || 0) + mdefBonus + bonusMdef;
+  player.mdef = stats.spirit * 1.1 + level * 0.8 + trainingBonus.mdef + mdefBonus + bonusMdef;
   player.evadeChance = evadeChance + (player.dex || 0) * 0.001; // 1点敏捷增加0.001闪避
 
   player.hp = clamp(player.hp, 1, player.max_hp);

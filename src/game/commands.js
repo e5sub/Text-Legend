@@ -146,14 +146,14 @@ const DIR_ALIASES = {
   西北3: 'northwest3'
 };
 const TRAINING_OPTIONS = {
-  hp: { label: '生命', inc: 10 },
-  mp: { label: '魔法值', inc: 10 },
-  atk: { label: '攻击', inc: 1 },
-  def: { label: '防御', inc: 1 },
-  mag: { label: '魔法', inc: 1 },
-  mdef: { label: '魔御', inc: 1 },
-  spirit: { label: '道术', inc: 1 },
-  dex: { label: '敏捷', inc: 1 }
+  hp: { label: '生命', inc: 1, perLevel: 0.1 },
+  mp: { label: '魔法值', inc: 1, perLevel: 0.1 },
+  atk: { label: '攻击', inc: 1, perLevel: 0.01 },
+  def: { label: '防御', inc: 1, perLevel: 0.01 },
+  mag: { label: '魔法', inc: 1, perLevel: 0.01 },
+  mdef: { label: '魔御', inc: 1, perLevel: 0.01 },
+  spirit: { label: '道术', inc: 1, perLevel: 0.01 },
+  dex: { label: '敏捷', inc: 1, perLevel: 0.01 }
 };
 const TRAINING_ALIASES = {
   hp: 'hp',
@@ -444,10 +444,9 @@ function skillByName(player, name) {
 
 function trainingCost(player, key) {
   const training = player.flags?.training || {};
-  const current = Number(training[key] || 0);
+  const currentLevel = Number(training[key] || 0);
   const base = 10000;
-  const steps = Math.floor(current / TRAINING_OPTIONS[key].inc);
-  return Math.max(1, Math.floor(base + steps * (base * 0.2)));
+  return Math.max(1, Math.floor(base + currentLevel * (base * 0.2)));
 }
 
 function getHealMultiplier(target) {
@@ -1381,8 +1380,9 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         Object.keys(TRAINING_OPTIONS).forEach((key) => {
           const info = TRAINING_OPTIONS[key];
           const cost = trainingCost(player, key);
-          const current = player.flags.training[key] || 0;
-          send(`${info.label}: 当前 +${current}, 消耗 ${cost} 金币, 提升 +${info.inc}`);
+          const currentLevel = player.flags.training[key] || 0;
+          const totalBonus = currentLevel * info.perLevel;
+          send(`${info.label}: Lv${currentLevel} (属性+${totalBonus.toFixed(2)}), 消耗 ${cost} 金币, 升至 Lv${currentLevel + 1}`);
         });
         return;
       }
@@ -1393,8 +1393,10 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
       if (player.gold < cost) return send('金币不足。');
       player.gold -= cost;
       player.flags.training[key] = (player.flags.training[key] || 0) + TRAINING_OPTIONS[key].inc;
+      const newLevel = player.flags.training[key];
+      const totalBonus = newLevel * TRAINING_OPTIONS[key].perLevel;
       computeDerived(player);
-      send(`修炼成功: ${TRAINING_OPTIONS[key].label} +${TRAINING_OPTIONS[key].inc} (累计 +${player.flags.training[key]})。`);
+      send(`修炼成功: ${TRAINING_OPTIONS[key].label} 升至 Lv${newLevel} (属性+${totalBonus.toFixed(2)})。`);
       send(`消耗 ${cost} 金币。`);
       return;
     }

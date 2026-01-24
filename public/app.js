@@ -1861,20 +1861,19 @@ const ITEM_SLOT_LABELS = {
   neck: '\u9879\u94fe'
 };
 const TRAINING_OPTIONS = [
-  { id: 'hp', label: '\u751f\u547d', inc: 10 },
-  { id: 'mp', label: '\u9b54\u6cd5\u503c', inc: 10 },
-  { id: 'atk', label: '\u653b\u51fb', inc: 1 },
-  { id: 'def', label: '\u9632\u5fa1', inc: 1 },
-  { id: 'mag', label: '\u9b54\u6cd5', inc: 1 },
-  { id: 'mdef', label: '\u9b54\u5fa1', inc: 1 },
-  { id: 'spirit', label: '\u9053\u672f', inc: 1 },
-  { id: 'dex', label: '\u654f\u6377', inc: 1 }
+  { id: 'hp', label: '\u751f\u547d', inc: 1, perLevel: 0.1 },
+  { id: 'mp', label: '\u9b54\u6cd5\u503c', inc: 1, perLevel: 0.1 },
+  { id: 'atk', label: '\u653b\u51fb', inc: 1, perLevel: 0.01 },
+  { id: 'def', label: '\u9632\u5fa1', inc: 1, perLevel: 0.01 },
+  { id: 'mag', label: '\u9b54\u6cd5', inc: 1, perLevel: 0.01 },
+  { id: 'mdef', label: '\u9b54\u5fa1', inc: 1, perLevel: 0.01 },
+  { id: 'spirit', label: '\u9053\u672f', inc: 1, perLevel: 0.01 },
+  { id: 'dex', label: '\u654f\u6377', inc: 1, perLevel: 0.01 }
 ];
 
-function trainingCost(current, inc) {
+function trainingCost(currentLevel) {
   const base = 10000;
-  const steps = Math.floor((current || 0) / inc);
-  return Math.max(1, Math.floor(base + steps * (base * 0.2)));
+  return Math.max(1, Math.floor(base + currentLevel * (base * 0.2)));
 }
 
 function formatItemTooltip(item) {
@@ -2646,12 +2645,13 @@ function renderState(state) {
   if (ui.training) {
     const training = state.training || { hp: 0, mp: 0, atk: 0, mag: 0, spirit: 0, dex: 0 };
     const trainingButtons = TRAINING_OPTIONS.map((opt) => {
-      const current = training[opt.id] || 0;
-      const cost = trainingCost(current, opt.inc);
+      const currentLevel = training[opt.id] || 0;
+      const cost = trainingCost(currentLevel);
+      const totalBonus = currentLevel * opt.perLevel;
       return {
         id: opt.id,
-        label: `${opt.label} +${opt.inc} (${cost}金)`,
-        tooltip: `${opt.label} 当前 +${current}`,
+        label: `${opt.label} Lv${currentLevel} (${cost}金)`,
+        tooltip: `${opt.label} 属性+${totalBonus.toFixed(2)}`,
         raw: { id: opt.id }
       };
     });
