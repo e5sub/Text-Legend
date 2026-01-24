@@ -1374,7 +1374,7 @@ function hasSpecialRingEquipped(player, itemId) {
   const ringSlots = ['ring_left', 'ring_right'];
   const equippedRings = ringSlots
     .map(slot => player.equipment[slot])
-    .filter(eq => eq !== undefined);
+    .filter(eq => eq !== undefined && eq !== null);
 
   // 检查是否有该特戒，如果左右都装备了相同特戒，只算一个
   const hasThisRing = equippedRings.some(eq => eq.id === itemId);
