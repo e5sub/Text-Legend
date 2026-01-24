@@ -1750,6 +1750,21 @@ async function buildState(player) {
     party: party ? { size: party.members.length, leader: party.leader, members: partyMembers } : null,
     training: player.flags?.training || { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 },
     online: { count: onlineCount },
+    trade: getTradeByPlayer(player.name) ? (() => {
+      const trade = getTradeByPlayer(player.name);
+      const myOffer = trade.offers[player.name];
+      const partnerName = trade.a.name === player.name ? trade.b.name : trade.a.name;
+      const partnerOffer = trade.offers[partnerName];
+      return {
+        partnerName,
+        myItems: myOffer.items.map(i => ({ id: i.id, qty: i.qty, effects: i.effects })),
+        myGold: myOffer.gold,
+        partnerItems: partnerOffer.items.map(i => ({ id: i.id, qty: i.qty, effects: i.effects })),
+        partnerGold: partnerOffer.gold,
+        locked: trade.locked,
+        confirmed: trade.confirmed
+      };
+    })() : null,
     sabak: {
       inZone: isSabakZone(player.position.zone),
       active: sabakState.active,

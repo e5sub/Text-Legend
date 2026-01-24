@@ -2807,6 +2807,11 @@ button:hover {
   font-style: italic;
 }
 
+/* 沙巴克模态框加宽 */
+#sabak-modal .modal-card {
+  width: min(600px, 90vw);
+}
+
 /* 守城方行会样式 */
 .defender-row {
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.1));

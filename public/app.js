@@ -177,6 +177,7 @@ const tradeUi = {
   partnerItems: document.getElementById('trade-partner-items'),
   myGold: document.getElementById('trade-my-gold'),
   partnerGold: document.getElementById('trade-partner-gold'),
+  partnerTitle: document.getElementById('trade-partner-title'),
   panel: document.getElementById('trade-panel'),
   modal: document.getElementById('trade-modal')
 };
@@ -725,7 +726,7 @@ function updateTradePartnerStatus(text) {
 
   if (text.includes('已锁定交易')) {
     // 提取玩家名
-    const match = text.match(/^(.+?) 已锁定/);
+    const match = text.match(/^(.+?) 已锁定交易/);
     if (match && match[1] !== activeChar) {
       // 对方锁定了
       setTradePartnerStatus(`对方（${match[1]}）已锁定交易`);
@@ -734,7 +735,7 @@ function updateTradePartnerStatus(text) {
       updateTradeDisplay();
     }
   } else if (text.includes('已确认交易')) {
-    const match = text.match(/^(.+?) 已确认/);
+    const match = text.match(/^(.+?) 已确认交易/);
     if (match && match[1] !== activeChar) {
       // 对方确认了
       setTradePartnerStatus(`对方（${match[1]}）已确认交易`);
@@ -2247,6 +2248,73 @@ function renderState(state) {
         ui.party.style.cursor = 'default';
         ui.party.style.color = '';
         ui.party.style.textDecoration = '';
+      }
+    }
+
+    // 更新交易状态
+    if (state.trade && tradeUi.modal && !tradeUi.modal.classList.contains('hidden')) {
+      // 更新对方名称
+      if (tradeUi.partnerTitle) {
+        tradeUi.partnerTitle.textContent = state.trade.partnerName || '对方';
+      }
+
+      // 更新我方物品
+      tradeUi.myItems.innerHTML = '';
+      if (state.trade.myItems.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'trade-empty';
+        empty.textContent = '暂无物品';
+        tradeUi.myItems.appendChild(empty);
+      } else {
+        state.trade.myItems.forEach((item) => {
+          const itemTemplate = lastState?.items?.find(i => i.id === item.id);
+          const itemDiv = document.createElement('div');
+          itemDiv.className = 'trade-item';
+          const name = itemTemplate ? formatItemName({ ...itemTemplate, effects: item.effects }) : item.id;
+          itemDiv.textContent = `${name} x${item.qty}`;
+          tradeUi.myItems.appendChild(itemDiv);
+        });
+      }
+
+      // 更新对方物品
+      tradeUi.partnerItems.innerHTML = '';
+      if (state.trade.partnerItems.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'trade-empty';
+        empty.textContent = '暂无物品';
+        tradeUi.partnerItems.appendChild(empty);
+      } else {
+        state.trade.partnerItems.forEach((item) => {
+          const itemTemplate = lastState?.items?.find(i => i.id === item.id);
+          const itemDiv = document.createElement('div');
+          itemDiv.className = 'trade-item';
+          const name = itemTemplate ? formatItemName({ ...itemTemplate, effects: item.effects }) : item.id;
+          itemDiv.textContent = `${name} x${item.qty}`;
+          tradeUi.partnerItems.appendChild(itemDiv);
+        });
+      }
+
+      // 更新金币
+      if (tradeUi.myGold) tradeUi.myGold.textContent = `金币: ${state.trade.myGold}`;
+      if (tradeUi.partnerGold) tradeUi.partnerGold.textContent = `金币: ${state.trade.partnerGold}`;
+
+      // 更新锁定/确认状态
+      if (tradeUi.status) {
+        const myName = lastState?.player?.name || '';
+        const partnerName = state.trade.partnerName;
+        const iLocked = state.trade.locked[myName];
+        const partnerLocked = state.trade.locked[partnerName];
+        const iConfirmed = state.trade.confirmed[myName];
+        const partnerConfirmed = state.trade.confirmed[partnerName];
+
+        let statusText = '';
+        if (partnerLocked) {
+          statusText = `对方已锁定`;
+        }
+        if (partnerConfirmed) {
+          statusText = `对方已确认`;
+        }
+        tradeUi.status.textContent = statusText || '交易中';
       }
     }
     ui.guild.textContent = state.guild || '无';
