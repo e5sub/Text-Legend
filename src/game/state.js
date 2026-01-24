@@ -114,25 +114,39 @@ export function spawnMobs(zoneId, roomId) {
     const scaled = scaledStats(tpl);
     if (!mob) {
       const cached = RESPAWN_CACHE.get(respawnKey(zoneId, roomId, index));
-      if (cached && cached.respawnAt && cached.respawnAt > now && (!cached.templateId || cached.templateId === templateId)) {
-        mob = {
-          id: `${templateId}-${Date.now()}-${randInt(100, 999)}`,
-          templateId,
-          slotIndex: index,
-          name: tpl.name,
-          level: tpl.level,
-          hp: 0,
-          max_hp: scaled.hp,
-          atk: scaled.atk,
-          def: scaled.def,
-          mdef: scaled.mdef,
-          dex: tpl.dex || 6,
-          status: {},
-          respawnAt: cached.respawnAt,
-          justRespawned: false
-        };
-        mobList.push(mob);
-        return;
+      if (cached && cached.respawnAt > now) {
+        // 检查缓存的怪物类型是否匹配当前配置
+        if (!cached.templateId || cached.templateId === templateId) {
+          mob = {
+            id: `${templateId}-${Date.now()}-${randInt(100, 999)}`,
+            templateId,
+            slotIndex: index,
+            name: tpl.name,
+            level: tpl.level,
+            hp: 0,
+            max_hp: scaled.hp,
+            atk: scaled.atk,
+            def: scaled.def,
+            mdef: scaled.mdef,
+            dex: tpl.dex || 6,
+            status: {},
+            respawnAt: cached.respawnAt,
+            justRespawned: false
+          };
+          mobList.push(mob);
+          return;
+        }
+        // 缓存的怪物类型不匹配，清理旧缓存，直接创建新怪物
+        RESPAWN_CACHE.delete(respawnKey(zoneId, roomId, index));
+        if (respawnStore && respawnStore.clear) {
+          respawnStore.clear(zoneId, roomId, index);
+        }
+      } else if (cached && cached.respawnAt <= now) {
+        // 缓存已过期，清理缓存记录
+        RESPAWN_CACHE.delete(respawnKey(zoneId, roomId, index));
+        if (respawnStore && respawnStore.clear) {
+          respawnStore.clear(zoneId, roomId, index);
+        }
       }
       mob = {
         id: `${templateId}-${Date.now()}-${randInt(100, 999)}`,
