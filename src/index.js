@@ -1927,6 +1927,21 @@ function applyDamageToMob(mob, dmg, attackerName) {
     if (Math.random() <= 0.1) {
       if (!mob.status) mob.status = {};
       mob.status.invincible = now + 10000;
+
+      // 清除所有毒效果和负面状态
+      if (mob.status.activePoisons) {
+        delete mob.status.activePoisons;
+      }
+      if (mob.status.poison) {
+        delete mob.status.poison;
+      }
+      if (mob.status.debuffs) {
+        delete mob.status.debuffs.poison;
+        delete mob.status.debuffs.poisonEffect;
+        delete mob.status.debuffs.weak;
+        delete mob.status.debuffs.armorBreak;
+      }
+
       if (attackerName) {
         const attacker = playersByName(attackerName);
         if (attacker) {
@@ -2459,6 +2474,23 @@ io.on('connection', (socket) => {
     loaded.combat = null;
     loaded.guild = null;
     if (!loaded.flags) loaded.flags = {};
+
+    // 自动恢复召唤物
+    if (loaded.flags.savedSummon) {
+      const saved = loaded.flags.savedSummon;
+      const skill = getSkill(loaded.classId, saved.id);
+      if (skill && loaded.mp >= skill.mp) {
+        const skillLevel = getSkillLevel(loaded, skill.id);
+        const summon = summonStats(loaded, skill, skillLevel);
+        loaded.summon = { ...summon, exp: saved.exp || 0 };
+        loaded.summon.hp = Math.min(saved.hp || loaded.summon.max_hp, loaded.summon.max_hp);
+        loaded.mp = clamp(loaded.mp - skill.mp, 0, loaded.max_mp);
+        loaded.send(`${loaded.summon.name} 已重新召唤 (等级 ${loaded.summon.level})。`);
+      }
+      // 清除保存的召唤物数据
+      delete loaded.flags.savedSummon;
+    }
+
     if (loaded.flags?.partyId && Array.isArray(loaded.flags.partyMembers) && loaded.flags.partyMembers.length) {
       const partyId = loaded.flags.partyId;
       const memberList = Array.from(new Set(loaded.flags.partyMembers.concat(loaded.name)));

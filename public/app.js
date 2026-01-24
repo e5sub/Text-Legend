@@ -1737,20 +1737,68 @@ const SET_DROPS = {
       { id: 'bracelet_true', name: '真魂手镯(套)', drops: [{ mob: '魔龙教主', chance: '0.3%' }, { mob: '世界BOSS', chance: '0.5%' }, { mob: '沙巴克BOSS', chance: '0.6%' }] }
     ]
   },
+  luoqi: {
+    name: '洛奇套装',
+    items: [
+      { id: 'sword_rochie', name: '洛奇王者之刃', drops: [{ mob: '世界BOSS', chance: '0.5%' }, { mob: '沙巴克BOSS', chance: '1%' }] },
+      { id: 'staff_rochie', name: '洛奇王者权杖', drops: [{ mob: '世界BOSS', chance: '0.5%' }, { mob: '沙巴克BOSS', chance: '1%' }] },
+      { id: 'sword_rochie_tao', name: '洛奇王者之剑', drops: [{ mob: '世界BOSS', chance: '0.5%' }, { mob: '沙巴克BOSS', chance: '1%' }] },
+      { id: 'armor_rochie_war', name: '洛奇战甲', drops: [{ mob: '世界BOSS', chance: '0.5%' }, { mob: '沙巴克BOSS', chance: '1%' }] },
+      { id: 'armor_rochie_mage', name: '洛奇法袍', drops: [{ mob: '世界BOSS', chance: '0.5%' }, { mob: '沙巴克BOSS', chance: '1%' }] },
+      { id: 'armor_rochie_tao', name: '洛奇道袍', drops: [{ mob: '世界BOSS', chance: '0.5%' }, { mob: '沙巴克BOSS', chance: '1%' }] },
+      { id: 'helm_rochie_war', name: '洛奇头盔(战士)', drops: [{ mob: '世界BOSS', chance: '0.3%' }, { mob: '沙巴克BOSS', chance: '0.6%' }] },
+      { id: 'helm_rochie_mage', name: '洛奇头盔(法师)', drops: [{ mob: '世界BOSS', chance: '0.3%' }, { mob: '沙巴克BOSS', chance: '0.6%' }] },
+      { id: 'helm_rochie_tao', name: '洛奇头盔(道士)', drops: [{ mob: '世界BOSS', chance: '0.3%' }, { mob: '沙巴克BOSS', chance: '0.6%' }] },
+      { id: 'boots_rochie_war', name: '洛奇靴子(战士)', drops: [{ mob: '世界BOSS', chance: '0.3%' }, { mob: '沙巴克BOSS', chance: '0.6%' }] },
+      { id: 'boots_rochie_mage', name: '洛奇靴子(法师)', drops: [{ mob: '世界BOSS', chance: '0.3%' }, { mob: '沙巴克BOSS', chance: '0.6%' }] },
+      { id: 'boots_rochie_tao', name: '洛奇靴子(道士)', drops: [{ mob: '世界BOSS', chance: '0.3%' }, { mob: '沙巴克BOSS', chance: '0.6%' }] },
+      { id: 'belt_rochie_war', name: '洛奇腰带(战士)', drops: [{ mob: '世界BOSS', chance: '0.3%' }, { mob: '沙巴克BOSS', chance: '0.6%' }] },
+      { id: 'belt_rochie_mage', name: '洛奇腰带(法师)', drops: [{ mob: '世界BOSS', chance: '0.3%' }, { mob: '沙巴克BOSS', chance: '0.6%' }] },
+      { id: 'belt_rochie_tao', name: '洛奇腰带(道士)', drops: [{ mob: '世界BOSS', chance: '0.3%' }, { mob: '沙巴克BOSS', chance: '0.6%' }] }
+    ]
+  },
+  skillbook: {
+    name: '技能书',
+    items: [
+      { id: 'book_war_basic', name: '技能书: 基本剑术', drops: [{ mob: '鸡', chance: '2%' }, { mob: '鹿', chance: '2%' }, { mob: '稻草人', chance: '1%' }] },
+      { id: 'book_war_attack', name: '技能书: 攻杀剑术', drops: [{ mob: '邪恶钳虫', chance: '2%' }, { mob: '多钩猫', chance: '1%' }] },
+      { id: 'book_war_assassinate', name: '技能书: 刺杀剑术', drops: [{ mob: '触龙神', chance: '3%' }, { mob: '白野猪', chance: '2%' }] },
+      { id: 'book_war_halfmoon', name: '技能书: 半月弯刀', drops: [{ mob: '沃玛教主', chance: '4%' }, { mob: '祖玛教主', chance: '4%' }] },
+      { id: 'book_war_fire', name: '技能书: 烈火剑法', drops: [{ mob: '祖玛教主', chance: '4%' }, { mob: '赤月恶魔', chance: '4%' }] },
+      { id: 'book_war_savage', name: '技能书: 野蛮冲撞', drops: [{ mob: '赤月恶魔', chance: '3%' }, { mob: '黄泉教主', chance: '3%' }] },
+      { id: 'book_mage_fireball', name: '技能书: 小火球', drops: [{ mob: '稻草人', chance: '2%' }, { mob: '鸡', chance: '2%' }] },
+      { id: 'book_mage_resist', name: '技能书: 抗拒火环', drops: [{ mob: '邪恶钳虫', chance: '2%' }, { mob: '多钩猫', chance: '1%' }] },
+      { id: 'book_mage_inferno', name: '技能书: 地狱火', drops: [{ mob: '触龙神', chance: '3%' }, { mob: '白野猪', chance: '2%' }] },
+      { id: 'book_mage_explode', name: '技能书: 爆裂火球', drops: [{ mob: '沃玛教主', chance: '4%' }, { mob: '祖玛教主', chance: '4%' }] },
+      { id: 'book_mage_lightning', name: '技能书: 雷电术', drops: [{ mob: '祖玛教主', chance: '4%' }, { mob: '牛魔王', chance: '3%' }] },
+      { id: 'book_mage_flash', name: '技能书: 疾光电影', drops: [{ mob: '赤月恶魔', chance: '3%' }, { mob: '黄泉教主', chance: '3%' }] },
+      { id: 'book_mage_thunder', name: '技能书: 雷霆万钧', drops: [{ mob: '牛魔王', chance: '3%' }, { mob: '魔龙教主', chance: '3%' }] },
+      { id: 'book_mage_shield', name: '技能书: 魔法盾', drops: [{ mob: '魔龙教主', chance: '4%' }, { mob: '沙巴克BOSS', chance: '4%' }] },
+      { id: 'book_mage_ice', name: '技能书: 冰咆哮', drops: [{ mob: '沙巴克BOSS', chance: '5%' }] },
+      { id: 'book_tao_heal', name: '技能书: 治愈术', drops: [{ mob: '鸡', chance: '2%' }, { mob: '鹿', chance: '2%' }] },
+      { id: 'book_tao_poison', name: '技能书: 施毒术', drops: [{ mob: '邪恶钳虫', chance: '2%' }, { mob: '多钩猫', chance: '1%' }] },
+      { id: 'book_tao_soul', name: '技能书: 灵魂火符', drops: [{ mob: '触龙神', chance: '3%' }, { mob: '白野猪', chance: '2%' }] },
+      { id: 'book_tao_invis', name: '技能书: 隐身术', drops: [{ mob: '沃玛教主', chance: '4%' }, { mob: '祖玛教主', chance: '4%' }] },
+      { id: 'book_tao_group_invis', name: '技能书: 群体隐身', drops: [{ mob: '赤月恶魔', chance: '3%' }, { mob: '黄泉教主', chance: '3%' }] },
+      { id: 'book_tao_armor', name: '技能书: 防御术', drops: [{ mob: '祖玛教主', chance: '4%' }, { mob: '赤月恶魔', chance: '4%' }] },
+      { id: 'book_tao_shield', name: '技能书: 神圣战甲术', drops: [{ mob: '黄泉教主', chance: '3%' }, { mob: '魔龙教主', chance: '3%' }] },
+      { id: 'book_tao_skeleton', name: '技能书: 召唤骷髅', drops: [{ mob: '牛魔王', chance: '3%' }, { mob: '魔龙教主', chance: '3%' }] },
+      { id: 'book_tao_summon', name: '技能书: 召唤神兽', drops: [{ mob: '魔龙教主', chance: '4%' }, { mob: '沙巴克BOSS', chance: '4%' }] }
+    ]
+  },
   special: {
     name: '特殊戒指',
     items: [
-      { id: 'ring_dodge', name: '躲避戒指', drops: [{ mob: '祖玛教主', chance: '0.8%' }, { mob: '牛魔王', chance: '0.8%' }, { mob: '世界BOSS', chance: '1.5%' }, { mob: '沙巴克BOSS', chance: '2%' }] },
-      { id: 'ring_def', name: '防御戒指', drops: [{ mob: '祖玛教主', chance: '0.8%' }, { mob: '世界BOSS', chance: '1.5%' }, { mob: '沙巴克BOSS', chance: '2%' }] },
-      { id: 'ring_fire', name: '火焰戒指', drops: [{ mob: '祖玛教主', chance: '0.8%' }, { mob: '世界BOSS', chance: '1.5%' }, { mob: '沙巴克BOSS', chance: '2%' }] },
-      { id: 'ring_stealth', name: '隐身戒指', drops: [{ mob: '赤月恶魔', chance: '0.8%' }, { mob: '世界BOSS', chance: '1.5%' }, { mob: '沙巴克BOSS', chance: '2%' }] },
-      { id: 'ring_heal', name: '治愈戒指', drops: [{ mob: '赤月恶魔', chance: '0.8%' }, { mob: '世界BOSS', chance: '1.5%' }, { mob: '沙巴克BOSS', chance: '2%' }] },
-      { id: 'ring_magic', name: '麻痹戒指', drops: [{ mob: '魔龙教主', chance: '0.3%' }, { mob: '牛魔王', chance: '0.5%' }, { mob: '世界BOSS', chance: '1%' }, { mob: '沙巴克BOSS', chance: '2%' }] },
-      { id: 'ring_teleport', name: '传送戒指', drops: [{ mob: '魔龙教主', chance: '0.3%' }, { mob: '牛魔王', chance: '0.6%' }, { mob: '世界BOSS', chance: '1%' }, { mob: '沙巴克BOSS', chance: '2%' }] },
-      { id: 'ring_protect', name: '护身戒指', drops: [{ mob: '魔龙教主', chance: '0.3%' }, { mob: '世界BOSS', chance: '1%' }, { mob: '沙巴克BOSS', chance: '2%' }] },
-      { id: 'ring_revival', name: '复活戒指', drops: [{ mob: '沃玛教主', chance: '0.5%' }, { mob: '魔龙教主', chance: '0.3%' }, { mob: '世界BOSS', chance: '1%' }, { mob: '沙巴克BOSS', chance: '2%' }] },
-      { id: 'ring_recall', name: '记忆戒指', drops: [{ mob: '赤月恶魔', chance: '0.5%' }, { mob: '世界BOSS', chance: '0.8%' }, { mob: '沙巴克BOSS', chance: '1.5%' }] },
-      { id: 'ring_rebirth', name: '复活戒指', drops: [{ mob: '赤月恶魔', chance: '0.3%' }, { mob: '世界BOSS', chance: '0.6%' }, { mob: '沙巴克BOSS', chance: '1.2%' }] }
+      { id: 'ring_dodge', name: '躲避戒指', drops: [{ mob: '牛魔王', chance: '0.8%' }, { mob: '魔龙教主', chance: '0.5%' }, { mob: '暗之沃玛教主', chance: '0.5%' }, { mob: '暗之祖玛教主', chance: '0.5%' }, { mob: '暗之赤月恶魔', chance: '0.5%' }, { mob: '暗之虹魔教主', chance: '0.5%' }, { mob: '暗之骷髅精灵', chance: '0.5%' }, { mob: '世界BOSS', chance: '1.5%' }, { mob: '沙巴克BOSS', chance: '2%' }] },
+      { id: 'ring_def', name: '防御戒指', drops: [{ mob: '祖玛教主', chance: '0.8%' }, { mob: '魔龙教主', chance: '0.5%' }, { mob: '暗之沃玛教主', chance: '0.5%' }, { mob: '暗之祖玛教主', chance: '0.5%' }, { mob: '暗之赤月恶魔', chance: '0.5%' }, { mob: '暗之虹魔教主', chance: '0.5%' }, { mob: '暗之骷髅精灵', chance: '0.5%' }, { mob: '世界BOSS', chance: '1.5%' }, { mob: '沙巴克BOSS', chance: '2%' }] },
+      { id: 'ring_fire', name: '火焰戒指', drops: [{ mob: '祖玛教主', chance: '0.8%' }, { mob: '魔龙教主', chance: '0.5%' }, { mob: '暗之沃玛教主', chance: '0.5%' }, { mob: '暗之祖玛教主', chance: '0.5%' }, { mob: '暗之赤月恶魔', chance: '0.5%' }, { mob: '暗之虹魔教主', chance: '0.5%' }, { mob: '暗之骷髅精灵', chance: '0.5%' }, { mob: '世界BOSS', chance: '1.5%' }, { mob: '沙巴克BOSS', chance: '2%' }] },
+      { id: 'ring_heal', name: '治愈戒指', drops: [{ mob: '魔龙教主', chance: '0.5%' }, { mob: '暗之沃玛教主', chance: '0.5%' }, { mob: '暗之祖玛教主', chance: '0.5%' }, { mob: '暗之赤月恶魔', chance: '0.5%' }, { mob: '暗之虹魔教主', chance: '0.5%' }, { mob: '暗之骷髅精灵', chance: '0.5%' }, { mob: '世界BOSS', chance: '1.5%' }, { mob: '沙巴克BOSS', chance: '2%' }] },
+      { id: 'ring_magic', name: '麻痹戒指', drops: [{ mob: '魔龙教主', chance: '0.5%' }, { mob: '牛魔王', chance: '0.5%' }, { mob: '暗之沃玛教主', chance: '0.5%' }, { mob: '暗之祖玛教主', chance: '0.5%' }, { mob: '暗之赤月恶魔', chance: '0.5%' }, { mob: '暗之虹魔教主', chance: '0.5%' }, { mob: '暗之骷髅精灵', chance: '0.5%' }, { mob: '世界BOSS', chance: '1.5%' }, { mob: '沙巴克BOSS', chance: '2%' }] },
+      { id: 'ring_teleport', name: '传送戒指', drops: [{ mob: '魔龙教主', chance: '0.5%' }, { mob: '牛魔王', chance: '0.6%' }, { mob: '暗之沃玛教主', chance: '0.5%' }, { mob: '暗之祖玛教主', chance: '0.5%' }, { mob: '暗之赤月恶魔', chance: '0.5%' }, { mob: '暗之虹魔教主', chance: '0.5%' }, { mob: '暗之骷髅精灵', chance: '0.5%' }, { mob: '世界BOSS', chance: '1.5%' }, { mob: '沙巴克BOSS', chance: '2%' }] },
+      { id: 'ring_protect', name: '护身戒指', drops: [{ mob: '魔龙教主', chance: '0.5%' }, { mob: '暗之沃玛教主', chance: '0.5%' }, { mob: '暗之祖玛教主', chance: '0.5%' }, { mob: '暗之赤月恶魔', chance: '0.5%' }, { mob: '暗之虹魔教主', chance: '0.5%' }, { mob: '暗之骷髅精灵', chance: '0.5%' }, { mob: '世界BOSS', chance: '1.5%' }, { mob: '沙巴克BOSS', chance: '2%' }] },
+      { id: 'ring_revival', name: '复活戒指', drops: [{ mob: '魔龙教主', chance: '0.5%' }, { mob: '暗之沃玛教主', chance: '0.5%' }, { mob: '暗之祖玛教主', chance: '0.5%' }, { mob: '暗之赤月恶魔', chance: '0.5%' }, { mob: '暗之虹魔教主', chance: '0.5%' }, { mob: '暗之骷髅精灵', chance: '0.5%' }, { mob: '世界BOSS', chance: '1.5%' }, { mob: '沙巴克BOSS', chance: '2%' }] },
+      { id: 'ring_break', name: '破防戒指', drops: [{ mob: '魔龙教主', chance: '0.5%' }, { mob: '暗之沃玛教主', chance: '0.5%' }, { mob: '暗之祖玛教主', chance: '0.5%' }, { mob: '暗之赤月恶魔', chance: '0.5%' }, { mob: '暗之虹魔教主', chance: '0.5%' }, { mob: '暗之骷髅精灵', chance: '0.5%' }, { mob: '世界BOSS', chance: '1.5%' }, { mob: '沙巴克BOSS', chance: '2%' }] },
+      { id: 'ring_recall', name: '记忆戒指', drops: [{ mob: '魔龙教主', chance: '0.3%' }, { mob: '暗之沃玛教主', chance: '0.3%' }, { mob: '暗之祖玛教主', chance: '0.3%' }, { mob: '暗之赤月恶魔', chance: '0.3%' }, { mob: '暗之虹魔教主', chance: '0.3%' }, { mob: '暗之骷髅精灵', chance: '0.3%' }, { mob: '世界BOSS', chance: '0.8%' }, { mob: '沙巴克BOSS', chance: '1.5%' }] }
     ]
   }
 };

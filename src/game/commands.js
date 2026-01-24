@@ -836,12 +836,32 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
           { name: '魔法上限', attr: 'max_mp', value: 10 }
         ];
 
-        // 统计每个属性的提升次数
+        // 统计每个属性的提升次数，并累加到player.flags.trainingFruit
         const attrStats = {};
+        if (!player.flags.trainingFruit) {
+          player.flags.trainingFruit = { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 };
+        }
+
         for (let i = 0; i < useCount; i++) {
           const selected = attrOptions[Math.floor(Math.random() * attrOptions.length)];
-          const oldValue = player[selected.attr] || 0;
-          player[selected.attr] = oldValue + selected.value;
+          // 累加到trainingFruit对象中
+          if (selected.attr === 'atk') {
+            player.flags.trainingFruit.atk += selected.value;
+          } else if (selected.attr === 'def') {
+            player.flags.trainingFruit.def += selected.value;
+          } else if (selected.attr === 'mdef') {
+            player.flags.trainingFruit.mdef += selected.value;
+          } else if (selected.attr === 'matk') {
+            player.flags.trainingFruit.mag += selected.value;
+          } else if (selected.attr === 'dmg') {
+            player.flags.trainingFruit.spirit += selected.value;
+          } else if (selected.attr === 'agi') {
+            player.flags.trainingFruit.dex += selected.value;
+          } else if (selected.attr === 'max_hp') {
+            player.flags.trainingFruit.hp += selected.value;
+          } else if (selected.attr === 'max_mp') {
+            player.flags.trainingFruit.mp += selected.value;
+          }
 
           if (!attrStats[selected.name]) {
             attrStats[selected.name] = 0;

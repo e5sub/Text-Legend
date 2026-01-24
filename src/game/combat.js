@@ -108,6 +108,24 @@ export function applyPoison(target, turns, tickDamage, sourceName = null) {
 }
 
 export function tickStatus(target) {
+  const now = Date.now();
+
+  // 检查是否处于无敌状态（免疫毒伤害）
+  if (target.status?.invincible && target.status.invincible > now) {
+    // 无敌状态，清除所有毒效果
+    if (target.status.activePoisons) {
+      delete target.status.activePoisons;
+    }
+    if (target.status.poison) {
+      delete target.status.poison;
+    }
+    if (target.status.debuffs) {
+      delete target.status.debuffs.poison;
+      delete target.status.debuffs.poisonEffect;
+    }
+    return null;
+  }
+
   // 特殊BOSS的多个毒效果处理
   if (target.status.activePoisons && target.status.activePoisons.length > 0) {
     const isSpecialBoss = Boolean(
@@ -140,13 +158,13 @@ export function tickStatus(target) {
 
       applyDamage(target, damage);
       totalDamage += damage;
-      
+
       // 记录每个玩家造成的伤害
       if (!damageBySource[source]) {
         damageBySource[source] = 0;
       }
       damageBySource[source] += damage;
-      
+
       poison.turns -= 1;
 
       if (poison.turns > 0) {
@@ -172,10 +190,10 @@ export function tickStatus(target) {
     if (target.status.poison.turns <= 0) {
       delete target.status.poison;
     }
-    return { 
-      type: 'poison', 
-      dmg: damage, 
-      damageBySource: sourceName ? { [sourceName]: damage } : {} 
+    return {
+      type: 'poison',
+      dmg: damage,
+      damageBySource: sourceName ? { [sourceName]: damage } : {}
     };
   }
 

@@ -156,6 +156,9 @@ export function computeDerived(player) {
   if (!player.flags.training) {
     player.flags.training = { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 };
   }
+  if (!player.flags.trainingFruit) {
+    player.flags.trainingFruit = { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 };
+  }
   const SET_BONUS_RATE = 1.2;
   const SET_DEFS = [
     {
@@ -320,6 +323,8 @@ export function computeDerived(player) {
     mdefBonus += mdef;
   }
   const training = player.flags.training;
+  const trainingFruit = player.flags.trainingFruit;
+
   // 修炼加成：等级 * 每级增长率
   const trainingBonus = {
     hp: (training.hp || 0) * 1,
@@ -331,8 +336,21 @@ export function computeDerived(player) {
     spirit: (training.spirit || 0) * 0.1,
     dex: (training.dex || 0) * 0.1
   };
-  stats.spirit += trainingBonus.spirit;
-  stats.dex += trainingBonus.dex;
+
+  // 修炼果加成：直接加成（不乘以系数）
+  const trainingFruitBonus = {
+    hp: (trainingFruit.hp || 0) * 10,
+    mp: (trainingFruit.mp || 0) * 10,
+    atk: (trainingFruit.atk || 0),
+    def: (trainingFruit.def || 0),
+    mag: (trainingFruit.mag || 0),
+    mdef: (trainingFruit.mdef || 0),
+    spirit: (trainingFruit.spirit || 0),
+    dex: (trainingFruit.dex || 0)
+  };
+
+  stats.spirit += trainingBonus.spirit + trainingFruitBonus.spirit;
+  stats.dex += trainingBonus.dex + trainingFruitBonus.dex;
 
   player.stats = stats;
   const levelUp = Math.max(0, level - 1);
@@ -350,15 +368,15 @@ export function computeDerived(player) {
   const bonusSpirit = levelBonus.spirit * levelUp;
   const bonusMdef = levelBonus.mdef * levelUp;
 
-  player.max_hp = base.con * 10 + cls.hpPerLevel * level + stats.con * 2 + trainingBonus.hp + bonusHp;
-  player.max_mp = base.spirit * 8 + cls.mpPerLevel * level + stats.spirit * 2 + trainingBonus.mp + bonusMp;
+  player.max_hp = base.con * 10 + cls.hpPerLevel * level + stats.con * 2 + trainingBonus.hp + trainingFruitBonus.hp + bonusHp;
+  player.max_mp = base.spirit * 8 + cls.mpPerLevel * level + stats.spirit * 2 + trainingBonus.mp + trainingFruitBonus.mp + bonusMp;
 
-  player.atk = stats.str * 1.6 + level * 1.2 + trainingBonus.atk + bonusAtk;
-  player.def = stats.con * 1.1 + level * 0.8 + trainingBonus.def + bonusDef;
+  player.atk = stats.str * 1.6 + level * 1.2 + trainingBonus.atk + trainingFruitBonus.atk + bonusAtk;
+  player.def = stats.con * 1.1 + level * 0.8 + trainingBonus.def + trainingFruitBonus.def + bonusDef;
   player.dex = stats.dex;
-  player.mag = stats.int * 1.4 + stats.spirit * 0.6 + trainingBonus.mag + bonusMag;
+  player.mag = stats.int * 1.4 + stats.spirit * 0.6 + trainingBonus.mag + trainingFruitBonus.mag + bonusMag;
   player.spirit = stats.spirit + bonusSpirit;
-  player.mdef = stats.spirit * 1.1 + level * 0.8 + trainingBonus.mdef + mdefBonus + bonusMdef;
+  player.mdef = stats.spirit * 1.1 + level * 0.8 + trainingBonus.mdef + trainingFruitBonus.mdef + mdefBonus + bonusMdef;
   player.evadeChance = evadeChance + (player.dex || 0) * 0.001; // 1点敏捷增加0.001闪避
 
   player.hp = clamp(player.hp, 1, player.max_hp);
