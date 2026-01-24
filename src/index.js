@@ -639,8 +639,8 @@ function dropLoot(mobTemplate, bonus = 1) {
       }
     });
   }
-  // 全地图怪物都有0.5%概率掉落修炼果
-  if (Math.random() <= 0.005) {
+  // 全地图怪物都有1%概率掉落修炼果
+  if (Math.random() <= 0.01) {
     loot.push({ id: 'training_fruit', effects: null });
   }
   const rarityDrop = rollRarityDrop(mobTemplate, finalBonus);
@@ -2809,16 +2809,61 @@ function tryAutoHeal(player) {
 function pickCombatSkillId(player, combatSkillId) {
   if (player.flags?.autoSkillId) {
     const autoSkill = player.flags.autoSkillId;
+    const now = Date.now();
+    
+    // 辅助函数：检查技能是否可用（不在CD且MP足够）
+    const isSkillUsable = (skill) => {
+      if (!skill || player.mp < skill.mp) return false;
+      if (skill.cooldown) {
+        if (!player.status?.skillCooldowns) return true;
+        const lastUse = player.status.skillCooldowns[skill.id] || 0;
+        const cooldownRemaining = lastUse + skill.cooldown - now;
+        if (cooldownRemaining > 0) return false;
+      }
+      return true;
+    };
+    
     if (Array.isArray(autoSkill)) {
       const choices = autoSkill
         .map((id) => getSkill(player.classId, id))
-        .filter((skill) => skill && player.mp >= skill.mp);
-      if (!choices.length) return combatSkillId;
+        .filter((skill) => isSkillUsable(skill));
+      
+      if (!choices.length) {
+        // 所有指定技能都在CD中，尝试从所有学会的技能中选择
+        const fallbackSkills = getLearnedSkills(player).filter((skill) =>
+          ['attack', 'spell', 'cleave', 'dot', 'aoe'].includes(skill.type)
+        );
+        const fallbackChoices = fallbackSkills.filter((skill) => isSkillUsable(skill));
+        if (fallbackChoices.length) {
+          fallbackChoices.sort((a, b) => (b.power || 1) - (a.power || 1));
+          return fallbackChoices[0].id;
+        }
+        return combatSkillId;
+      }
       return choices[randInt(0, choices.length - 1)].id;
     }
+    
     const autoId = autoSkill === 'all'
       ? selectAutoSkill(player)
       : autoSkill;
+    
+    // 单技能时也要检查CD
+    if (autoId && autoId !== 'all') {
+      const skill = getSkill(player.classId, autoId);
+      if (skill && skill.cooldown && !isSkillUsable(skill)) {
+        // 主技能在CD中，尝试从其他学会的技能中选择
+        const fallbackSkills = getLearnedSkills(player).filter((skill) =>
+          ['attack', 'spell', 'cleave', 'dot', 'aoe'].includes(skill.type) && skill.id !== autoId
+        );
+        const fallbackChoices = fallbackSkills.filter((skill) => isSkillUsable(skill));
+        if (fallbackChoices.length) {
+          fallbackChoices.sort((a, b) => (b.power || 1) - (a.power || 1));
+          return fallbackChoices[0].id;
+        }
+        // 没有其他可用技能，才返回默认技能
+        return combatSkillId;
+      }
+    }
     return autoId || combatSkillId;
   }
   return combatSkillId;
@@ -3263,11 +3308,29 @@ async function combatTick() {
     if (skill && player.mp < skill.mp) {
       skill = skillForPlayer(player, DEFAULT_SKILLS[player.classId]);
     }
+    
+    // 检查技能CD
+    if (skill && skill.cooldown) {
+      if (!player.status) player.status = {};
+      if (!player.status.skillCooldowns) player.status.skillCooldowns = {};
+      
+      const now = Date.now();
+      const lastUse = player.status.skillCooldowns[skill.id] || 0;
+      const cooldownRemaining = Math.max(0, lastUse + skill.cooldown - now);
+      
+      if (cooldownRemaining > 0) {
+        player.send(`${skill.name} 冷却中，还需 ${Math.ceil(cooldownRemaining / 1000)} 秒。`);
+        skill = skillForPlayer(player, DEFAULT_SKILLS[player.classId]);
+      }
+    }
 
     const hitChance = calcHitChance(player, target);
     if (Math.random() <= hitChance) {
       if (target.evadeChance && Math.random() <= target.evadeChance) {
-        player.send(`${target.name} 闪避了你的攻击。`);
+        const skillName = skill?.id === 'slash' ? null : skill?.name;
+        if (skillName) {
+          player.send(`你释放了 ${skillName}，${target.name} 闪避了你的攻击。`);
+        }
         target.send(`你闪避了 ${player.name} 的攻击。`);
         continue;
       }
@@ -3303,6 +3366,19 @@ async function combatTick() {
           dmg = Math.floor(calcDamage(player, target, skillPower) * crit);
         }
         if (skill.mp > 0) player.mp = clamp(player.mp - skill.mp, 0, player.max_mp);
+        
+        // 记录技能CD
+        if (skill.cooldown) {
+          if (!player.status) player.status = {};
+          if (!player.status.skillCooldowns) player.status.skillCooldowns = {};
+          player.status.skillCooldowns[skill.id] = Date.now();
+        }
+        
+        // 打印技能释放日志
+        if (skill) {
+          const skillName = skill.id === 'slash' ? '普通攻击' : skill.name;
+          player.send(`你释放了 ${skillName}！`);
+        }
       } else {
         const crit = consumeFirestrikeCrit(player, 'player', true);
         dmg = Math.floor(calcDamage(player, target, 1) * crit);
@@ -3431,7 +3507,10 @@ async function combatTick() {
         target.send('你受到破防效果，防御和魔御降低20%！');
       }
     } else {
-      player.send(`${target.name} 躲过了你的攻击。`);
+      const skillName = skill?.id === 'slash' ? null : skill?.name;
+      if (skillName) {
+        player.send(`你释放了 ${skillName}，${target.name} 躲过了你的攻击。`);
+      }
       target.send(`你躲过了 ${player.name} 的攻击。`);
       if (skill && skill.type === 'dot') {
         player.send('施毒失败。');
@@ -3531,6 +3610,12 @@ async function combatTick() {
           if (!player.status.skillCooldowns) player.status.skillCooldowns = {};
           player.status.skillCooldowns[skill.id] = Date.now();
         }
+        
+        // 打印技能释放日志
+        if (skill && skill.type !== 'aoe') {
+          const skillName = skill.id === 'slash' ? '普通攻击' : skill.name;
+          player.send(`你释放了 ${skillName}！`);
+        }
       } else {
         dmg = calcDamage(player, mob, 1);
       }
@@ -3553,7 +3638,8 @@ async function combatTick() {
             retaliateMobAgainstPlayer(target, player, online);
           }
         });
-        player.send(`你施放了 ${skill.name}，造成范围伤害。`);
+        const skillName = skill.id === 'slash' ? '普通攻击' : skill.name;
+        player.send(`你释放了 ${skillName}，造成范围伤害。`);
         const deadTargets = mobs.filter((target) => target.hp <= 0);
         if (deadTargets.length) {
           deadTargets.forEach((target) => processMobDeath(player, target, online));
@@ -3646,7 +3732,10 @@ async function combatTick() {
         notifyMastery(player, skill);
       }
     } else {
-      player.send(`${mob.name} 躲过了你的攻击。`);
+      const skillName = skill?.id === 'slash' ? null : skill?.name;
+      if (skillName) {
+        player.send(`你释放了 ${skillName}，${mob.name} 躲过了你的攻击。`);
+      }
       if (skill && skill.type === 'dot') {
         player.send('施毒失败。');
       }
