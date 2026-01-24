@@ -2824,15 +2824,6 @@ function pickCombatSkillId(player, combatSkillId) {
   return combatSkillId;
 }
 
-function consumeFirestrikeCrit(player, targetType, isNormalAttack) {
-  if (!player.status || !player.status.firestrikeCrit) return 1;
-  if (!isNormalAttack) return 1;
-  delete player.status.firestrikeCrit;
-  if (targetType === 'mob') return 2.0;
-  if (targetType === 'player') return Math.random() <= 0.5 ? 1.2 : 1.0;
-  return 1;
-}
-
 function autoResummon(player) {
   if (!player || player.hp <= 0) return false;
   const skills = getLearnedSkills(player).filter((skill) => skill.type === 'summon');
@@ -3493,6 +3484,22 @@ async function combatTick() {
     }
     let chosenSkillId = pickCombatSkillId(player, player.combat.skillId);
     let skill = skillForPlayer(player, chosenSkillId);
+    
+    // 检查技能CD
+    if (skill && skill.cooldown) {
+      if (!player.status) player.status = {};
+      if (!player.status.skillCooldowns) player.status.skillCooldowns = {};
+      
+      const now = Date.now();
+      const lastUse = player.status.skillCooldowns[skill.id] || 0;
+      const cooldownRemaining = Math.max(0, lastUse + skill.cooldown - now);
+      
+      if (cooldownRemaining > 0) {
+        player.send(`${skill.name} 冷却中，还需 ${Math.ceil(cooldownRemaining / 1000)} 秒。`);
+        skill = skillForPlayer(player, DEFAULT_SKILLS[player.classId]);
+      }
+    }
+    
     if (skill && player.mp < skill.mp) {
       player.send('魔法不足，改用普通攻击。');
       skill = skillForPlayer(player, DEFAULT_SKILLS[player.classId]);
@@ -3514,14 +3521,18 @@ async function combatTick() {
         } else if (skill.type === 'dot') {
           dmg = Math.max(1, Math.floor(player.mag * 0.5 * skillPower));
         } else {
-          const isNormal = !skill || skill.id === 'slash';
-          const crit = consumeFirestrikeCrit(player, 'mob', isNormal);
-          dmg = Math.floor(calcDamage(player, mob, skillPower) * crit);
+          dmg = calcDamage(player, mob, skillPower);
         }
         if (skill.mp > 0) player.mp = clamp(player.mp - skill.mp, 0, player.max_mp);
+        
+        // 记录技能CD
+        if (skill.cooldown) {
+          if (!player.status) player.status = {};
+          if (!player.status.skillCooldowns) player.status.skillCooldowns = {};
+          player.status.skillCooldowns[skill.id] = Date.now();
+        }
       } else {
-        const crit = consumeFirestrikeCrit(player, 'mob', true);
-        dmg = Math.floor(calcDamage(player, mob, 1) * crit);
+        dmg = calcDamage(player, mob, 1);
       }
 
       if (skill && skill.type === 'aoe') {
@@ -3618,10 +3629,6 @@ async function combatTick() {
         player.send(`施毒成功：${mob.name} 中毒。`);
       } else if (tryApplyPoisonEffect(player, mob)) {
         player.send(`你的毒特效作用于 ${mob.name}。`);
-      }
-      if (skill && skill.id === 'firestrike') {
-        if (!player.status) player.status = {};
-        player.status.firestrikeCrit = true;
       }
       if (skill && skill.type === 'cleave') {
         mobs.filter((m) => m.id !== mob.id).forEach((other) => {
