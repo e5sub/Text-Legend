@@ -3648,12 +3648,17 @@ async function combatTick() {
     const statusTick = tickStatus(mob);
     if (statusTick && statusTick.type === 'poison') {
       player.send(`${mob.name} 受到 ${statusTick.dmg} 点中毒伤害。`);
-      const sourceName = mob.status?.poison?.sourceName;
-      if (sourceName) {
-        recordMobDamage(mob, sourceName, statusTick.dmg);
-        const source = playersByName(sourceName);
-        if (source && source.name !== player.name) {
-          source.send(`你的施毒对 ${mob.name} 造成 ${statusTick.dmg} 点伤害。`);
+      
+      // 记录每个玩家造成的中毒伤害到排行榜
+      if (statusTick.damageBySource) {
+        for (const [sourceName, damage] of Object.entries(statusTick.damageBySource)) {
+          if (sourceName && sourceName !== 'unknown') {
+            recordMobDamage(mob, sourceName, damage);
+            const source = playersByName(sourceName);
+            if (source && source.name !== player.name) {
+              source.send(`你的施毒对 ${mob.name} 造成 ${damage} 点伤害。`);
+            }
+          }
         }
       }
     }

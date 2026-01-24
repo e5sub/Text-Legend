@@ -117,15 +117,16 @@ export function tickStatus(target) {
 
     let totalDamage = 0;
     const remainingPoisons = [];
+    const damageBySource = {}; // 记录每个玩家造成的伤害
 
     // 按玩家分组计算毒伤害总和，每个玩家上限1000
-    const damageBySource = {};
+    const totalDamageBySource = {};
     for (const poison of target.status.activePoisons) {
       const source = poison.sourceName || 'unknown';
-      if (!damageBySource[source]) {
-        damageBySource[source] = 0;
+      if (!totalDamageBySource[source]) {
+        totalDamageBySource[source] = 0;
       }
-      damageBySource[source] += poison.tickDamage;
+      totalDamageBySource[source] += poison.tickDamage;
     }
 
     for (const poison of target.status.activePoisons) {
@@ -133,12 +134,19 @@ export function tickStatus(target) {
       let damage = poison.tickDamage;
 
       // 特殊BOSS：同一玩家的毒效果总和上限为1000
-      if (isSpecialBoss && damageBySource[source] > 1000) {
-        damage = Math.floor(damage * (1000 / damageBySource[source]));
+      if (isSpecialBoss && totalDamageBySource[source] > 1000) {
+        damage = Math.floor(damage * (1000 / totalDamageBySource[source]));
       }
 
       applyDamage(target, damage);
       totalDamage += damage;
+      
+      // 记录每个玩家造成的伤害
+      if (!damageBySource[source]) {
+        damageBySource[source] = 0;
+      }
+      damageBySource[source] += damage;
+      
       poison.turns -= 1;
 
       if (poison.turns > 0) {
@@ -152,18 +160,23 @@ export function tickStatus(target) {
       delete target.status.activePoisons;
     }
 
-    return { type: 'poison', dmg: totalDamage };
+    return { type: 'poison', dmg: totalDamage, damageBySource };
   }
 
   // 普通怪物/玩家的单一毒效果处理
   if (target.status.poison && target.status.poison.turns > 0) {
     const damage = target.status.poison.tickDamage;
+    const sourceName = target.status.poison.sourceName;
     applyDamage(target, damage);
     target.status.poison.turns -= 1;
     if (target.status.poison.turns <= 0) {
       delete target.status.poison;
     }
-    return { type: 'poison', dmg: damage };
+    return { 
+      type: 'poison', 
+      dmg: damage, 
+      damageBySource: sourceName ? { [sourceName]: damage } : {} 
+    };
   }
 
   // 清理过期的中毒冷却
