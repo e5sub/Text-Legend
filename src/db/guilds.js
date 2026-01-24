@@ -38,6 +38,18 @@ export async function isGuildLeader(guildId, userId, charName) {
   return row && row.role === 'leader';
 }
 
+export async function transferGuildLeader(guildId, oldLeaderUserId, oldLeaderCharName, newLeaderUserId, newLeaderCharName) {
+  await knex('guild_members')
+    .where({ guild_id: guildId, user_id: oldLeaderUserId, char_name: oldLeaderCharName })
+    .update({ role: 'member' });
+  await knex('guild_members')
+    .where({ guild_id: guildId, user_id: newLeaderUserId, char_name: newLeaderCharName })
+    .update({ role: 'leader' });
+  await knex('guilds')
+    .where({ id: guildId })
+    .update({ leader_user_id: newLeaderUserId, leader_char_name: newLeaderCharName });
+}
+
 export async function getSabakOwner() {
   return knex('sabak_state').where({ id: 1 }).first();
 }

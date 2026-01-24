@@ -19,16 +19,29 @@ import { applyDamage } from './combat.js';
 
 // 负载均衡：选择玩家最少的房间
 // 当目标房间有多个变体时（如 plains, plains1, plains2, plains3），自动分配到人最少的那个
-function selectLeastPopulatedRoom(zoneId, roomId, onlinePlayers) {
+function selectLeastPopulatedRoom(zoneId, roomId, onlinePlayers, currentPlayer = null) {
   const baseRoomId = roomId.replace(/\d+$/, '');
   const roomOptions = [];
+
+  // 获取当前玩家的队伍成员
+  let partyMembers = new Set();
+  if (currentPlayer && partyApi) {
+    const party = partyApi.getPartyByMember(currentPlayer.name);
+    if (party) {
+      party.members.forEach(member => partyMembers.add(member));
+    }
+  }
 
   // 检查基础房间是否存在
   if (WORLD[zoneId]?.rooms?.[baseRoomId]) {
     const playerCount = onlinePlayers.filter(
       p => p.position.zone === zoneId && p.position.room === baseRoomId
     ).length;
-    roomOptions.push({ roomId: baseRoomId, playerCount });
+    // 计算队伍成员数量
+    const partyCount = onlinePlayers.filter(
+      p => p.position.zone === zoneId && p.position.room === baseRoomId && partyMembers.has(p.name)
+    ).length;
+    roomOptions.push({ roomId: baseRoomId, playerCount, partyCount });
   }
 
   // 查找所有带数字后缀的房间变体（1, 2, 3）
@@ -38,7 +51,11 @@ function selectLeastPopulatedRoom(zoneId, roomId, onlinePlayers) {
       const playerCount = onlinePlayers.filter(
         p => p.position.zone === zoneId && p.position.room === candidateRoomId
       ).length;
-      roomOptions.push({ roomId: candidateRoomId, playerCount });
+      // 计算队伍成员数量
+      const partyCount = onlinePlayers.filter(
+        p => p.position.zone === zoneId && p.position.room === candidateRoomId && partyMembers.has(p.name)
+      ).length;
+      roomOptions.push({ roomId: candidateRoomId, playerCount, partyCount });
     }
   }
 
@@ -46,8 +63,15 @@ function selectLeastPopulatedRoom(zoneId, roomId, onlinePlayers) {
     return roomId;
   }
 
-  // 选择玩家最少的房间
-  roomOptions.sort((a, b) => a.playerCount - b.playerCount);
+  // 优先选择有队伍成员的房间
+  roomOptions.sort((a, b) => {
+    // 先按队伍成员数量降序排序（有队伍成员的优先）
+    if (a.partyCount > 0 || b.partyCount > 0) {
+      return b.partyCount - a.partyCount;
+    }
+    // 如果都没有队伍成员，按玩家数量升序排序
+    return a.playerCount - b.playerCount;
+  });
   return roomOptions[0].roomId;
 }
 import {
@@ -551,7 +575,7 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         })();
 
         if (hasRoomVariants) {
-          roomId = selectLeastPopulatedRoom(zoneId, roomId, players);
+          roomId = selectLeastPopulatedRoom(zoneId, roomId, players, player);
         }
 
         const targetRoom = WORLD[zoneId]?.rooms?.[roomId];
@@ -1347,7 +1371,22 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         const target = players.find((p) => p.name === targetName);
         if (target) target.send('你已被队长踢出队伍。');
         return;
+      if (sub === 'transfer') {
+        if (!party) return send('你不在队伍中。');
+        if (!party.leader || party.leader !== player.name) return send('只有队长可以转让队长职位。');
+        if (!targetName) return send('转让给谁？');
+        if (!party.members.includes(targetName)) return send('对方不在队伍中。');
+        if (targetName === player.name) return send('不能转让给自己。');
+        party.leader = targetName;
+        if (partyApi.persistParty) {
+          await partyApi.persistParty(party);
+        }
+        send(`你已将队长职位转让给 ${targetName}。`);
+        const target = players.find((p) => p.name === targetName);
+        if (target) target.send(`${player.name} 已将队长职位转让给你。`);
+        return;
       }
+
       if (sub === 'follow') {
         const mode = restArgs[0] ? restArgs[0].toLowerCase() : '';
         if (mode === 'accept') {
@@ -1457,6 +1496,33 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         target.send('你已被移出行会。');
         return;
       }
+
+      if (sub === 'transfer') {
+        if (!player.guild) return send('你不在行会中。');
+        const target = players.find((p) => p.name === nameArg);
+        if (!target) return send('玩家不在线。');
+        if (!target.guild || target.guild.id !== player.guild.id) return send('对方不在你的行会中。');
+        const isLeader = await guildApi.isGuildLeader(player.guild.id, player.userId, player.name);
+        if (!isLeader) return send('只有会长可以转让会长职位。');
+        if (target.guild.role === 'leader') return send('对方已经是会长。');
+        await guildApi.transferGuildLeader(
+          player.guild.id,
+          player.userId,
+          player.name,
+          target.userId,
+          target.name
+        );
+        player.guild.role = 'member';
+        target.guild.role = 'leader';
+        send(`你已将会长职位转让给 ${target.name}。`);
+        target.send(`${player.name} 已将会长职位转让给你。`);
+        return;
+      }
+
+
+
+
+
 
       if (sub === 'accept') {
         send('行会邀请无需接受，邀请后会自动加入。');

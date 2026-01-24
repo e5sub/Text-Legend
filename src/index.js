@@ -10,7 +10,7 @@ import config from './config.js';
 import knex from './db/index.js';
 import { createUser, verifyUser, createSession, getSession, getUserByName, setAdminFlag } from './db/users.js';
 import { listCharacters, loadCharacter, saveCharacter, findCharacterByName } from './db/characters.js';
-import { addGuildMember, createGuild, getGuildByName, getGuildMember, getSabakOwner, isGuildLeader, listGuildMembers, listSabakRegistrations, registerSabak, removeGuildMember, setSabakOwner, clearSabakRegistrations } from './db/guilds.js';
+import { addGuildMember, createGuild, getGuildByName, getGuildMember, getSabakOwner, isGuildLeader, listGuildMembers, listSabakRegistrations, registerSabak, removeGuildMember, setSabakOwner, clearSabakRegistrations, transferGuildLeader } from './db/guilds.js';
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
 import { sendMail, listMail, markMailRead } from './db/mail.js';
 import { createVipCodes, listVipCodes, useVipCode } from './db/vip.js';
@@ -1508,7 +1508,13 @@ async function buildState(player) {
       }
     });
 
-    return filteredExits;
+    // 移除标签中的数字后缀（如 "平原1" -> "平原"）
+    const cleanExits = filteredExits.map(exit => ({
+      dir: exit.dir,
+      label: exit.label.replace(/(\D)\d+$/, '$1')
+    }));
+
+    return cleanExits;
   })() : [];
   const skills = getLearnedSkills(player).map((s) => ({
     id: s.id,
@@ -2389,6 +2395,7 @@ io.on('connection', (socket) => {
         removeGuildMember,
         listGuildMembers,
         isGuildLeader,
+        transferGuildLeader,
         registerSabak,
         listSabakRegistrations,
         sabakState,

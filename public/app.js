@@ -1973,6 +1973,12 @@ function renderGuildModal() {
       tag.textContent = member.role === 'leader' ? '会长' : '成员';
       row.appendChild(tag);
       if (lastState?.guild_role === 'leader' && member.role !== 'leader') {
+        const transferBtn = document.createElement('button');
+        transferBtn.textContent = '转移会长';
+        transferBtn.addEventListener('click', () => {
+          if (socket) socket.emit('cmd', { text: `guild transfer ${member.name}` });
+        });
+        row.appendChild(transferBtn);
         const kickBtn = document.createElement('button');
         kickBtn.textContent = '踢出';
         kickBtn.addEventListener('click', () => {
@@ -2040,6 +2046,12 @@ function renderPartyModal() {
 
       // 队长可以踢出队员
       if (isLeader && !isLeaderName) {
+        const transferBtn = document.createElement('button');
+        transferBtn.textContent = '转移队长';
+        transferBtn.addEventListener('click', () => {
+          if (socket) socket.emit('cmd', { text: `party transfer ${member.name}` });
+        });
+        row.appendChild(transferBtn);
         const kickBtn = document.createElement('button');
         kickBtn.textContent = '踢出';
         kickBtn.addEventListener('click', () => {
