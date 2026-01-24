@@ -1922,47 +1922,6 @@ function applyDamageToMob(mob, dmg, attackerName) {
       }
       return { damageTaken: false };
     }
-
-    // 10%几率触发无敌效果（持续10秒）
-    if (Math.random() <= 0.1) {
-      if (!mob.status) mob.status = {};
-      mob.status.invincible = now + 10000;
-
-      // 清除所有毒效果和负面状态
-      if (mob.status.activePoisons) {
-        delete mob.status.activePoisons;
-      }
-      if (mob.status.poison) {
-        delete mob.status.poison;
-      }
-      if (mob.status.debuffs) {
-        delete mob.status.debuffs.poison;
-        delete mob.status.debuffs.poisonEffect;
-        delete mob.status.debuffs.weak;
-        delete mob.status.debuffs.armorBreak;
-      }
-
-      if (attackerName) {
-        const attacker = playersByName(attackerName);
-        if (attacker) {
-          attacker.send(`${mob.name} 触发了无敌效果，10秒内免疫所有伤害、毒、麻痹、降攻击、降防效果！`);
-        }
-      }
-      // 这次攻击无效
-      return { damageTaken: false };
-    }
-
-    // 10%几率触发50%减伤
-    if (Math.random() <= 0.1) {
-      const originalDmg = dmg;
-      dmg = Math.floor(dmg * 0.5);
-      if (attackerName) {
-        const attacker = playersByName(attackerName);
-        if (attacker) {
-          attacker.send(`${mob.name} 触发了减伤效果，伤害从 ${originalDmg} 降低到 ${dmg}！`);
-        }
-      }
-    }
   }
 
   recordMobDamage(mob, attackerName, dmg);
@@ -2031,39 +1990,76 @@ function retaliateMobAgainstPlayer(mob, player, online) {
     dmg += calcMagicDamageFromValue(spiritBase, mobTarget);
   }
   
-  // 特殊BOSS破防效果：魔龙教主、世界BOSS、沙巴克BOSS、暗之BOSS攻击时有20%几率破防
+  // 特殊BOSS攻击效果
   const isSpecialBoss = Boolean(mobTemplate?.specialBoss);
-  if (isSpecialBoss && Math.random() <= 0.2) {
-    if (!mobTarget.status) mobTarget.status = {};
-    if (!mobTarget.status.debuffs) mobTarget.status.debuffs = {};
+  if (isSpecialBoss) {
     const now = Date.now();
-    mobTarget.status.debuffs.armorBreak = {
-      defMultiplier: 0.5,
-      expiresAt: now + 3000
-    };
-    if (mobTarget.userId) {
-      mobTarget.send(`${mob.name} 破防攻击！你的防御和魔御降低50%，持续3秒。`);
-      if (mobTarget !== player) {
+
+    // 10%几率触发无敌效果（持续10秒）
+    if (Math.random() <= 0.1) {
+      if (!mob.status) mob.status = {};
+      mob.status.invincible = now + 10000;
+
+      // 清除所有毒效果和负面状态
+      if (mob.status.activePoisons) {
+        delete mob.status.activePoisons;
+      }
+      if (mob.status.poison) {
+        delete mob.status.poison;
+      }
+      if (mob.status.debuffs) {
+        delete mob.status.debuffs.poison;
+        delete mob.status.debuffs.poisonEffect;
+        delete mob.status.debuffs.weak;
+        delete mob.status.debuffs.armorBreak;
+      }
+
+      // 通知房间内所有玩家
+      if (online && online.length > 0) {
+        const roomPlayers = online.filter((p) =>
+          p.position.zone === player.position.zone &&
+          p.position.room === player.position.room &&
+          p.hp > 0
+        );
+        roomPlayers.forEach((roomPlayer) => {
+          roomPlayer.send(`${mob.name} 触发了无敌效果，10秒内免疫所有伤害、毒、麻痹、降攻击、降防效果！`);
+        });
+      }
+    }
+
+    // 20%几率触发破防效果
+    if (Math.random() <= 0.2) {
+      if (!mobTarget.status) mobTarget.status = {};
+      if (!mobTarget.status.debuffs) mobTarget.status.debuffs = {};
+      const breakNow = Date.now();
+      mobTarget.status.debuffs.armorBreak = {
+        defMultiplier: 0.5,
+        expiresAt: breakNow + 3000
+      };
+      if (mobTarget.userId) {
+        mobTarget.send(`${mob.name} 破防攻击！你的防御和魔御降低50%，持续3秒。`);
+        if (mobTarget !== player) {
+          player.send(`${mob.name} 对 ${mobTarget.name} 造成破防效果！`);
+        }
+      } else {
         player.send(`${mob.name} 对 ${mobTarget.name} 造成破防效果！`);
       }
-    } else {
-      player.send(`${mob.name} 对 ${mobTarget.name} 造成破防效果！`);
     }
-  }
-  
-  // 特殊BOSS毒伤害效果：20%几率使目标持续掉血，每秒掉1%气血，持续5秒
-  if (isSpecialBoss && Math.random() <= 0.2) {
-    if (!mobTarget.status) mobTarget.status = {};
-    const maxHp = Math.max(1, mobTarget.max_hp || 1);
-    const tickDmg = Math.max(1, Math.floor(maxHp * 0.01));
-    applyPoison(mobTarget, 5, tickDmg, mob.name);
-    if (mobTarget.userId) {
-      mobTarget.send(`${mob.name} 的毒性攻击！你将每秒损失1%气血，持续5秒。`);
-      if (mobTarget !== player) {
+
+    // 20%几率触发毒伤害效果：使目标持续掉血，每秒掉1%气血，持续5秒
+    if (Math.random() <= 0.2) {
+      if (!mobTarget.status) mobTarget.status = {};
+      const maxHp = Math.max(1, mobTarget.max_hp || 1);
+      const tickDmg = Math.max(1, Math.floor(maxHp * 0.01));
+      applyPoison(mobTarget, 5, tickDmg, mob.name);
+      if (mobTarget.userId) {
+        mobTarget.send(`${mob.name} 的毒性攻击！你将每秒损失1%气血，持续5秒。`);
+        if (mobTarget !== player) {
+          player.send(`${mob.name} 对 ${mobTarget.name} 造成毒性伤害！`);
+        }
+      } else {
         player.send(`${mob.name} 对 ${mobTarget.name} 造成毒性伤害！`);
       }
-    } else {
-      player.send(`${mob.name} 对 ${mobTarget.name} 造成毒性伤害！`);
     }
   }
 
