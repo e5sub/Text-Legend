@@ -371,7 +371,7 @@ function rarityByPrice(item) {
 }
 
 const ITEM_POOLS = (() => {
-  const pools = { common: [], uncommon: [], rare: [], epic: [], legendary: [] };
+  const pools = { common: [], uncommon: [], rare: [], epic: [], legendary: [], supreme: [] };
   Object.values(ITEM_TEMPLATES).forEach((item) => {
     if (item.type === 'currency') return;
     if (!['weapon', 'armor', 'accessory', 'book', 'material', 'consumable'].includes(item.type)) return;
