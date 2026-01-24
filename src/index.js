@@ -1486,18 +1486,24 @@ async function buildState(player) {
       return { dir, label };
     });
 
-    // 合并带数字后缀的方向，只显示一个入口
+    // 合并带数字后缀的方向，只显示一个入口（暗之BOSS房间除外）
     const filteredExits = [];
     allExits.forEach(exit => {
       const dir = exit.dir;
       const baseDir = dir.replace(/[0-9]+$/, '');
+
+      // 检查是否是前往暗之BOSS房间的入口
+      const isDarkBossExit = exit.dir.startsWith('southwest');
 
       // 检查是否有数字后缀的变体
       const hasVariants = allExits.some(e =>
         e.dir !== dir && e.dir.startsWith(baseDir) && /[0-9]+$/.test(e.dir)
       );
 
-      if (hasVariants) {
+      if (isDarkBossExit) {
+        // 暗之BOSS入口不合并，全部显示
+        filteredExits.push(exit);
+      } else if (hasVariants) {
         // 只添加基础方向，不添加数字后缀的
         if (!/[0-9]+$/.test(dir) && !filteredExits.some(e => e.dir === baseDir)) {
           filteredExits.push({ dir: baseDir, label: exit.label.replace(/[0-9]+$/, '') });
@@ -1508,10 +1514,10 @@ async function buildState(player) {
       }
     });
 
-    // 移除标签中的数字后缀（如 "平原1" -> "平原"）
+    // 移除标签中的数字后缀（如 "平原1" -> "平原"）（暗之BOSS房间除外）
     const cleanExits = filteredExits.map(exit => ({
       dir: exit.dir,
-      label: exit.label.replace(/(\D)\d+$/, '$1')
+      label: exit.dir.startsWith('southwest') ? exit.label : exit.label.replace(/(\D)\d+$/, '$1')
     }));
 
     return cleanExits;
@@ -3190,7 +3196,7 @@ async function combatTick() {
       if (hasEquipped(player, 'ring_break') && Math.random() <= 0.1) {
         if (!target.status) target.status = {};
         if (!target.status.debuffs) target.status.debuffs = {};
-        target.status.debuffs.armorBreak = { expiresAt: Date.now() + 2000, defMultiplier: 1.2 };
+        target.status.debuffs.armorBreak = { expiresAt: Date.now() + 2000, defMultiplier: 0.8 };
         player.send(`破防戒指生效，${target.name} 防御降低20%！`);
         target.send('你受到破防效果，防御和魔御降低20%！');
       }
@@ -3355,7 +3361,7 @@ async function combatTick() {
       if (hasEquipped(player, 'ring_break') && Math.random() <= 0.1) {
         if (!mob.status) mob.status = {};
         if (!mob.status.debuffs) mob.status.debuffs = {};
-        mob.status.debuffs.armorBreak = { expiresAt: Date.now() + 2000, defMultiplier: 1.2 };
+        mob.status.debuffs.armorBreak = { expiresAt: Date.now() + 2000, defMultiplier: 0.8 };
         player.send(`破防戒指生效，${mob.name} 防御降低20%！`);
       }
       if (skill && skill.type === 'dot') {
