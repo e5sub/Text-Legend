@@ -2759,6 +2759,19 @@ button:hover {
   min-width: 64px;
 }
 
+.sabak-guild-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+body.dark .sabak-guild-list .guild-member {
+  color: #e8d5c0;
+}
+
 /* 队伍管理界面按钮样式 */
 .party-actions {
   display: flex;

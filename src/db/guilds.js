@@ -22,6 +22,13 @@ export async function removeGuildMember(guildId, userId, charName) {
   await knex('guild_members').where({ guild_id: guildId, user_id: userId, char_name: charName }).del();
 }
 
+export async function leaveGuild(userId, charName) {
+  const row = await knex('guild_members').where({ user_id: userId, char_name: charName }).first();
+  if (!row) return null;
+  await knex('guild_members').where({ user_id: userId, char_name: charName }).del();
+  return row.guild_id;
+}
+
 export async function getGuildMember(userId, charName) {
   const row = await knex('guild_members').where({ user_id: userId, char_name: charName }).first();
   if (!row) return null;
@@ -63,7 +70,20 @@ export async function registerSabak(guildId) {
 }
 
 export async function listSabakRegistrations() {
-  return knex('sabak_registrations').select('guild_id');
+  return knex('sabak_registrations')
+    .join('guilds', 'sabak_registrations.guild_id', 'guilds.id')
+    .select('guilds.name as guild_name', 'sabak_registrations.guild_id', 'sabak_registrations.created_at');
+}
+
+export async function hasSabakRegistrationToday(guildId) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const row = await knex('sabak_registrations')
+    .where({ guild_id: guildId })
+    .where('created_at', '>=', knex.fn.now())
+    .whereRaw('DATE(created_at) = DATE(?)', [today.toISOString().split('T')[0]])
+    .first();
+  return !!row;
 }
 
 export async function clearSabakRegistrations() {

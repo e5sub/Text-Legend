@@ -1196,6 +1196,38 @@ function isSabakZone(zoneId) {
   return typeof zoneId === 'string' && zoneId.startsWith('sb_');
 }
 
+function isSabakPalace(zoneId, roomId) {
+  return zoneId === 'sb_town' && roomId === 'palace';
+}
+
+function getSabakPalaceKillStats() {
+  if (!sabakState.active || !sabakState.ownerGuildId) return null;
+
+  const stats = [];
+  // 添加守城方
+  const defenderStats = sabakState.killStats[sabakState.ownerGuildId];
+  stats.push({
+    guild_id: sabakState.ownerGuildId,
+    guild_name: sabakState.ownerGuildName || '未知',
+    kills: defenderStats?.kills || 0,
+    is_defender: true
+  });
+
+  // 添加攻城方
+  Object.entries(sabakState.killStats || {}).forEach(([guildId, info]) => {
+    if (String(guildId) !== String(sabakState.ownerGuildId)) {
+      stats.push({
+        guild_id: guildId,
+        guild_name: info?.name || '未知',
+        kills: info?.kills || 0,
+        is_defender: false
+      });
+    }
+  });
+
+  return stats.sort((a, b) => b.kills - a.kills);
+}
+
 function sabakWindowRange(now = new Date()) {
   const start = new Date(now);
   start.setHours(sabakConfig.startHour, 0, 0, 0);
@@ -1702,7 +1734,9 @@ async function buildState(player) {
       inZone: isSabakZone(player.position.zone),
       active: sabakState.active,
       ownerGuildId: sabakState.ownerGuildId,
-      ownerGuildName: sabakState.ownerGuildName
+      ownerGuildName: sabakState.ownerGuildName,
+      inPalace: isSabakPalace(player.position.zone, player.position.room),
+      palaceKillStats: isSabakPalace(player.position.zone, player.position.room) ? getSabakPalaceKillStats() : null
     },
     worldBossRank: bossRank,
     worldBossNextRespawn: bossNextRespawn,
@@ -2511,6 +2545,83 @@ io.on('connection', (socket) => {
       role: player.guild.role || 'member',
       members: memberList
     });
+  });
+
+  socket.on('sabak_info', async () => {
+    const player = players.get(socket.id);
+    if (!player) return;
+
+    const ownerGuildName = sabakState.ownerGuildName || '无';
+    const windowInfo = sabakWindowInfo();
+    const registrations = await listSabakRegistrations();
+
+    // 将守城方行会添加到报名列表中显示
+    let displayRegistrations = registrations || [];
+    if (sabakState.ownerGuildId && sabakState.ownerGuildName) {
+      displayRegistrations = [
+        { guild_id: sabakState.ownerGuildId, guild_name: sabakState.ownerGuildName, isDefender: true },
+        ...displayRegistrations.map(r => ({ ...r, isDefender: false }))
+      ];
+    }
+
+    const isOwner = player.guild && String(player.guild.id) === String(sabakState.ownerGuildId);
+    const canRegister = player.guild && player.guild.role === 'leader' && !isOwner;
+
+    socket.emit('sabak_info', {
+      windowInfo,
+      ownerGuildName,
+      registrations: displayRegistrations,
+      canRegister,
+      isOwner
+    });
+  });
+
+  socket.on('sabak_register_confirm', async () => {
+    const player = players.get(socket.id);
+    if (!player) return;
+
+    if (!player.guild) {
+      player.send('你不在行会中。');
+      return;
+    }
+    const isLeader = await isGuildLeader(player.guild.id, player.userId, player.name);
+    if (!isLeader) {
+      player.send('只有会长可以报名。');
+      return;
+    }
+    const isOwner = String(player.guild.id) === String(sabakState.ownerGuildId);
+    if (isOwner) {
+      player.send('守城行会无需报名。');
+      return;
+    }
+    const hasRegisteredToday = await hasSabakRegistrationToday(player.guild.id);
+    if (hasRegisteredToday) {
+      player.send('该行会今天已经报名过了。');
+      return;
+    }
+    const registrations = await listSabakRegistrations();
+    const today = new Date();
+    const todayRegistrations = registrations.filter(r => {
+      if (!r.created_at) return false;
+      const regDate = new Date(r.created_at);
+      return regDate.toDateString() === today.toDateString();
+    });
+    if (todayRegistrations.length >= 1) {
+      player.send('今天已经有行会报名了，每天只能有一个行会申请攻城。');
+      return;
+    }
+    if (player.gold < 5000000) {
+      player.send('报名需要500万金币。');
+      return;
+    }
+    player.gold -= 5000000;
+    try {
+      await registerSabak(player.guild.id);
+      player.send('已报名沙巴克攻城，支付500万金币。');
+    } catch {
+      player.send('该行会已经报名。');
+      player.gold += 5000000;
+    }
   });
 
   socket.on('disconnect', async () => {
@@ -3752,6 +3863,69 @@ async function sabakTick() {
   // 自动开始攻城战
   if (!sabakState.active && isSabakActive(nowDate) && sabakState.ownerGuildId) {
     startSabakSiege(null);
+  }
+
+  // 检查皇宫占领情况（仅攻城战期间）
+  if (sabakState.active && isSabakActive(nowDate)) {
+    const palacePlayers = listOnlinePlayers().filter(p =>
+      isSabakPalace(p.position.zone, p.position.room) && p.guild
+    );
+
+    // 检查是否只有一方行会在皇宫内
+    const ownerGuildId = sabakState.ownerGuildId;
+    const attackerGuilds = Object.keys(sabakState.killStats || {}).filter(id => id !== String(ownerGuildId));
+
+    let controllingGuildId = null;
+    let controllingGuildName = null;
+
+    // 如果皇宫内只有守城方成员
+    if (palacePlayers.length > 0 && palacePlayers.every(p => String(p.guild.id) === String(ownerGuildId))) {
+      controllingGuildId = ownerGuildId;
+      controllingGuildName = sabakState.ownerGuildName;
+    }
+    // 如果皇宫内只有攻城方成员（同一行会）
+    else if (palacePlayers.length > 0) {
+      const firstGuildId = String(palacePlayers[0].guild.id);
+      if (firstGuildId !== String(ownerGuildId) && palacePlayers.every(p => String(p.guild.id) === firstGuildId)) {
+        controllingGuildId = firstGuildId;
+        controllingGuildName = palacePlayers[0].guild.name;
+      }
+    }
+
+    // 如果控制行会发生了变化，重置占领计时
+    if (controllingGuildId !== sabakState.captureGuildId) {
+      sabakState.captureGuildId = controllingGuildId;
+      sabakState.captureGuildName = controllingGuildName;
+      sabakState.captureStart = controllingGuildId ? now : null;
+      if (controllingGuildId) {
+        emitAnnouncement(`${controllingGuildName} 开始占领沙城皇宫！`, 'announce');
+      }
+    }
+
+    // 检查是否占领满5分钟
+    if (sabakState.captureGuildId && sabakState.captureStart) {
+      const captureDuration = now - sabakState.captureStart;
+      const captureMinutes = captureDuration / 60000;
+      const占领所需分钟 = 5;
+
+      if (captureDuration >= 占领所需分钟 * 60 * 1000) {
+        // 占领成功，立即结束攻城
+        sabakState.ownerGuildId = sabakState.captureGuildId;
+        sabakState.ownerGuildName = sabakState.captureGuildName;
+        await setSabakOwner(sabakState.captureGuildId, sabakState.captureGuildName);
+        emitAnnouncement(`${sabakState.captureGuildName} 占领沙城皇宫5分钟，成功夺取沙巴克！`, 'announce');
+        sabakState.active = false;
+        sabakState.siegeEndsAt = null;
+        sabakState.captureGuildId = null;
+        sabakState.captureGuildName = null;
+        sabakState.captureStart = null;
+        sabakState.killStats = {};
+      } else if (Math.floor(captureDuration / 1000) % 30 === 0 && captureDuration > 0) {
+        // 每30秒提醒一次占领时间
+        const remainingMinutes = Math.ceil((占领所需分钟 * 60 * 1000 - captureDuration) / 60000);
+        emitAnnouncement(`${sabakState.captureGuildName} 已占领沙城皇宫 ${Math.floor(captureMinutes)} 分钟，还需 ${remainingMinutes} 分钟即可获胜。`, 'announce');
+      }
+    }
   }
 
   // 结束攻城战

@@ -185,7 +185,19 @@ const guildUi = {
   title: document.getElementById('guild-title'),
   list: document.getElementById('guild-list'),
   invite: document.getElementById('guild-invite'),
+  leave: document.getElementById('guild-leave'),
   close: document.getElementById('guild-close')
+};
+const sabakUi = {
+  modal: document.getElementById('sabak-modal'),
+  info: document.getElementById('sabak-info'),
+  guildList: document.getElementById('sabak-guild-list'),
+  confirm: document.getElementById('sabak-confirm'),
+  close: document.getElementById('sabak-close')
+};
+const sabakPalaceStatsUi = {
+  title: document.getElementById('sabak-palace-stats-title'),
+  list: document.getElementById('sabak-palace-stats')
 };
 const partyUi = {
   modal: document.getElementById('party-modal'),
@@ -1955,6 +1967,9 @@ function renderGuildModal() {
     const isLeader = lastState?.guild_role === 'leader';
     guildUi.invite.classList.toggle('hidden', !isLeader);
   }
+  if (guildUi.leave) {
+    guildUi.leave.classList.remove('hidden');
+  }
   if (!guildMembers.length) {
     const empty = document.createElement('div');
     empty.textContent = '暂无成员信息。';
@@ -1990,6 +2005,44 @@ function renderGuildModal() {
     });
   }
   guildUi.modal.classList.remove('hidden');
+}
+
+function renderSabakModal(payload) {
+  if (!sabakUi.modal) return;
+  const { windowInfo, ownerGuildName, registrations, canRegister, isOwner } = payload;
+  if (sabakUi.info) {
+    sabakUi.info.innerHTML = `
+      <div><strong>攻城时间:</strong> ${windowInfo}</div>
+      <div><strong>当前城主:</strong> ${ownerGuildName || '无'}</div>
+      <div><strong>报名费用:</strong> ${isOwner ? '守城行会免费' : '500万金币'}</div>
+      <div><strong>胜利条件:</strong> 半小时杀人最多 或 占领沙城皇宫5分钟</div>
+    `;
+  }
+  if (sabakUi.guildList) {
+    sabakUi.guildList.innerHTML = '';
+    if (!registrations || registrations.length === 0) {
+      const empty = document.createElement('div');
+      empty.textContent = '暂无报名行会';
+      sabakUi.guildList.appendChild(empty);
+    } else {
+      registrations.forEach((reg) => {
+        const row = document.createElement('div');
+        row.className = 'guild-member';
+        const guildName = reg.guild_name || reg.guildName;
+        row.textContent = reg.isDefender ? `${guildName} [守城方]` : guildName;
+        if (reg.isDefender) {
+          row.style.color = '#ffd700';
+          row.style.fontWeight = 'bold';
+        }
+        sabakUi.guildList.appendChild(row);
+      });
+    }
+  }
+  if (sabakUi.confirm) {
+    sabakUi.confirm.classList.toggle('hidden', !canRegister);
+    sabakUi.confirm.textContent = isOwner ? '守城行会无需报名' : '确认报名（500万金币）';
+  }
+  sabakUi.modal.classList.remove('hidden');
 }
 
 function renderPartyModal() {
@@ -2368,6 +2421,38 @@ function renderState(state) {
           ui.worldBossRank.appendChild(row);
         });
       }
+    }
+  }
+
+  // 沙城皇宫击杀统计（仅在沙城皇宫房间显示）
+  if (sabakPalaceStatsUi.title && sabakPalaceStatsUi.list) {
+    const inSabakPalace = state.room && state.room.zoneId === 'sb_town' && state.room.roomId === 'palace';
+    const palaceStatsBlock = sabakPalaceStatsUi.title.closest('.action-group');
+
+    if (!inSabakPalace || !state.sabak?.palaceKillStats || state.sabak.palaceKillStats.length === 0) {
+      if (palaceStatsBlock) palaceStatsBlock.classList.add('hidden');
+    } else {
+      if (palaceStatsBlock) palaceStatsBlock.classList.remove('hidden');
+      sabakPalaceStatsUi.list.innerHTML = '';
+      state.sabak.palaceKillStats.forEach((entry, idx) => {
+        const row = document.createElement('div');
+        row.className = 'rank-item';
+        const name = document.createElement('span');
+        name.textContent = entry.guild_name;
+        const kills = document.createElement('span');
+        kills.textContent = `${entry.kills}击杀`;
+        const pos = document.createElement('span');
+        pos.className = 'rank-pos';
+        pos.textContent = `#${idx + 1}`;
+        if (entry.is_defender) {
+          name.style.color = '#ffd700';
+          name.style.fontWeight = 'bold';
+        }
+        row.appendChild(pos);
+        row.appendChild(name);
+        row.appendChild(kills);
+        sabakPalaceStatsUi.list.appendChild(row);
+      });
     }
   }
 
@@ -2796,6 +2881,10 @@ function enterGame(name) {
       renderGuildModal();
     }
   });
+  socket.on('sabak_info', (payload) => {
+    if (!payload) return;
+    renderSabakModal(payload);
+  });
   socket.on('chat', (payload) => {
     appendChatLine(payload);
   });
@@ -3008,9 +3097,28 @@ if (chat.partyToggleBtn) {
   chat.partyToggleBtn.addEventListener('click', () => {});
 }
 if (chat.sabakRegisterBtn) {
-  chat.sabakRegisterBtn.addEventListener('click', () => {
+  chat.sabakRegisterBtn.addEventListener('click', async () => {
     if (!socket) return;
-    socket.emit('cmd', { text: 'sabak register' });
+    socket.emit('sabak_info');
+  });
+}
+if (sabakUi.confirm) {
+  sabakUi.confirm.addEventListener('click', () => {
+    if (!socket) return;
+    socket.emit('sabak_register_confirm');
+    if (sabakUi.modal) sabakUi.modal.classList.add('hidden');
+  });
+}
+if (sabakUi.close) {
+  sabakUi.close.addEventListener('click', () => {
+    if (sabakUi.modal) sabakUi.modal.classList.add('hidden');
+  });
+}
+if (sabakUi.modal) {
+  sabakUi.modal.addEventListener('click', (e) => {
+    if (e.target === sabakUi.modal) {
+      sabakUi.modal.classList.add('hidden');
+    }
   });
 }
 if (chat.locationBtn) {
@@ -3257,6 +3365,18 @@ if (guildUi.invite) {
     });
     if (!name) return;
     if (socket) socket.emit('cmd', { text: `guild invite ${name.trim()}` });
+  });
+}
+if (guildUi.leave) {
+  guildUi.leave.addEventListener('click', async () => {
+    const confirmed = await promptModal({
+      title: '退出行会',
+      text: '确定要退出行会吗？',
+      placeholder: '输入 "确认" 继续'
+    });
+    if (confirmed === '确认' && socket) {
+      socket.emit('cmd', { text: 'guild leave' });
+    }
   });
 }
 if (guildUi.close) {

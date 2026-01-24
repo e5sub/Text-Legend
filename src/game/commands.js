@@ -1558,8 +1558,8 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
       if (sub === 'leave') {
         if (!player.guild) return send('你不在行会中。');
         const isLeader = await guildApi.isGuildLeader(player.guild.id, player.userId, player.name);
-        if (isLeader) return send('会长不能直接退出行会。');
-        await guildApi.removeGuildMember(player.guild.id, player.userId, player.name);
+        if (isLeader) return send('会长不能直接退出行会，请先转让会长职位。');
+        const guildId = await guildApi.leaveGuild(player.userId, player.name);
         player.guild = null;
         send('你已退出行会。');
         return;
@@ -1598,11 +1598,26 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         if (!player.guild) return send('你不在行会中。');
         const isLeader = await guildApi.isGuildLeader(player.guild.id, player.userId, player.name);
         if (!isLeader) return send('只有会长可以报名。');
+        const isOwner = guildApi.sabakState.ownerGuildId === player.guild.id;
+        if (isOwner) return send('守城行会无需报名。');
+        const hasRegisteredToday = await guildApi.hasSabakRegistrationToday(player.guild.id);
+        if (hasRegisteredToday) return send('该行会今天已经报名过了。');
+        const registrations = await guildApi.listSabakRegistrations();
+        const todayRegistrations = registrations.filter(r => {
+          if (!r.created_at) return false;
+          const regDate = new Date(r.created_at);
+          const today = new Date();
+          return regDate.toDateString() === today.toDateString();
+        });
+        if (todayRegistrations.length >= 1) return send('今天已经有行会报名了，每天只能有一个行会申请攻城。');
+        if (player.gold < 5000000) return send('报名需要500万金币。');
+        player.gold -= 5000000;
         try {
           await guildApi.registerSabak(player.guild.id);
-          send('已报名沙巴克攻城。');
+          send('已报名沙巴克攻城，支付500万金币。');
         } catch {
           send('该行会已经报名。');
+          player.gold += 5000000;
         }
         return;
       }

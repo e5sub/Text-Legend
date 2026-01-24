@@ -62,112 +62,112 @@
         name: '平原',
         desc: '开阔的草地上小怪徘徊，城镇在南边。',
         exits: { south: 'bq_town:gate', north: 'forest', east: 'wolfden', west: 'dssv:entrance' },
-        spawns: ['chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'deer', 'deer', 'deer', 'deer', 'deer', 'deer', 'deer', 'deer', 'deer', 'deer', 'sheep', 'sheep', 'sheep', 'sheep', 'sheep', 'sheep', 'sheep', 'sheep', 'sheep', 'sheep', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow']
+        spawns: ['chicken', 'chicken', 'deer', 'deer', 'sheep']
       },
       plains1: {
         id: 'plains1',
         name: '平原1',
         desc: '开阔的草地上小怪徘徊，城镇在南边。',
         exits: { south: 'bq_town:gate', north: 'forest1', east: 'wolfden1', west: 'dssv:entrance1' },
-        spawns: ['chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'deer', 'deer', 'deer', 'deer', 'deer', 'deer', 'deer', 'deer', 'deer', 'deer', 'sheep', 'sheep', 'sheep', 'sheep', 'sheep', 'sheep', 'sheep', 'sheep', 'sheep', 'sheep', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow']
+        spawns: ['chicken', 'chicken', 'deer', 'deer', 'sheep']
       },
       plains2: {
         id: 'plains2',
         name: '平原2',
         desc: '开阔的草地上小怪徘徊，城镇在南边。',
         exits: { south: 'bq_town:gate', north: 'forest2', east: 'wolfden2', west: 'dssv:entrance2' },
-        spawns: ['chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'deer', 'deer', 'deer', 'deer', 'deer', 'deer', 'deer', 'deer', 'deer', 'deer', 'sheep', 'sheep', 'sheep', 'sheep', 'sheep', 'sheep', 'sheep', 'sheep', 'sheep', 'sheep', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow']
+        spawns: ['chicken', 'chicken', 'deer', 'deer', 'sheep']
       },
       plains3: {
         id: 'plains3',
         name: '平原3',
         desc: '开阔的草地上小怪徘徊，城镇在南边。',
         exits: { south: 'bq_town:gate', north: 'forest3', east: 'wolfden3', west: 'dssv:entrance3' },
-        spawns: ['chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'deer', 'deer', 'deer', 'deer', 'deer', 'deer', 'deer', 'deer', 'deer', 'deer', 'sheep', 'sheep', 'sheep', 'sheep', 'sheep', 'sheep', 'sheep', 'sheep', 'sheep', 'sheep', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow', 'scarecrow']
+        spawns: ['chicken', 'chicken', 'deer', 'deer', 'sheep']
       },
       forest: {
         id: 'forest',
         name: '林地',
         desc: '高树投下阴影，狼群在这里潜伏。',
         exits: { south: 'plains', north: 'ruins' },
-        spawns: ['wolf', 'bee', 'cat']
+        spawns: ['wolf', 'wolf', 'bee', 'bee', 'cat']
       },
       forest1: {
         id: 'forest1',
         name: '林地1',
         desc: '高树投下阴影，狼群在这里潜伏。',
         exits: { south: 'plains1', north: 'ruins1' },
-        spawns: ['wolf', 'bee', 'cat']
+        spawns: ['wolf', 'wolf', 'bee', 'bee', 'cat']
       },
       forest2: {
         id: 'forest2',
         name: '林地2',
         desc: '高树投下阴影，狼群在这里潜伏。',
         exits: { south: 'plains2', north: 'ruins2' },
-        spawns: ['wolf', 'bee', 'cat']
+        spawns: ['wolf', 'wolf', 'bee', 'bee', 'cat']
       },
       forest3: {
         id: 'forest3',
         name: '林地3',
         desc: '高树投下阴影，狼群在这里潜伏。',
         exits: { south: 'plains3', north: 'ruins3' },
-        spawns: ['wolf', 'bee', 'cat']
+        spawns: ['wolf', 'wolf', 'bee', 'bee', 'cat']
       },
       wolfden: {
         id: 'wolfden',
         name: '狼穴',
         desc: '遍地白骨，寒冷的嚎叫回荡。',
         exits: { west: 'plains' },
-        spawns: ['wolf', 'wolf', 'wolf']
+        spawns: ['wolf', 'wolf', 'wolf', 'wolf', 'wolf']
       },
       wolfden1: {
         id: 'wolfden1',
         name: '狼穴1',
         desc: '遍地白骨，寒冷的嚎叫回荡。',
         exits: { west: 'plains1' },
-        spawns: ['wolf', 'wolf', 'wolf']
+        spawns: ['wolf', 'wolf', 'wolf', 'wolf', 'wolf']
       },
       wolfden2: {
         id: 'wolfden2',
         name: '狼穴2',
         desc: '遍地白骨，寒冷的嚎叫回荡。',
         exits: { west: 'plains2' },
-        spawns: ['wolf', 'wolf', 'wolf']
+        spawns: ['wolf', 'wolf', 'wolf', 'wolf', 'wolf']
       },
       wolfden3: {
         id: 'wolfden3',
         name: '狼穴3',
         desc: '遍地白骨，寒冷的嚎叫回荡。',
         exits: { west: 'plains3' },
-        spawns: ['wolf', 'wolf', 'wolf']
+        spawns: ['wolf', 'wolf', 'wolf', 'wolf', 'wolf']
       },
       ruins: {
         id: 'ruins',
         name: '古代遗迹',
         desc: '残破石块与诡异寂静，骷髅在此游荡。',
         exits: { south: 'forest', north: 'mine:entrance' },
-        spawns: ['skeleton', 'skeleton', 'spider']
+        spawns: ['skeleton', 'skeleton', 'skeleton', 'skeleton', 'spider']
       },
       ruins1: {
         id: 'ruins1',
         name: '古代遗迹1',
         desc: '残破石块与诡异寂静，骷髅在此游荡。',
         exits: { south: 'forest1', north: 'mine:entrance1' },
-        spawns: ['skeleton', 'skeleton', 'spider']
+        spawns: ['skeleton', 'skeleton', 'skeleton', 'skeleton', 'spider']
       },
       ruins2: {
         id: 'ruins2',
         name: '古代遗迹2',
         desc: '残破石块与诡异寂静，骷髅在此游荡。',
         exits: { south: 'forest2', north: 'mine:entrance2' },
-        spawns: ['skeleton', 'skeleton', 'spider']
+        spawns: ['skeleton', 'skeleton', 'skeleton', 'skeleton', 'spider']
       },
       ruins3: {
         id: 'ruins3',
         name: '古代遗迹3',
         desc: '残破石块与诡异寂静，骷髅在此游荡。',
         exits: { south: 'forest3', north: 'mine:entrance3' },
-        spawns: ['skeleton', 'skeleton', 'spider']
+        spawns: ['skeleton', 'skeleton', 'skeleton', 'skeleton', 'spider']
       }
     }
   },
@@ -180,56 +180,56 @@
         name: '山谷入口',
         desc: '毒雾弥漫，蛇影窜动。',
         exits: { east: 'bq_plains:plains', north: 'deep' },
-        spawns: ['red_snake', 'tiger_snake']
+        spawns: ['red_snake', 'red_snake', 'red_snake', 'tiger_snake', 'tiger_snake']
       },
       entrance1: {
         id: 'entrance1',
         name: '山谷入口1',
         desc: '毒雾弥漫，蛇影窜动。',
         exits: { east: 'bq_plains:plains1', north: 'deep1' },
-        spawns: ['red_snake', 'tiger_snake']
+        spawns: ['red_snake', 'red_snake', 'red_snake', 'tiger_snake', 'tiger_snake']
       },
       entrance2: {
         id: 'entrance2',
         name: '山谷入口2',
         desc: '毒雾弥漫，蛇影窜动。',
         exits: { east: 'bq_plains:plains2', north: 'deep2' },
-        spawns: ['red_snake', 'tiger_snake']
+        spawns: ['red_snake', 'red_snake', 'red_snake', 'tiger_snake', 'tiger_snake']
       },
       entrance3: {
         id: 'entrance3',
         name: '山谷入口3',
         desc: '毒雾弥漫，蛇影窜动。',
         exits: { east: 'bq_plains:plains3', north: 'deep3' },
-        spawns: ['red_snake', 'tiger_snake']
+        spawns: ['red_snake', 'red_snake', 'red_snake', 'tiger_snake', 'tiger_snake']
       },
       deep: {
         id: 'deep',
         name: '山谷深处',
         desc: '阴冷潮湿，邪恶毒蛇盘踞。',
         exits: { south: 'entrance', north: 'mine:entrance' },
-        spawns: ['red_snake', 'tiger_snake', 'evil_snake']
+        spawns: ['red_snake', 'tiger_snake', 'evil_snake', 'evil_snake', 'evil_snake']
       },
       deep1: {
         id: 'deep1',
         name: '山谷深处1',
         desc: '阴冷潮湿，邪恶毒蛇盘踞。',
         exits: { south: 'entrance1', north: 'mine:entrance1' },
-        spawns: ['red_snake', 'tiger_snake', 'evil_snake']
+        spawns: ['red_snake', 'tiger_snake', 'evil_snake', 'evil_snake', 'evil_snake']
       },
       deep2: {
         id: 'deep2',
         name: '山谷深处2',
         desc: '阴冷潮湿，邪恶毒蛇盘踞。',
         exits: { south: 'entrance2', north: 'mine:entrance2' },
-        spawns: ['red_snake', 'tiger_snake', 'evil_snake']
+        spawns: ['red_snake', 'tiger_snake', 'evil_snake', 'evil_snake', 'evil_snake']
       },
       deep3: {
         id: 'deep3',
         name: '山谷深处3',
         desc: '阴冷潮湿，邪恶毒蛇盘踞。',
         exits: { south: 'entrance3', north: 'mine:entrance3' },
-        spawns: ['red_snake', 'tiger_snake', 'evil_snake']
+        spawns: ['red_snake', 'tiger_snake', 'evil_snake', 'evil_snake', 'evil_snake']
       }
     }
   },
@@ -242,56 +242,56 @@
         name: '矿区入口',
         desc: '矿洞阴暗，僵尸游荡。',
         exits: { south: 'bq_plains:ruins', north: 'depths' },
-        spawns: ['zombie', 'elec_zombie', 'craw_zombie']
+        spawns: ['zombie', 'zombie', 'elec_zombie', 'elec_zombie', 'craw_zombie']
       },
       entrance1: {
         id: 'entrance1',
         name: '矿区入口1',
         desc: '矿洞阴暗，僵尸游荡。',
         exits: { south: 'bq_plains:ruins1', north: 'depths1' },
-        spawns: ['zombie', 'elec_zombie', 'craw_zombie']
+        spawns: ['zombie', 'zombie', 'elec_zombie', 'elec_zombie', 'craw_zombie']
       },
       entrance2: {
         id: 'entrance2',
         name: '矿区入口2',
         desc: '矿洞阴暗，僵尸游荡。',
         exits: { south: 'bq_plains:ruins2', north: 'depths2' },
-        spawns: ['zombie', 'elec_zombie', 'craw_zombie']
+        spawns: ['zombie', 'zombie', 'elec_zombie', 'elec_zombie', 'craw_zombie']
       },
       entrance3: {
         id: 'entrance3',
         name: '矿区入口3',
         desc: '矿洞阴暗，僵尸游荡。',
         exits: { south: 'bq_plains:ruins3', north: 'depths3' },
-        spawns: ['zombie', 'elec_zombie', 'craw_zombie']
+        spawns: ['zombie', 'zombie', 'elec_zombie', 'elec_zombie', 'craw_zombie']
       },
       depths: {
         id: 'depths',
         name: '矿区深处',
         desc: '腐臭弥漫，怪物更加凶残。',
         exits: { south: 'entrance', north: 'wgc:entrance' },
-        spawns: ['zombie', 'black_worm', 'moth', 'cave_bat']
+        spawns: ['zombie', 'black_worm', 'moth', 'moth', 'cave_bat']
       },
       depths1: {
         id: 'depths1',
         name: '矿区深处1',
         desc: '腐臭弥漫，怪物更加凶残。',
         exits: { south: 'entrance1', north: 'wgc:entrance1' },
-        spawns: ['zombie', 'black_worm', 'moth', 'cave_bat']
+        spawns: ['zombie', 'black_worm', 'moth', 'moth', 'cave_bat']
       },
       depths2: {
         id: 'depths2',
         name: '矿区深处2',
         desc: '腐臭弥漫，怪物更加凶残。',
         exits: { south: 'entrance2', north: 'wgc:entrance2' },
-        spawns: ['zombie', 'black_worm', 'moth', 'cave_bat']
+        spawns: ['zombie', 'black_worm', 'moth', 'moth', 'cave_bat']
       },
       depths3: {
         id: 'depths3',
         name: '矿区深处3',
         desc: '腐臭弥漫，怪物更加凶残。',
         exits: { south: 'entrance3', north: 'wgc:entrance3' },
-        spawns: ['zombie', 'black_worm', 'moth', 'cave_bat']
+        spawns: ['zombie', 'black_worm', 'moth', 'moth', 'cave_bat']
       }
     }
   },
@@ -304,56 +304,56 @@
         name: '蜈蚣洞入口',
         desc: '潮湿闷热，虫声四起。',
         exits: { south: 'mine:depths', north: 'deep' },
-        spawns: ['centipede', 'scorpion', 'black_worm']
+        spawns: ['centipede', 'centipede', 'scorpion', 'scorpion', 'black_worm']
       },
       entrance1: {
         id: 'entrance1',
         name: '蜈蚣洞入口1',
         desc: '潮湿闷热，虫声四起。',
         exits: { south: 'mine:depths1', north: 'deep1' },
-        spawns: ['centipede', 'scorpion', 'black_worm']
+        spawns: ['centipede', 'centipede', 'scorpion', 'scorpion', 'black_worm']
       },
       entrance2: {
         id: 'entrance2',
         name: '蜈蚣洞入口2',
         desc: '潮湿闷热，虫声四起。',
         exits: { south: 'mine:depths2', north: 'deep2' },
-        spawns: ['centipede', 'scorpion', 'black_worm']
+        spawns: ['centipede', 'centipede', 'scorpion', 'scorpion', 'black_worm']
       },
       entrance3: {
         id: 'entrance3',
         name: '蜈蚣洞入口3',
         desc: '潮湿闷热，虫声四起。',
         exits: { south: 'mine:depths3', north: 'deep3' },
-        spawns: ['centipede', 'scorpion', 'black_worm']
+        spawns: ['centipede', 'centipede', 'scorpion', 'scorpion', 'black_worm']
       },
       deep: {
         id: 'deep',
         name: '蜈蚣洞深处',
         desc: '触龙神盘踞其中。',
         exits: { south: 'entrance', north: 'mg_plains:gate' },
-        spawns: ['ghoul', 'bug_queen']
+        spawns: ['ghoul', 'ghoul', 'ghoul', 'ghoul', 'bug_queen']
       },
       deep1: {
         id: 'deep1',
         name: '蜈蚣洞深处1',
         desc: '触龙神盘踞其中。',
         exits: { south: 'entrance1', north: 'mg_plains:gate1' },
-        spawns: ['ghoul', 'bug_queen']
+        spawns: ['ghoul', 'ghoul', 'ghoul', 'ghoul', 'bug_queen']
       },
       deep2: {
         id: 'deep2',
         name: '蜈蚣洞深处2',
         desc: '触龙神盘踞其中。',
         exits: { south: 'entrance2', north: 'mg_plains:gate2' },
-        spawns: ['ghoul', 'bug_queen']
+        spawns: ['ghoul', 'ghoul', 'ghoul', 'ghoul', 'bug_queen']
       },
       deep3: {
         id: 'deep3',
         name: '蜈蚣洞深处3',
         desc: '触龙神盘踞其中。',
         exits: { south: 'entrance3', north: 'mg_plains:gate3' },
-        spawns: ['ghoul', 'bug_queen']
+        spawns: ['ghoul', 'ghoul', 'ghoul', 'ghoul', 'bug_queen']
       }
     }
   },
@@ -366,28 +366,28 @@
         name: '盟重入口',
         desc: '黄沙漫天，通往各大地图。',
         exits: { south: 'wgc:deep', north: 'mg_town:gate', west: 'sm:entrance', east: 'fm:gate', northwest: 'brm:gate', northeast: 'sb_town:gate' },
-        spawns: ['half_orc', 'half_orc_warrior']
+        spawns: ['half_orc', 'half_orc', 'half_orc', 'half_orc_warrior', 'half_orc_warrior']
       },
       gate1: {
         id: 'gate1',
         name: '盟重入口1',
         desc: '黄沙漫天，通往各大地图。',
         exits: { south: 'wgc:deep1', north: 'mg_town:gate', west: 'sm:entrance1', east: 'fm:gate1', northwest: 'brm:gate1', northeast: 'sb_town:gate' },
-        spawns: ['half_orc', 'half_orc_warrior']
+        spawns: ['half_orc', 'half_orc', 'half_orc', 'half_orc_warrior', 'half_orc_warrior']
       },
       gate2: {
         id: 'gate2',
         name: '盟重入口2',
         desc: '黄沙漫天，通往各大地图。',
         exits: { south: 'wgc:deep2', north: 'mg_town:gate', west: 'sm:entrance2', east: 'fm:gate2', northwest: 'brm:gate2', northeast: 'sb_town:gate' },
-        spawns: ['half_orc', 'half_orc_warrior']
+        spawns: ['half_orc', 'half_orc', 'half_orc', 'half_orc_warrior', 'half_orc_warrior']
       },
       gate3: {
         id: 'gate3',
         name: '盟重入口3',
         desc: '黄沙漫天，通往各大地图。',
         exits: { south: 'wgc:deep3', north: 'mg_town:gate', west: 'sm:entrance3', east: 'fm:gate3', northwest: 'brm:gate3', northeast: 'sb_town:gate' },
-        spawns: ['half_orc', 'half_orc_warrior']
+        spawns: ['half_orc', 'half_orc', 'half_orc', 'half_orc_warrior', 'half_orc_warrior']
       }
     }
   },
@@ -441,56 +441,56 @@
         name: '石墓入口',
         desc: '低沉的嚎叫回响。',
         exits: { east: 'mg_plains:gate', north: 'deep' },
-        spawns: ['pig_red', 'pig_black', 'moth']
+        spawns: ['pig_red', 'pig_red', 'pig_black', 'pig_black', 'moth']
       },
       entrance1: {
         id: 'entrance1',
         name: '石墓入口1',
         desc: '低沉的嚎叫回响。',
         exits: { east: 'mg_plains:gate1', north: 'deep1' },
-        spawns: ['pig_red', 'pig_black', 'moth']
+        spawns: ['pig_red', 'pig_red', 'pig_black', 'pig_black', 'moth']
       },
       entrance2: {
         id: 'entrance2',
         name: '石墓入口2',
         desc: '低沉的嚎叫回响。',
         exits: { east: 'mg_plains:gate2', north: 'deep2' },
-        spawns: ['pig_red', 'pig_black', 'moth']
+        spawns: ['pig_red', 'pig_red', 'pig_black', 'pig_black', 'moth']
       },
       entrance3: {
         id: 'entrance3',
         name: '石墓入口3',
         desc: '低沉的嚎叫回响。',
         exits: { east: 'mg_plains:gate3', north: 'deep3' },
-        spawns: ['pig_red', 'pig_black', 'moth']
+        spawns: ['pig_red', 'pig_red', 'pig_black', 'pig_black', 'moth']
       },
       deep: {
         id: 'deep',
         name: '石墓深处',
         desc: '白野猪出没。',
         exits: { south: 'entrance' },
-        spawns: ['pig_red', 'pig_black', 'pig_white']
+        spawns: ['pig_red', 'pig_red', 'pig_black', 'pig_black', 'pig_white']
       },
       deep1: {
         id: 'deep1',
         name: '石墓深处1',
         desc: '白野猪出没。',
         exits: { south: 'entrance1' },
-        spawns: ['pig_red', 'pig_black', 'pig_white']
+        spawns: ['pig_red', 'pig_red', 'pig_black', 'pig_black', 'pig_white']
       },
       deep2: {
         id: 'deep2',
         name: '石墓深处2',
         desc: '白野猪出没。',
         exits: { south: 'entrance2' },
-        spawns: ['pig_red', 'pig_black', 'pig_white']
+        spawns: ['pig_red', 'pig_red', 'pig_black', 'pig_black', 'pig_white']
       },
       deep3: {
         id: 'deep3',
         name: '石墓深处3',
         desc: '白野猪出没。',
         exits: { south: 'entrance3' },
-        spawns: ['pig_red', 'pig_black', 'pig_white']
+        spawns: ['pig_red', 'pig_red', 'pig_black', 'pig_black', 'pig_white']
       }
     }
   },
@@ -549,56 +549,56 @@
         name: '寺庙入口',
         desc: '阴风阵阵，沃玛的影子在石壁上闪动。',
         exits: { east: 'mg_town:gate', north: 'hall' },
-        spawns: ['woma_guard', 'woma_warrior']
+        spawns: ['woma_guard', 'woma_guard', 'woma_guard', 'woma_warrior', 'woma_warrior']
       },
       entrance1: {
         id: 'entrance1',
         name: '寺庙入口1',
         desc: '阴风阵阵，沃玛的影子在石壁上闪动。',
         exits: { east: 'mg_town:gate', north: 'hall1' },
-        spawns: ['woma_guard', 'woma_warrior']
+        spawns: ['woma_guard', 'woma_guard', 'woma_guard', 'woma_warrior', 'woma_warrior']
       },
       entrance2: {
         id: 'entrance2',
         name: '寺庙入口2',
         desc: '阴风阵阵，沃玛的影子在石壁上闪动。',
         exits: { east: 'mg_town:gate', north: 'hall2' },
-        spawns: ['woma_guard', 'woma_warrior']
+        spawns: ['woma_guard', 'woma_guard', 'woma_guard', 'woma_warrior', 'woma_warrior']
       },
       entrance3: {
         id: 'entrance3',
         name: '寺庙入口3',
         desc: '阴风阵阵，沃玛的影子在石壁上闪动。',
         exits: { east: 'mg_town:gate', north: 'hall3' },
-        spawns: ['woma_guard', 'woma_warrior']
+        spawns: ['woma_guard', 'woma_guard', 'woma_guard', 'woma_warrior', 'woma_warrior']
       },
       hall: {
         id: 'hall',
         name: '寺庙大厅',
         desc: '沃玛战士在此巡逻。',
         exits: { south: 'entrance', north: 'deep' },
-        spawns: ['woma_guard', 'woma_warrior', 'woma_mage']
+        spawns: ['woma_guard', 'woma_guard', 'woma_warrior', 'woma_warrior', 'woma_mage']
       },
       hall1: {
         id: 'hall1',
         name: '寺庙大厅1',
         desc: '沃玛战士在此巡逻。',
         exits: { south: 'entrance1', north: 'deep' },
-        spawns: ['woma_guard', 'woma_warrior', 'woma_mage']
+        spawns: ['woma_guard', 'woma_guard', 'woma_warrior', 'woma_warrior', 'woma_mage']
       },
       hall2: {
         id: 'hall2',
         name: '寺庙大厅2',
         desc: '沃玛战士在此巡逻。',
         exits: { south: 'entrance2', north: 'deep' },
-        spawns: ['woma_guard', 'woma_warrior', 'woma_mage']
+        spawns: ['woma_guard', 'woma_guard', 'woma_warrior', 'woma_warrior', 'woma_mage']
       },
       hall3: {
         id: 'hall3',
         name: '寺庙大厅3',
         desc: '沃玛战士在此巡逻。',
         exits: { south: 'entrance3', north: 'deep' },
-        spawns: ['woma_guard', 'woma_warrior', 'woma_mage']
+        spawns: ['woma_guard', 'woma_guard', 'woma_warrior', 'woma_warrior', 'woma_mage']
       },
       deep: {
         id: 'deep',
@@ -618,56 +618,56 @@
         name: '祖玛大厅',
         desc: '石像林立，弓箭手暗处窥视。',
         exits: { west: 'mg_town:gate', north: 'deep' },
-        spawns: ['zuma_archer', 'zuma_guard', 'zuma_statue']
+        spawns: ['zuma_archer', 'zuma_archer', 'zuma_guard', 'zuma_guard', 'zuma_statue']
       },
       hall1: {
         id: 'hall1',
         name: '祖玛大厅1',
         desc: '石像林立，弓箭手暗处窥视。',
         exits: { west: 'mg_town:gate', north: 'deep1' },
-        spawns: ['zuma_archer', 'zuma_guard', 'zuma_statue']
+        spawns: ['zuma_archer', 'zuma_archer', 'zuma_guard', 'zuma_guard', 'zuma_statue']
       },
       hall2: {
         id: 'hall2',
         name: '祖玛大厅2',
         desc: '石像林立，弓箭手暗处窥视。',
         exits: { west: 'mg_town:gate', north: 'deep2' },
-        spawns: ['zuma_archer', 'zuma_guard', 'zuma_statue']
+        spawns: ['zuma_archer', 'zuma_archer', 'zuma_guard', 'zuma_guard', 'zuma_statue']
       },
       hall3: {
         id: 'hall3',
         name: '祖玛大厅3',
         desc: '石像林立，弓箭手暗处窥视。',
         exits: { west: 'mg_town:gate', north: 'deep3' },
-        spawns: ['zuma_archer', 'zuma_guard', 'zuma_statue']
+        spawns: ['zuma_archer', 'zuma_archer', 'zuma_guard', 'zuma_guard', 'zuma_statue']
       },
       deep: {
         id: 'deep',
         name: '祖玛深处',
         desc: '祖玛教主的气息在此涌动。',
         exits: { south: 'hall', north: 'throne' },
-        spawns: ['zuma_guard', 'zuma_statue']
+        spawns: ['zuma_guard', 'zuma_guard', 'zuma_guard', 'zuma_guard', 'zuma_statue']
       },
       deep1: {
         id: 'deep1',
         name: '祖玛深处1',
         desc: '祖玛教主的气息在此涌动。',
         exits: { south: 'hall1', north: 'throne' },
-        spawns: ['zuma_guard', 'zuma_statue']
+        spawns: ['zuma_guard', 'zuma_guard', 'zuma_guard', 'zuma_guard', 'zuma_statue']
       },
       deep2: {
         id: 'deep2',
         name: '祖玛深处2',
         desc: '祖玛教主的气息在此涌动。',
         exits: { south: 'hall2', north: 'throne' },
-        spawns: ['zuma_guard', 'zuma_statue']
+        spawns: ['zuma_guard', 'zuma_guard', 'zuma_guard', 'zuma_guard', 'zuma_statue']
       },
       deep3: {
         id: 'deep3',
         name: '祖玛深处3',
         desc: '祖玛教主的气息在此涌动。',
         exits: { south: 'hall3', north: 'throne' },
-        spawns: ['zuma_guard', 'zuma_statue']
+        spawns: ['zuma_guard', 'zuma_guard', 'zuma_guard', 'zuma_guard', 'zuma_statue']
       },
       throne: {
         id: 'throne',
@@ -687,56 +687,56 @@
         name: '赤月入口',
         desc: '空气凝重，蜘蛛遍地。',
         exits: { south: 'mg_town:gate', north: 'nest' },
-        spawns: ['chiyue_spider', 'chiyue_flower']
+        spawns: ['chiyue_spider', 'chiyue_spider', 'chiyue_spider', 'chiyue_flower', 'chiyue_flower']
       },
       valley1: {
         id: 'valley1',
         name: '赤月入口1',
         desc: '空气凝重，蜘蛛遍地。',
         exits: { south: 'mg_town:gate', north: 'nest1' },
-        spawns: ['chiyue_spider', 'chiyue_flower']
+        spawns: ['chiyue_spider', 'chiyue_spider', 'chiyue_spider', 'chiyue_flower', 'chiyue_flower']
       },
       valley2: {
         id: 'valley2',
         name: '赤月入口2',
         desc: '空气凝重，蜘蛛遍地。',
         exits: { south: 'mg_town:gate', north: 'nest2' },
-        spawns: ['chiyue_spider', 'chiyue_flower']
+        spawns: ['chiyue_spider', 'chiyue_spider', 'chiyue_spider', 'chiyue_flower', 'chiyue_flower']
       },
       valley3: {
         id: 'valley3',
         name: '赤月入口3',
         desc: '空气凝重，蜘蛛遍地。',
         exits: { south: 'mg_town:gate', north: 'nest3' },
-        spawns: ['chiyue_spider', 'chiyue_flower']
+        spawns: ['chiyue_spider', 'chiyue_spider', 'chiyue_spider', 'chiyue_flower', 'chiyue_flower']
       },
       nest: {
         id: 'nest',
         name: '赤月巢穴',
         desc: '血色粘液覆盖墙壁。',
         exits: { south: 'valley', north: 'demon' },
-        spawns: ['chiyue_guard', 'chiyue_blood']
+        spawns: ['chiyue_guard', 'chiyue_guard', 'chiyue_guard', 'chiyue_guard', 'chiyue_blood']
       },
       nest1: {
         id: 'nest1',
         name: '赤月巢穴1',
         desc: '血色粘液覆盖墙壁。',
         exits: { south: 'valley1', north: 'demon' },
-        spawns: ['chiyue_guard', 'chiyue_blood']
+        spawns: ['chiyue_guard', 'chiyue_guard', 'chiyue_guard', 'chiyue_guard', 'chiyue_blood']
       },
       nest2: {
         id: 'nest2',
         name: '赤月巢穴2',
         desc: '血色粘液覆盖墙壁。',
         exits: { south: 'valley2', north: 'demon' },
-        spawns: ['chiyue_guard', 'chiyue_blood']
+        spawns: ['chiyue_guard', 'chiyue_guard', 'chiyue_guard', 'chiyue_guard', 'chiyue_blood']
       },
       nest3: {
         id: 'nest3',
         name: '赤月巢穴3',
         desc: '血色粘液覆盖墙壁。',
         exits: { south: 'valley3', north: 'demon' },
-        spawns: ['chiyue_guard', 'chiyue_blood']
+        spawns: ['chiyue_guard', 'chiyue_guard', 'chiyue_guard', 'chiyue_guard', 'chiyue_blood']
       },
       demon: {
         id: 'demon',
@@ -756,35 +756,35 @@
         name: '封魔入口',
         desc: '浓雾笼罩，邪气逼人。',
         exits: { west: 'mg_plains:gate', north: 'deep' },
-        spawns: ['ghoul', 'half_orc_elite']
+        spawns: ['ghoul', 'ghoul', 'ghoul', 'half_orc_elite', 'half_orc_elite']
       },
       gate1: {
         id: 'gate1',
         name: '封魔入口1',
         desc: '浓雾笼罩，邪气逼人。',
         exits: { west: 'mg_plains:gate1', north: 'deep' },
-        spawns: ['ghoul', 'half_orc_elite']
+        spawns: ['ghoul', 'ghoul', 'ghoul', 'half_orc_elite', 'half_orc_elite']
       },
       gate2: {
         id: 'gate2',
         name: '封魔入口2',
         desc: '浓雾笼罩，邪气逼人。',
         exits: { west: 'mg_plains:gate2', north: 'deep' },
-        spawns: ['ghoul', 'half_orc_elite']
+        spawns: ['ghoul', 'ghoul', 'ghoul', 'half_orc_elite', 'half_orc_elite']
       },
       gate3: {
         id: 'gate3',
         name: '封魔入口3',
         desc: '浓雾笼罩，邪气逼人。',
         exits: { west: 'mg_plains:gate3', north: 'deep' },
-        spawns: ['ghoul', 'half_orc_elite']
+        spawns: ['ghoul', 'ghoul', 'ghoul', 'half_orc_elite', 'half_orc_elite']
       },
       deep: {
         id: 'deep',
         name: '封魔深处',
         desc: '虹魔教主的地盘。',
         exits: { south: 'gate' },
-        spawns: ['fmg_pig', 'fmg_scorpion', 'fmg_demon']
+        spawns: ['fmg_pig', 'fmg_pig', 'fmg_scorpion', 'fmg_scorpion', 'fmg_demon']
       }
     }
   },
@@ -797,35 +797,35 @@
         name: '白日门入口',
         desc: '丛林的气息扑面而来。',
         exits: { west: 'mg_plains:gate', north: 'jungle' },
-        spawns: ['half_orc_elite', 'spider']
+        spawns: ['half_orc_elite', 'half_orc_elite', 'half_orc_elite', 'spider', 'spider']
       },
       gate1: {
         id: 'gate1',
         name: '白日门入口1',
         desc: '丛林的气息扑面而来。',
         exits: { west: 'mg_plains:gate1', north: 'jungle' },
-        spawns: ['half_orc_elite', 'spider']
+        spawns: ['half_orc_elite', 'half_orc_elite', 'half_orc_elite', 'spider', 'spider']
       },
       gate2: {
         id: 'gate2',
         name: '白日门入口2',
         desc: '丛林的气息扑面而来。',
         exits: { west: 'mg_plains:gate2', north: 'jungle' },
-        spawns: ['half_orc_elite', 'spider']
+        spawns: ['half_orc_elite', 'half_orc_elite', 'half_orc_elite', 'spider', 'spider']
       },
       gate3: {
         id: 'gate3',
         name: '白日门入口3',
         desc: '丛林的气息扑面而来。',
         exits: { west: 'mg_plains:gate3', north: 'jungle' },
-        spawns: ['half_orc_elite', 'spider']
+        spawns: ['half_orc_elite', 'half_orc_elite', 'half_orc_elite', 'spider', 'spider']
       },
       jungle: {
         id: 'jungle',
         name: '丛林深处',
         desc: '千年树妖潜伏其中。',
         exits: { south: 'gate' },
-        spawns: ['tree_demon']
+        spawns: ['tree_demon', 'tree_demon', 'tree_demon', 'tree_demon', 'tree_demon']
       }
     }
   },
@@ -838,28 +838,28 @@
         name: '海滩',
         desc: '海风袭来，渔火点点。',
         exits: { north: 'village', south: 'bq_town:port' },
-        spawns: ['bee']
+        spawns: ['bee', 'bee', 'bee', 'bee', 'bee']
       },
       shore1: {
         id: 'shore1',
         name: '海滩1',
         desc: '海风袭来，渔火点点。',
         exits: { north: 'village', south: 'bq_town:port' },
-        spawns: ['bee']
+        spawns: ['bee', 'bee', 'bee', 'bee', 'bee']
       },
       shore2: {
         id: 'shore2',
         name: '海滩2',
         desc: '海风袭来，渔火点点。',
         exits: { north: 'village', south: 'bq_town:port' },
-        spawns: ['bee']
+        spawns: ['bee', 'bee', 'bee', 'bee', 'bee']
       },
       shore3: {
         id: 'shore3',
         name: '海滩3',
         desc: '海风袭来，渔火点点。',
         exits: { north: 'village', south: 'bq_town:port' },
-        spawns: ['bee']
+        spawns: ['bee', 'bee', 'bee', 'bee', 'bee']
       },
       village: {
         id: 'village',
@@ -880,28 +880,28 @@
         name: '骨魔入口',
         desc: '骷髅的低语回响。',
         exits: { south: 'cm_island:village', north: 'deep' },
-        spawns: ['bone_soldier', 'bone_general']
+        spawns: ['bone_soldier', 'bone_soldier', 'bone_soldier', 'bone_general', 'bone_general']
       },
       entrance1: {
         id: 'entrance1',
         name: '骨魔入口1',
         desc: '骷髅的低语回响。',
         exits: { south: 'cm_island:village', north: 'deep' },
-        spawns: ['bone_soldier', 'bone_general']
+        spawns: ['bone_soldier', 'bone_soldier', 'bone_soldier', 'bone_general', 'bone_general']
       },
       entrance2: {
         id: 'entrance2',
         name: '骨魔入口2',
         desc: '骷髅的低语回响。',
         exits: { south: 'cm_island:village', north: 'deep' },
-        spawns: ['bone_soldier', 'bone_general']
+        spawns: ['bone_soldier', 'bone_soldier', 'bone_soldier', 'bone_general', 'bone_general']
       },
       entrance3: {
         id: 'entrance3',
         name: '骨魔入口3',
         desc: '骷髅的低语回响。',
         exits: { south: 'cm_island:village', north: 'deep' },
-        spawns: ['bone_soldier', 'bone_general']
+        spawns: ['bone_soldier', 'bone_soldier', 'bone_soldier', 'bone_general', 'bone_general']
       },
       deep: {
         id: 'deep',
@@ -921,28 +921,28 @@
         name: '牛魔入口',
         desc: '牛魔将军巡逻。',
         exits: { south: 'cm_island:village', north: 'deep' },
-        spawns: ['nmmob', 'nm_mage']
+        spawns: ['nmmob', 'nmmob', 'nmmob', 'nm_mage', 'nm_mage']
       },
       entrance1: {
         id: 'entrance1',
         name: '牛魔入口1',
         desc: '牛魔将军巡逻。',
         exits: { south: 'cm_island:village', north: 'deep' },
-        spawns: ['nmmob', 'nm_mage']
+        spawns: ['nmmob', 'nmmob', 'nmmob', 'nm_mage', 'nm_mage']
       },
       entrance2: {
         id: 'entrance2',
         name: '牛魔入口2',
         desc: '牛魔将军巡逻。',
         exits: { south: 'cm_island:village', north: 'deep' },
-        spawns: ['nmmob', 'nm_mage']
+        spawns: ['nmmob', 'nmmob', 'nmmob', 'nm_mage', 'nm_mage']
       },
       entrance3: {
         id: 'entrance3',
         name: '牛魔入口3',
         desc: '牛魔将军巡逻。',
         exits: { south: 'cm_island:village', north: 'deep' },
-        spawns: ['nmmob', 'nm_mage']
+        spawns: ['nmmob', 'nmmob', 'nmmob', 'nm_mage', 'nm_mage']
       },
       deep: {
         id: 'deep',
@@ -962,28 +962,28 @@
         name: '魔龙城门',
         desc: '钢铁与龙焰的味道。',
         exits: { west: 'nm_temple:deep', north: 'deep' },
-        spawns: ['molong_guard']
+        spawns: ['molong_guard', 'molong_guard', 'molong_guard', 'molong_guard', 'molong_guard']
       },
       gate1: {
         id: 'gate1',
         name: '魔龙城门1',
         desc: '钢铁与龙焰的味道。',
         exits: { west: 'nm_temple:deep', north: 'deep' },
-        spawns: ['molong_guard']
+        spawns: ['molong_guard', 'molong_guard', 'molong_guard', 'molong_guard', 'molong_guard']
       },
       gate2: {
         id: 'gate2',
         name: '魔龙城门2',
         desc: '钢铁与龙焰的味道。',
         exits: { west: 'nm_temple:deep', north: 'deep' },
-        spawns: ['molong_guard']
+        spawns: ['molong_guard', 'molong_guard', 'molong_guard', 'molong_guard', 'molong_guard']
       },
       gate3: {
         id: 'gate3',
         name: '魔龙城门3',
         desc: '钢铁与龙焰的味道。',
         exits: { west: 'nm_temple:deep', north: 'deep' },
-        spawns: ['molong_guard']
+        spawns: ['molong_guard', 'molong_guard', 'molong_guard', 'molong_guard', 'molong_guard']
       },
       deep: {
         id: 'deep',

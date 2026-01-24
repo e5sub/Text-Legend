@@ -175,6 +175,10 @@
             <div class="action-title">&#x7269;&#x54C1;</div>
             <div id="items-list" class="chip-grid"></div>
           </div>
+          <div class="action-group hidden">
+            <div class="action-title" id="sabak-palace-stats-title">沙城皇宫击杀统计</div>
+            <div id="sabak-palace-stats" class="rank-list"></div>
+          </div>
           <div class="action-group">
             <div class="action-title" id="worldboss-rank-title">世界BOSS伤害排行</div>
             <div id="worldboss-rank" class="rank-list"></div>
@@ -384,7 +388,20 @@
       <div id="guild-list" class="guild-list"></div>
       <div class="modal-actions">
         <button id="guild-invite">邀请成员</button>
+        <button id="guild-leave">退出行会</button>
         <button id="guild-close">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="sabak-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-title">沙巴克攻城报名</div>
+      <div class="modal-text" id="sabak-info"></div>
+      <div id="sabak-guild-list" class="sabak-guild-list"></div>
+      <div class="modal-actions">
+        <button id="sabak-confirm">确认报名（500万金币）</button>
+        <button id="sabak-close">关闭</button>
       </div>
     </div>
   </div>
