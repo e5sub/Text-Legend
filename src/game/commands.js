@@ -323,7 +323,15 @@ function formatStats(player, partyApi) {
 
 function sendRoomDescription(player, send) {
   const zone = WORLD[player.position.zone];
+  if (!zone) {
+    send('你所在的区域不存在。');
+    return;
+  }
   const room = zone.rooms[player.position.room];
+  if (!room) {
+    send('你所在的房间不存在。');
+    return;
+  }
   const allExits = Object.entries(room.exits)
     .map(([dir, dest]) => {
       let zoneId = player.position.zone;
@@ -540,10 +548,8 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         return;
       }
       let dir = normalizeDirection(args);
-      console.log(`[DEBUG] Go command - args: "${args}", normalized dir: "${dir}", player position: ${player.position.zone}:${player.position.room}`);
       if (!dir || !room.exits[dir]) {
         const targetName = (args || '').trim();
-        console.log(`[DEBUG] Trying to match by name: "${targetName}"`);
         if (targetName) {
           const entry = Object.entries(room.exits).find(([exitDir, dest]) => {
             let zoneId = player.position.zone;
@@ -561,12 +567,10 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         }
       }
       if (!dir || !room.exits[dir]) {
-        console.log(`[DEBUG] Invalid direction - dir: "${dir}", room.exits:`, Object.keys(room.exits));
         send('方向无效。');
         return;
       }
       const dest = room.exits[dir];
-      console.log(`[DEBUG] Moving - dest: "${dest}"`);
       if (dest.includes(':')) {
         let [zoneId, roomId] = dest.split(':');
 

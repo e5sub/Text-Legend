@@ -1668,7 +1668,9 @@ async function buildState(player) {
 
 async function sendState(player) {
   if (!player.socket) return;
-  player.socket.emit('state', await buildState(player));
+  const state = await buildState(player);
+  console.log(`[DEBUG] Sending state to ${player.name} - exits: ${JSON.stringify(state.exits)}`);
+  player.socket.emit('state', state);
 }
 
 async function sendRoomState(zoneId, roomId) {
@@ -2372,6 +2374,7 @@ io.on('connection', (socket) => {
     if (!player) return;
     const prevZone = player.position.zone;
     const prevRoom = player.position.room;
+    console.log(`[DEBUG] Before command - player: ${player.name}, position: ${player.position.zone}:${player.position.room}`);
     await handleCommand({
       player,
       players: listOnlinePlayers(),
@@ -2421,6 +2424,7 @@ io.on('connection', (socket) => {
     ) {
       await handleSabakEntry(player);
     }
+    console.log(`[DEBUG] After command - player: ${player.name}, position: ${player.position.zone}:${player.position.room}, position changed: ${player.position.zone !== prevZone || player.position.room !== prevRoom}`);
     await sendState(player);
     await savePlayer(player);
   });
