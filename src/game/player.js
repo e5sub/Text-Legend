@@ -322,14 +322,14 @@ export function computeDerived(player) {
   const training = player.flags.training;
   // 修炼加成：等级 * 每级增长率
   const trainingBonus = {
-    hp: (training.hp || 0) * 0.1,
-    mp: (training.mp || 0) * 0.1,
-    atk: (training.atk || 0) * 0.01,
-    def: (training.def || 0) * 0.01,
-    mag: (training.mag || 0) * 0.01,
-    mdef: (training.mdef || 0) * 0.01,
-    spirit: (training.spirit || 0) * 0.01,
-    dex: (training.dex || 0) * 0.01
+    hp: (training.hp || 0) * 1,
+    mp: (training.mp || 0) * 1,
+    atk: (training.atk || 0) * 0.1,
+    def: (training.def || 0) * 0.1,
+    mag: (training.mag || 0) * 0.1,
+    mdef: (training.mdef || 0) * 0.1,
+    spirit: (training.spirit || 0) * 0.1,
+    dex: (training.dex || 0) * 0.1
   };
   stats.spirit += trainingBonus.spirit;
   stats.dex += trainingBonus.dex;
