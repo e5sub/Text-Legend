@@ -18,10 +18,18 @@ import { clamp } from './utils.js';
 import { applyDamage } from './combat.js';
 
 // 负载均衡：选择玩家最少的房间
-// 当目标房间有多个变体时（如 plains1, plains2, plains3），自动分配到人最少的那个
+// 当目标房间有多个变体时（如 plains, plains1, plains2, plains3），自动分配到人最少的那个
 function selectLeastPopulatedRoom(zoneId, roomId, onlinePlayers) {
   const baseRoomId = roomId.replace(/\d+$/, '');
   const roomOptions = [];
+
+  // 检查基础房间是否存在
+  if (WORLD[zoneId]?.rooms?.[baseRoomId]) {
+    const playerCount = onlinePlayers.filter(
+      p => p.position.zone === zoneId && p.position.room === baseRoomId
+    ).length;
+    roomOptions.push({ roomId: baseRoomId, playerCount });
+  }
 
   // 查找所有带数字后缀的房间变体（1, 2, 3）
   for (let i = 1; i <= 3; i++) {
