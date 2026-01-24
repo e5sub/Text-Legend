@@ -16,6 +16,32 @@ import { CLASSES, expForLevel, getStartPosition } from './constants.js';
 import { getRoom, getAliveMobs, spawnMobs } from './state.js';
 import { clamp } from './utils.js';
 import { applyDamage } from './combat.js';
+
+// 负载均衡：选择玩家最少的房间
+// 当目标房间有多个变体时（如 plains1, plains2, plains3），自动分配到人最少的那个
+function selectLeastPopulatedRoom(zoneId, roomId, onlinePlayers) {
+  const baseRoomId = roomId.replace(/\d+$/, '');
+  const roomOptions = [];
+
+  // 查找所有带数字后缀的房间变体（1, 2, 3）
+  for (let i = 1; i <= 3; i++) {
+    const candidateRoomId = `${baseRoomId}${i}`;
+    if (WORLD[zoneId]?.rooms?.[candidateRoomId]) {
+      const playerCount = onlinePlayers.filter(
+        p => p.position.zone === zoneId && p.position.room === candidateRoomId
+      ).length;
+      roomOptions.push({ roomId: candidateRoomId, playerCount });
+    }
+  }
+
+  if (roomOptions.length === 0) {
+    return roomId;
+  }
+
+  // 选择玩家最少的房间
+  roomOptions.sort((a, b) => a.playerCount - b.playerCount);
+  return roomOptions[0].roomId;
+}
 import {
   validateNumber,
   validateItemId,
@@ -479,7 +505,24 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
       }
       const dest = room.exits[dir];
       if (dest.includes(':')) {
-        const [zoneId, roomId] = dest.split(':');
+        let [zoneId, roomId] = dest.split(':');
+
+        // 检查目标房间是否有数字后缀的变体（如 plains 有 plains1, plains2, plains3）
+        // 如果有，则自动分配到玩家最少的变体房间
+        const baseRoomId = roomId.replace(/\d+$/, '');
+        const hasRoomVariants = (() => {
+          for (let i = 1; i <= 3; i++) {
+            if (WORLD[zoneId]?.rooms?.[`${baseRoomId}${i}`]) {
+              return true;
+            }
+          }
+          return false;
+        })();
+
+        if (hasRoomVariants) {
+          roomId = selectLeastPopulatedRoom(zoneId, roomId, players);
+        }
+
         const targetRoom = WORLD[zoneId]?.rooms?.[roomId];
         if (targetRoom?.sabakOnly) {
           if (!player.guild || !guildApi?.sabakState?.ownerGuildId || String(player.guild.id) !== String(guildApi.sabakState.ownerGuildId)) {
