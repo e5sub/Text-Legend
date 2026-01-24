@@ -19,7 +19,7 @@ import { applyDamage } from './combat.js';
 
 // 负载均衡：选择玩家最少的房间
 // 当目标房间有多个变体时（如 plains, plains1, plains2, plains3），自动分配到人最少的那个
-function selectLeastPopulatedRoom(zoneId, roomId, onlinePlayers, currentPlayer = null) {
+function selectLeastPopulatedRoom(zoneId, roomId, onlinePlayers, currentPlayer = null, partyApi = null) {
   const baseRoomId = roomId.replace(/\d+$/, '');
   const roomOptions = [];
 
@@ -535,9 +535,15 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
     case 'go':
     case 'move': {
       const room = getRoom(player.position.zone, player.position.room);
+      if (!room) {
+        send('你所在的房间不存在。');
+        return;
+      }
       let dir = normalizeDirection(args);
+      console.log(`[DEBUG] Go command - args: "${args}", normalized dir: "${dir}", player position: ${player.position.zone}:${player.position.room}`);
       if (!dir || !room.exits[dir]) {
         const targetName = (args || '').trim();
+        console.log(`[DEBUG] Trying to match by name: "${targetName}"`);
         if (targetName) {
           const entry = Object.entries(room.exits).find(([exitDir, dest]) => {
             let zoneId = player.position.zone;
@@ -555,27 +561,34 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         }
       }
       if (!dir || !room.exits[dir]) {
+        console.log(`[DEBUG] Invalid direction - dir: "${dir}", room.exits:`, Object.keys(room.exits));
         send('方向无效。');
         return;
       }
       const dest = room.exits[dir];
+      console.log(`[DEBUG] Moving - dest: "${dest}"`);
       if (dest.includes(':')) {
         let [zoneId, roomId] = dest.split(':');
 
-        // 检查目标房间是否有数字后缀的变体（如 plains 有 plains1, plains2, plains3）
-        // 如果有，则自动分配到玩家最少的变体房间
-        const baseRoomId = roomId.replace(/\d+$/, '');
-        const hasRoomVariants = (() => {
-          for (let i = 1; i <= 3; i++) {
-            if (WORLD[zoneId]?.rooms?.[`${baseRoomId}${i}`]) {
-              return true;
+        // 检查目标房间是否为指定了数字后缀的房间（如 plains1, plains2, plains3）
+        // 如果已经指定了数字后缀，则直接使用该房间，不进行负载均衡
+        const hasNumberSuffix = /\d$/.test(roomId);
+        if (!hasNumberSuffix) {
+          // 如果目标房间是基础房间（如 plains），检查是否有数字后缀的变体
+          // 如果有，则根据队伍优先和负载均衡选择合适的房间
+          const baseRoomId = roomId.replace(/\d+$/, '');
+          const hasRoomVariants = (() => {
+            for (let i = 1; i <= 3; i++) {
+              if (WORLD[zoneId]?.rooms?.[`${baseRoomId}${i}`]) {
+                return true;
+              }
             }
-          }
-          return false;
-        })();
+            return false;
+          })();
 
-        if (hasRoomVariants) {
-          roomId = selectLeastPopulatedRoom(zoneId, roomId, players, player);
+          if (hasRoomVariants) {
+            roomId = selectLeastPopulatedRoom(zoneId, roomId, players, player, partyApi);
+          }
         }
 
         const targetRoom = WORLD[zoneId]?.rooms?.[roomId];
