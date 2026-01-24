@@ -2594,6 +2594,16 @@ io.on('connection', (socket) => {
       player.send('守城行会无需报名。');
       return;
     }
+    // 检查报名时间：0:00-19:50
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const totalMinutes = currentHour * 60 + currentMinute;
+    const registerEndMinutes = 19 * 60 + 50; // 19:50
+    if (totalMinutes >= registerEndMinutes) {
+      player.send('报名时间为每日 0:00-19:50，当前时间已截止报名。');
+      return;
+    }
     const hasRegisteredToday = await hasSabakRegistrationToday(player.guild.id);
     if (hasRegisteredToday) {
       player.send('该行会今天已经报名过了。');
@@ -3862,7 +3872,22 @@ async function sabakTick() {
 
   // 自动开始攻城战
   if (!sabakState.active && isSabakActive(nowDate) && sabakState.ownerGuildId) {
-    startSabakSiege(null);
+    // 检查是否有行会报名
+    const registrations = await listSabakRegistrations();
+    const today = new Date();
+    const todayRegistrations = registrations.filter(r => {
+      if (!r.created_at) return false;
+      const regDate = new Date(r.created_at);
+      return regDate.toDateString() === today.toDateString();
+    });
+
+    if (todayRegistrations.length === 0) {
+      // 没有行会报名，直接判定守城方胜利
+      emitAnnouncement('今日无行会报名攻城，守城方自动获胜！', 'announce');
+    } else {
+      // 有行会报名，正常开始攻城战
+      startSabakSiege(null);
+    }
   }
 
   // 检查皇宫占领情况（仅攻城战期间）
