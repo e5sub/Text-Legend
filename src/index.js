@@ -1451,6 +1451,31 @@ function transferOneEquipmentChance(from, to, chance) {
   return [formatItemLabel(equipped.id, equipped.effects)];
 }
 
+// 房间状态缓存（用于BOSS房间优化）
+const roomStateCache = new Map();
+let roomStateLastUpdate = 0;
+let roomStateCachedData = null;
+const ROOM_STATE_TTL = 100; // 100ms缓存时间
+const VIP_SELF_CLAIM_CACHE_TTL = 10000; // VIP自领缓存10秒
+let vipSelfClaimCachedValue = null;
+let vipSelfClaimLastUpdate = 0;
+
+// 判断是否是BOSS房间（魔龙教主/世界BOSS/沙巴克BOSS/暗之系列）
+function isBossRoom(zoneId, roomId) {
+  if (!zoneId || !roomId) return false;
+  const zone = WORLD[zoneId];
+  if (!zone) return false;
+  const room = zone.rooms[roomId];
+  if (!room) return false;
+  
+  // 检查房间内的怪物是否有特殊BOSS
+  const mobs = getRoomMobs(zoneId, roomId);
+  return mobs.some(m => {
+    const tpl = MOB_TEMPLATES[m.templateId];
+    return tpl && tpl.specialBoss;
+  });
+}
+
 async function buildState(player) {
   computeDerived(player);
   const zone = WORLD[player.position.zone];
@@ -1577,6 +1602,8 @@ async function buildState(player) {
   const sabakBonus = Boolean(
     player.guild && sabakState.ownerGuildId && String(player.guild.id) === String(sabakState.ownerGuildId)
   );
+  // 优化：BOSS房间使用缓存的公共数据
+  const isBoss = isBossRoom(player.position.zone, player.position.room);
   const onlineCount = players.size;
   const roomPlayers = listOnlinePlayers()
     .filter((p) => p.position.zone === player.position.zone && p.position.room === player.position.room)
@@ -1587,15 +1614,17 @@ async function buildState(player) {
       guild: p.guild?.name || null,
       guildId: p.guild?.id || null
     }));
-  let worldBossRank = [];
-  let worldBossNextRespawn = null;
+  
+  let bossRank = [];
+  let bossNextRespawn = null;
+  
   // 检查魔龙教主、世界BOSS、沙巴克BOSS、暗之BOSS的刷新时间
   const deadSpecialBosses = deadBosses.filter((m) => {
     const tpl = MOB_TEMPLATES[m.templateId];
     return tpl && tpl.specialBoss;
   });
   if (deadSpecialBosses.length > 0) {
-    worldBossNextRespawn = deadSpecialBosses.sort((a, b) => (a.respawnAt || Infinity) - (b.respawnAt || Infinity))[0]?.respawnAt;
+    bossNextRespawn = deadSpecialBosses.sort((a, b) => (a.respawnAt || Infinity) - (b.respawnAt || Infinity))[0]?.respawnAt;
   }
   const bossMob = getAliveMobs(player.position.zone, player.position.room).find((m) => {
     const tpl = MOB_TEMPLATES[m.templateId];
@@ -1603,7 +1632,17 @@ async function buildState(player) {
   });
   if (bossMob) {
     const { entries } = buildDamageRankMap(bossMob);
-    worldBossRank = entries.slice(0, 5).map(([name, damage]) => ({ name, damage }));
+    bossRank = entries.slice(0, 5).map(([name, damage]) => ({ name, damage }));
+  }
+  
+  // VIP自领状态缓存
+  let vipSelfClaimEnabled;
+  if (Date.now() - vipSelfClaimLastUpdate > VIP_SELF_CLAIM_CACHE_TTL) {
+    vipSelfClaimEnabled = await getVipSelfClaimEnabled();
+    vipSelfClaimCachedValue = vipSelfClaimEnabled;
+    vipSelfClaimLastUpdate = Date.now();
+  } else {
+    vipSelfClaimEnabled = vipSelfClaimCachedValue;
   }
   return {
     player: {
@@ -1665,12 +1704,12 @@ async function buildState(player) {
       ownerGuildId: sabakState.ownerGuildId,
       ownerGuildName: sabakState.ownerGuildName
     },
-    worldBossRank,
-    worldBossNextRespawn,
+    worldBossRank: bossRank,
+    worldBossNextRespawn: bossNextRespawn,
     players: roomPlayers,
     bossRespawn: nextRespawn,
     server_time: Date.now(),
-    vip_self_claim_enabled: await getVipSelfClaimEnabled()
+    vip_self_claim_enabled: vipSelfClaimEnabled
   };
 }
 
@@ -1683,9 +1722,26 @@ async function sendState(player) {
 async function sendRoomState(zoneId, roomId) {
   const players = listOnlinePlayers()
     .filter((p) => p.position.zone === zoneId && p.position.room === roomId);
-  for (const p of players) {
-    await sendState(p);
+  
+  if (players.length === 0) return;
+  
+  // BOSS房间优化：批量处理，减少序列化开销
+  const isBoss = isBossRoom(zoneId, roomId);
+  
+  if (isBoss && players.length > 5) {
+    // BOSS房间且人很多时，使用节流，每100ms最多更新一次
+    const cacheKey = `${zoneId}:${roomId}`;
+    const now = Date.now();
+    const lastUpdate = roomStateCache.get(cacheKey) || 0;
+    
+    if (now - lastUpdate < ROOM_STATE_TTL) {
+      return; // 还在缓存期内，跳过
+    }
+    roomStateCache.set(cacheKey, now);
   }
+  
+  // 使用Promise.all并行发送
+  await Promise.all(players.map(p => sendState(p)));
 }
 
 const WORLD_BOSS_ROOM = { zoneId: 'wb', roomId: 'lair' };
