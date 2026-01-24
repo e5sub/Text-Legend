@@ -571,6 +571,7 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         return;
       }
       const dest = room.exits[dir];
+      console.log(`[DEBUG Go] dest: ${dest}, includes ':': ${dest.includes(':')}`);
       if (dest.includes(':')) {
         let [zoneId, roomId] = dest.split(':');
 
@@ -602,9 +603,12 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
             return;
           }
         }
+        console.log(`[DEBUG Go] Before position update - zoneId: ${zoneId}, roomId: ${roomId}`);
         player.position.zone = zoneId;
         player.position.room = roomId;
+        console.log(`[DEBUG Go] After position update - player.position: ${player.position.zone}:${player.position.room}`);
       } else {
+        console.log(`[DEBUG Go] Else branch - dest: ${dest}`);
         const targetRoom = WORLD[player.position.zone]?.rooms?.[dest];
         if (targetRoom?.sabakOnly) {
           if (!player.guild || !guildApi?.sabakState?.ownerGuildId || String(player.guild.id) !== String(guildApi.sabakState.ownerGuildId)) {
@@ -613,6 +617,7 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
           }
         }
         player.position.room = dest;
+        console.log(`[DEBUG Go] After position update (same zone) - player.position: ${player.position.zone}:${player.position.room}`);
       }
       const zone = WORLD[player.position.zone];
       const roomName = zone?.rooms[player.position.room]?.name;
