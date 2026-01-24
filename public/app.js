@@ -2210,14 +2210,9 @@ function renderState(state) {
   }
   // 后端已经过滤掉带数字后缀的方向，直接使用
   const exits = (state.exits || []).map((e) => ({ id: e.dir, label: e.label }));
-  console.log('[DEBUG] Rendering exits:', exits);
   renderChips(ui.exits, exits, (e) => {
-    console.log('[DEBUG] Clicked exit:', e);
     if (socket) {
-      console.log('[DEBUG] Sending command:', `go ${e.id}`);
       socket.emit('cmd', { text: `go ${e.id}` });
-    } else {
-      console.log('[DEBUG] Socket is null!');
     }
   });
 

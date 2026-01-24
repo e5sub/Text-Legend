@@ -673,6 +673,8 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
     case 'say': {
       if (!args) return;
       players.forEach((p) => p.send(`[${player.name}] ${args}`));
+      // 发送者也要收到自己的消息
+      send(`[${player.name}] ${args}`);
       return;
     }
     case 'who': {
@@ -1578,6 +1580,8 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
       players
         .filter((p) => p.guild && p.guild.id === player.guild.id)
         .forEach((p) => p.send(`[行会][${player.name}] ${args}`));
+      // 发送者也要收到自己的消息
+      send(`[行会][${player.name}] ${args}`);
       return;
     }
     case 'sabak': {
