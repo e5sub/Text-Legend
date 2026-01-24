@@ -82,15 +82,17 @@ export function getRepairCost(item, missing, player = null) {
   if (!item || missing <= 0) return 0;
   const base = item.type === 'weapon' ? 200 : item.type === 'armor' ? 180 : 160;
   const rarity = rarityByPrice(item);
-  const mult = rarity === 'legendary'
-    ? 5.0
-    : rarity === 'epic'
-      ? 4.2
-      : rarity === 'rare'
-        ? 3.4
-        : rarity === 'uncommon'
-          ? 2.6
-          : 2.0;
+  const mult = rarity === 'supreme'
+    ? 6.0
+    : rarity === 'legendary'
+      ? 5.0
+      : rarity === 'epic'
+        ? 4.2
+        : rarity === 'rare'
+          ? 3.4
+          : rarity === 'uncommon'
+            ? 2.6
+            : 2.0;
   let cost = Math.min(50000, Math.max(1, Math.floor(base * mult * missing)));
   if (player?.flags?.vip) {
     cost = Math.max(1, Math.floor(cost * 0.5));
@@ -215,6 +217,36 @@ export function computeDerived(player) {
       neck: 'necklace_true',
       ring: 'ring_true',
       bracelet: 'bracelet_true'
+    },
+    {
+      id: 'rochie_war',
+      bonusRate: 2.0,
+      head: 'helm_rochie_war',
+      waist: 'belt_rochie_war',
+      feet: 'boots_rochie_war',
+      neck: 'necklace_rochie_war',
+      ring: 'ring_rochie_war',
+      bracelet: 'bracelet_rochie_war'
+    },
+    {
+      id: 'rochie_mage',
+      bonusRate: 2.0,
+      head: 'helm_rochie_mage',
+      waist: 'belt_rochie_mage',
+      feet: 'boots_rochie_mage',
+      neck: 'necklace_rochie_mage',
+      ring: 'ring_rochie_mage',
+      bracelet: 'bracelet_rochie_mage'
+    },
+    {
+      id: 'rochie_tao',
+      bonusRate: 2.0,
+      head: 'helm_rochie_tao',
+      waist: 'belt_rochie_tao',
+      feet: 'boots_rochie_tao',
+      neck: 'necklace_rochie_tao',
+      ring: 'ring_rochie_tao',
+      bracelet: 'bracelet_rochie_tao'
     }
   ];
   const cls = CLASSES[player.classId];
@@ -294,7 +326,7 @@ export function computeDerived(player) {
   player.stats = stats;
   const levelUp = Math.max(0, level - 1);
   const levelBonusMap = {
-    warrior: { hp: 3, mp: 10, atk: 0.5, def: 1, mag: 0, spirit: 0, mdef: 2 },
+    warrior: { hp: 3, mp: 10, atk: 0.5, def: 3, mag: 0, spirit: 0, mdef: 3 },
     mage: { hp: 5, mp: 10, atk: 0, def: 2, mag: 2, spirit: 0, mdef: 1 },
     taoist: { hp: 5, mp: 10, atk: 0, def: 2, mag: 0, spirit: 2, mdef: 1 }
   };

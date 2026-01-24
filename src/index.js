@@ -335,8 +335,9 @@ function emitAnnouncement(text, color, location) {
   io.emit('chat', payload);
 }
 
-const RARITY_ORDER = ['legendary', 'epic', 'rare', 'uncommon', 'common'];
+const RARITY_ORDER = ['supreme', 'legendary', 'epic', 'rare', 'uncommon', 'common'];
 const RARITY_NORMAL = {
+  supreme: 0.0005,
   legendary: 0.001,
   epic: 0.005,
   rare: 0.02,
@@ -344,6 +345,7 @@ const RARITY_NORMAL = {
   common: 0.15
 };
 const RARITY_BOSS = {
+  supreme: 0.003,
   legendary: 0.007,
   epic: 0.03,
   rare: 0.08,
