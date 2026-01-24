@@ -502,7 +502,7 @@
         id: 'gate',
         name: '土城城门',
         desc: '黄沙漫天，旅人聚集。',
-        exits: { south: 'mg_plains:gate', south1: 'mg_plains:gate1', south2: 'mg_plains:gate2', south3: 'mg_plains:gate3', north: 'mg_market', west: 'wms:entrance', west1: 'wms:entrance1', west2: 'wms:entrance2', west3: 'wms:entrance3', east: 'zm:hall', east1: 'zm:hall1', east2: 'zm:hall2', east3: 'zm:hall3', northeast: 'cr:valley', northeast1: 'cr:valley1', northeast2: 'cr:valley2', northeast3: 'cr:valley3', northwest: 'wb:lair' },
+        exits: { south: 'mg_plains:gate', south1: 'mg_plains:gate1', south2: 'mg_plains:gate2', south3: 'mg_plains:gate3', north: 'mg_market', west: 'wms:entrance', west1: 'wms:entrance1', west2: 'wms:entrance2', west3: 'wms:entrance3', east: 'zm:hall', east1: 'zm:hall1', east2: 'zm:hall2', east3: 'zm:hall3', northeast: 'cr:valley', northeast1: 'cr:valley1', northeast2: 'cr:valley2', northeast3: 'cr:valley3', northwest: 'wb:lair', southwest: 'dark_bosses:dark_woma_lair', southwest1: 'dark_bosses:dark_zuma_lair', southwest2: 'dark_bosses:dark_hongmo_lair', southwest3: 'dark_bosses:dark_huangquan_lair', southwest4: 'dark_bosses:dark_doublehead_lair', southwest5: 'dark_bosses:dark_skeleton_lair' },
         npcs: ['guard'],
         spawns: []
       },
@@ -1018,7 +1018,7 @@
         id: 'dark_woma_lair',
         name: '暗之沃玛神殿',
         desc: '暗之沃玛教主在此守望。',
-        exits: { southeast: 'mg_town:gate' },
+        exits: { northeast: 'mg_town:gate' },
         spawns: ['dark_woma_boss']
       }
       ,
@@ -1026,7 +1026,7 @@
         id: 'dark_zuma_lair',
         name: '暗之祖玛神殿',
         desc: '暗之祖玛教主在此守望。',
-        exits: { southeast: 'mg_town:gate' },
+        exits: { northeast: 'mg_town:gate' },
         spawns: ['dark_zuma_boss']
       }
       ,
@@ -1034,7 +1034,7 @@
         id: 'dark_hongmo_lair',
         name: '暗之虹魔神殿',
         desc: '暗之虹魔教主在此守望。',
-        exits: { southeast: 'mg_town:gate' },
+        exits: { northeast: 'mg_town:gate' },
         spawns: ['dark_hongmo_boss']
       }
       ,
@@ -1042,7 +1042,7 @@
         id: 'dark_huangquan_lair',
         name: '暗之黄泉神殿',
         desc: '暗之黄泉教主在此守望。',
-        exits: { southeast: 'mg_town:gate' },
+        exits: { northeast: 'mg_town:gate' },
         spawns: ['dark_huangquan_boss']
       }
       ,
@@ -1050,7 +1050,7 @@
         id: 'dark_doublehead_lair',
         name: '暗之血魔神殿',
         desc: '暗之双头血魔在此守望。',
-        exits: { southeast: 'mg_town:gate' },
+        exits: { northeast: 'mg_town:gate' },
         spawns: ['dark_doublehead_boss']
       }
       ,
@@ -1058,7 +1058,7 @@
         id: 'dark_skeleton_lair',
         name: '暗之骷髅神殿',
         desc: '暗之骷髅精灵在此守望。',
-        exits: { southeast: 'mg_town:gate' },
+        exits: { northeast: 'mg_town:gate' },
         spawns: ['dark_skeleton_boss']
       }
     }
