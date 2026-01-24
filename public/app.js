@@ -2196,27 +2196,8 @@ function renderState(state) {
   if (selectedMob && !(state.mobs || []).some((m) => m.id === selectedMob.id)) {
     selectedMob = null;
   }
-  // 合并带数字后缀的方向，只显示一个入口
-  const exits = (state.exits || []).reduce((acc, e) => {
-    const dir = e.dir;
-    const label = e.label || directionLabels[dir] || dir;
-
-    // 检查是否是数字后缀方向（north1, north2, north3等）
-    const baseDir = dir.replace(/[0-9]+$/, '');
-    const hasNumberedVariants = state.exits.some(exit =>
-      exit.dir !== dir && exit.dir.startsWith(baseDir) && /[0-9]+$/.test(exit.dir)
-    );
-
-    if (hasNumberedVariants) {
-      // 只显示基础方向，不显示数字后缀
-      if (!/[0-9]+$/.test(dir) && !acc.some(existing => existing.id === baseDir)) {
-        acc.push({ id: baseDir, label: label.replace(/[0-9]+$/, '') });
-      }
-    } else {
-      acc.push({ id: dir, label });
-    }
-    return acc;
-  }, []);
+  // 后端已经过滤掉带数字后缀的方向，直接使用
+  const exits = (state.exits || []).map((e) => ({ id: e.dir, label: e.label }));
   renderChips(ui.exits, exits, (e) => socket.emit('cmd', { text: `go ${e.id}` }));
 
   const players = (state.players || [])

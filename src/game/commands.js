@@ -300,7 +300,7 @@ function formatStats(player, partyApi) {
 function sendRoomDescription(player, send) {
   const zone = WORLD[player.position.zone];
   const room = zone.rooms[player.position.room];
-  const exits = Object.entries(room.exits)
+  const allExits = Object.entries(room.exits)
     .map(([dir, dest]) => {
       let zoneId = player.position.zone;
       let roomId = dest;
@@ -312,9 +312,32 @@ function sendRoomDescription(player, send) {
       const name = destRoom
         ? (zoneId === player.position.zone ? destRoom.name : `${destZone.name} - ${destRoom.name}`)
         : dest;
-      return `${name}`;
-    })
-    .join(', ');
+      return { dir, name };
+    });
+
+  // 合并带数字后缀的方向，只显示一个入口
+  const filteredExits = [];
+  allExits.forEach(exit => {
+    const dir = exit.dir;
+    const baseDir = dir.replace(/[0-9]+$/, '');
+
+    // 检查是否有数字后缀的变体
+    const hasVariants = allExits.some(e =>
+      e.dir !== dir && e.dir.startsWith(baseDir) && /[0-9]+$/.test(e.dir)
+    );
+
+    if (hasVariants) {
+      // 只添加基础方向，不添加数字后缀的
+      if (!/[0-9]+$/.test(dir) && !filteredExits.some(e => e.name === exit.name.replace(/[0-9]+$/, ''))) {
+        filteredExits.push({ name: exit.name.replace(/[0-9]+$/, '') });
+      }
+    } else {
+      // 没有变体，正常添加
+      filteredExits.push({ name: exit.name });
+    }
+  });
+
+  const exits = filteredExits.map(e => e.name).join(', ');
   send(`当前位置: ${roomLabel(player)}`);
   send(room.desc);
   send(`出口: ${exits || '无'}`);
