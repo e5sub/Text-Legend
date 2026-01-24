@@ -54,7 +54,7 @@ export function getItemKey(slot) {
   return baseKey;
 }
 
-function sameEffects(a, b) {
+export function sameEffects(a, b) {
   const na = normalizeEffects(a);
   const nb = normalizeEffects(b);
   return effectsKey(na) === effectsKey(nb);
