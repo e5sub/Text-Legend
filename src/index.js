@@ -3171,9 +3171,12 @@ function updateSpecialBossStatsBasedOnPlayers() {
       let defBonus = 0;
       let mdefBonus = 0;
 
-      // 单人时增加1000攻击、5000防御、5000魔御
+      // 判断是否是世界BOSS
+      const isWorldBoss = specialBoss.templateId === 'world_boss';
+
+      // 单人时增加攻击、5000防御、5000魔御
       if (playersInRoom < 2) {
-        atkBonus = 1000;
+        atkBonus = isWorldBoss ? 1000 : 800;
         defBonus = 5000;
         mdefBonus = 5000;
         if (!specialBoss.status?.enhancedMode) {
@@ -3183,9 +3186,9 @@ function updateSpecialBossStatsBasedOnPlayers() {
           specialBoss.mdef = baseMdef + mdefBonus;
         }
       }
-      // 2人及以上时增加1000攻击，防御魔御保持基础值
+      // 2人及以上时增加攻击，防御魔御保持基础值
       else {
-        atkBonus = 1000;
+        atkBonus = isWorldBoss ? 1000 : 800;
         defBonus = 0;
         mdefBonus = 0;
         if (specialBoss.status?.enhancedMode !== 'partial') {
