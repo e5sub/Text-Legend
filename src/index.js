@@ -1471,20 +1471,45 @@ async function buildState(player) {
   const nextRespawn = deadBosses.length > 0
     ? deadBosses.sort((a, b) => (a.respawnAt || Infinity) - (b.respawnAt || Infinity))[0]?.respawnAt
     : null;
-  const exits = room ? Object.keys(room.exits).map((dir) => {
-    const dest = room.exits[dir];
-    let zoneId = player.position.zone;
-    let roomId = dest;
-    if (dest.includes(':')) {
-      [zoneId, roomId] = dest.split(':');
-    }
-    const destZone = WORLD[zoneId];
-    const destRoom = destZone?.rooms[roomId];
-    const label = destRoom
-      ? (zoneId === player.position.zone ? destRoom.name : `${destZone.name} - ${destRoom.name}`)
-      : dest;
-    return { dir, label };
-  }) : [];
+  const exits = room ? (() => {
+    const allExits = Object.entries(room.exits).map(([dir, dest]) => {
+      let zoneId = player.position.zone;
+      let roomId = dest;
+      if (dest.includes(':')) {
+        [zoneId, roomId] = dest.split(':');
+      }
+      const destZone = WORLD[zoneId];
+      const destRoom = destZone?.rooms[roomId];
+      const label = destRoom
+        ? (zoneId === player.position.zone ? destRoom.name : `${destZone.name} - ${destRoom.name}`)
+        : dest;
+      return { dir, label };
+    });
+
+    // 合并带数字后缀的方向，只显示一个入口
+    const filteredExits = [];
+    allExits.forEach(exit => {
+      const dir = exit.dir;
+      const baseDir = dir.replace(/[0-9]+$/, '');
+
+      // 检查是否有数字后缀的变体
+      const hasVariants = allExits.some(e =>
+        e.dir !== dir && e.dir.startsWith(baseDir) && /[0-9]+$/.test(e.dir)
+      );
+
+      if (hasVariants) {
+        // 只添加基础方向，不添加数字后缀的
+        if (!/[0-9]+$/.test(dir) && !filteredExits.some(e => e.dir === baseDir)) {
+          filteredExits.push({ dir: baseDir, label: exit.label.replace(/[0-9]+$/, '') });
+        }
+      } else {
+        // 没有变体，正常添加
+        filteredExits.push(exit);
+      }
+    });
+
+    return filteredExits;
+  })() : [];
   const skills = getLearnedSkills(player).map((s) => ({
     id: s.id,
     name: s.name,
