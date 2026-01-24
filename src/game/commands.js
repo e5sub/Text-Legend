@@ -1604,8 +1604,8 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         if (hasRegisteredToday) return send('该行会今天已经报名过了。');
         const registrations = await guildApi.listSabakRegistrations();
         const todayRegistrations = registrations.filter(r => {
-          if (!r.created_at) return false;
-          const regDate = new Date(r.created_at);
+          if (!r.registered_at) return false;
+          const regDate = new Date(r.registered_at);
           const today = new Date();
           return regDate.toDateString() === today.toDateString();
         });

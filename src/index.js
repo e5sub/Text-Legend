@@ -2612,8 +2612,8 @@ io.on('connection', (socket) => {
     const registrations = await listSabakRegistrations();
     const today = new Date();
     const todayRegistrations = registrations.filter(r => {
-      if (!r.created_at) return false;
-      const regDate = new Date(r.created_at);
+      if (!r.registered_at) return false;
+      const regDate = new Date(r.registered_at);
       return regDate.toDateString() === today.toDateString();
     });
     if (todayRegistrations.length >= 1) {
@@ -3876,8 +3876,8 @@ async function sabakTick() {
     const registrations = await listSabakRegistrations();
     const today = new Date();
     const todayRegistrations = registrations.filter(r => {
-      if (!r.created_at) return false;
-      const regDate = new Date(r.created_at);
+      if (!r.registered_at) return false;
+      const regDate = new Date(r.registered_at);
       return regDate.toDateString() === today.toDateString();
     });
 

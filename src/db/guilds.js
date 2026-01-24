@@ -72,7 +72,7 @@ export async function registerSabak(guildId) {
 export async function listSabakRegistrations() {
   return knex('sabak_registrations')
     .join('guilds', 'sabak_registrations.guild_id', 'guilds.id')
-    .select('guilds.name as guild_name', 'sabak_registrations.guild_id', 'sabak_registrations.created_at');
+    .select('guilds.name as guild_name', 'sabak_registrations.guild_id', 'sabak_registrations.registered_at');
 }
 
 export async function hasSabakRegistrationToday(guildId) {
@@ -80,8 +80,8 @@ export async function hasSabakRegistrationToday(guildId) {
   today.setHours(0, 0, 0, 0);
   const row = await knex('sabak_registrations')
     .where({ guild_id: guildId })
-    .where('created_at', '>=', knex.fn.now())
-    .whereRaw('DATE(created_at) = DATE(?)', [today.toISOString().split('T')[0]])
+    .where('registered_at', '>=', knex.fn.now())
+    .whereRaw('DATE(registered_at) = DATE(?)', [today.toISOString().split('T')[0]])
     .first();
   return !!row;
 }
