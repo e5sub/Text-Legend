@@ -639,6 +639,10 @@ function dropLoot(mobTemplate, bonus = 1) {
       }
     });
   }
+  // 全地图怪物都有10%概率掉落修炼果
+  if (Math.random() <= 0.1) {
+    loot.push({ id: 'training_fruit', effects: null });
+  }
   const rarityDrop = rollRarityDrop(mobTemplate, finalBonus);
   if (rarityDrop) {
     loot.push({ id: rarityDrop, effects: rollEquipmentEffects(rarityDrop) });
@@ -884,7 +888,11 @@ const tradeApi = {
     // 验证玩家拥有该物品
     const hasItemResult = validatePlayerHasItem(player, itemId, qtyResult.value, effectsResult.value);
     if (!hasItemResult.ok) return { ok: false, msg: hasItemResult.error };
-    
+
+    // 检查物品是否可交易
+    const item = ITEM_TEMPLATES[itemId];
+    if (item?.untradable) return { ok: false, msg: '该物品不可交易。' };
+
     const offer = ensureOffer(trade, player.name);
     const existing = offer.items.find((i) => i.id === itemId && sameEffects(i.effects, effects));
     if (existing) existing.qty += qtyResult.value;
@@ -1015,9 +1023,12 @@ const consignApi = {
       const itemResult = validateItemId(itemId);
       if (!itemResult.ok) return { ok: false, msg: '未找到物品。' };
       const item = ITEM_TEMPLATES[itemId];
-      
+
       if (!CONSIGN_EQUIPMENT_TYPES.has(item.type)) return { ok: false, msg: '仅可寄售装备。' };
-      
+
+      // 检查物品是否可寄售
+      if (item?.unconsignable) return { ok: false, msg: '该物品不可寄售。' };
+
       // 验证数量和价格
       const qtyResult = validateItemQty(qty);
       if (!qtyResult.ok) return { ok: false, msg: '数量无效。' };

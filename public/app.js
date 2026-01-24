@@ -2012,16 +2012,33 @@ function renderSabakModal(payload) {
   const { windowInfo, ownerGuildName, registrations, canRegister, isOwner } = payload;
   if (sabakUi.info) {
     sabakUi.info.innerHTML = `
-      <div><strong>攻城时间:</strong> ${windowInfo}</div>
-      <div><strong>当前城主:</strong> ${ownerGuildName || '无'}</div>
-      <div><strong>报名费用:</strong> ${isOwner ? '守城行会免费' : '500万金币'}</div>
-      <div><strong>胜利条件:</strong> 半小时杀人最多 或 占领沙城皇宫5分钟</div>
+      <div class="sabak-info-section">
+        <div class="sabak-info-title">⚔️ 攻城时间</div>
+        <div class="sabak-info-content">每天 20:00 - 20:30</div>
+      </div>
+      <div class="sabak-info-section">
+        <div class="sabak-info-title">🏰 当前城主</div>
+        <div class="sabak-info-content ${ownerGuildName ? 'sabak-owner' : ''}">${ownerGuildName || '暂无'}</div>
+      </div>
+      <div class="sabak-info-section">
+        <div class="sabak-info-title">⏰ 报名时间</div>
+        <div class="sabak-info-content">每日 0:00 - 19:50</div>
+      </div>
+      <div class="sabak-info-section">
+        <div class="sabak-info-title">💰 报名费用</div>
+        <div class="sabak-info-content">${isOwner ? '守城行会免费' : '500万金币'}</div>
+      </div>
+      <div class="sabak-info-section">
+        <div class="sabak-info-title">🏆 胜利条件</div>
+        <div class="sabak-info-content">攻城时间内杀人最多的行会获胜<br>或占领沙城皇宫持续5分钟</div>
+      </div>
     `;
   }
   if (sabakUi.guildList) {
     sabakUi.guildList.innerHTML = '';
     if (!registrations || registrations.length === 0) {
       const empty = document.createElement('div');
+      empty.className = 'sabak-empty';
       empty.textContent = '暂无报名行会';
       sabakUi.guildList.appendChild(empty);
     } else {
@@ -2029,10 +2046,12 @@ function renderSabakModal(payload) {
         const row = document.createElement('div');
         row.className = 'guild-member';
         const guildName = reg.guild_name || reg.guildName;
-        row.textContent = reg.isDefender ? `${guildName} [守城方]` : guildName;
         if (reg.isDefender) {
-          row.style.color = '#ffd700';
-          row.style.fontWeight = 'bold';
+          row.innerHTML = `<span class="defender-badge">守城</span>${guildName}`;
+          row.classList.add('defender-row');
+        } else {
+          row.innerHTML = `<span class="attacker-badge">攻城</span>${guildName}`;
+          row.classList.add('attacker-row');
         }
         sabakUi.guildList.appendChild(row);
       });

@@ -11,7 +11,7 @@ import {
   hasSkill,
   ensurePlayerSkills
 } from './skills.js';
-import { addItem, removeItem, equipItem, unequipItem, bagLimit, gainExp, computeDerived, getDurabilityMax, getRepairCost, getItemKey } from './player.js';
+import { addItem, removeItem, equipItem, unequipItem, bagLimit, gainExp, computeDerived, getDurabilityMax, getRepairCost, getItemKey, sameEffects } from './player.js';
 import { CLASSES, expForLevel, getStartPosition } from './constants.js';
 import { getRoom, getAliveMobs, spawnMobs } from './state.js';
 import { clamp } from './utils.js';
@@ -796,6 +796,73 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         if (!removeItem(player, item.id, 1, resolved.slot.effects)) return send('背包里没有该物品。');
         player.skills.push(skill.id);
         send(`学会技能: ${skill.name}。`);
+        return;
+      }
+      // 修炼果：随机增加属性（支持批量使用）
+      if (item.id === 'training_fruit') {
+        // 解析数量参数，格式如 "修炼果 10" 或 "修炼果 5"
+        // 如果没有指定数量，默认使用全部
+        const parts = args.split(' ').filter(Boolean);
+        let useCount = null;
+
+        if (parts.length > 1) {
+          const countStr = parts[parts.length - 1];
+          const parsedCount = parseInt(countStr, 10);
+          if (!isNaN(parsedCount) && parsedCount > 0) {
+            useCount = parsedCount;
+          }
+        }
+
+        // 检查背包中是否有足够数量
+        const inventoryItem = player.inventory.find(i => i.id === item.id && sameEffects(i.effects, resolved.slot.effects));
+        if (!inventoryItem || inventoryItem.qty === 0) {
+          return send('背包里没有修炼果。');
+        }
+
+        // 如果没有指定数量，使用全部；否则使用指定数量
+        if (useCount === null) {
+          useCount = inventoryItem.qty;
+        } else if (useCount > inventoryItem.qty) {
+          return send(`背包里只有 ${inventoryItem.qty} 个修炼果。`);
+        }
+
+        const attrOptions = [
+          { name: '攻击', attr: 'atk', value: 1 },
+          { name: '魔法', attr: 'matk', value: 1 },
+          { name: '道术', attr: 'dmg', value: 1 },
+          { name: '防御', attr: 'def', value: 1 },
+          { name: '魔御', attr: 'mdef', value: 1 },
+          { name: '敏捷', attr: 'agi', value: 1 },
+          { name: '生命上限', attr: 'max_hp', value: 10 },
+          { name: '魔法上限', attr: 'max_mp', value: 10 }
+        ];
+
+        // 统计每个属性的提升次数
+        const attrStats = {};
+        for (let i = 0; i < useCount; i++) {
+          const selected = attrOptions[Math.floor(Math.random() * attrOptions.length)];
+          const oldValue = player[selected.attr] || 0;
+          player[selected.attr] = oldValue + selected.value;
+
+          if (!attrStats[selected.name]) {
+            attrStats[selected.name] = 0;
+          }
+          attrStats[selected.name] += selected.value;
+        }
+
+        // 扣除物品
+        if (!removeItem(player, item.id, useCount, resolved.slot.effects)) {
+          return send('背包里没有该物品。');
+        }
+
+        // 构建结果消息
+        const resultParts = Object.entries(attrStats).map(([name, value]) => `${name}+${value}`);
+        if (useCount === 1) {
+          send(`使用了修炼果，${resultParts[0]}。`);
+        } else {
+          send(`使用了 ${useCount} 个修炼果，${resultParts.join('、')}。`);
+        }
+        computeDerived(player);
         return;
       }
       if (!removeItem(player, item.id, 1, resolved.slot.effects)) return send('背包里没有该物品。');

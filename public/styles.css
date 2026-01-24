@@ -2768,8 +2768,127 @@ button:hover {
   overflow-y: auto;
 }
 
+/* 沙巴克报名信息卡片样式 */
+.sabak-info-section {
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.sabak-info-section:last-child {
+  margin-bottom: 0;
+}
+
+.sabak-info-title {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.sabak-info-content {
+  font-size: 1rem;
+  color: #333;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+.sabak-info-content.sabak-owner {
+  color: #d32f2f;
+  font-weight: bold;
+  font-size: 1.05rem;
+}
+
+.sabak-empty {
+  text-align: center;
+  color: #999;
+  padding: 20px;
+  font-style: italic;
+}
+
+/* 守城方行会样式 */
+.defender-row {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.1));
+  border-left: 3px solid #ffd700;
+  padding: 8px 12px;
+  border-radius: 4px;
+  color: #b8860b;
+  font-weight: 600;
+}
+
+.defender-badge {
+  display: inline-block;
+  background: #ffd700;
+  color: #8b6914;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+/* 攻城方行会样式 */
+.attacker-row {
+  background: linear-gradient(135deg, rgba(220, 20, 60, 0.1), rgba(139, 0, 0, 0.05));
+  border-left: 3px solid #dc143c;
+  padding: 8px 12px;
+  border-radius: 4px;
+  color: #8b0000;
+  font-weight: 500;
+}
+
+.attacker-badge {
+  display: inline-block;
+  background: #dc143c;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  margin-right: 8px;
+}
+
 body.dark .sabak-guild-list .guild-member {
   color: #e8d5c0;
+}
+
+/* 深色模式下的沙巴克信息卡片 */
+body.dark .sabak-info-section {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+body.dark .sabak-info-title {
+  color: #aaa;
+}
+
+body.dark .sabak-info-content {
+  color: #e8d5c0;
+}
+
+body.dark .sabak-info-content.sabak-owner {
+  color: #ff6b6b;
+}
+
+body.dark .defender-row {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.15));
+  border-left: 3px solid #ffd700;
+  color: #ffd700;
+}
+
+body.dark .attacker-row {
+  background: linear-gradient(135deg, rgba(220, 20, 60, 0.2), rgba(139, 0, 0, 0.15));
+  border-left: 3px solid #dc143c;
+  color: #ff6b6b;
+}
+
+body.dark .attacker-badge {
+  background: #dc143c;
+  color: #fff;
+}
+
+body.dark .sabak-empty {
+  color: #666;
 }
 
 /* 队伍管理界面按钮样式 */

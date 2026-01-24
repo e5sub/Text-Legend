@@ -15,7 +15,7 @@
   scroll_random: { id: 'scroll_random', name: '随机卷', type: 'consumable', teleport: { zone: 'bq_plains', room: 'plains' }, price: 220 },
   scroll_recall: { id: 'scroll_recall', name: '召唤卷', type: 'consumable', price: 380 },
 
-  oil_bless: { id: 'oil_bless', name: '祝福油', type: 'consumable', price: 1800 },
+  training_fruit: { id: 'training_fruit', name: '修炼果', type: 'consumable', price: 1800, untradable: true, unconsignable: true },
   woma_horn: { id: 'woma_horn', name: '沃玛号角', type: 'material', price: 3000 },
   gold_bar: { id: 'gold_bar', name: '金条', type: 'material', price: 100000 },
   book_war_basic: { id: 'book_war_basic', name: '技能书: 基本剑术', type: 'book', price: 800 },
