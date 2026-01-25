@@ -10,6 +10,14 @@ export function getDefenseMultiplier(target) {
   const debuffs = target.status?.debuffs || {};
   const now = Date.now();
   let multiplier = 1;
+  const buff = target.status?.buffs?.defBuff;
+  if (buff) {
+    if (buff.expiresAt && buff.expiresAt < now) {
+      delete target.status.buffs.defBuff;
+    } else {
+      multiplier *= buff.defMultiplier || 1;
+    }
+  }
   const poison = debuffs.poison;
   if (poison) {
     if (poison.expiresAt && poison.expiresAt < now) {

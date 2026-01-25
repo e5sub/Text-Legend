@@ -2434,6 +2434,14 @@ function getMagicDefenseMultiplier(target) {
   const debuffs = target.status?.debuffs || {};
   const now = Date.now();
   let multiplier = 1;
+  const buff = target.status?.buffs?.mdefBuff;
+  if (buff) {
+    if (buff.expiresAt && buff.expiresAt < now) {
+      delete target.status.buffs.mdefBuff;
+    } else {
+      multiplier *= buff.mdefMultiplier || 1;
+    }
+  }
   const poison = debuffs.poison;
   if (poison) {
     if (poison.expiresAt && poison.expiresAt < now) {
@@ -3020,9 +3028,18 @@ function selectAutoSkill(player) {
 
 function tryAutoHeal(player) {
   if (!player.flags?.autoSkillId) return false;
-  const healSkill = getLearnedSkills(player).find((skill) => skill.type === 'heal');
+  const autoSkill = player.flags.autoSkillId;
+  const autoHealEnabled = autoSkill === 'all'
+    || (Array.isArray(autoSkill) && autoSkill.includes('heal'))
+    || autoSkill === 'heal';
+  const autoGroupHealEnabled = autoSkill === 'all'
+    || (Array.isArray(autoSkill) && autoSkill.includes('group_heal'))
+    || autoSkill === 'group_heal';
+  if (!autoHealEnabled && !autoGroupHealEnabled) return false;
+  const learned = getLearnedSkills(player);
+  const healSkill = learned.find((skill) => skill.type === 'heal');
+  const groupHealSkill = learned.find((skill) => skill.type === 'heal_group');
   if (!healSkill) return false;
-  if (player.mp < healSkill.mp) return false;
 
   const healThreshold = 0.2;
   const candidates = [];
@@ -3037,7 +3054,6 @@ function tryAutoHeal(player) {
 
   const party = getPartyByMember(player.name);
   if (party && party.members.length > 0) {
-    const online = listOnlinePlayers();
     party.members.forEach((memberName) => {
       if (memberName === player.name) return;
       const member = playersByName(memberName);
@@ -3052,6 +3068,41 @@ function tryAutoHeal(player) {
 
   if (candidates.length === 0) return false;
 
+  const summonTargets = [];
+  if (party && party.members.length > 0) {
+    party.members.forEach((memberName) => {
+      const member = playersByName(memberName);
+      if (member && member.summon && member.summon.hp > 0) {
+        summonTargets.push({ target: member.summon, name: member.summon.name, isSummon: true });
+      }
+    });
+  } else if (player.summon && player.summon.hp > 0) {
+    summonTargets.push({ target: player.summon, name: player.summon.name, isSummon: true });
+  }
+  const allCandidates = candidates.concat(summonTargets);
+
+  if (autoGroupHealEnabled && groupHealSkill && player.mp >= groupHealSkill.mp) {
+    const hasLow = allCandidates.some((c) => c.target.hp / c.target.max_hp < healThreshold);
+    if (hasLow) {
+      player.mp = clamp(player.mp - groupHealSkill.mp, 0, player.max_mp);
+      const baseHeal = Math.floor((player.spirit || 0) * 0.8 * scaledSkillPower(healSkill, getSkillLevel(player, healSkill.id)) + player.level * 4);
+      const groupHeal = Math.max(1, Math.floor(baseHeal * 0.3));
+      candidates.forEach((entry) => {
+        const heal = Math.max(1, Math.floor(groupHeal * getHealMultiplier(entry.target)));
+        entry.target.hp = clamp(entry.target.hp + heal, 1, entry.target.max_hp);
+        if (entry.target !== player) {
+          entry.target.send(`${player.name} 自动为你施放 ${groupHealSkill.name}，恢复 ${heal} 点生命。`);
+        }
+      });
+      summonTargets.forEach((entry) => {
+        entry.target.hp = clamp(entry.target.hp + groupHeal, 1, entry.target.max_hp);
+      });
+      player.send(`自动施放 ${groupHealSkill.name}，为队伍成员恢复生命。`);
+      return true;
+    }
+  }
+
+  if (!autoHealEnabled || player.mp < healSkill.mp) return false;
   candidates.sort((a, b) => (a.target.hp / a.target.max_hp) - (b.target.hp / b.target.max_hp));
   const toHeal = candidates[0];
 
@@ -3074,7 +3125,81 @@ function tryAutoHeal(player) {
   return true;
 }
 
+function applyBuff(target, buff) {
+  if (!target.status) target.status = {};
+  if (!target.status.buffs) target.status.buffs = {};
+  target.status.buffs[buff.key] = buff;
+}
+
+function tryAutoBuff(player) {
+  if (!player.flags?.autoSkillId) return false;
+  const autoSkill = player.flags.autoSkillId;
+  const learnedBuffs = getLearnedSkills(player).filter((skill) =>
+    skill.type === 'buff_def' || skill.type === 'buff_mdef' || skill.type === 'buff_shield'
+  );
+  if (!learnedBuffs.length) return false;
+
+  const enabledIds = autoSkill === 'all'
+    ? new Set(learnedBuffs.map((skill) => skill.id))
+    : new Set(Array.isArray(autoSkill) ? autoSkill : [autoSkill]);
+  const buffSkill = learnedBuffs.find((skill) => enabledIds.has(skill.id));
+  if (!buffSkill) return false;
+  if (player.mp < buffSkill.mp) return false;
+
+  const now = Date.now();
+  if (buffSkill.type === 'buff_shield') {
+    const shield = player.status?.buffs?.magicShield;
+    if (shield && (!shield.expiresAt || shield.expiresAt >= now + 5000)) return false;
+    player.mp = clamp(player.mp - buffSkill.mp, 0, player.max_mp);
+    const skillLevel = getSkillLevel(player, buffSkill.id);
+    const duration = 120 + skillLevel * 60;
+    const ratio = 0.6 + (skillLevel - 1) * 0.1;
+    applyBuff(player, { key: 'magicShield', expiresAt: now + duration * 1000, ratio });
+    player.send(`自动施放 ${buffSkill.name}，持续 ${duration} 秒。`);
+    return true;
+  }
+
+  const party = getPartyByMember(player.name);
+  const members = party
+    ? listOnlinePlayers().filter(
+        (p) =>
+          party.members.includes(p.name) &&
+          p.position.zone === player.position.zone &&
+          p.position.room === player.position.room
+      )
+    : [player];
+  const targets = members.slice();
+  members.forEach((p) => {
+    if (p.summon && p.summon.hp > 0) targets.push(p.summon);
+  });
+
+  const buffKey = buffSkill.type === 'buff_mdef' ? 'mdefBuff' : 'defBuff';
+  const multiplierKey = buffSkill.type === 'buff_mdef' ? 'mdefMultiplier' : 'defMultiplier';
+  const buffActive = targets.every((p) => {
+    const buff = p.status?.buffs?.[buffKey];
+    if (!buff) return false;
+    if (buff.expiresAt && buff.expiresAt < now + 5000) return false;
+    return true;
+  });
+  if (buffActive) return false;
+
+  player.mp = clamp(player.mp - buffSkill.mp, 0, player.max_mp);
+  const duration = 60;
+  const buffPayload = { key: buffKey, expiresAt: now + duration * 1000, [multiplierKey]: 1.1 };
+
+  targets.forEach((p) => {
+    applyBuff(p, buffPayload);
+    if (p.send && p.name !== player.name) {
+      p.send(`${player.name} 自动为你施放 ${buffSkill.name}。`);
+    }
+  });
+  player.send(`自动施放 ${buffSkill.name}，持续 ${duration} 秒。`);
+  return true;
+}
+
 function pickCombatSkillId(player, combatSkillId) {
+  const isCombatSkill = (skill) =>
+    Boolean(skill && ['attack', 'spell', 'cleave', 'dot', 'aoe'].includes(skill.type));
   if (player.flags?.autoSkillId) {
     const autoSkill = player.flags.autoSkillId;
     const now = Date.now();
@@ -3098,7 +3223,7 @@ function pickCombatSkillId(player, combatSkillId) {
     if (Array.isArray(autoSkill)) {
       const choices = autoSkill
         .map((id) => getSkill(player.classId, id))
-        .filter((skill) => isSkillUsable(skill));
+        .filter((skill) => isCombatSkill(skill) && isSkillUsable(skill));
       
       if (!choices.length) {
         // 所有指定技能都在CD中，尝试从所有学会的技能中选择
@@ -3122,6 +3247,9 @@ function pickCombatSkillId(player, combatSkillId) {
     // 单技能时也要检查CD
     if (autoId && autoId !== 'all') {
       const skill = getSkill(player.classId, autoId);
+      if (!isCombatSkill(skill)) {
+        return combatSkillId;
+      }
       if (skill && skill.cooldown && !isSkillUsable(skill)) {
         // 主技能在CD中，尝试从其他学会的技能中选择
         const fallbackSkills = getLearnedSkills(player).filter((skill) =>
@@ -3559,6 +3687,7 @@ async function combatTick() {
 
     tryAutoPotion(player);
     tryAutoHeal(player);
+    tryAutoBuff(player);
 
     if (player.status && player.status.stunTurns > 0) {
       player.status.stunTurns -= 1;

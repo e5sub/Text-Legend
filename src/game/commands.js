@@ -1037,6 +1037,41 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
         notifyMastery(player, skill);
         return;
       }
+      if (skill.type === 'heal_group') {
+        if (player.mp < skill.mp) return send('魔法不足。');
+        const party = partyApi?.getPartyByMember ? partyApi.getPartyByMember(player.name) : null;
+        const members = party
+          ? players.filter(
+              (p) =>
+                party.members.includes(p.name) &&
+                p.position.zone === player.position.zone &&
+                p.position.room === player.position.room
+            )
+          : [player];
+        if (!members.length) return send('未找到队伍成员。');
+        const summonTargets = [];
+        members.forEach((member) => {
+          if (member.summon && member.summon.hp > 0) {
+            summonTargets.push({ summon: member.summon, owner: member });
+          }
+        });
+        player.mp -= skill.mp;
+        const baseHeal = Math.floor((player.spirit || 0) * 0.8 * power + player.level * 4);
+        const groupHeal = Math.max(1, Math.floor(baseHeal * 0.3));
+        members.forEach((member) => {
+          const heal = Math.max(1, Math.floor(groupHeal * getHealMultiplier(member)));
+          member.hp = clamp(member.hp + heal, 1, member.max_hp);
+          if (member.name !== player.name) {
+            member.send(`${player.name} 为你施放了 ${skill.name}，恢复 ${heal} 点生命。`);
+          }
+        });
+        summonTargets.forEach(({ summon }) => {
+          summon.hp = clamp(summon.hp + groupHeal, 1, summon.max_hp);
+        });
+        send(`你施放了 ${skill.name}，为队伍成员恢复生命。`);
+        notifyMastery(player, skill);
+        return;
+      }
       if (skill.type === 'summon') {
         if (player.mp < skill.mp) return send('魔法不足。');
         player.mp -= skill.mp;
@@ -1064,11 +1099,10 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
       if (skill.type === 'buff_def') {
         if (player.mp < skill.mp) return send('魔法不足。');
         player.mp -= skill.mp;
-        const duration = 120 + skillLevel * 60;
-        const base = skill.id === 'ghost' ? 4 : 6;
-        const defBonus = base + skillLevel * 2;
+        const duration = 60;
+        const defMultiplier = 1.1;
         const party = partyApi?.getPartyByMember ? partyApi.getPartyByMember(player.name) : null;
-        const targets = party
+        const members = party
           ? players.filter(
               (p) =>
                 party.members.includes(p.name) &&
@@ -1076,9 +1110,43 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
                 p.position.room === player.position.room
             )
           : [player];
+        const targets = members.slice();
+        members.forEach((p) => {
+          if (p.summon && p.summon.hp > 0) targets.push(p.summon);
+        });
         targets.forEach((p) => {
-          applyBuff(p, { key: 'defBuff', expiresAt: Date.now() + duration * 1000, defBonus });
-          p.send(`${player.name} 为你施放了 ${skill.name}。`);
+          applyBuff(p, { key: 'defBuff', expiresAt: Date.now() + duration * 1000, defMultiplier });
+          if (p.send) {
+            p.send(`${player.name} 为你施放了 ${skill.name}。`);
+          }
+        });
+        send(`你施放了 ${skill.name}，持续 ${duration} 秒。`);
+        notifyMastery(player, skill);
+        return;
+      }
+      if (skill.type === 'buff_mdef') {
+        if (player.mp < skill.mp) return send('魔法不足。');
+        player.mp -= skill.mp;
+        const duration = 60;
+        const mdefMultiplier = 1.1;
+        const party = partyApi?.getPartyByMember ? partyApi.getPartyByMember(player.name) : null;
+        const members = party
+          ? players.filter(
+              (p) =>
+                party.members.includes(p.name) &&
+                p.position.zone === player.position.zone &&
+                p.position.room === player.position.room
+            )
+          : [player];
+        const targets = members.slice();
+        members.forEach((p) => {
+          if (p.summon && p.summon.hp > 0) targets.push(p.summon);
+        });
+        targets.forEach((p) => {
+          applyBuff(p, { key: 'mdefBuff', expiresAt: Date.now() + duration * 1000, mdefMultiplier });
+          if (p.send) {
+            p.send(`${player.name} 为你施放了 ${skill.name}。`);
+          }
         });
         send(`你施放了 ${skill.name}，持续 ${duration} 秒。`);
         notifyMastery(player, skill);

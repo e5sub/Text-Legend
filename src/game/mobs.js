@@ -109,7 +109,8 @@
     { id: 'blood_drink', chance: 0.02 },
     { id: 'book_war_savage', chance: 0.03 },
     { id: 'book_mage_flash', chance: 0.03 },
-    { id: 'book_tao_group_invis', chance: 0.03 }
+    { id: 'book_tao_group_invis', chance: 0.03 },
+    { id: 'book_tao_group_heal', chance: 0.03 }
   ] },
 
   // Fengmo

@@ -1792,6 +1792,7 @@ const SET_DROPS = {
       { id: 'book_mage_shield', name: '技能书: 魔法盾', drops: [{ mob: '魔龙教主', chance: '4%' }, { mob: '沙巴克BOSS', chance: '4%' }] },
       { id: 'book_mage_ice', name: '技能书: 冰咆哮', drops: [{ mob: '沙巴克BOSS', chance: '5%' }] },
       { id: 'book_tao_heal', name: '技能书: 治愈术', drops: [{ mob: '鸡', chance: '2%' }, { mob: '鹿', chance: '2%' }] },
+      { id: 'book_tao_group_heal', name: '技能书: 群体治疗术', drops: [{ mob: '赤月恶魔', chance: '3%' }] },
       { id: 'book_tao_poison', name: '技能书: 施毒术', drops: [{ mob: '邪恶钳虫', chance: '2%' }, { mob: '多钩猫', chance: '1%' }] },
       { id: 'book_tao_soul', name: '技能书: 灵魂火符', drops: [{ mob: '触龙神', chance: '3%' }, { mob: '白野猪', chance: '2%' }] },
       { id: 'book_tao_invis', name: '技能书: 隐身术', drops: [{ mob: '沃玛教主', chance: '4%' }, { mob: '祖玛教主', chance: '4%' }] },

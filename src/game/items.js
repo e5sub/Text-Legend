@@ -34,6 +34,7 @@
   book_mage_shield: { id: 'book_mage_shield', name: '技能书: 魔法盾', type: 'book', price: 8800 },
   book_mage_ice: { id: 'book_mage_ice', name: '技能书: 冰咆哮', type: 'book', price: 9800 },
   book_tao_heal: { id: 'book_tao_heal', name: '技能书: 治愈术', type: 'book', price: 1400 },
+  book_tao_group_heal: { id: 'book_tao_group_heal', name: '技能书: 群体治疗术', type: 'book', price: 8200 },
   book_tao_poison: { id: 'book_tao_poison', name: '技能书: 施毒术', type: 'book', price: 3800 },
   book_tao_soul: { id: 'book_tao_soul', name: '技能书: 灵魂火符', type: 'book', price: 6200 },
   book_tao_invis: { id: 'book_tao_invis', name: '技能书: 隐身术', type: 'book', price: 5200 },

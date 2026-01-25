@@ -16,16 +16,17 @@ export const SKILLS = {
     flash: { id: 'flash', name: '\u75be\u5149\u7535\u5f71', mp: 18, power: 1.5, type: 'spell' },
     thunder: { id: 'thunder', name: '\u5730\u72f1\u96f7\u5149', mp: 20, power: 1.3, type: 'aoe' },
     shield: { id: 'shield', name: '\u9b54\u6cd5\u76fe', mp: 22, power: 1.0, type: 'buff_shield' },
-    iceblast: { id: 'iceblast', name: '\u51b0\u5481\u54ee', mp: 24, power: 2.0, type: 'spell' }
+    iceblast: { id: 'iceblast', name: '\u51b0\u54c6\u54ee', mp: 24, power: 2.0, type: 'spell' }
   },
   taoist: {
     heal: { id: 'heal', name: '\u6cbb\u6108\u672f', mp: 12, power: 1.0, type: 'heal' },
+    group_heal: { id: 'group_heal', name: '\u7fa4\u4f53\u6cbb\u7597\u672f', mp: 22, power: 1.0, type: 'heal_group' },
     poison: { id: 'poison', name: '\u65bd\u6bd2\u672f', mp: 10, power: 0.6, type: 'dot' },
     soul: { id: 'soul', name: '\u7075\u9b42\u706b\u7b26', mp: 14, power: 1.4, type: 'spell' },
     invis: { id: 'invis', name: '\u9690\u8eab\u672f', mp: 14, power: 1.0, type: 'stealth' },
     group_invis: { id: 'group_invis', name: '\u7fa4\u4f53\u9690\u8eab\u672f', mp: 22, power: 1.0, type: 'stealth_group' },
     armor: { id: 'armor', name: '\u795e\u5723\u6218\u7532\u672f', mp: 18, power: 1.0, type: 'buff_def' },
-    ghost: { id: 'ghost', name: '\u5e7d\u7075\u76fe', mp: 18, power: 1.0, type: 'buff_def' },
+    ghost: { id: 'ghost', name: '\u5e7d\u7075\u76fe', mp: 18, power: 1.0, type: 'buff_mdef' },
     skeleton: {
       id: 'skeleton',
       name: '\u53ec\u5524\u9ab7\u9ac5',
@@ -68,6 +69,7 @@ export const BOOK_SKILLS = {
   book_mage_shield: { classId: 'mage', skillId: 'shield' },
   book_mage_ice: { classId: 'mage', skillId: 'iceblast' },
   book_tao_heal: { classId: 'taoist', skillId: 'heal' },
+  book_tao_group_heal: { classId: 'taoist', skillId: 'group_heal' },
   book_tao_poison: { classId: 'taoist', skillId: 'poison' },
   book_tao_soul: { classId: 'taoist', skillId: 'soul' },
   book_tao_invis: { classId: 'taoist', skillId: 'invis' },
