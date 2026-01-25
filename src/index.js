@@ -3484,11 +3484,11 @@ function updateSpecialBossStatsBasedOnPlayers() {
           specialBoss.mdef = baseMdef + mdefBonus;
         }
       }
-      // 2人及以上时增加攻击，世界BOSS额外增加1000防御/魔御
+      // 2人及以上时增加攻击，世界BOSS额外增加0防御/魔御
       else {
         atkBonus = isWorldBoss ? 3000 : 800;
-        defBonus = isWorldBoss ? 1000 : 0;
-        mdefBonus = isWorldBoss ? 1000 : 0;
+        defBonus = isWorldBoss ? 0 : 0;
+        mdefBonus = isWorldBoss ? 0 : 0;
         if (specialBoss.status?.enhancedMode !== 'partial') {
           specialBoss.status.enhancedMode = 'partial';
           specialBoss.atk = baseAtk + atkBonus;
