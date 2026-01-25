@@ -37,6 +37,10 @@
           </div>
           <div class="block-body">
           <div class="table-container">
+            <div class="row" style="margin-bottom: 8px;">
+              <input id="users-search" type="text" placeholder="搜索用户名">
+              <button id="users-search-btn" class="btn-small">搜索</button>
+            </div>
             <table id="users-table">
               <thead>
                 <tr>
@@ -60,22 +64,32 @@
               <button id="users-next-page" class="btn-small">下一页</button>
             </div>
           </div>
+          <div class="divider"></div>
+          <h3>设置 GM 权限</h3>
+          <input id="promote-username" type="text" placeholder="用户名">
+          <button id="promote-btn">设为 GM</button>
+          <button id="demote-btn">取消 GM</button>
+          <div id="promote-msg" class="msg"></div>
+          <div class="divider"></div>
+          <h3>修改玩家密码</h3>
+          <input id="pw-username" type="text" placeholder="用户名">
+          <input id="pw-new" type="password" placeholder="新密码">
+          <button id="pw-update-btn">更新密码</button>
+          <div id="pw-msg" class="msg"></div>
           </div>
         </div>
 
         <div class="block" data-collapsible>
           <div class="block-title">
-            <h2>创建/取消 GM</h2>
+            <h2>站内邮件</h2>
             <button class="btn-small block-toggle">折叠</button>
           </div>
           <div class="block-body">
-            <input id="promote-username" type="text" placeholder="用户名">
-            <select id="promote-flag">
-              <option value="true">设为 GM</option>
-              <option value="false">取消 GM</option>
-            </select>
-            <button id="promote-btn">提交</button>
-            <div id="promote-msg" class="msg"></div>
+            <input id="mail-username" type="text" placeholder="用户名">
+            <input id="mail-title" type="text" placeholder="标题">
+            <textarea id="mail-body" placeholder="内容"></textarea>
+            <button id="mail-send-btn">发送邮件</button>
+            <div id="mail-msg" class="msg"></div>
           </div>
         </div>
 
@@ -94,20 +108,6 @@
         </div>
 
         <div class="block" data-collapsible>
-          <div class="block-title">
-            <h2>站内邮件</h2>
-            <button class="btn-small block-toggle">折叠</button>
-          </div>
-          <div class="block-body">
-            <input id="mail-username" type="text" placeholder="用户名">
-            <input id="mail-title" type="text" placeholder="标题">
-            <textarea id="mail-body" placeholder="内容"></textarea>
-            <button id="mail-send-btn">发送邮件</button>
-            <div id="mail-msg" class="msg"></div>
-          </div>
-        </div>
-
-        <div class="block full" data-collapsible>
           <div class="block-title">
             <h2>VIP 激活码</h2>
             <button class="btn-small block-toggle">折叠</button>

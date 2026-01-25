@@ -46,3 +46,18 @@ export async function setAdminFlag(userId, isAdmin) {
 export async function getUserByName(username) {
   return knex('users').where({ username }).first();
 }
+
+export async function verifyUserPassword(userId, password) {
+  const user = await knex('users').where({ id: userId }).first();
+  if (!user) return false;
+  return bcrypt.compare(password, user.password_hash);
+}
+
+export async function updateUserPassword(userId, newPassword) {
+  const hash = await bcrypt.hash(newPassword, 10);
+  await knex('users').where({ id: userId }).update({ password_hash: hash });
+}
+
+export async function clearUserSessions(userId) {
+  await knex('sessions').where({ user_id: userId }).del();
+}

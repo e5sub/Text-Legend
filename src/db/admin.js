@@ -15,16 +15,24 @@ export async function verifyAdminSession(token) {
   return { session, user };
 }
 
-export async function listUsers(page = 1, limit = 10) {
+export async function listUsers(page = 1, limit = 10, search = '') {
   const offset = (page - 1) * limit;
-  const users = await knex('users')
-    .select('id', 'username', 'is_admin', 'created_at')
+  const term = String(search || '').trim().toLowerCase();
+  const baseQuery = knex('users').select('id', 'username', 'is_admin', 'created_at');
+  if (term) {
+    baseQuery.whereRaw('LOWER(username) LIKE ?', [`%${term}%`]);
+  }
+  const users = await baseQuery
     .orderBy('created_at', 'desc')
     .limit(limit)
     .offset(offset);
-  const countResult = await knex('users').count('* as count').first();
+  const countQuery = knex('users').count('* as count');
+  if (term) {
+    countQuery.whereRaw('LOWER(username) LIKE ?', [`%${term}%`]);
+  }
+  const countResult = await countQuery.first();
   const total = countResult.count;
-  return { users, total, page, limit, totalPages: Math.ceil(total / limit) };
+  return { users, total, page, limit, totalPages: Math.ceil(total / limit), search: term };
 }
 
 export async function deleteUser(userId) {

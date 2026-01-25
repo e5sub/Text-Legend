@@ -11,6 +11,7 @@ let vipSelfClaimEnabled = true;
 let bossRespawnTimer = null;
 let bossRespawnTarget = null;
 let bossRespawnTimerEl = null;
+let bossRespawnRoomKey = null;
 
 // 屏蔽F12开发者工具
 (function() {
@@ -802,9 +803,10 @@ function parseTradeItems(text) {
   }
 }
 
-function promptModal({ title, text, placeholder, value, extra, allowEmpty }) {
+function promptModal({ title, text, placeholder, value, extra, allowEmpty, type }) {
   if (!promptUi.modal || !promptUi.input) return Promise.resolve(null);
   return new Promise((resolve) => {
+    const prevType = promptUi.input.type;
     const onCancel = () => {
       cleanup();
       resolve(null);
@@ -828,6 +830,7 @@ function promptModal({ title, text, placeholder, value, extra, allowEmpty }) {
       promptUi.cancel.removeEventListener('click', onCancel);
       promptUi.input.removeEventListener('keydown', onKey);
       promptUi.modal.classList.add('hidden');
+      promptUi.input.type = prevType || 'text';
       if (promptUi.extra) {
         promptUi.extra.removeEventListener('click', onExtra);
         promptUi.extra.classList.add('hidden');
@@ -838,6 +841,7 @@ function promptModal({ title, text, placeholder, value, extra, allowEmpty }) {
     promptUi.text.textContent = text || '';
     promptUi.input.placeholder = placeholder || '';
     promptUi.input.value = value || '';
+    promptUi.input.type = type || 'text';
     if (promptUi.extra) {
       if (extra && extra.text) {
         promptUi.extra.textContent = extra.text;
@@ -2467,7 +2471,6 @@ function renderState(state) {
   }
 
   if (ui.worldBossRank) {
-    ui.worldBossRank.innerHTML = '';
     const inWorldBossRoom = state.room && state.room.zoneId === 'wb' && state.room.roomId === 'lair';
     const inMolongRoom = state.room && state.room.zoneId === 'molong' && state.room.roomId === 'deep';
     const inSabakBossRoom = state.room && state.room.zoneId === 'sb_guild' && state.room.roomId === 'sanctum';
@@ -2503,6 +2506,18 @@ function renderState(state) {
       }
     }
 
+    const currentRoomKey = state.room ? `${state.room.zoneId}:${state.room.roomId}` : null;
+    const roomChanged = bossRespawnRoomKey !== currentRoomKey;
+    if (roomChanged) {
+      if (bossRespawnTimer) {
+        clearInterval(bossRespawnTimer);
+      }
+      bossRespawnTimer = null;
+      bossRespawnTarget = null;
+      bossRespawnTimerEl = null;
+      bossRespawnRoomKey = currentRoomKey;
+      if (ui.worldBossRank) ui.worldBossRank.innerHTML = '';
+    }
     if (!inSpecialBossRoom) {
       if (rankBlock) rankBlock.classList.add('hidden');
       if (bossRespawnTimer) {
@@ -2511,6 +2526,8 @@ function renderState(state) {
         bossRespawnTarget = null;
         bossRespawnTimerEl = null;
       }
+      bossRespawnRoomKey = null;
+      if (ui.worldBossRank) ui.worldBossRank.innerHTML = '';
     } else {
       if (rankBlock) rankBlock.classList.remove('hidden');
       const ranks = state.worldBossRank || [];
@@ -2518,17 +2535,9 @@ function renderState(state) {
 
       // 如果有下次刷新时间，显示刷新倒计时
       if (nextRespawn && nextRespawn > Date.now()) {
-        if (ui.worldBossRank) ui.worldBossRank.innerHTML = '';
-        bossRespawnTarget = nextRespawn;
-        const respawnDiv = document.createElement('div');
-        respawnDiv.className = 'boss-respawn-time';
-        const timerSpan = document.createElement('span');
-        timerSpan.id = 'boss-respawn-timer';
-        timerSpan.textContent = '计算中...';
-        respawnDiv.appendChild(document.createTextNode('下次刷新: '));
-        respawnDiv.appendChild(timerSpan);
-        ui.worldBossRank.appendChild(respawnDiv);
-        bossRespawnTimerEl = timerSpan;
+        if (bossRespawnTimerEl && !bossRespawnTimerEl.isConnected) {
+          bossRespawnTimerEl = null;
+        }
 
         const updateTimer = () => {
           if (!bossRespawnTarget || !bossRespawnTimerEl) return;
@@ -2547,11 +2556,27 @@ function renderState(state) {
             }
           }
         };
-        updateTimer();
-        if (bossRespawnTimer) {
-          clearInterval(bossRespawnTimer);
+
+        if (bossRespawnTarget !== nextRespawn || !bossRespawnTimerEl) {
+          bossRespawnTarget = nextRespawn;
+          const respawnDiv = document.createElement('div');
+          respawnDiv.className = 'boss-respawn-time';
+          const timerSpan = document.createElement('span');
+          timerSpan.id = 'boss-respawn-timer';
+          timerSpan.textContent = '计算中...';
+          respawnDiv.appendChild(document.createTextNode('下次刷新: '));
+          respawnDiv.appendChild(timerSpan);
+          if (ui.worldBossRank) ui.worldBossRank.innerHTML = '';
+          ui.worldBossRank.appendChild(respawnDiv);
+          bossRespawnTimerEl = timerSpan;
+          updateTimer();
+          if (bossRespawnTimer) {
+            clearInterval(bossRespawnTimer);
+          }
+          bossRespawnTimer = setInterval(updateTimer, 1000);
+        } else {
+          updateTimer();
         }
-        bossRespawnTimer = setInterval(updateTimer, 1000);
       } else if (!ranks.length) {
         if (bossRespawnTimer) {
           clearInterval(bossRespawnTimer);
@@ -2559,8 +2584,10 @@ function renderState(state) {
           bossRespawnTarget = null;
           bossRespawnTimerEl = null;
         }
+        bossRespawnRoomKey = currentRoomKey;
         const empty = document.createElement('div');
         empty.textContent = '暂无排行';
+        if (ui.worldBossRank) ui.worldBossRank.innerHTML = '';
         ui.worldBossRank.appendChild(empty);
       } else {
         if (bossRespawnTimer) {
@@ -2569,6 +2596,8 @@ function renderState(state) {
           bossRespawnTarget = null;
           bossRespawnTimerEl = null;
         }
+        bossRespawnRoomKey = currentRoomKey;
+        if (ui.worldBossRank) ui.worldBossRank.innerHTML = '';
         ranks.forEach((entry, idx) => {
           const row = document.createElement('div');
           row.className = 'rank-item';
@@ -2783,6 +2812,7 @@ function renderState(state) {
     { id: 'repair', label: '\u4FEE\u7406' },
     { id: 'consign', label: '\u5BC4\u552E' },
     { id: 'drops', label: '\u5957\u88c5\u6389\u843d' },
+    { id: 'password', label: '\u6539\u5BC6\u7801' },
     { id: 'logout', label: '\u9000\u51fa\u6e38\u620f' }
   ];
   // 只对非VIP玩家显示VIP激活按钮，并且自助领取功能开启时显示领取按钮
@@ -2823,6 +2853,49 @@ function renderState(state) {
       });
       if (!code) return;
       socket.emit('cmd', { text: `vip activate ${code.trim()}` });
+      return;
+    }
+    if (a.id === 'password') {
+      const oldPassword = await promptModal({
+        title: '\u4fee\u6539\u5bc6\u7801',
+        text: '\u8bf7\u8f93\u5165\u65e7\u5bc6\u7801',
+        placeholder: '\u65e7\u5bc6\u7801',
+        type: 'password'
+      });
+      if (!oldPassword) return;
+      const newPassword = await promptModal({
+        title: '\u4fee\u6539\u5bc6\u7801',
+        text: '\u8bf7\u8f93\u5165\u65b0\u5bc6\u7801\uff08\u81f3\u5c114\u4f4d\uff09',
+        placeholder: '\u65b0\u5bc6\u7801',
+        type: 'password'
+      });
+      if (!newPassword) return;
+      const confirmPassword = await promptModal({
+        title: '\u4fee\u6539\u5bc6\u7801',
+        text: '\u8bf7\u518d\u6b21\u8f93\u5165\u65b0\u5bc6\u7801',
+        placeholder: '\u786e\u8ba4\u65b0\u5bc6\u7801',
+        type: 'password'
+      });
+      if (!confirmPassword) return;
+      if (newPassword !== confirmPassword) {
+        showToast('\u4e24\u6b21\u5bc6\u7801\u4e0d\u4e00\u81f4');
+        return;
+      }
+      try {
+        await apiPost('/api/password', {
+          token,
+          oldPassword,
+          newPassword
+        });
+        showToast('\u5bc6\u7801\u5df2\u66f4\u65b0\uff0c\u8bf7\u91cd\u65b0\u767b\u5f55');
+        const rememberedUser = localStorage.getItem('rememberedUser');
+        if (rememberedUser) {
+          localStorage.removeItem(getUserStorageKey('savedToken', rememberedUser));
+        }
+        exitGame();
+      } catch (err) {
+        showToast(err.message || '\u4fee\u6539\u5931\u8d25');
+      }
       return;
     }
     if (a.id === 'logout') {

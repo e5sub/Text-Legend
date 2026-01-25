@@ -8,7 +8,7 @@ import crypto from 'node:crypto';
 
 import config from './config.js';
 import knex from './db/index.js';
-import { createUser, verifyUser, createSession, getSession, getUserByName, setAdminFlag } from './db/users.js';
+import { createUser, verifyUser, createSession, getSession, getUserByName, setAdminFlag, verifyUserPassword, updateUserPassword, clearUserSessions } from './db/users.js';
 import { listCharacters, loadCharacter, saveCharacter, findCharacterByName } from './db/characters.js';
 import { addGuildMember, createGuild, getGuildByName, getGuildMember, getSabakOwner, isGuildLeader, listGuildMembers, listSabakRegistrations, registerSabak, removeGuildMember, leaveGuild, setSabakOwner, clearSabakRegistrations, transferGuildLeader } from './db/guilds.js';
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
@@ -138,6 +138,20 @@ app.post('/api/login', async (req, res) => {
   res.json({ ok: true, token, characters: chars });
 });
 
+app.post('/api/password', async (req, res) => {
+  const { token, oldPassword, newPassword } = req.body || {};
+  if (!token) return res.status(401).json({ error: '登录已过期。' });
+  if (!oldPassword || !newPassword) return res.status(400).json({ error: '旧密码或新密码缺失。' });
+  if (String(newPassword).length < 4) return res.status(400).json({ error: '密码至少4位。' });
+  const session = await getSession(token);
+  if (!session) return res.status(401).json({ error: '登录已过期。' });
+  const ok = await verifyUserPassword(session.user_id, String(oldPassword));
+  if (!ok) return res.status(400).json({ error: '旧密码错误。' });
+  await updateUserPassword(session.user_id, String(newPassword));
+  await clearUserSessions(session.user_id);
+  res.json({ ok: true });
+});
+
 app.post('/api/character', async (req, res) => {
   const { token, name, classId } = req.body || {};
   const session = await getSession(token);
@@ -234,7 +248,8 @@ app.get('/admin/users', async (req, res) => {
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
   const page = Number(req.query.page) || 1;
   const limit = Number(req.query.limit) || 10;
-  const result = await listUsers(page, limit);
+  const search = String(req.query.search || '');
+  const result = await listUsers(page, limit, search);
   res.json({ ok: true, ...result });
 });
 
@@ -264,6 +279,19 @@ app.post('/admin/users/promote', async (req, res) => {
   const user = await getUserByName(username);
   if (!user) return res.status(404).json({ error: '用户不存在。' });
   await setAdminFlag(user.id, Boolean(isAdmin));
+  res.json({ ok: true });
+});
+
+app.post('/admin/users/password', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const { username, password } = req.body || {};
+  if (!username || !password) return res.status(400).json({ error: '缺少用户名或密码。' });
+  if (String(password).length < 4) return res.status(400).json({ error: '密码至少4位。' });
+  const user = await getUserByName(username);
+  if (!user) return res.status(404).json({ error: '用户不存在。' });
+  await updateUserPassword(user.id, String(password));
+  await clearUserSessions(user.id);
   res.json({ ok: true });
 });
 
@@ -1111,6 +1139,7 @@ const tradeApi = {
 };
 
 const CONSIGN_EQUIPMENT_TYPES = new Set(['weapon', 'armor', 'accessory', 'book']);
+const CONSIGN_FEE_RATE = 0.1;
 
 const consignApi = {
     async listMarket(player) {
@@ -1196,6 +1225,8 @@ const consignApi = {
 
     // 服务端重新计算总价，防止客户端篡改价格
     const serverTotal = row.price * qtyResult.value;
+    const fee = Math.floor(serverTotal * CONSIGN_FEE_RATE);
+    const sellerGain = serverTotal - fee;
     const hasGoldResult = validatePlayerHasGold(player, serverTotal);
     if (!hasGoldResult.ok) return { ok: false, msg: hasGoldResult.error };
 
@@ -1223,8 +1254,8 @@ const consignApi = {
 
     const seller = playersByName(row.seller_name);
     if (seller) {
-      seller.gold += serverTotal;
-      seller.send(`寄售成交: ${ITEM_TEMPLATES[row.item_id]?.name || row.item_id} x${qtyResult.value}，获得 ${serverTotal} 金币。`);
+      seller.gold += sellerGain;
+      seller.send(`寄售成交: ${ITEM_TEMPLATES[row.item_id]?.name || row.item_id} x${qtyResult.value}，获得 ${sellerGain} 金币（手续费 ${fee}）。`);
       savePlayer(seller);
       await consignApi.listMine(seller);
       await consignApi.listMarket(seller);
@@ -1233,7 +1264,7 @@ const consignApi = {
       if (sellerRow) {
         const sellerPlayer = await loadCharacter(sellerRow.user_id, sellerRow.name);
         if (sellerPlayer) {
-          sellerPlayer.gold += serverTotal;
+          sellerPlayer.gold += sellerGain;
           await saveCharacter(sellerRow.user_id, sellerPlayer);
         }
       }

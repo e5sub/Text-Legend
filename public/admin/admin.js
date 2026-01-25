@@ -17,10 +17,14 @@ const themeToggleBtn = document.getElementById('theme-toggle');
 const collapseAllBtn = document.getElementById('collapse-all');
 const lootLogStatus = document.getElementById('loot-log-status');
 const lootLogMsg = document.getElementById('loot-log-msg');
+const pwMsg = document.getElementById('pw-msg');
+const usersSearchInput = document.getElementById('users-search');
+const usersSearchBtn = document.getElementById('users-search-btn');
 
 let adminToken = localStorage.getItem('adminToken');
 let currentUsersPage = 1;
 let totalUsersPages = 1;
+let currentUsersSearch = '';
 
 function showDashboard() {
   loginSection.classList.add('hidden');
@@ -98,14 +102,15 @@ async function login() {
 
 async function refreshUsers(page = 1) {
   try {
-    const data = await api(`/admin/users?page=${page}&limit=10`, 'GET');
+    const searchParam = currentUsersSearch ? `&search=${encodeURIComponent(currentUsersSearch)}` : '';
+    const data = await api(`/admin/users?page=${page}&limit=10${searchParam}`, 'GET');
     currentUsersPage = data.page;
     totalUsersPages = data.totalPages;
     
     usersList.innerHTML = '';
     if (!data.users || data.users.length === 0) {
       usersList.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #999;">暂无用户</td></tr>';
-      usersPaginationInfo.textContent = '';
+      usersPaginationInfo.textContent = currentUsersSearch ? `未找到匹配“${currentUsersSearch}”的用户` : '';
       return;
     }
     
@@ -117,6 +122,14 @@ async function refreshUsers(page = 1) {
       // 用户名
       const tdName = document.createElement('td');
       tdName.textContent = u.username;
+      tdName.style.cursor = 'pointer';
+      tdName.title = u.is_admin ? '点击取消 GM' : '点击设为 GM';
+      tdName.addEventListener('click', async () => {
+        const nextAdmin = !u.is_admin;
+        const actionLabel = nextAdmin ? '设为 GM' : '取消 GM';
+        if (!confirm(`确认对用户 "${u.username}" 执行 ${actionLabel} 吗？`)) return;
+        await quickToggleGM(u.username, nextAdmin);
+      });
       tr.appendChild(tdName);
       
       // GM权限
@@ -199,14 +212,15 @@ async function deleteUserAccount(userId, username) {
   }
 }
 
-async function promoteUser() {
+async function promoteUser(isAdmin) {
+  if (!promoteMsg) return;
   promoteMsg.textContent = '';
   try {
     await api('/admin/users/promote', 'POST', {
       username: document.getElementById('promote-username').value.trim(),
-      isAdmin: document.getElementById('promote-flag').value === 'true'
+      isAdmin
     });
-    promoteMsg.textContent = '已更新 GM 权限。';
+    promoteMsg.textContent = isAdmin ? '已设置为 GM。' : '已取消 GM。';
     await refreshUsers(currentUsersPage);
   } catch (err) {
     promoteMsg.textContent = err.message;
@@ -225,6 +239,19 @@ async function updateCharacter() {
     charMsg.textContent = '角色已更新。';
   } catch (err) {
     charMsg.textContent = err.message;
+  }
+}
+
+async function updatePassword() {
+  pwMsg.textContent = '';
+  try {
+    await api('/admin/users/password', 'POST', {
+      username: document.getElementById('pw-username').value.trim(),
+      password: document.getElementById('pw-new').value
+    });
+    pwMsg.textContent = '密码已更新，已清理登录状态。';
+  } catch (err) {
+    pwMsg.textContent = err.message;
   }
 }
 
@@ -420,6 +447,20 @@ initCollapsibleBlocks();
 
 document.getElementById('admin-login-btn').addEventListener('click', login);
 document.getElementById('refresh-users').addEventListener('click', () => refreshUsers(currentUsersPage));
+if (usersSearchBtn) {
+  usersSearchBtn.addEventListener('click', () => {
+    currentUsersSearch = (usersSearchInput?.value || '').trim();
+    refreshUsers(1);
+  });
+}
+if (usersSearchInput) {
+  usersSearchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      currentUsersSearch = usersSearchInput.value.trim();
+      refreshUsers(1);
+    }
+  });
+}
 document.getElementById('users-prev-page').addEventListener('click', () => {
   if (currentUsersPage > 1) {
     refreshUsers(currentUsersPage - 1);
@@ -430,8 +471,12 @@ document.getElementById('users-next-page').addEventListener('click', () => {
     refreshUsers(currentUsersPage + 1);
   }
 });
-document.getElementById('promote-btn').addEventListener('click', promoteUser);
+const promoteBtn = document.getElementById('promote-btn');
+if (promoteBtn) promoteBtn.addEventListener('click', () => promoteUser(true));
+const demoteBtn = document.getElementById('demote-btn');
+if (demoteBtn) demoteBtn.addEventListener('click', () => promoteUser(false));
 document.getElementById('char-update-btn').addEventListener('click', updateCharacter);
+document.getElementById('pw-update-btn').addEventListener('click', updatePassword);
 document.getElementById('mail-send-btn').addEventListener('click', sendMail);
 document.getElementById('vip-create-btn').addEventListener('click', createVipCodes);
 document.getElementById('vip-list-btn').addEventListener('click', listVipCodes);
