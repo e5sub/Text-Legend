@@ -14,7 +14,7 @@ import { addGuildMember, createGuild, getGuildByName, getGuildMember, getSabakOw
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
 import { sendMail, listMail, markMailRead } from './db/mail.js';
 import { createVipCodes, listVipCodes, useVipCode } from './db/vip.js';
-import { getVipSelfClaimEnabled, setVipSelfClaimEnabled, canUserClaimVip, incrementUserVipClaimCount } from './db/settings.js';
+import { getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, canUserClaimVip, incrementUserVipClaimCount } from './db/settings.js';
 import { listMobRespawns, upsertMobRespawn, clearMobRespawn, saveMobState } from './db/mobs.js';
 import {
   listConsignments,
@@ -290,6 +290,23 @@ app.post('/admin/vip/self-claim-toggle', async (req, res) => {
   const { enabled } = req.body || {};
   await setVipSelfClaimEnabled(enabled === true);
   res.json({ ok: true, enabled: enabled === true });
+});
+
+app.get('/admin/loot-log-status', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const enabled = await getLootLogEnabled();
+  res.json({ ok: true, enabled });
+});
+
+app.post('/admin/loot-log-toggle', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const { enabled } = req.body || {};
+  const nextEnabled = enabled === true;
+  await setLootLogEnabled(nextEnabled);
+  lootLogEnabled = nextEnabled;
+  res.json({ ok: true, enabled: nextEnabled });
 });
 
 const players = new Map();
@@ -1188,6 +1205,7 @@ function distributeLoot(party, partyMembers, drops) {
     const effects = entry.effects || null;
     const target = partyMembers[randInt(0, partyMembers.length - 1)];
     addItem(target, itemId, 1, effects);
+    logLoot(`[loot][party] ${target.name} <- ${itemId}`);
     results.push({ id: itemId, effects, target });
     partyMembers.forEach((member) => {
       member.send(`队伍掉落: ${formatItemLabel(itemId, effects)} -> ${target.name}`);
@@ -1547,6 +1565,12 @@ const ROOM_STATE_TTL = 100; // 100ms缓存时间
 const VIP_SELF_CLAIM_CACHE_TTL = 10000; // VIP自领缓存10秒
 let vipSelfClaimCachedValue = null;
 let vipSelfClaimLastUpdate = 0;
+let lootLogEnabled = false;
+
+function logLoot(message) {
+  if (!lootLogEnabled) return;
+  console.log(message);
+}
 
 // 判断是否是BOSS房间（魔龙教主/世界BOSS/沙巴克BOSS/暗之系列）
 function isBossRoom(zoneId, roomId) {
@@ -2737,9 +2761,10 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('disconnect', async () => {
+  socket.on('disconnect', async (reason) => {
     const player = players.get(socket.id);
     if (player) {
+      console.log(`[disconnect] ${player.name} (${player.userId || 'unknown'}) reason=${reason || 'unknown'}`);
       if (!player.flags) player.flags = {};
       player.flags.offlineAt = Date.now();
       player.summon = null;
@@ -3133,7 +3158,7 @@ function processMobDeath(player, mob, online) {
       }
     }
 
-    dropTargets.forEach(({ player: owner, damageRatio }) => {
+    dropTargets.forEach(({ player: owner, damageRatio, rank }) => {
       const drops = dropLoot(template, 1);
       if (!drops.length) return;
       if (!isSpecialBoss && party && partyMembersForLoot.length > 0) {
@@ -3141,6 +3166,7 @@ function processMobDeath(player, mob, online) {
         distributed.forEach(({ id, effects, target }) => {
           const item = ITEM_TEMPLATES[id];
           if (!item) return;
+          logLoot(`[loot][party] ${target.name} <- ${id} (${template.id})`);
           const rarity = rarityByPrice(item);
           if (['epic', 'legendary'].includes(rarity)) {
             const text = `${target.name} 击败 ${template.name} 获得${RARITY_LABELS[rarity] || '稀有'}装备 ${formatItemLabel(id, effects)}！`;
@@ -3156,16 +3182,26 @@ function processMobDeath(player, mob, online) {
         const maxItemsPerPlayer = 2;
         drops.forEach((entry) => {
           if (itemCount >= maxItemsPerPlayer) return;
-          if (Math.random() > owner.damageRatio) return;
+          if (Math.random() > damageRatio) {
+            logLoot(`[loot][special][skip] ${owner.name} ${entry.id} (ratio:${damageRatio.toFixed(3)})`);
+            return;
+          }
 
           const item = ITEM_TEMPLATES[entry.id];
           if (item) {
             const rarity = rarityByPrice(item);
-            if (rarity === 'legendary' && owner.rank > 3) return;
-            if (rarity === 'legendary' && legendaryDropGiven) return;
+            if (rarity === 'legendary' && rank > 3) {
+              logLoot(`[loot][special][skip] ${owner.name} ${entry.id} (rank:${rank})`);
+              return;
+            }
+            if (rarity === 'legendary' && legendaryDropGiven) {
+              logLoot(`[loot][special][skip] ${owner.name} ${entry.id} (legendary given)`);
+              return;
+            }
           }
 
           addItem(owner, entry.id, 1, entry.effects);
+          logLoot(`[loot][special] ${owner.name} <- ${entry.id} (${template.id})`);
           actualDrops.push(entry);
           itemCount++;
           if (item) {
@@ -3186,10 +3222,14 @@ function processMobDeath(player, mob, online) {
         });
         if (actualDrops.length > 0) {
           owner.send(`掉落: ${actualDrops.map((entry) => formatItemLabel(entry.id, entry.effects)).join(', ')}`);
+        } else {
+          const names = drops.map((entry) => entry.id).join(', ');
+          logLoot(`[loot][special][empty] ${owner.name} drops filtered (${template.id}) -> [${names}]`);
         }
       } else {
         drops.forEach((entry) => {
           addItem(owner, entry.id, 1, entry.effects);
+          logLoot(`[loot][solo] ${owner.name} <- ${entry.id} (${template.id})`);
         });
         owner.send(`掉落: ${drops.map((entry) => formatItemLabel(entry.id, entry.effects)).join(', ')}`);
         drops.forEach((entry) => {
@@ -4232,6 +4272,7 @@ async function start() {
     console.warn(err);
   }
   await loadSabakState();
+  lootLogEnabled = await getLootLogEnabled();
   checkMobRespawn();
   setInterval(() => checkMobRespawn(), 5000);
   setInterval(() => sabakTick().catch(() => {}), 5000);

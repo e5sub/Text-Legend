@@ -34,6 +34,21 @@ export async function setVipSelfClaimEnabled(enabled) {
 }
 
 /**
+ * 获取掉落日志开关
+ */
+export async function getLootLogEnabled() {
+  const enabled = await getSetting('loot_log_enabled', 'false');
+  return enabled === 'true' || enabled === '1';
+}
+
+/**
+ * 设置掉落日志开关
+ */
+export async function setLootLogEnabled(enabled) {
+  await setSetting('loot_log_enabled', enabled ? 'true' : 'false');
+}
+
+/**
  * 获取玩家已领取的VIP激活码数量
  */
 export async function getUserVipClaimCount(userId) {
