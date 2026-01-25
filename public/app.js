@@ -10,6 +10,7 @@ let serverTimeTimer = null;
 let vipSelfClaimEnabled = true;
 let bossRespawnTimer = null;
 let bossRespawnTarget = null;
+let bossRespawnTimerEl = null;
 
 // 屏蔽F12开发者工具
 (function() {
@@ -2508,6 +2509,7 @@ function renderState(state) {
         clearInterval(bossRespawnTimer);
         bossRespawnTimer = null;
         bossRespawnTarget = null;
+        bossRespawnTimerEl = null;
       }
     } else {
       if (rankBlock) rankBlock.classList.remove('hidden');
@@ -2516,10 +2518,7 @@ function renderState(state) {
 
       // 如果有下次刷新时间，显示刷新倒计时
       if (nextRespawn && nextRespawn > Date.now()) {
-        if (bossRespawnTarget !== nextRespawn && bossRespawnTimer) {
-          clearInterval(bossRespawnTimer);
-          bossRespawnTimer = null;
-        }
+        if (ui.worldBossRank) ui.worldBossRank.innerHTML = '';
         bossRespawnTarget = nextRespawn;
         const respawnDiv = document.createElement('div');
         respawnDiv.className = 'boss-respawn-time';
@@ -2529,32 +2528,36 @@ function renderState(state) {
         respawnDiv.appendChild(document.createTextNode('下次刷新: '));
         respawnDiv.appendChild(timerSpan);
         ui.worldBossRank.appendChild(respawnDiv);
+        bossRespawnTimerEl = timerSpan;
 
-        // 倒计时更新函数
         const updateTimer = () => {
-          const remaining = Math.max(0, nextRespawn - Date.now());
+          if (!bossRespawnTarget || !bossRespawnTimerEl) return;
+          const remaining = Math.max(0, bossRespawnTarget - Date.now());
           if (remaining > 0) {
             const minutes = Math.floor(remaining / 60000);
             const seconds = Math.floor((remaining % 60000) / 1000);
-            timerSpan.textContent = `${minutes}分${seconds}秒`;
+            bossRespawnTimerEl.textContent = `${minutes}分${seconds}秒`;
           } else {
-            timerSpan.textContent = '即将刷新';
+            bossRespawnTimerEl.textContent = '即将刷新';
             if (bossRespawnTimer) {
               clearInterval(bossRespawnTimer);
               bossRespawnTimer = null;
               bossRespawnTarget = null;
+              bossRespawnTimerEl = null;
             }
           }
         };
         updateTimer();
-        if (!bossRespawnTimer) {
-          bossRespawnTimer = setInterval(updateTimer, 1000);
+        if (bossRespawnTimer) {
+          clearInterval(bossRespawnTimer);
         }
+        bossRespawnTimer = setInterval(updateTimer, 1000);
       } else if (!ranks.length) {
         if (bossRespawnTimer) {
           clearInterval(bossRespawnTimer);
           bossRespawnTimer = null;
           bossRespawnTarget = null;
+          bossRespawnTimerEl = null;
         }
         const empty = document.createElement('div');
         empty.textContent = '暂无排行';
@@ -2564,6 +2567,7 @@ function renderState(state) {
           clearInterval(bossRespawnTimer);
           bossRespawnTimer = null;
           bossRespawnTarget = null;
+          bossRespawnTimerEl = null;
         }
         ranks.forEach((entry, idx) => {
           const row = document.createElement('div');
