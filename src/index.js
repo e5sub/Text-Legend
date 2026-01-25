@@ -2203,7 +2203,8 @@ function retaliateMobAgainstPlayer(mob, player, online) {
   }
   const mobHitChance = calcHitChance(mob, mobTarget);
   if (Math.random() > mobHitChance) return;
-  if (mobTarget && mobTarget.evadeChance && Math.random() <= mobTarget.evadeChance) {
+  const isWorldBoss = Boolean(mobTemplate?.worldBoss);
+  if (!isWorldBoss && mobTarget && mobTarget.evadeChance && Math.random() <= mobTarget.evadeChance) {
     if (mobTarget.userId) {
       mobTarget.send(`你闪避了 ${mob.name} 的攻击。`);
     } else {
@@ -4103,7 +4104,8 @@ async function combatTick() {
     }
     const mobHitChance = calcHitChance(mob, mobTarget);
     if (Math.random() <= mobHitChance) {
-      if (mobTarget && mobTarget.evadeChance && Math.random() <= mobTarget.evadeChance) {
+      const isWorldBoss = Boolean(mobTemplate?.worldBoss);
+      if (!isWorldBoss && mobTarget && mobTarget.evadeChance && Math.random() <= mobTarget.evadeChance) {
         if (mobTarget.userId) {
           mobTarget.send(`你闪避了 ${mob.name} 的攻击。`);
         } else {
