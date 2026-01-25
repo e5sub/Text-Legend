@@ -9,7 +9,12 @@ const config = {
     host: process.env.DB_HOST || '127.0.0.1',
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'legend'
+    database: process.env.DB_NAME || 'legend',
+    poolMax: Number(process.env.DB_POOL_MAX || (dbClient === 'sqlite' ? 1 : 10)),
+    sqlite: {
+      wal: process.env.SQLITE_WAL !== 'false',
+      synchronous: process.env.SQLITE_SYNCHRONOUS || 'NORMAL'
+    }
   },
   sessionTtlMin: Number(process.env.SESSION_TTL_MIN || 120),
   adminBootstrapSecret: process.env.ADMIN_BOOTSTRAP_SECRET || '',

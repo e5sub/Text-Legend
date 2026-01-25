@@ -4,7 +4,7 @@
 
 ```
 docker build -t text-legend .
-docker run -p 3000:3000 -e DB_CLIENT=sqlite -e DB_FILENAME=/app/data/game.sqlite -e ADMIN_BOOTSTRAP_SECRET=change_me -v %cd%/data:/app/data text-legend
+docker run -p 3000:3000 -e DB_CLIENT=sqlite -e DB_FILENAME=/app/data/game.sqlite -e DB_POOL_MAX=1 -e SQLITE_WAL=true -e SQLITE_SYNCHRONOUS=NORMAL -e ADMIN_BOOTSTRAP_SECRET=change_me -v %cd%/data:/app/data text-legend
 ```
 
 或使用 docker-compose：
@@ -18,6 +18,12 @@ MySQL compose：
 ```
 docker compose -f docker-compose.mysql.yml up --build
 ```
+
+## SQLite 配置
+
+- `DB_POOL_MAX`：连接池最大连接数（SQLite 建议 1）
+- `SQLITE_WAL`：是否启用 WAL（默认 true）
+- `SQLITE_SYNCHRONOUS`：同步模式（默认 NORMAL，可设 FULL/EXTRA）
 
 ## 说明
 - 这是一个致敬 1.76 时代的网页文字版游戏。

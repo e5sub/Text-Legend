@@ -17,7 +17,16 @@ const knex = knexModule({
         database: config.db.database
       },
   useNullAsDefault: isSqlite,
-  pool: { min: 0, max: 10 }
+  pool: { min: 0, max: config.db.poolMax }
 });
+
+if (isSqlite) {
+  if (config.db.sqlite?.wal) {
+    knex.raw('PRAGMA journal_mode = WAL;').catch(() => {});
+  }
+  if (config.db.sqlite?.synchronous) {
+    knex.raw(`PRAGMA synchronous = ${config.db.sqlite.synchronous};`).catch(() => {});
+  }
+}
 
 export default knex;
