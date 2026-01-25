@@ -11,6 +11,10 @@
     <header>
       <h1>GM 后台</h1>
       <p>账号、角色、邮件、VIP 管理</p>
+      <div class="header-actions">
+        <button id="theme-toggle" class="btn-small">切换暗色</button>
+        <button id="collapse-all" class="btn-small">折叠全部</button>
+      </div>
     </header>
 
     <section id="login" class="panel">
@@ -22,93 +26,141 @@
     </section>
 
     <section id="dashboard" class="panel hidden">
-      <div class="row">
-        <h2>用户与权限</h2>
-        <button id="refresh-users">刷新列表</button>
-      </div>
-      <div class="table-container">
-        <table id="users-table">
-          <thead>
-            <tr>
-              <th>用户名</th>
-              <th>GM权限</th>
-              <th>创建时间</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="users-list">
-            <tr>
-              <td colspan="4" style="text-align: center; color: #999;">加载中...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="row" style="margin-top: 12px;">
-        <div id="users-pagination-info" style="color: #666;"></div>
-        <div>
-          <button id="users-prev-page" class="btn-small">上一页</button>
-          <button id="users-next-page" class="btn-small">下一页</button>
+      <div class="grid">
+        <div class="block full" data-collapsible>
+          <div class="row">
+            <div class="block-title">
+              <h2>用户与权限</h2>
+              <button class="btn-small block-toggle">折叠</button>
+            </div>
+            <button id="refresh-users">刷新列表</button>
+          </div>
+          <div class="block-body">
+          <div class="table-container">
+            <table id="users-table">
+              <thead>
+                <tr>
+                  <th>用户名</th>
+                  <th>GM权限</th>
+                  <th>创建时间</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="users-list">
+                <tr>
+                  <td colspan="4" style="text-align: center; color: #999;">加载中...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="row" style="margin-top: 12px;">
+            <div id="users-pagination-info" style="color: #666;"></div>
+            <div>
+              <button id="users-prev-page" class="btn-small">上一页</button>
+              <button id="users-next-page" class="btn-small">下一页</button>
+            </div>
+          </div>
+          </div>
+        </div>
+
+        <div class="block" data-collapsible>
+          <div class="block-title">
+            <h2>创建/取消 GM</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <input id="promote-username" type="text" placeholder="用户名">
+            <select id="promote-flag">
+              <option value="true">设为 GM</option>
+              <option value="false">取消 GM</option>
+            </select>
+            <button id="promote-btn">提交</button>
+            <div id="promote-msg" class="msg"></div>
+          </div>
+        </div>
+
+        <div class="block" data-collapsible>
+          <div class="block-title">
+            <h2>角色修改</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <input id="char-username" type="text" placeholder="用户名">
+            <input id="char-name" type="text" placeholder="角色名">
+            <textarea id="char-patch" placeholder='JSON Patch，例如: {"gold":5000,"level":40}'></textarea>
+            <button id="char-update-btn">更新角色</button>
+            <div id="char-msg" class="msg"></div>
+          </div>
+        </div>
+
+        <div class="block" data-collapsible>
+          <div class="block-title">
+            <h2>站内邮件</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <input id="mail-username" type="text" placeholder="用户名">
+            <input id="mail-title" type="text" placeholder="标题">
+            <textarea id="mail-body" placeholder="内容"></textarea>
+            <button id="mail-send-btn">发送邮件</button>
+            <div id="mail-msg" class="msg"></div>
+          </div>
+        </div>
+
+        <div class="block full" data-collapsible>
+          <div class="block-title">
+            <h2>VIP 激活码</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <input id="vip-count" type="number" min="1" max="100" value="5">
+            <button id="vip-create-btn">生成激活码</button>
+            <button id="vip-list-btn">查看激活码列表</button>
+            <div id="vip-codes-result" class="list"></div>
+            
+            <div class="table-container" id="vip-codes-table-container" style="display: none;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>激活码</th>
+                    <th>状态</th>
+                    <th>使用者ID</th>
+                    <th>使用时间</th>
+                  </tr>
+                </thead>
+                <tbody id="vip-codes-list"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="block" data-collapsible>
+          <div class="block-title">
+            <h2>VIP 自助激活开关</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <p>当前状态: <span id="vip-self-claim-status">加载中...</span></p>
+            <button id="vip-self-claim-on">开启自助激活</button>
+            <button id="vip-self-claim-off">关闭自助激活</button>
+            <div id="vip-self-claim-msg" class="msg"></div>
+          </div>
+        </div>
+
+        <div class="block" data-collapsible>
+          <div class="block-title">
+            <h2>数据备份与导入</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <p style="color: #666;">导入会覆盖当前全部数据，建议停服或确保无在线玩家。</p>
+            <button id="backup-download">下载备份</button>
+            <input id="import-file" type="file" accept="application/json">
+            <button id="import-btn">导入备份</button>
+            <div id="backup-msg" class="msg"></div>
+          </div>
         </div>
       </div>
-
-      <div class="divider"></div>
-
-      <h2>创建/取消 GM</h2>
-      <input id="promote-username" type="text" placeholder="用户名">
-      <select id="promote-flag">
-        <option value="true">设为 GM</option>
-        <option value="false">取消 GM</option>
-      </select>
-      <button id="promote-btn">提交</button>
-      <div id="promote-msg" class="msg"></div>
-
-      <div class="divider"></div>
-
-      <h2>角色修改</h2>
-      <input id="char-username" type="text" placeholder="用户名">
-      <input id="char-name" type="text" placeholder="角色名">
-      <textarea id="char-patch" placeholder='JSON Patch，例如: {"gold":5000,"level":40}'></textarea>
-      <button id="char-update-btn">更新角色</button>
-      <div id="char-msg" class="msg"></div>
-
-      <div class="divider"></div>
-
-      <h2>站内邮件</h2>
-      <input id="mail-username" type="text" placeholder="用户名">
-      <input id="mail-title" type="text" placeholder="标题">
-      <textarea id="mail-body" placeholder="内容"></textarea>
-      <button id="mail-send-btn">发送邮件</button>
-      <div id="mail-msg" class="msg"></div>
-
-      <div class="divider"></div>
-
-      <h2>VIP 激活码</h2>
-      <input id="vip-count" type="number" min="1" max="100" value="5">
-      <button id="vip-create-btn">生成激活码</button>
-      <button id="vip-list-btn">查看激活码列表</button>
-      <div id="vip-codes-result" class="list"></div>
-      
-      <div class="table-container" id="vip-codes-table-container" style="display: none;">
-        <table>
-          <thead>
-            <tr>
-              <th>激活码</th>
-              <th>状态</th>
-              <th>使用者ID</th>
-              <th>使用时间</th>
-            </tr>
-          </thead>
-          <tbody id="vip-codes-list"></tbody>
-        </table>
-      </div>
-
-      <div class="divider"></div>
-
-      <h2>VIP 自助激活开关</h2>
-      <p>当前状态: <span id="vip-self-claim-status">加载中...</span></p>
-      <button id="vip-self-claim-on">开启自助激活</button>
-      <button id="vip-self-claim-off">关闭自助激活</button>
-      <div id="vip-self-claim-msg" class="msg"></div>
     </section>
   </div>
 

@@ -1,9 +1,14 @@
-﻿:root {
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Spectral:wght@400;600&display=swap');
+
+:root {
   --bg: #f2ede3;
   --panel: #fff8ed;
+  --panel-strong: #fff2dd;
   --ink: #2a1a0e;
   --accent: #b95412;
+  --accent-strong: #8f3b0b;
   --shadow: rgba(42, 26, 10, 0.12);
+  --border: #e7caa6;
   --font-display: "Cinzel", "Garamond", "Times New Roman", serif;
   --font-body: "Spectral", "Georgia", serif;
 }
@@ -12,14 +17,16 @@
 
 body {
   margin: 0;
-  background: radial-gradient(circle at top, #fff7ea 0%, #f1e1c9 45%, #e3c6a4 100%);
+  background:
+    radial-gradient(circle at top, #fff7ea 0%, #f1e1c9 45%, #e3c6a4 100%),
+    linear-gradient(120deg, rgba(255, 245, 224, 0.3), rgba(214, 169, 118, 0.15));
   color: var(--ink);
   font-family: var(--font-body);
   min-height: 100vh;
 }
 
 .wrap {
-  max-width: 960px;
+  max-width: 1040px;
   margin: 0 auto;
   padding: 32px 20px 40px;
 }
@@ -29,14 +36,29 @@ header {
   margin-bottom: 20px;
 }
 
+.header-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
 h1 {
   font-family: var(--font-display);
   margin: 0 0 6px;
+  letter-spacing: 0.04em;
+}
+
+h2 {
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  letter-spacing: 0.03em;
 }
 
 .panel {
   background: var(--panel);
-  border: 1px solid #e7caa6;
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 20px;
   box-shadow: 0 12px 30px var(--shadow);
@@ -68,6 +90,13 @@ button {
   cursor: pointer;
   box-shadow: 0 6px 14px rgba(214, 109, 26, 0.3);
   margin-right: 8px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+button:hover {
+  background: var(--accent-strong);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(143, 59, 11, 0.25);
 }
 
 .row {
@@ -75,6 +104,43 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.block-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.block-body {
+  margin-top: 6px;
+}
+
+.block.collapsed .block-body {
+  display: none;
+}
+
+.block.collapsed .block-toggle {
+  background: #6c757d;
+  box-shadow: 0 4px 10px rgba(108, 117, 125, 0.3);
+}
+
+.grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.block {
+  background: var(--panel-strong);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.block.full {
+  grid-column: 1 / -1;
 }
 
 .list {
@@ -181,9 +247,19 @@ tbody tr:hover {
   background: #5a6268;
 }
 
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 768px) {
   .wrap {
     padding: 20px 12px;
+  }
+
+  .header-actions {
+    flex-direction: column;
   }
   
   table {
@@ -198,4 +274,43 @@ tbody tr:hover {
     font-size: 0.8rem;
     padding: 4px 8px;
   }
+}
+
+body.theme-dark {
+  --bg: #1a1410;
+  --panel: #221a14;
+  --panel-strong: #281f18;
+  --ink: #efe2d2;
+  --accent: #e08a3e;
+  --accent-strong: #c2722f;
+  --shadow: rgba(0, 0, 0, 0.35);
+  --border: #3c2b1d;
+  background:
+    radial-gradient(circle at top, #2b2119 0%, #1a1410 55%, #120d0a 100%),
+    linear-gradient(120deg, rgba(140, 90, 50, 0.15), rgba(0, 0, 0, 0.2));
+  color: var(--ink);
+}
+
+body.theme-dark .panel,
+body.theme-dark .block {
+  border-color: var(--border);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+}
+
+body.theme-dark input,
+body.theme-dark select,
+body.theme-dark textarea {
+  background: #1f1711;
+  border-color: #3a2b1f;
+  color: var(--ink);
+}
+
+body.theme-dark table,
+body.theme-dark .list {
+  background: #201710;
+  border-color: #3a2b1f;
+}
+
+body.theme-dark thead {
+  background: linear-gradient(135deg, #3a2b1f 0%, #2a1f16 100%);
 }

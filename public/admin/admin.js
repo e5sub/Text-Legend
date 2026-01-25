@@ -11,6 +11,10 @@ const vipCodesTableContainer = document.getElementById('vip-codes-table-containe
 const vipSelfClaimStatus = document.getElementById('vip-self-claim-status');
 const vipSelfClaimMsg = document.getElementById('vip-self-claim-msg');
 const usersPaginationInfo = document.getElementById('users-pagination-info');
+const backupMsg = document.getElementById('backup-msg');
+const importFileInput = document.getElementById('import-file');
+const themeToggleBtn = document.getElementById('theme-toggle');
+const collapseAllBtn = document.getElementById('collapse-all');
 
 let adminToken = localStorage.getItem('adminToken');
 let currentUsersPage = 1;
@@ -19,6 +23,45 @@ let totalUsersPages = 1;
 function showDashboard() {
   loginSection.classList.add('hidden');
   dashboardSection.classList.remove('hidden');
+}
+
+function applyTheme(theme) {
+  document.body.classList.toggle('theme-dark', theme === 'dark');
+  if (themeToggleBtn) {
+    themeToggleBtn.textContent = theme === 'dark' ? '切换亮色' : '切换暗色';
+  }
+}
+
+function toggleTheme() {
+  const current = localStorage.getItem('adminTheme') || 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('adminTheme', next);
+  applyTheme(next);
+}
+
+function initCollapsibleBlocks() {
+  const blocks = Array.from(document.querySelectorAll('.block[data-collapsible]'));
+  blocks.forEach((block) => {
+    const toggle = block.querySelector('.block-toggle');
+    if (!toggle) return;
+    toggle.addEventListener('click', () => {
+      block.classList.toggle('collapsed');
+      toggle.textContent = block.classList.contains('collapsed') ? '展开' : '折叠';
+    });
+  });
+  if (collapseAllBtn) {
+    collapseAllBtn.addEventListener('click', () => {
+      const shouldCollapse = !collapseAllBtn.classList.contains('active');
+      collapseAllBtn.classList.toggle('active', shouldCollapse);
+      collapseAllBtn.textContent = shouldCollapse ? '展开全部' : '折叠全部';
+      blocks.forEach((block) => {
+        const toggle = block.querySelector('.block-toggle');
+        if (!toggle) return;
+        block.classList.toggle('collapsed', shouldCollapse);
+        toggle.textContent = shouldCollapse ? '展开' : '折叠';
+      });
+    });
+  }
 }
 
 async function api(path, method, body) {
@@ -287,11 +330,67 @@ async function toggleVipSelfClaim(enabled) {
   }
 }
 
+async function downloadBackup() {
+  backupMsg.textContent = '';
+  try {
+    const res = await fetch('/admin/backup', {
+      headers: {
+        Authorization: adminToken ? `Bearer ${adminToken}` : ''
+      }
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || '请求失败');
+    }
+    const blob = await res.blob();
+    const disposition = res.headers.get('Content-Disposition') || '';
+    const match = disposition.match(/filename="([^"]+)"/);
+    const filename = match ? match[1] : 'text-legend-backup.json';
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    backupMsg.textContent = '备份已下载。';
+  } catch (err) {
+    backupMsg.textContent = err.message;
+  }
+}
+
+async function importBackup() {
+  backupMsg.textContent = '';
+  const file = importFileInput?.files?.[0];
+  if (!file) {
+    backupMsg.textContent = '请选择备份文件。';
+    return;
+  }
+  if (!confirm('导入会覆盖当前全部数据，确定继续吗？')) return;
+  if (!confirm('再次确认：导入后无法恢复，是否继续？')) return;
+  try {
+    const text = await file.text();
+    const payload = JSON.parse(text);
+    const data = await api('/admin/import', 'POST', payload);
+    const counts = data.counts || {};
+    const summary = Object.entries(counts)
+      .map(([name, count]) => `${name}: ${count}`)
+      .join(', ');
+    backupMsg.textContent = summary ? `导入完成：${summary}` : '导入完成。';
+  } catch (err) {
+    backupMsg.textContent = err.message;
+  }
+}
+
 if (adminToken) {
   showDashboard();
   refreshUsers();
   refreshVipSelfClaimStatus();
 }
+
+applyTheme(localStorage.getItem('adminTheme') || 'light');
+initCollapsibleBlocks();
 
 document.getElementById('admin-login-btn').addEventListener('click', login);
 document.getElementById('refresh-users').addEventListener('click', () => refreshUsers(currentUsersPage));
@@ -312,3 +411,6 @@ document.getElementById('vip-create-btn').addEventListener('click', createVipCod
 document.getElementById('vip-list-btn').addEventListener('click', listVipCodes);
 document.getElementById('vip-self-claim-on').addEventListener('click', () => toggleVipSelfClaim(true));
 document.getElementById('vip-self-claim-off').addEventListener('click', () => toggleVipSelfClaim(false));
+document.getElementById('backup-download').addEventListener('click', downloadBackup);
+document.getElementById('import-btn').addEventListener('click', importBackup);
+if (themeToggleBtn) themeToggleBtn.addEventListener('click', toggleTheme);

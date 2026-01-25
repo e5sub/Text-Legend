@@ -66,7 +66,7 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-app.use(express.json());
+app.use(express.json({ limit: '20mb' }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 const CAPTCHA_TTL_MS = 5 * 60 * 1000;
@@ -170,6 +170,38 @@ async function requireAdmin(req) {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) return null;
   return verifyAdminSession(token);
+}
+
+const BACKUP_TABLES = [
+  'users',
+  'sessions',
+  'characters',
+  'guilds',
+  'guild_members',
+  'sabak_state',
+  'sabak_registrations',
+  'mails',
+  'vip_codes',
+  'game_settings',
+  'mob_respawns',
+  'consignments',
+  'consignment_history'
+];
+
+function normalizeBackupTables(payload) {
+  if (!payload) return null;
+  if (payload.tables && typeof payload.tables === 'object') return payload.tables;
+  if (payload.data && typeof payload.data === 'object') return payload.data;
+  if (typeof payload === 'object') return payload;
+  return null;
+}
+
+function chunkArray(rows, size) {
+  const chunks = [];
+  for (let i = 0; i < rows.length; i += size) {
+    chunks.push(rows.slice(i, i + size));
+  }
+  return chunks;
 }
 
 app.post('/admin/login', async (req, res) => {
@@ -307,6 +339,71 @@ app.post('/admin/loot-log-toggle', async (req, res) => {
   await setLootLogEnabled(nextEnabled);
   lootLogEnabled = nextEnabled;
   res.json({ ok: true, enabled: nextEnabled });
+});
+
+app.get('/admin/backup', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const tables = {};
+  for (const name of BACKUP_TABLES) {
+    if (await knex.schema.hasTable(name)) {
+      tables[name] = await knex(name).select('*');
+    }
+  }
+  const payload = {
+    meta: {
+      version: 1,
+      db_client: config.db.client,
+      exported_at: new Date().toISOString()
+    },
+    tables
+  };
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  res.setHeader('Content-Disposition', `attachment; filename="text-legend-backup-${stamp}.json"`);
+  res.json(payload);
+});
+
+app.post('/admin/import', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  if (players.size > 0) {
+    return res.status(400).json({ error: '导入前请确保没有在线玩家。' });
+  }
+  const tables = normalizeBackupTables(req.body);
+  if (!tables) return res.status(400).json({ error: '备份文件格式错误。' });
+  const counts = {};
+  await knex.transaction(async (trx) => {
+    if (config.db.client === 'sqlite') {
+      await trx.raw('PRAGMA foreign_keys = OFF;');
+    } else {
+      await trx.raw('SET FOREIGN_KEY_CHECKS = 0;');
+    }
+    for (const name of BACKUP_TABLES.slice().reverse()) {
+      if (!tables[name]) continue;
+      if (await trx.schema.hasTable(name)) {
+        await trx(name).del();
+      }
+    }
+    for (const name of BACKUP_TABLES) {
+      const rows = tables[name];
+      if (!rows || rows.length === 0) {
+        counts[name] = 0;
+        continue;
+      }
+      if (!await trx.schema.hasTable(name)) continue;
+      const chunks = chunkArray(rows, 200);
+      for (const chunk of chunks) {
+        await trx(name).insert(chunk);
+      }
+      counts[name] = rows.length;
+    }
+    if (config.db.client === 'sqlite') {
+      await trx.raw('PRAGMA foreign_keys = ON;');
+    } else {
+      await trx.raw('SET FOREIGN_KEY_CHECKS = 1;');
+    }
+  });
+  res.json({ ok: true, counts });
 });
 
 const players = new Map();
