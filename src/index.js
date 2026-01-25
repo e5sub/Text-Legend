@@ -63,7 +63,10 @@ import { expForLevel } from './game/constants.js';
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  pingInterval: 20000,
+  pingTimeout: 60000
+});
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 app.use(express.json({ limit: '20mb' }));
