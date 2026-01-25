@@ -832,8 +832,8 @@ export async function handleCommand({ player, players, input, send, partyApi, gu
           { name: '防御', attr: 'def', value: 1 },
           { name: '魔御', attr: 'mdef', value: 1 },
           { name: '敏捷', attr: 'agi', value: 1 },
-          { name: '生命上限', attr: 'max_hp', value: 10 },
-          { name: '魔法上限', attr: 'max_mp', value: 10 }
+          { name: '生命上限', attr: 'max_hp', value: 1 },
+          { name: '魔法上限', attr: 'max_mp', value: 1 }
         ];
 
         // 统计每个属性的提升次数，并累加到player.flags.trainingFruit

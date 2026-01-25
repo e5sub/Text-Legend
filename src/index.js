@@ -299,6 +299,7 @@ const partyFollowInvites = new Map();
 const guildInvites = new Map();
 const tradeInvites = new Map();
 const tradesByPlayer = new Map();
+const lastSaveTime = new Map(); // 记录每个玩家上次保存时间
 
 const sabakConfig = {
   startHour: 20,
@@ -639,8 +640,8 @@ function dropLoot(mobTemplate, bonus = 1) {
       }
     });
   }
-  // 全地图怪物都有5%概率掉落修炼果
-  if (Math.random() <= 0.05) {
+  // 全地图怪物都有1%概率掉落修炼果
+  if (Math.random() <= 0.01) {
     loot.push({ id: 'training_fruit', effects: null });
   }
   const rarityDrop = rollRarityDrop(mobTemplate, finalBonus);
@@ -2747,6 +2748,7 @@ io.on('connection', (socket) => {
         clearTrade(trade, `交易已取消（${player.name} 离线）。`);
       }
       await savePlayer(player);
+      lastSaveTime.delete(player.name); // 清理保存时间记录
       players.delete(socket.id);
     }
   });
@@ -2881,6 +2883,10 @@ function pickCombatSkillId(player, combatSkillId) {
         const lastUse = player.status.skillCooldowns[skill.id] || 0;
         const cooldownRemaining = lastUse + skill.cooldown - now;
         if (cooldownRemaining > 0) return false;
+      }
+      // 召唤技能：如果召唤物还存活，跳过该技能
+      if (skill.type === 'summon' && player.summon && player.summon.hp > 0) {
+        return false;
       }
       return true;
     };
@@ -4064,7 +4070,14 @@ async function combatTick() {
       handleDeath(player);
     }
     await sendState(player);
-    savePlayer(player);
+
+    // 每30秒保存一次玩家数据,避免频繁写入数据库
+    const now = Date.now();
+    const lastSave = lastSaveTime.get(player.name) || 0;
+    if (now - lastSave >= 30000) {
+      savePlayer(player);
+      lastSaveTime.set(player.name, now);
+    }
   }
 }
 
