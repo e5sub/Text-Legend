@@ -510,20 +510,20 @@ export function summonStats(player, skill, summonLevelOverride = null) {
   let atk;
   let def;
   let mdef;
-  if (skill.id === 'summon') {
-    const factor = 0.1 + ((level - 1) * (0.9 / 7));
-    max_hp = Math.floor((player.max_hp || 0) * factor);
-    atk = Math.floor((player.spirit || 0) * factor);
-    def = Math.floor((player.def || 0) * factor);
-    mdef = Math.floor((player.mdef || 0) * factor);
-  } else {
-    const increase = Math.min((level - 1) * 1.25, 10);
-    const multiplier = 1 + increase;
-    max_hp = Math.floor(base.baseHp * multiplier);
-    atk = Math.floor((player.spirit || 0) * multiplier);
-    def = Math.floor(base.baseDef * multiplier);
-    mdef = 0;
-  }
+    const summonFactor = 0.1 + ((level - 1) * (0.9 / 7));
+    if (skill.id === 'summon') {
+      const factor = summonFactor;
+      max_hp = Math.floor((player.max_hp || 0) * factor);
+      atk = Math.floor((player.spirit || 0) * factor);
+      def = Math.floor((player.def || 0) * factor);
+      mdef = Math.floor((player.mdef || 0) * factor);
+    } else {
+      const factor = summonFactor * 0.6;
+      max_hp = Math.floor(base.baseHp * factor);
+      atk = Math.floor((player.spirit || 0) * factor);
+      def = Math.floor(base.baseDef * factor);
+      mdef = 0;
+    }
   const dex = 8 + skillLevel;
   return {
     id: skill.id,

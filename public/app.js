@@ -1712,6 +1712,7 @@ function refreshMailItemOptions() {
     opt.textContent = `${formatItemName(item)} x${item.qty}`;
     mailUi.item.appendChild(opt);
   });
+  updateMailQtyLimit();
 }
 
 function openMailModal() {
@@ -1749,6 +1750,33 @@ function renderMailAttachmentList() {
     });
     mailUi.attachList.appendChild(btn);
   });
+  updateMailQtyLimit();
+}
+
+function getMailRemainingQty(key) {
+  if (!key) return 0;
+  const item = (lastState?.items || []).find((i) => (i.key || i.id) === key);
+  if (!item) return 0;
+  const ownedQty = Math.max(0, Number(item.qty || 0));
+  const usedQty = mailAttachments
+    .filter((entry) => entry.key === key)
+    .reduce((sum, entry) => sum + Number(entry.qty || 0), 0);
+  return Math.max(0, ownedQty - usedQty);
+}
+
+function updateMailQtyLimit() {
+  if (!mailUi.qty || !mailUi.item) return;
+  const key = mailUi.item.value;
+  if (!key) {
+    mailUi.qty.removeAttribute('max');
+    return;
+  }
+  const remainingQty = getMailRemainingQty(key);
+  mailUi.qty.max = String(remainingQty);
+  const current = Number(mailUi.qty.value || 0);
+  if (!Number.isNaN(current) && current > remainingQty) {
+    mailUi.qty.value = remainingQty > 0 ? String(remainingQty) : '';
+  }
 }
 
 function parseShopLine(text) {
@@ -4057,8 +4085,8 @@ if (mailUi.refresh) {
     if (socket) socket.emit('mail_list');
   });
 }
-if (mailUi.send) {
-  mailUi.send.addEventListener('click', () => {
+  if (mailUi.send) {
+    mailUi.send.addEventListener('click', () => {
     if (!socket) return;
     const toName = mailUi.to ? mailUi.to.value.trim() : '';
     const title = mailUi.subject ? mailUi.subject.value.trim() : '';
@@ -4068,28 +4096,47 @@ if (mailUi.send) {
       key: entry.key,
       qty: entry.qty
     }));
-    socket.emit('mail_send', { toName, title, body, items, gold });
-  });
+      socket.emit('mail_send', { toName, title, body, items, gold });
+    });
+  }
+  if (mailUi.item) {
+    mailUi.item.addEventListener('change', () => {
+      updateMailQtyLimit();
+    });
+  }
+  if (mailUi.claim) {
+    mailUi.claim.addEventListener('click', () => {
+      if (!socket || !selectedMailId) return;
+      socket.emit('mail_claim', { mailId: selectedMailId });
+    });
 }
-if (mailUi.claim) {
-  mailUi.claim.addEventListener('click', () => {
-    if (!socket || !selectedMailId) return;
-    socket.emit('mail_claim', { mailId: selectedMailId });
-  });
-}
-if (mailUi.addItem) {
-  mailUi.addItem.addEventListener('click', () => {
-    if (!mailUi.item) return;
-    const key = mailUi.item.value;
-    if (!key) return;
-    const qtyRaw = mailUi.qty ? Number(mailUi.qty.value || 1) : 1;
-    const qty = Math.max(1, Number.isNaN(qtyRaw) ? 1 : qtyRaw);
-    const item = (lastState?.items || []).find((i) => (i.key || i.id) === key);
-    if (!item) return;
-    mailAttachments.push({ key, qty, item });
-    renderMailAttachmentList();
-  });
-}
+  if (mailUi.addItem) {
+    mailUi.addItem.addEventListener('click', () => {
+      if (!mailUi.item) return;
+      const key = mailUi.item.value;
+      if (!key) return;
+      const qtyRaw = mailUi.qty ? Number(mailUi.qty.value || 1) : 1;
+      const qty = Math.max(1, Number.isNaN(qtyRaw) ? 1 : qtyRaw);
+      const item = (lastState?.items || []).find((i) => (i.key || i.id) === key);
+      if (!item) return;
+      const ownedQty = Math.max(0, Number(item.qty || 0));
+      const usedQty = mailAttachments
+        .filter((entry) => entry.key === key)
+        .reduce((sum, entry) => sum + Number(entry.qty || 0), 0);
+      const remainingQty = Math.max(0, ownedQty - usedQty);
+      if (remainingQty <= 0) {
+        showToast('该物品附件数量已达上限');
+        return;
+      }
+      const finalQty = Math.min(qty, remainingQty);
+      if (finalQty < qty) {
+        showToast('数量超过背包剩余数量，已自动调整');
+      }
+      if (mailUi.qty) mailUi.qty.value = String(finalQty);
+      mailAttachments.push({ key, qty: finalQty, item });
+      renderMailAttachmentList();
+    });
+  }
 if (shopUi.sellBulk) {
   shopUi.sellBulk.addEventListener('click', async () => {
     if (!socket) return;

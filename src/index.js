@@ -3076,24 +3076,27 @@ io.on('connection', (socket) => {
         const qty = Math.max(1, Number(entry?.qty || 1));
         grouped.set(key, (grouped.get(key) || 0) + qty);
       });
-      for (const [key, totalQty] of grouped.entries()) {
-        const slot = resolveInventorySlotByKey(player, key);
-        if (!slot) return socket.emit('mail_send_result', { ok: false, msg: '背包里没有该物品。' });
-        const item = ITEM_TEMPLATES[slot.id];
-        if (!item) return socket.emit('mail_send_result', { ok: false, msg: '物品不存在。' });
-        if (item.type === 'currency') return socket.emit('mail_send_result', { ok: false, msg: '金币无法赠送。' });
-        const qty = Math.max(1, Math.min(Number(totalQty), Number(slot.qty || 1)));
-        if (qty <= 0 || qty > Number(slot.qty || 0)) {
-          return socket.emit('mail_send_result', { ok: false, msg: '背包里没有足够数量。' });
+        for (const [key, totalQty] of grouped.entries()) {
+          const slot = resolveInventorySlotByKey(player, key);
+          if (!slot) return socket.emit('mail_send_result', { ok: false, msg: '背包里没有该物品。' });
+          const item = ITEM_TEMPLATES[slot.id];
+          if (!item) return socket.emit('mail_send_result', { ok: false, msg: '物品不存在。' });
+          if (item.untradable || item.unconsignable) {
+            return socket.emit('mail_send_result', { ok: false, msg: '该物品无法通过邮件赠送。' });
+          }
+          if (item.type === 'currency') return socket.emit('mail_send_result', { ok: false, msg: '金币无法赠送。' });
+          const qty = Math.max(1, Number(totalQty));
+          if (qty > Number(slot.qty || 0)) {
+            return socket.emit('mail_send_result', { ok: false, msg: '附件数量超过背包数量。' });
+          }
         }
-      }
-      for (const [key, totalQty] of grouped.entries()) {
-        const slot = resolveInventorySlotByKey(player, key);
-        if (!slot) continue;
-        const qty = Math.max(1, Math.min(Number(totalQty), Number(slot.qty || 1)));
-        if (!removeItem(player, slot.id, qty, slot.effects)) {
-          return socket.emit('mail_send_result', { ok: false, msg: '背包里没有足够数量。' });
-        }
+        for (const [key, totalQty] of grouped.entries()) {
+          const slot = resolveInventorySlotByKey(player, key);
+          if (!slot) continue;
+          const qty = Math.max(1, Number(totalQty));
+          if (!removeItem(player, slot.id, qty, slot.effects)) {
+            return socket.emit('mail_send_result', { ok: false, msg: '附件数量超过背包数量。' });
+          }
         items.push({
           id: slot.id,
           qty,
@@ -3570,25 +3573,17 @@ function pickCombatSkillId(player, combatSkillId) {
       return true;
     };
     
-    if (Array.isArray(autoSkill)) {
-      const choices = autoSkill
-        .map((id) => getSkill(player.classId, id))
-        .filter((skill) => isCombatSkill(skill) && isSkillUsable(skill));
-      
-      if (!choices.length) {
-        // 所有指定技能都在CD中，尝试从所有学会的技能中选择
-        const fallbackSkills = getLearnedSkills(player).filter((skill) =>
-          ['attack', 'spell', 'cleave', 'dot', 'aoe'].includes(skill.type)
-        );
-        const fallbackChoices = fallbackSkills.filter((skill) => isSkillUsable(skill));
-        if (fallbackChoices.length) {
-          fallbackChoices.sort((a, b) => (b.power || 1) - (a.power || 1));
-          return fallbackChoices[0].id;
+      if (Array.isArray(autoSkill)) {
+        const choices = autoSkill
+          .map((id) => getSkill(player.classId, id))
+          .filter((skill) => isCombatSkill(skill) && isSkillUsable(skill));
+        
+        if (!choices.length) {
+          // 未选中可用的输出技能时，保持默认攻击而不是替换为其他技能
+          return combatSkillId;
         }
-        return combatSkillId;
+        return choices[randInt(0, choices.length - 1)].id;
       }
-      return choices[randInt(0, choices.length - 1)].id;
-    }
     
     const autoId = autoSkill === 'all'
       ? selectAutoSkill(player)
