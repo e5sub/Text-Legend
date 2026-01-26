@@ -1848,6 +1848,130 @@ button:hover {
   filter: brightness(1.03);
 }
 
+.mail-card {
+  width: min(92vw, 720px);
+}
+
+.mail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.mail-list {
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid rgba(120, 64, 20, 0.35);
+  border-radius: 12px;
+  padding: 8px;
+  background: rgba(120, 64, 20, 0.08);
+}
+
+.mail-item {
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  color: #5b3d22;
+  background: rgba(120, 64, 20, 0.08);
+  margin-bottom: 6px;
+}
+
+.mail-item.unread {
+  font-weight: 700;
+}
+
+.mail-item.active {
+  background: rgba(120, 64, 20, 0.18);
+}
+
+.mail-detail {
+  border: 1px solid rgba(120, 64, 20, 0.35);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(120, 64, 20, 0.06);
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mail-detail-title {
+  font-weight: 700;
+  color: #4b2f16;
+}
+
+.mail-detail-meta {
+  font-size: 0.85rem;
+  color: #7a5a3a;
+}
+
+.mail-detail-body {
+  white-space: pre-wrap;
+  color: #5b3d22;
+}
+
+.mail-detail-items {
+  font-size: 0.85rem;
+  color: #6a4a2b;
+}
+
+.mail-compose {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mail-compose input,
+.mail-compose textarea,
+.mail-attach-row select {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(120, 64, 20, 0.35);
+  background: rgba(120, 64, 20, 0.06);
+  color: #4b2f16;
+}
+
+.mail-attach-row {
+  display: grid;
+  grid-template-columns: 1fr 120px 120px;
+  gap: 8px;
+}
+
+.mail-attach-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 24px;
+}
+
+.mail-attach-item {
+  border-radius: 999px;
+  border: 1px solid rgba(118, 70, 22, 0.25);
+  background: #f7e2c6;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.mail-gold-row input {
+  width: 100%;
+}
+
+@media (max-width: 720px) {
+  .mail-grid {
+    grid-template-columns: 1fr;
+  }
+  .mail-list,
+  .mail-detail {
+    max-height: none;
+  }
+  .mail-attach-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .consign-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

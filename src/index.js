@@ -12,7 +12,7 @@ import { createUser, verifyUser, createSession, getSession, getUserByName, setAd
 import { listCharacters, loadCharacter, saveCharacter, findCharacterByName } from './db/characters.js';
 import { addGuildMember, createGuild, getGuildByName, getGuildMember, getSabakOwner, isGuildLeader, listGuildMembers, listSabakRegistrations, registerSabak, removeGuildMember, leaveGuild, setSabakOwner, clearSabakRegistrations, transferGuildLeader } from './db/guilds.js';
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
-import { sendMail, listMail, markMailRead } from './db/mail.js';
+import { sendMail, listMail, markMailRead, markMailClaimed } from './db/mail.js';
 import { createVipCodes, listVipCodes, useVipCode } from './db/vip.js';
 import { getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, canUserClaimVip, incrementUserVipClaimCount, getWorldBossKillCount, setWorldBossKillCount } from './db/settings.js';
 import { listMobRespawns, upsertMobRespawn, clearMobRespawn, saveMobState } from './db/mobs.js';
@@ -218,7 +218,7 @@ app.get('/api/mail', async (req, res) => {
   const session = await getSession(token);
   if (!session) return res.status(401).json({ error: '登录已过期。' });
   const mails = await listMail(session.user_id);
-  res.json({ ok: true, mails });
+  res.json({ ok: true, mails: mails.map(buildMailPayload) });
 });
 
 app.post('/api/mail/read', async (req, res) => {
@@ -368,7 +368,7 @@ app.post('/admin/mail/send', async (req, res) => {
   const { username, title, body } = req.body || {};
   const user = await getUserByName(username);
   if (!user) return res.status(404).json({ error: '用户不存在。' });
-  await sendMail(user.id, 'GM', title, body);
+  await sendMail(user.id, 'GM', title, body, null, 0);
   res.json({ ok: true });
 });
 
@@ -619,6 +619,46 @@ function parseJson(value, fallback = null) {
   } catch {
     return fallback;
   }
+}
+
+function buildMailItemView(entry) {
+  if (!entry || !entry.id) return null;
+  const view = buildItemView(entry.id, entry.effects || null, entry.durability, entry.max_durability);
+  return {
+    ...view,
+    qty: Math.max(1, Number(entry.qty || 1)),
+    durability: entry.durability ?? null,
+    max_durability: entry.max_durability ?? null
+  };
+}
+
+function buildMailPayload(row) {
+  const items = parseJson(row.items_json, []);
+  const itemViews = Array.isArray(items)
+    ? items.map(buildMailItemView).filter(Boolean)
+    : [];
+  return {
+    id: row.id,
+    from_name: row.from_name,
+    title: row.title,
+    body: row.body,
+    created_at: row.created_at,
+    read_at: row.read_at,
+    claimed_at: row.claimed_at,
+    gold: Number(row.gold || 0),
+    items: itemViews
+  };
+}
+
+function resolveInventorySlotByKey(player, key) {
+  if (!player || !player.inventory || !key) return null;
+  const trimmed = String(key).trim();
+  if (!trimmed) return null;
+  const byKey = player.inventory.find((slot) => getItemKey(slot) === trimmed);
+  if (byKey) return byKey;
+  const byId = player.inventory.find((slot) => slot.id === trimmed);
+  if (byId) return byId;
+  return null;
 }
 
 async function cleanupInvalidItems() {
@@ -2931,6 +2971,126 @@ io.on('connection', (socket) => {
     }
     await sendState(player);
     await savePlayer(player);
+  });
+
+  socket.on('mail_list', async () => {
+    const player = players.get(socket.id);
+    if (!player) return;
+    const mails = await listMail(player.userId);
+    socket.emit('mail_list', { ok: true, mails: mails.map(buildMailPayload) });
+  });
+
+  socket.on('mail_send', async (payload) => {
+    const player = players.get(socket.id);
+    if (!player) return;
+    const toName = String(payload?.toName || '').trim();
+    const title = String(payload?.title || '').trim();
+    const body = String(payload?.body || '').trim();
+    const itemsPayload = Array.isArray(payload?.items) ? payload.items : [];
+    const gold = Math.max(0, Number(payload?.gold || 0));
+    if (!toName) return socket.emit('mail_send_result', { ok: false, msg: '请输入收件人。' });
+    if (!title) return socket.emit('mail_send_result', { ok: false, msg: '请输入邮件标题。' });
+    if (!body) return socket.emit('mail_send_result', { ok: false, msg: '请输入邮件内容。' });
+
+    const target = await findCharacterByName(toName);
+    if (!target) return socket.emit('mail_send_result', { ok: false, msg: '收件人不存在。' });
+
+    const items = [];
+    if (itemsPayload.length) {
+      const grouped = new Map();
+      itemsPayload.forEach((entry) => {
+        const key = String(entry?.key || '').trim();
+        if (!key) return;
+        const qty = Math.max(1, Number(entry?.qty || 1));
+        grouped.set(key, (grouped.get(key) || 0) + qty);
+      });
+      for (const [key, totalQty] of grouped.entries()) {
+        const slot = resolveInventorySlotByKey(player, key);
+        if (!slot) return socket.emit('mail_send_result', { ok: false, msg: '背包里没有该物品。' });
+        const item = ITEM_TEMPLATES[slot.id];
+        if (!item) return socket.emit('mail_send_result', { ok: false, msg: '物品不存在。' });
+        if (item.type === 'currency') return socket.emit('mail_send_result', { ok: false, msg: '金币无法赠送。' });
+        const qty = Math.max(1, Math.min(Number(totalQty), Number(slot.qty || 1)));
+        if (qty <= 0 || qty > Number(slot.qty || 0)) {
+          return socket.emit('mail_send_result', { ok: false, msg: '背包里没有足够数量。' });
+        }
+      }
+      for (const [key, totalQty] of grouped.entries()) {
+        const slot = resolveInventorySlotByKey(player, key);
+        if (!slot) continue;
+        const qty = Math.max(1, Math.min(Number(totalQty), Number(slot.qty || 1)));
+        if (!removeItem(player, slot.id, qty, slot.effects)) {
+          return socket.emit('mail_send_result', { ok: false, msg: '背包里没有足够数量。' });
+        }
+        items.push({
+          id: slot.id,
+          qty,
+          effects: slot.effects || null,
+          durability: slot.durability ?? null,
+          max_durability: slot.max_durability ?? null
+        });
+      }
+    }
+
+    if (gold > 0) {
+      if (player.gold < gold) {
+        items.forEach((entry) => {
+          addItem(player, entry.id, entry.qty || 1, entry.effects || null, entry.durability ?? null, entry.max_durability ?? null);
+        });
+        return socket.emit('mail_send_result', { ok: false, msg: '金币不足。' });
+      }
+      player.gold -= gold;
+    }
+
+    await sendMail(target.user_id, player.name, title, body, items.length ? items : null, gold);
+    const onlineTarget = playersByName(toName);
+    if (onlineTarget) {
+      onlineTarget.send(`你收到来自 ${player.name} 的邮件：${title}`);
+    }
+    socket.emit('mail_send_result', { ok: true, msg: '邮件已发送。' });
+    await sendState(player);
+    await savePlayer(player);
+  });
+
+  socket.on('mail_claim', async (payload) => {
+    const player = players.get(socket.id);
+    if (!player) return;
+    const mailId = Number(payload?.mailId || 0);
+    if (!mailId) return socket.emit('mail_claim_result', { ok: false, msg: '邮件ID无效。' });
+    const mails = await listMail(player.userId);
+    const mail = mails.find((m) => m.id === mailId);
+    if (!mail) return socket.emit('mail_claim_result', { ok: false, msg: '邮件不存在。' });
+    if (mail.claimed_at) return socket.emit('mail_claim_result', { ok: false, msg: '附件已领取。' });
+    const items = parseJson(mail.items_json, []);
+    const gold = Number(mail.gold || 0);
+    if ((!items || !items.length) && gold <= 0) {
+      await markMailRead(player.userId, mailId);
+      return socket.emit('mail_claim_result', { ok: false, msg: '该邮件没有附件。' });
+    }
+    if (items && items.length) {
+      items.forEach((entry) => {
+        if (!entry || !entry.id) return;
+        addItem(player, entry.id, entry.qty || 1, entry.effects || null, entry.durability ?? null, entry.max_durability ?? null);
+      });
+    }
+    if (gold > 0) {
+      player.gold += gold;
+    }
+    await markMailClaimed(player.userId, mailId);
+    await markMailRead(player.userId, mailId);
+    socket.emit('mail_claim_result', { ok: true, msg: '附件已领取。' });
+    await sendState(player);
+    await savePlayer(player);
+  });
+
+  socket.on('mail_read', async (payload) => {
+    const player = players.get(socket.id);
+    if (!player) return;
+    const mailId = Number(payload?.mailId || 0);
+    if (!mailId) return;
+    await markMailRead(player.userId, mailId);
+    const mails = await listMail(player.userId);
+    socket.emit('mail_list', { ok: true, mails: mails.map(buildMailPayload) });
   });
 
   socket.on('guild_members', async () => {

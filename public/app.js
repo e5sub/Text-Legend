@@ -4,6 +4,9 @@ let activeChar = null;
 const classNames = { warrior: '战士', mage: '法师', taoist: '道士' };
 let selectedMob = null;
 let selectedSummonId = null;
+let mailCache = [];
+let selectedMailId = null;
+let mailAttachments = [];
 let lastState = null;
 let serverTimeBase = null;
 let serverTimeLocal = null;
@@ -212,6 +215,26 @@ const shopUi = {
   sellList: document.getElementById('shop-sell-list'),
   close: document.getElementById('shop-close'),
   sellBulk: document.getElementById('shop-sell-bulk')
+};
+const mailUi = {
+  modal: document.getElementById('mail-modal'),
+  list: document.getElementById('mail-list'),
+  detailTitle: document.getElementById('mail-detail-title'),
+  detailMeta: document.getElementById('mail-detail-meta'),
+  detailBody: document.getElementById('mail-detail-body'),
+  detailItems: document.getElementById('mail-detail-items'),
+  claim: document.getElementById('mail-claim'),
+  refresh: document.getElementById('mail-refresh'),
+  close: document.getElementById('mail-close'),
+  to: document.getElementById('mail-to'),
+  subject: document.getElementById('mail-subject'),
+  body: document.getElementById('mail-body'),
+  item: document.getElementById('mail-item'),
+  qty: document.getElementById('mail-qty'),
+  addItem: document.getElementById('mail-add-item'),
+  attachList: document.getElementById('mail-attach-list'),
+  gold: document.getElementById('mail-gold'),
+  send: document.getElementById('mail-send')
 };
 const repairUi = {
   modal: document.getElementById('repair-modal'),
@@ -1592,6 +1615,139 @@ function renderShopSellList(items) {
         socket.emit('cmd', { text: `sell ${key} ${qty}` });
       });
     shopUi.sellList.appendChild(btn);
+  });
+}
+
+function formatMailDate(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const mi = String(date.getMinutes()).padStart(2, '0');
+  return `${mm}-${dd} ${hh}:${mi}`;
+}
+
+function renderMailDetail(mail) {
+  if (!mailUi.detailTitle || !mailUi.detailBody || !mailUi.detailMeta || !mailUi.detailItems) return;
+  if (!mail) {
+    mailUi.detailTitle.textContent = '\u8BF7\u9009\u62E9\u90AE\u4EF6';
+    mailUi.detailMeta.textContent = '';
+    mailUi.detailBody.textContent = '';
+    mailUi.detailItems.textContent = '';
+    if (mailUi.claim) mailUi.claim.classList.add('hidden');
+    return;
+  }
+  mailUi.detailTitle.textContent = mail.title || '\u65E0\u6807\u9898';
+  const dateText = formatMailDate(mail.created_at);
+  mailUi.detailMeta.textContent = `${mail.from_name || '\u7CFB\u7EDF'}${dateText ? ` | ${dateText}` : ''}`;
+  mailUi.detailBody.textContent = mail.body || '';
+  const lines = [];
+  if (mail.gold && mail.gold > 0) {
+    lines.push(`\u91D1\u5E01: ${mail.gold}`);
+  }
+  if (mail.items && mail.items.length) {
+    const itemLines = mail.items.map((item) => `${formatItemName(item)} x${item.qty || 1}`);
+    lines.push(`\u9644\u4EF6: ${itemLines.join(', ')}`);
+  }
+  mailUi.detailItems.textContent = lines.join('\n');
+  if (mailUi.claim) {
+    if ((mail.items && mail.items.length) || (mail.gold && mail.gold > 0)) {
+      if (mail.claimed_at) {
+        mailUi.claim.classList.add('hidden');
+      } else {
+        mailUi.claim.classList.remove('hidden');
+      }
+    } else {
+      mailUi.claim.classList.add('hidden');
+    }
+  }
+}
+
+function renderMailList(mails) {
+  if (!mailUi.list) return;
+  mailCache = Array.isArray(mails) ? mails : [];
+  mailUi.list.innerHTML = '';
+  if (!mailCache.length) {
+    const empty = document.createElement('div');
+    empty.textContent = '\u6682\u65E0\u90AE\u4EF6';
+    mailUi.list.appendChild(empty);
+    renderMailDetail(null);
+    return;
+  }
+  mailCache.forEach((mail) => {
+    const row = document.createElement('div');
+    const unread = !mail.read_at;
+    const claimed = mail.claimed_at;
+    row.className = `mail-item${unread ? ' unread' : ''}${mail.id === selectedMailId ? ' active' : ''}`;
+    const flags = [];
+    if (unread) flags.push('\u672A\u8BFB');
+    if (claimed) flags.push('\u5DF2\u9886');
+    row.textContent = `${mail.title || '\u65E0\u6807\u9898'} - ${mail.from_name || '\u7CFB\u7EDF'}${flags.length ? ` (${flags.join('/')})` : ''}`;
+    row.addEventListener('click', () => {
+      selectedMailId = mail.id;
+      renderMailList(mailCache);
+      renderMailDetail(mail);
+      if (socket) socket.emit('mail_read', { mailId: mail.id });
+    });
+    mailUi.list.appendChild(row);
+  });
+  const active = mailCache.find((m) => m.id === selectedMailId) || mailCache[0];
+  selectedMailId = active?.id || null;
+  renderMailDetail(active);
+}
+
+function refreshMailItemOptions() {
+  if (!mailUi.item) return;
+  mailUi.item.innerHTML = '';
+  const empty = document.createElement('option');
+  empty.value = '';
+  empty.textContent = '\u4E0D\u8D60\u9001\u9644\u4EF6';
+  mailUi.item.appendChild(empty);
+  const items = (lastState?.items || []).filter((item) => item.type !== 'currency');
+  items.forEach((item) => {
+    const opt = document.createElement('option');
+    opt.value = item.key || item.id;
+    opt.textContent = `${formatItemName(item)} x${item.qty}`;
+    mailUi.item.appendChild(opt);
+  });
+}
+
+function openMailModal() {
+  if (!mailUi.modal) return;
+  mailAttachments = [];
+  renderMailAttachmentList();
+  if (mailUi.to) mailUi.to.value = '';
+  if (mailUi.subject) mailUi.subject.value = '';
+  if (mailUi.body) mailUi.body.value = '';
+  if (mailUi.item) mailUi.item.value = '';
+  if (mailUi.qty) mailUi.qty.value = '';
+  if (mailUi.gold) mailUi.gold.value = '';
+  refreshMailItemOptions();
+  mailUi.modal.classList.remove('hidden');
+  if (socket) socket.emit('mail_list');
+}
+
+function renderMailAttachmentList() {
+  if (!mailUi.attachList) return;
+  mailUi.attachList.innerHTML = '';
+  if (!mailAttachments.length) {
+    const empty = document.createElement('div');
+    empty.textContent = '\u6682\u65E0\u9644\u4EF6';
+    mailUi.attachList.appendChild(empty);
+    return;
+  }
+  mailAttachments.forEach((entry, index) => {
+    const btn = document.createElement('div');
+    btn.className = 'mail-attach-item';
+    btn.textContent = `${formatItemName(entry.item)} x${entry.qty}`;
+    btn.title = '\u70B9\u51FB\u5220\u9664';
+    btn.addEventListener('click', () => {
+      mailAttachments.splice(index, 1);
+      renderMailAttachmentList();
+    });
+    mailUi.attachList.appendChild(btn);
   });
 }
 
@@ -3116,6 +3272,9 @@ function renderState(state) {
   if (shopUi.modal && !shopUi.modal.classList.contains('hidden')) {
     renderShopSellList(state.items || []);
   }
+  if (mailUi.modal && !mailUi.modal.classList.contains('hidden')) {
+    refreshMailItemOptions();
+  }
   if (consignUi.modal && !consignUi.modal.classList.contains('hidden')) {
     renderConsignInventory(state.items || []);
   }
@@ -3206,6 +3365,10 @@ function renderState(state) {
     }
     if (a.id === 'guild') {
       showGuildModal();
+      return;
+    }
+    if (a.id === 'mail list') {
+      openMailModal();
       return;
     }
     if (a.id === 'vip claim') {
@@ -3563,6 +3726,30 @@ function enterGame(name) {
     consignHistoryItems = payload.items || [];
     renderConsignHistory(consignHistoryItems);
   });
+  socket.on('mail_list', (payload) => {
+    if (!payload || !payload.ok) return;
+    renderMailList(payload.mails || []);
+  });
+  socket.on('mail_send_result', (payload) => {
+    if (!payload) return;
+    showToast(payload.msg || '发送完成');
+    if (payload.ok && mailUi.to) {
+      mailUi.to.value = '';
+      if (mailUi.subject) mailUi.subject.value = '';
+      if (mailUi.body) mailUi.body.value = '';
+      if (mailUi.item) mailUi.item.value = '';
+      if (mailUi.qty) mailUi.qty.value = '';
+      if (mailUi.gold) mailUi.gold.value = '';
+      mailAttachments = [];
+      renderMailAttachmentList();
+      if (socket) socket.emit('mail_list');
+    }
+  });
+  socket.on('mail_claim_result', (payload) => {
+    if (!payload) return;
+    showToast(payload.msg || '领取完成');
+    if (payload.ok && socket) socket.emit('mail_list');
+  });
   socket.on('state', (payload) => {
     renderState(payload);
   });
@@ -3858,6 +4045,49 @@ if (shopUi.close) {
   shopUi.close.addEventListener('click', () => {
     shopUi.modal.classList.add('hidden');
     hideItemTooltip();
+  });
+}
+if (mailUi.close) {
+  mailUi.close.addEventListener('click', () => {
+    mailUi.modal.classList.add('hidden');
+  });
+}
+if (mailUi.refresh) {
+  mailUi.refresh.addEventListener('click', () => {
+    if (socket) socket.emit('mail_list');
+  });
+}
+if (mailUi.send) {
+  mailUi.send.addEventListener('click', () => {
+    if (!socket) return;
+    const toName = mailUi.to ? mailUi.to.value.trim() : '';
+    const title = mailUi.subject ? mailUi.subject.value.trim() : '';
+    const body = mailUi.body ? mailUi.body.value.trim() : '';
+    const gold = mailUi.gold ? Math.max(0, Number(mailUi.gold.value || 0)) : 0;
+    const items = mailAttachments.map((entry) => ({
+      key: entry.key,
+      qty: entry.qty
+    }));
+    socket.emit('mail_send', { toName, title, body, items, gold });
+  });
+}
+if (mailUi.claim) {
+  mailUi.claim.addEventListener('click', () => {
+    if (!socket || !selectedMailId) return;
+    socket.emit('mail_claim', { mailId: selectedMailId });
+  });
+}
+if (mailUi.addItem) {
+  mailUi.addItem.addEventListener('click', () => {
+    if (!mailUi.item) return;
+    const key = mailUi.item.value;
+    if (!key) return;
+    const qtyRaw = mailUi.qty ? Number(mailUi.qty.value || 1) : 1;
+    const qty = Math.max(1, Number.isNaN(qtyRaw) ? 1 : qtyRaw);
+    const item = (lastState?.items || []).find((i) => (i.key || i.id) === key);
+    if (!item) return;
+    mailAttachments.push({ key, qty, item });
+    renderMailAttachmentList();
   });
 }
 if (shopUi.sellBulk) {

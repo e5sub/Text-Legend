@@ -233,6 +233,42 @@
     </div>
   </div>
 
+  <div id="mail-modal" class="modal hidden">
+    <div class="modal-card mail-card">
+      <div class="modal-title">&#x90AE;&#x4EF6;</div>
+      <div class="mail-grid">
+        <div id="mail-list" class="mail-list"></div>
+        <div class="mail-detail">
+          <div id="mail-detail-title" class="mail-detail-title">&#x8BF7;&#x9009;&#x62E9;&#x90AE;&#x4EF6;</div>
+          <div id="mail-detail-meta" class="mail-detail-meta"></div>
+          <div id="mail-detail-body" class="mail-detail-body"></div>
+          <div id="mail-detail-items" class="mail-detail-items"></div>
+          <button id="mail-claim" class="hidden">&#x9886;&#x53D6;&#x9644;&#x4EF6;</button>
+        </div>
+      </div>
+      <div class="mail-compose">
+        <div class="mail-compose-title">&#x5199;&#x90AE;&#x4EF6;</div>
+        <input id="mail-to" type="text" placeholder="&#x6536;&#x4EF6;&#x4EBA;">
+        <input id="mail-subject" type="text" placeholder="&#x6807;&#x9898;">
+        <textarea id="mail-body" rows="3" placeholder="&#x7559;&#x8A00;&#x5185;&#x5BB9;"></textarea>
+        <div class="mail-attach-row">
+          <select id="mail-item"></select>
+          <input id="mail-qty" type="number" min="1" step="1" placeholder="&#x6570;&#x91CF;">
+          <button id="mail-add-item" type="button">&#x6DFB;&#x52A0;&#x9644;&#x4EF6;</button>
+        </div>
+        <div id="mail-attach-list" class="mail-attach-list"></div>
+        <div class="mail-gold-row">
+          <input id="mail-gold" type="number" min="0" step="1" placeholder="&#x9644;&#x4EF6;&#x91D1;&#x5E01; (&#x53EF;&#x9009;)" />
+        </div>
+        <button id="mail-send">&#x53D1;&#x9001;</button>
+      </div>
+      <div class="modal-actions">
+        <button id="mail-refresh">&#x5237;&#x65B0;</button>
+        <button id="mail-close">&#x5173;&#x95ED;</button>
+      </div>
+    </div>
+  </div>
+
   <div id="repair-modal" class="modal hidden">
     <div class="modal-card">
       <div class="modal-title">&#x88C5;&#x5907;&#x4FEE;&#x7406;</div>
