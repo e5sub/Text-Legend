@@ -1690,11 +1690,19 @@ export async function handleCommand({ player, players, input, source, send, part
         }
         // 如果目标有队伍且队伍未满员，且玩家没有队伍，直接加入目标的队伍
         if (targetParty && targetParty.members.length < PARTY_LIMIT && !party) {
+          if (targetParty.members.includes(player.name)) {
+            send('你已在队伍中。');
+            send(partyStatus(targetParty));
+            return;
+          }
+          targetParty.members.push(player.name);
           if (partyApi.persistParty) {
             await partyApi.persistParty(targetParty);
           }
           send(`你已加入 ${target.name} 的队伍。`);
+          send(partyStatus(targetParty));
           target.send(`${player.name} 已加入你的队伍。`);
+          target.send(partyStatus(targetParty));
           return;
         }
         // 如果目标已有队伍且队伍已满员，或者玩家已有队伍，按原逻辑处理
