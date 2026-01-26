@@ -1,7 +1,5 @@
 import { ROOM_VARIANT_COUNT } from './constants.js';
 
-import { ROOM_VARIANT_COUNT } from './constants.js';
-
 export const WORLD = {
   bq_town: {
     id: 'bq_town',
