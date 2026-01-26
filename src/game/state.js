@@ -255,17 +255,10 @@ export function removeMob(zoneId, roomId, mobId) {
     mob.hp = 0;
     mob.status = {};
     const tpl = MOB_TEMPLATES[mob.templateId];
-    const isBoss = tpl && (
-      tpl.worldBoss ||
-      tpl.sabakBoss ||
-      tpl.id.includes('boss') ||
-      tpl.id.includes('leader') ||
-      tpl.id.includes('demon') ||
-      ['bug_queen', 'huangquan', 'evil_snake', 'pig_white'].includes(tpl.id)
-    );
+    const isSpecial = Boolean(tpl && (tpl.worldBoss || tpl.sabakBoss || tpl.specialBoss));
     const delayMs = tpl && tpl.respawnMs
       ? tpl.respawnMs
-      : (tpl && (tpl.worldBoss || tpl.sabakBoss) ? 60 * 60 * 1000 : (isBoss ? 10 * 60 * 1000 : 1 * 1000));
+      : (isSpecial ? 60 * 60 * 1000 : 1 * 1000);
     mob.respawnAt = Date.now() + delayMs;
     if (delayMs > 0) {
       RESPAWN_CACHE.set(respawnKey(zoneId, roomId, mob.slotIndex), {

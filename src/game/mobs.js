@@ -15,7 +15,7 @@
   // Snake valley
   red_snake: { id: 'red_snake', name: '红蛇', level: 10, hp: 160, atk: 20, def: 5, mdef: 5, exp: 130, gold: [12, 26], drops: [{ id: 'potion_mid', chance: 0.08 }] },
   tiger_snake: { id: 'tiger_snake', name: '虎蛇', level: 11, hp: 180, atk: 22, def: 6, mdef: 6, exp: 150, gold: [14, 28], drops: [{ id: 'potion_mid', chance: 0.08 }] },
-  evil_snake: { id: 'evil_snake', name: '邪恶毒蛇', level: 26, hp: 980, atk: 60, def: 24, mdef: 24, exp: 820, gold: [120, 240], drops: [{ id: 'necklace_green', chance: 0.1 }, { id: 'ring_tiger', chance: 0.1 }] },
+  evil_snake: { id: 'evil_snake', name: '邪恶毒蛇', level: 26, hp: 980, atk: 60, def: 24, mdef: 24, exp: 820, gold: [120, 240], respawnMs: 5 * 60 * 1000, drops: [{ id: 'necklace_green', chance: 0.1 }, { id: 'ring_tiger', chance: 0.1 }] },
 
   // Mine / cave
   skeleton: { id: 'skeleton', name: '骷髅', level: 6, hp: 120, atk: 14, def: 4, mdef: 4, exp: 70, gold: [8, 18], drops: [{ id: 'potion_small', chance: 0.12 }, { id: 'sword_wood', chance: 0.03 }] },
@@ -35,7 +35,7 @@
   // Stone tomb
   pig_red: { id: 'pig_red', name: '红野猪', level: 18, hp: 420, atk: 34, def: 14, mdef: 14, exp: 320, gold: [26, 52], drops: [{ id: 'potion_mid', chance: 0.12 }] },
   pig_black: { id: 'pig_black', name: '黑野猪', level: 20, hp: 480, atk: 38, def: 16, mdef: 16, exp: 360, gold: [30, 60], drops: [{ id: 'potion_mid', chance: 0.12 }] },
-  pig_white: { id: 'pig_white', name: '白野猪', level: 26, hp: 980, atk: 56, def: 22, mdef: 22, exp: 760, gold: [100, 200], drops: [{ id: 'ring_strength', chance: 0.08 }, { id: 'ring_bone', chance: 0.08 }, { id: 'ring_tao', chance: 0.08 }] },
+  pig_white: { id: 'pig_white', name: '白野猪', level: 26, hp: 980, atk: 56, def: 22, mdef: 22, exp: 760, gold: [100, 200], respawnMs: 5 * 60 * 1000, drops: [{ id: 'ring_strength', chance: 0.08 }, { id: 'ring_bone', chance: 0.08 }, { id: 'ring_tao', chance: 0.08 }] },
 
   // Woma
   woma_guard: { id: 'woma_guard', name: '沃玛卫士', level: 22, hp: 620, atk: 48, def: 22, mdef: 22, exp: 520, gold: [60, 120], drops: [{ id: 'necklace_life', chance: 0.02 }, { id: 'ring_ruby', chance: 0.02 }] },
@@ -116,14 +116,14 @@
   // Fengmo
   fmg_pig: { id: 'fmg_pig', name: '虹魔猪卫', level: 34, hp: 1500, atk: 80, def: 34, mdef: 34, exp: 1200, gold: [180, 300], drops: [{ id: 'ring_strength', chance: 0.05 }] },
   fmg_scorpion: { id: 'fmg_scorpion', name: '虹魔蝎卫', level: 34, hp: 1500, atk: 80, def: 34, mdef: 34, exp: 1200, gold: [180, 300], drops: [{ id: 'ring_bone', chance: 0.05 }] },
-  fmg_demon: { id: 'fmg_demon', name: '虹魔教主', level: 38, hp: 3380, atk: 125, def: 57, mdef: 57, exp: 2600, gold: [338, 546], drops: [
+  fmg_demon: { id: 'fmg_demon', name: '虹魔教主', level: 38, hp: 3380, atk: 125, def: 57, mdef: 57, exp: 2600, gold: [338, 546], respawnMs: 5 * 60 * 1000, drops: [
     { id: 'ring_strength', chance: 0.06 },
     { id: 'ring_bone', chance: 0.06 },
     { id: 'ring_tao', chance: 0.06 }
   ] },
 
   // Baibimu / jungle
-  tree_demon: { id: 'tree_demon', name: '千年树妖', level: 32, hp: 1800, atk: 78, def: 38, mdef: 38, exp: 1400, gold: [200, 320], drops: [
+  tree_demon: { id: 'tree_demon', name: '千年树妖', level: 32, hp: 1800, atk: 78, def: 38, mdef: 38, exp: 1400, gold: [200, 320], respawnMs: 5 * 60 * 1000, drops: [
     { id: 'necklace_luck', chance: 0.12 },
     { id: 'necklace_green', chance: 0.06 },
     { id: 'ring_tiger', chance: 0.05 },
@@ -134,12 +134,12 @@
   // Cangyue island
   bone_soldier: { id: 'bone_soldier', name: '骷髅战士', level: 30, hp: 1000, atk: 70, def: 30, mdef: 30, exp: 820, gold: [100, 200], drops: [{ id: 'ring_tiger', chance: 0.05 }] },
   bone_general: { id: 'bone_general', name: '骷髅将军', level: 34, hp: 1400, atk: 82, def: 36, mdef: 36, exp: 1200, gold: [160, 260], drops: [{ id: 'necklace_green', chance: 0.06 }] },
-  huangquan: { id: 'huangquan', name: '黄泉教主', level: 38, hp: 3380, atk: 125, def: 57, mdef: 57, exp: 2600, gold: [338, 546], drops: [{ id: 'ring_holy', chance: 0.04 }, { id: 'ring_fashen', chance: 0.04 }, { id: 'ring_tianzun', chance: 0.04 }, { id: 'book_war_savage', chance: 0.03 }, { id: 'book_mage_flash', chance: 0.03 }, { id: 'book_tao_shield', chance: 0.03 }] },
+  huangquan: { id: 'huangquan', name: '黄泉教主', level: 38, hp: 3380, atk: 125, def: 57, mdef: 57, exp: 2600, gold: [338, 546], respawnMs: 5 * 60 * 1000, drops: [{ id: 'ring_holy', chance: 0.04 }, { id: 'ring_fashen', chance: 0.04 }, { id: 'ring_tianzun', chance: 0.04 }, { id: 'book_war_savage', chance: 0.03 }, { id: 'book_mage_flash', chance: 0.03 }, { id: 'book_tao_shield', chance: 0.03 }] },
 
   // Niumo temple
   nmmob: { id: 'nmmob', name: '牛魔将军', level: 38, hp: 1800, atk: 92, def: 42, mdef: 42, exp: 1600, gold: [200, 360], drops: [{ id: 'ring_strength', chance: 0.06 }] },
   nm_mage: { id: 'nm_mage', name: '牛魔法师', level: 36, hp: 1500, atk: 86, def: 38, mdef: 38, exp: 1400, gold: [180, 320], drops: [{ id: 'ring_bone', chance: 0.06 }] },
-  nm_boss: { id: 'nm_boss', name: '牛魔王', level: 45, hp: 5200, atk: 156, def: 78, mdef: 78, exp: 4160, gold: [780, 1300], drops: [
+  nm_boss: { id: 'nm_boss', name: '牛魔王', level: 45, hp: 5200, atk: 156, def: 78, mdef: 78, exp: 4160, gold: [780, 1300], respawnMs: 5 * 60 * 1000, drops: [
     { id: 'juejudao', chance: 0.04 },
     { id: 'blood_drink', chance: 0.04 },
     { id: 'longwen', chance: 0.04 },
