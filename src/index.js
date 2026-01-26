@@ -3143,59 +3143,62 @@ function tryAutoBuff(player) {
   const enabledIds = autoSkill === 'all'
     ? new Set(learnedBuffs.map((skill) => skill.id))
     : new Set(Array.isArray(autoSkill) ? autoSkill : [autoSkill]);
-  const buffSkill = learnedBuffs.find((skill) => enabledIds.has(skill.id));
-  if (!buffSkill) return false;
-  if (player.mp < buffSkill.mp) return false;
+  const enabledSkills = learnedBuffs.filter((skill) => enabledIds.has(skill.id));
+  if (!enabledSkills.length) return false;
 
   const now = Date.now();
-  if (buffSkill.type === 'buff_shield') {
-    const shield = player.status?.buffs?.magicShield;
-    if (shield && (!shield.expiresAt || shield.expiresAt >= now + 5000)) return false;
+  for (const buffSkill of enabledSkills) {
+    if (player.mp < buffSkill.mp) continue;
+    if (buffSkill.type === 'buff_shield') {
+      const shield = player.status?.buffs?.magicShield;
+      if (shield && (!shield.expiresAt || shield.expiresAt >= now + 5000)) continue;
+      player.mp = clamp(player.mp - buffSkill.mp, 0, player.max_mp);
+      const skillLevel = getSkillLevel(player, buffSkill.id);
+      const duration = 120 + skillLevel * 60;
+      const ratio = 0.6 + (skillLevel - 1) * 0.1;
+      applyBuff(player, { key: 'magicShield', expiresAt: now + duration * 1000, ratio });
+      player.send(`自动施放 ${buffSkill.name}，持续 ${duration} 秒。`);
+      return true;
+    }
+
+    const party = getPartyByMember(player.name);
+    const members = party
+      ? listOnlinePlayers().filter(
+          (p) =>
+            party.members.includes(p.name) &&
+            p.position.zone === player.position.zone &&
+            p.position.room === player.position.room
+        )
+      : [player];
+    const targets = members.slice();
+    members.forEach((p) => {
+      if (p.summon && p.summon.hp > 0) targets.push(p.summon);
+    });
+
+    const buffKey = buffSkill.type === 'buff_mdef' ? 'mdefBuff' : 'defBuff';
+    const multiplierKey = buffSkill.type === 'buff_mdef' ? 'mdefMultiplier' : 'defMultiplier';
+    const buffActive = targets.every((p) => {
+      const buff = p.status?.buffs?.[buffKey];
+      if (!buff) return false;
+      if (buff.expiresAt && buff.expiresAt < now + 5000) return false;
+      return true;
+    });
+    if (buffActive) continue;
+
     player.mp = clamp(player.mp - buffSkill.mp, 0, player.max_mp);
-    const skillLevel = getSkillLevel(player, buffSkill.id);
-    const duration = 120 + skillLevel * 60;
-    const ratio = 0.6 + (skillLevel - 1) * 0.1;
-    applyBuff(player, { key: 'magicShield', expiresAt: now + duration * 1000, ratio });
+    const duration = 60;
+    const buffPayload = { key: buffKey, expiresAt: now + duration * 1000, [multiplierKey]: 1.1 };
+
+    targets.forEach((p) => {
+      applyBuff(p, buffPayload);
+      if (p.send && p.name !== player.name) {
+        p.send(`${player.name} 自动为你施放 ${buffSkill.name}。`);
+      }
+    });
     player.send(`自动施放 ${buffSkill.name}，持续 ${duration} 秒。`);
     return true;
   }
-
-  const party = getPartyByMember(player.name);
-  const members = party
-    ? listOnlinePlayers().filter(
-        (p) =>
-          party.members.includes(p.name) &&
-          p.position.zone === player.position.zone &&
-          p.position.room === player.position.room
-      )
-    : [player];
-  const targets = members.slice();
-  members.forEach((p) => {
-    if (p.summon && p.summon.hp > 0) targets.push(p.summon);
-  });
-
-  const buffKey = buffSkill.type === 'buff_mdef' ? 'mdefBuff' : 'defBuff';
-  const multiplierKey = buffSkill.type === 'buff_mdef' ? 'mdefMultiplier' : 'defMultiplier';
-  const buffActive = targets.every((p) => {
-    const buff = p.status?.buffs?.[buffKey];
-    if (!buff) return false;
-    if (buff.expiresAt && buff.expiresAt < now + 5000) return false;
-    return true;
-  });
-  if (buffActive) return false;
-
-  player.mp = clamp(player.mp - buffSkill.mp, 0, player.max_mp);
-  const duration = 60;
-  const buffPayload = { key: buffKey, expiresAt: now + duration * 1000, [multiplierKey]: 1.1 };
-
-  targets.forEach((p) => {
-    applyBuff(p, buffPayload);
-    if (p.send && p.name !== player.name) {
-      p.send(`${player.name} 自动为你施放 ${buffSkill.name}。`);
-    }
-  });
-  player.send(`自动施放 ${buffSkill.name}，持续 ${duration} 秒。`);
-  return true;
+  return false;
 }
 
 function pickCombatSkillId(player, combatSkillId) {

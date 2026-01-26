@@ -81,6 +81,7 @@ export const BOOK_SKILLS = {
 };
 
 export const SKILL_MASTERY_LEVELS = [0, 100, 400];
+const MAX_SKILL_LEVEL = SKILL_MASTERY_LEVELS.length;
 
 function ensureSkillMastery(player) {
   if (!player.flags) player.flags = {};
@@ -89,27 +90,11 @@ function ensureSkillMastery(player) {
 }
 
 export function getSkillLevel(player, skillId) {
-  const mastery = ensureSkillMastery(player);
-  const record = mastery[skillId];
-  return record ? record.level || 1 : 1;
+  return MAX_SKILL_LEVEL;
 }
 
 export function gainSkillMastery(player, skillId, amount = 1) {
-  const mastery = ensureSkillMastery(player);
-  const record = mastery[skillId] || { level: 1, exp: 0 };
-  if (record.level >= 3) {
-    mastery[skillId] = record;
-    return false;
-  }
-  record.exp += amount;
-  const nextThreshold = SKILL_MASTERY_LEVELS[record.level];
-  if (record.exp >= nextThreshold) {
-    record.level += 1;
-    record.exp = 0;
-    mastery[skillId] = record;
-    return true;
-  }
-  mastery[skillId] = record;
+  ensureSkillMastery(player);
   return false;
 }
 
