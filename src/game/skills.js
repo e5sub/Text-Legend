@@ -1,28 +1,28 @@
 export const SKILLS = {
   warrior: {
     slash: { id: 'slash', name: '\u57fa\u672c\u5251\u672f', mp: 0, power: 1.0, type: 'attack' },
-    attack: { id: 'attack', name: '\u653b\u6740\u5251\u672f', mp: 0, power: 1.2, type: 'attack' },
-    assassinate: { id: 'assassinate', name: '\u523a\u6740\u5251\u672f', mp: 0, power: 1.4, type: 'attack' },
-    halfmoon: { id: 'halfmoon', name: '\u534a\u6708\u5f2f\u5200', mp: 12, power: 1.1, type: 'cleave' },
-    firestrike: { id: 'firestrike', name: '\u70c8\u706b\u5251\u6cd5', mp: 18, power: 2.0, type: 'attack', cooldown: 5000 },
-    savage: { id: 'savage', name: '\u91ce\u86ee\u51b2\u649e', mp: 12, power: 1.1, type: 'attack' }
+    attack: { id: 'attack', name: '\u653b\u6740\u5251\u672f', mp: 0, power: 1.3, type: 'attack' },
+    assassinate: { id: 'assassinate', name: '\u523a\u6740\u5251\u672f', mp: 0, power: 1.6, type: 'attack' },
+    halfmoon: { id: 'halfmoon', name: '\u534a\u6708\u5f2f\u5200', mp: 12, power: 1.2, type: 'cleave' },
+    firestrike: { id: 'firestrike', name: '\u70c8\u706b\u5251\u6cd5', mp: 18, power: 2.2, type: 'attack', cooldown: 5000 },
+    savage: { id: 'savage', name: '\u91ce\u86ee\u51b2\u649e', mp: 12, power: 1.2, type: 'attack' }
   },
   mage: {
-    fireball: { id: 'fireball', name: '\u5c0f\u706b\u7403', mp: 10, power: 1.3, type: 'spell' },
+    fireball: { id: 'fireball', name: '\u5c0f\u706b\u7403', mp: 10, power: 1.15, type: 'spell' },
     resist: { id: 'resist', name: '\u6297\u62d2\u706b\u73af', mp: 12, power: 0.6, type: 'repel' },
-    inferno: { id: 'inferno', name: '\u5730\u72f1\u706b', mp: 12, power: 1.2, type: 'spell' },
-    explode: { id: 'explode', name: '\u7206\u88c2\u706b\u7130', mp: 14, power: 1.4, type: 'spell' },
-    lightning: { id: 'lightning', name: '\u96f7\u7535\u672f', mp: 16, power: 1.7, type: 'spell' },
-    flash: { id: 'flash', name: '\u75be\u5149\u7535\u5f71', mp: 18, power: 1.5, type: 'spell' },
-    thunder: { id: 'thunder', name: '\u5730\u72f1\u96f7\u5149', mp: 20, power: 1.3, type: 'aoe' },
+    inferno: { id: 'inferno', name: '\u5730\u72f1\u706b', mp: 12, power: 1.15, type: 'spell' },
+    explode: { id: 'explode', name: '\u7206\u88c2\u706b\u7130', mp: 14, power: 1.25, type: 'spell' },
+    lightning: { id: 'lightning', name: '\u96f7\u7535\u672f', mp: 16, power: 1.45, type: 'spell' },
+    flash: { id: 'flash', name: '\u75be\u5149\u7535\u5f71', mp: 18, power: 1.3, type: 'spell' },
+    thunder: { id: 'thunder', name: '\u5730\u72f1\u96f7\u5149', mp: 20, power: 1.15, type: 'aoe' },
     shield: { id: 'shield', name: '\u9b54\u6cd5\u76fe', mp: 22, power: 1.0, type: 'buff_shield' },
-    iceblast: { id: 'iceblast', name: '\u51b0\u54c6\u54ee', mp: 24, power: 2.0, type: 'spell' }
+    iceblast: { id: 'iceblast', name: '\u51b0\u54c6\u54ee', mp: 24, power: 1.6, type: 'spell' }
   },
   taoist: {
     heal: { id: 'heal', name: '\u6cbb\u6108\u672f', mp: 12, power: 1.0, type: 'heal' },
     group_heal: { id: 'group_heal', name: '\u7fa4\u4f53\u6cbb\u7597\u672f', mp: 22, power: 1.0, type: 'heal_group' },
-    poison: { id: 'poison', name: '\u65bd\u6bd2\u672f', mp: 10, power: 0.6, type: 'dot' },
-    soul: { id: 'soul', name: '\u7075\u9b42\u706b\u7b26', mp: 14, power: 1.4, type: 'spell' },
+    poison: { id: 'poison', name: '\u65bd\u6bd2\u672f', mp: 10, power: 0.75, type: 'dot' },
+    soul: { id: 'soul', name: '\u7075\u9b42\u706b\u7b26', mp: 14, power: 1.5, type: 'spell' },
     invis: { id: 'invis', name: '\u9690\u8eab\u672f', mp: 14, power: 1.0, type: 'stealth' },
     group_invis: { id: 'group_invis', name: '\u7fa4\u4f53\u9690\u8eab\u672f', mp: 22, power: 1.0, type: 'stealth_group' },
     armor: { id: 'armor', name: '\u795e\u5723\u6218\u7532\u672f', mp: 18, power: 1.0, type: 'buff_def' },
