@@ -3865,7 +3865,7 @@ if (shopUi.sellBulk) {
     if (!socket) return;
     const confirmed = await confirmModal({
       title: '\u4E00\u952E\u552E\u5356',
-      text: '\u5C06\u51FA\u552E\u65E0\u7279\u6548\u88C5\u5907\uFF0C\u4EE5\u53CA\u53F2\u8BD7\u4EE5\u4E0B\u88C5\u5907\u3002\u786E\u5B9A\u5417\uFF1F'
+      text: '\u5C06\u51FA\u552E\u65E0\u7279\u6548\u4E14\u53F2\u8BD7\u4EE5\u4E0B\u7684\u88C5\u5907\u3002\u786E\u5B9A\u5417\uFF1F'
     });
     if (!confirmed) return;
     socket.emit('cmd', { text: 'sell_bulk', source: 'ui' });
