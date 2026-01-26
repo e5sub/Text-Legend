@@ -500,6 +500,19 @@ function getHealMultiplier(target) {
   return debuff.healMultiplier || 1;
 }
 
+function getSpiritValue(target) {
+  if (!target) return 0;
+  const base = Number(target.spirit ?? target.atk ?? 0) || 0;
+  const buff = target.status?.buffs?.spiritBoost;
+  if (!buff) return base;
+  const now = Date.now();
+  if (buff.expiresAt && buff.expiresAt < now) {
+    if (target.status?.buffs) delete target.status.buffs.spiritBoost;
+    return base;
+  }
+  return Math.floor(base * (buff.multiplier || 1));
+}
+
 export function summonStats(player, skill, summonLevelOverride = null) {
   const base = skill.summon;
   const skillLevel = getSkillLevel(player, skill.id);
@@ -1099,7 +1112,7 @@ export async function handleCommand({ player, players, input, source, send, part
           }
         }
         player.mp -= skill.mp;
-        const baseHeal = Math.floor((player.spirit || 0) * 0.8 * power + player.level * 4);
+        const baseHeal = Math.floor(getSpiritValue(player) * 0.8 * power + player.level * 4);
         if (targetIsSummon) {
           target.hp = clamp(target.hp + baseHeal, 1, target.max_hp);
           send(`你为 ${target.name} 施放了 ${skill.name}，恢复 ${baseHeal} 点生命。`);
@@ -1136,7 +1149,7 @@ export async function handleCommand({ player, players, input, source, send, part
           });
         });
         player.mp -= skill.mp;
-        const baseHeal = Math.floor((player.spirit || 0) * 0.8 * power + player.level * 4);
+        const baseHeal = Math.floor(getSpiritValue(player) * 0.8 * power + player.level * 4);
         const groupHeal = Math.max(1, Math.floor(baseHeal * 0.3));
         members.forEach((member) => {
           const heal = Math.max(1, Math.floor(groupHeal * getHealMultiplier(member)));
@@ -1235,24 +1248,48 @@ export async function handleCommand({ player, players, input, source, send, part
         notifyMastery(player, skill);
         return;
       }
-      if (skill.type === 'stealth' || skill.type === 'stealth_group') {
+      if (skill.type === 'stealth') {
         if (player.mp < skill.mp) return send('魔法不足。');
         player.mp -= skill.mp;
         const duration = 90 + skillLevel * 45;
-        const party = partyApi?.getPartyByMember ? partyApi.getPartyByMember(player.name) : null;
-        const targets = skill.type === 'stealth_group' && party
-          ? players.filter(
-              (p) =>
-                party.members.includes(p.name) &&
-                p.position.zone === player.position.zone &&
-                p.position.room === player.position.room
-            )
-          : [player];
+        const targets = [player];
         targets.forEach((p) => {
           applyBuff(p, { key: 'invisible', expiresAt: Date.now() + duration * 1000 });
           p.send(`${player.name} 为你施放了 ${skill.name}。`);
         });
         send(`你施放了 ${skill.name}，持续 ${duration} 秒。`);
+        notifyMastery(player, skill);
+        return;
+      }
+      if (skill.type === 'stealth_group') {
+        if (player.mp < skill.mp) return send('魔法不足。');
+        if (skill.cooldown) {
+          if (!player.status) player.status = {};
+          if (!player.status.skillCooldowns) player.status.skillCooldowns = {};
+          const now = Date.now();
+          const lastUse = player.status.skillCooldowns[skill.id] || 0;
+          const cooldownRemaining = Math.max(0, lastUse + skill.cooldown - now);
+          if (cooldownRemaining > 0) {
+            send(`${skill.name} 冷却中，还需 ${Math.ceil(cooldownRemaining / 1000)} 秒。`);
+            return;
+          }
+        }
+        player.mp -= skill.mp;
+        const duration = 5;
+        const now = Date.now();
+        const targets = [player, ...getAliveSummons(player)];
+        targets.forEach((p) => {
+          if (!p.status) p.status = {};
+          if (!p.status.buffs) p.status.buffs = {};
+          p.status.invincible = now + duration * 1000;
+          applyBuff(p, { key: 'spiritBoost', expiresAt: now + duration * 1000, multiplier: 2 });
+        });
+        if (skill.cooldown) {
+          if (!player.status) player.status = {};
+          if (!player.status.skillCooldowns) player.status.skillCooldowns = {};
+          player.status.skillCooldowns[skill.id] = Date.now();
+        }
+        send(`你施放了 ${skill.name}，自己和召唤物 ${duration} 秒内免疫所有伤害，道术提升100%。`);
         notifyMastery(player, skill);
         return;
       }

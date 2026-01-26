@@ -1661,7 +1661,35 @@ function hasHealBlockEffect(player) {
   return Object.values(player.equipment || {}).some((eq) => eq && eq.effects && eq.effects.healblock);
 }
 
+function isInvincible(target) {
+  const until = target?.status?.invincible;
+  if (!until) return false;
+  if (until > Date.now()) return true;
+  if (target.status) delete target.status.invincible;
+  return false;
+}
+
+function getSpiritValue(target) {
+  if (!target) return 0;
+  const base = Number(target.spirit ?? target.atk ?? 0) || 0;
+  const buff = target.status?.buffs?.spiritBoost;
+  if (!buff) return base;
+  const now = Date.now();
+  if (buff.expiresAt && buff.expiresAt < now) {
+    if (target.status?.buffs) delete target.status.buffs.spiritBoost;
+    return base;
+  }
+  return Math.floor(base * (buff.multiplier || 1));
+}
+
+function applyDamageToSummon(target, dmg) {
+  if (isInvincible(target)) return 0;
+  applyDamage(target, dmg);
+  return dmg;
+}
+
 function applyDamageToPlayer(target, dmg) {
+  if (isInvincible(target)) return 0;
   if (target.status?.buffs?.magicShield) {
     const buff = target.status.buffs.magicShield;
     if (buff.expiresAt && buff.expiresAt < Date.now()) {
@@ -1689,6 +1717,7 @@ function applyDamageToPlayer(target, dmg) {
     }
   }
   applyDamage(target, dmg);
+  return dmg;
 }
 
 function tryRevive(player) {
@@ -2486,10 +2515,10 @@ function retaliateMobAgainstPlayer(mob, player, online) {
   }
 
   if (mobTarget && mobTarget.userId) {
-    applyDamageToPlayer(mobTarget, dmg);
-    mobTarget.send(`${mob.name} 对你造成 ${dmg} 点伤害。`);
+    const damageDealt = applyDamageToPlayer(mobTarget, dmg);
+    mobTarget.send(`${mob.name} 对你造成 ${damageDealt} 点伤害。`);
     if (mobTarget !== player) {
-      player.send(`${mob.name} 攻击 ${mobTarget.name}，造成 ${dmg} 点伤害。`);
+      player.send(`${mob.name} 攻击 ${mobTarget.name}，造成 ${damageDealt} 点伤害。`);
     }
     if (mobTarget.hp <= 0 && mobTarget !== player && !tryRevive(mobTarget)) {
       handleDeath(mobTarget);
@@ -2506,8 +2535,8 @@ function retaliateMobAgainstPlayer(mob, player, online) {
       );
       
       roomPlayers.forEach((splashTarget) => {
-        applyDamageToPlayer(splashTarget, splashDmg);
-        splashTarget.send(`${mob.name} 的攻击溅射到你，造成 ${splashDmg} 点伤害。`);
+        const splashDealt = applyDamageToPlayer(splashTarget, splashDmg);
+        splashTarget.send(`${mob.name} 的攻击溅射到你，造成 ${splashDealt} 点伤害。`);
         if (splashTarget.hp <= 0 && !tryRevive(splashTarget)) {
           handleDeath(splashTarget);
         }
@@ -2515,7 +2544,7 @@ function retaliateMobAgainstPlayer(mob, player, online) {
         // 溅射到召唤物
         const splashSummons = getAliveSummons(splashTarget);
         splashSummons.forEach((summon) => {
-          applyDamage(summon, splashDmg);
+          applyDamageToSummon(summon, splashDmg);
           splashTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${splashDmg} 点伤害。`);
           if (summon.hp <= 0) {
             splashTarget.send(`${summon.name} 被击败。`);
@@ -2529,10 +2558,10 @@ function retaliateMobAgainstPlayer(mob, player, online) {
       if (mobTarget && mobTarget.userId) {
         const targetSummons = getAliveSummons(mobTarget);
         targetSummons.forEach((summon) => {
-          applyDamage(summon, splashDmg);
-          mobTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${splashDmg} 点伤害。`);
-          if (summon.hp <= 0) {
-            mobTarget.send(`${summon.name} 被击败。`);
+        applyDamageToSummon(summon, splashDmg);
+        mobTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${splashDmg} 点伤害。`);
+        if (summon.hp <= 0) {
+          mobTarget.send(`${summon.name} 被击败。`);
             removeSummonById(mobTarget, summon.id);
             autoResummon(mobTarget, summon.id);
           }
@@ -2542,7 +2571,7 @@ function retaliateMobAgainstPlayer(mob, player, online) {
     
     return;
   }
-  applyDamage(mobTarget, dmg);
+  applyDamageToSummon(mobTarget, dmg);
   player.send(`${mob.name} 对 ${mobTarget.name} 造成 ${dmg} 点伤害。`);
   
   // 特殊BOSS溅射效果：主目标是召唤物时，对玩家和房间所有其他玩家及召唤物造成BOSS攻击力50%的溅射伤害
@@ -2551,11 +2580,11 @@ function retaliateMobAgainstPlayer(mob, player, online) {
     
     // 溅射到召唤物的主人
     if (player && player.hp > 0) {
-      applyDamageToPlayer(player, splashDmg);
-      player.send(`${mob.name} 的攻击溅射到你，造成 ${splashDmg} 点伤害。`);
-      if (player.hp <= 0 && !tryRevive(player)) {
-        handleDeath(player);
-      }
+    const splashDealt = applyDamageToPlayer(player, splashDmg);
+    player.send(`${mob.name} 的攻击溅射到你，造成 ${splashDealt} 点伤害。`);
+    if (player.hp <= 0 && !tryRevive(player)) {
+      handleDeath(player);
+    }
     }
     
     // 溅射到房间所有其他玩家和召唤物
@@ -2567,8 +2596,8 @@ function retaliateMobAgainstPlayer(mob, player, online) {
     );
     
     roomPlayers.forEach((splashTarget) => {
-      applyDamageToPlayer(splashTarget, splashDmg);
-      splashTarget.send(`${mob.name} 的攻击溅射到你，造成 ${splashDmg} 点伤害。`);
+      const splashDealt = applyDamageToPlayer(splashTarget, splashDmg);
+      splashTarget.send(`${mob.name} 的攻击溅射到你，造成 ${splashDealt} 点伤害。`);
       if (splashTarget.hp <= 0 && !tryRevive(splashTarget)) {
         handleDeath(splashTarget);
       }
@@ -2576,7 +2605,7 @@ function retaliateMobAgainstPlayer(mob, player, online) {
       // 溅射到其他玩家的召唤物
       const splashSummons = getAliveSummons(splashTarget);
       splashSummons.forEach((summon) => {
-        applyDamage(summon, splashDmg);
+        applyDamageToSummon(summon, splashDmg);
         splashTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${splashDmg} 点伤害。`);
         if (summon.hp <= 0) {
           splashTarget.send(`${summon.name} 被击败。`);
@@ -3433,7 +3462,7 @@ function tryAutoHeal(player) {
     const hasLow = allCandidates.some((c) => c.target.hp / c.target.max_hp < healThreshold);
     if (hasLow) {
       player.mp = clamp(player.mp - groupHealSkill.mp, 0, player.max_mp);
-      const baseHeal = Math.floor((player.spirit || 0) * 0.8 * scaledSkillPower(healSkill, getSkillLevel(player, healSkill.id)) + player.level * 4);
+      const baseHeal = Math.floor(getSpiritValue(player) * 0.8 * scaledSkillPower(healSkill, getSkillLevel(player, healSkill.id)) + player.level * 4);
       const groupHeal = Math.max(1, Math.floor(baseHeal * 0.3));
       candidates.forEach((entry) => {
         if (entry.isSummon) return;
@@ -3456,7 +3485,7 @@ function tryAutoHeal(player) {
   const toHeal = candidates[0];
 
   player.mp = clamp(player.mp - healSkill.mp, 0, player.max_mp);
-  const baseHeal = Math.floor((player.spirit || 0) * 0.8 * scaledSkillPower(healSkill, getSkillLevel(player, healSkill.id)) + player.level * 4);
+  const baseHeal = Math.floor(getSpiritValue(player) * 0.8 * scaledSkillPower(healSkill, getSkillLevel(player, healSkill.id)) + player.level * 4);
   const heal = Math.max(1, Math.floor(baseHeal * getHealMultiplier(player)));
 
   if (toHeal.isSummon) {
@@ -4144,7 +4173,7 @@ async function combatTick() {
         if (skill.type === 'spell' || skill.type === 'aoe') {
           const mdefMultiplier = getMagicDefenseMultiplier(target);
           const mdef = Math.floor((target.mdef || 0) * mdefMultiplier);
-          const powerStat = skill.id === 'soul' ? (player.spirit || 0) : (player.mag || 0);
+          const powerStat = skill.id === 'soul' ? getSpiritValue(player) : (player.mag || 0);
           // 道士的soul技能受防御和魔御各50%影响
           if (skill.id === 'soul') {
             const defMultiplier = getDefenseMultiplier(target);
@@ -4159,7 +4188,7 @@ async function combatTick() {
           const defMultiplier = getDefenseMultiplier(target);
           const mdef = Math.floor((target.mdef || 0) * mdefMultiplier);
           const def = Math.floor((target.def || 0) * defMultiplier);
-          const spirit = player.spirit || 0;
+          const spirit = getSpiritValue(player);
           // 道术攻击受防御和魔御各50%影响
           dmg = Math.max(1, Math.floor((spirit + randInt(0, spirit / 2)) * skillPower - mdef * 0.3 - def * 0.3));
         } else {
@@ -4200,18 +4229,18 @@ async function combatTick() {
         }
       }
 
-        applyDamageToPlayer(target, dmg);
+        const damageDealt = applyDamageToPlayer(target, dmg);
         target.flags.lastCombatAt = Date.now();
-        player.send(`你对 ${target.name} 造成 ${dmg} 点伤害。`);
-        target.send(`${player.name} 对你造成 ${dmg} 点伤害。`);
+        player.send(`你对 ${target.name} 造成 ${damageDealt} 点伤害。`);
+        target.send(`${player.name} 对你造成 ${damageDealt} 点伤害。`);
         if (skill && (skill.type === 'aoe' || skill.type === 'cleave')) {
           target.send('你受到群体技能伤害。');
         }
         if (hasComboWeapon(player) && target.hp > 0 && Math.random() <= COMBO_PROC_CHANCE) {
-          applyDamageToPlayer(target, dmg);
+          const comboDealt = applyDamageToPlayer(target, dmg);
           target.flags.lastCombatAt = Date.now();
-          player.send(`连击触发，对 ${target.name} 造成 ${dmg} 点伤害。`);
-          target.send(`${player.name} 连击对你造成 ${dmg} 点伤害。`);
+          player.send(`连击触发，对 ${target.name} 造成 ${comboDealt} 点伤害。`);
+          target.send(`${player.name} 连击对你造成 ${comboDealt} 点伤害。`);
         }
         if (tryApplyHealBlockEffect(player, target)) {
           target.send('你受到禁疗影响，回血降低。');
@@ -4243,10 +4272,10 @@ async function combatTick() {
         if (extraTargets.length) {
           const extraTarget = extraTargets[randInt(0, extraTargets.length - 1)];
           const extraDmg = Math.max(1, Math.floor(dmg * ASSASSINATE_SECONDARY_DAMAGE_RATE));
-          applyDamageToPlayer(extraTarget, extraDmg);
+          const extraDealt = applyDamageToPlayer(extraTarget, extraDmg);
           extraTarget.flags.lastCombatAt = Date.now();
-          player.send(`刺杀剑术波及 ${extraTarget.name}，造成 ${extraDmg} 点伤害。`);
-          extraTarget.send(`${player.name} 的刺杀剑术波及你，造成 ${extraDmg} 点伤害。`);
+          player.send(`刺杀剑术波及 ${extraTarget.name}，造成 ${extraDealt} 点伤害。`);
+          extraTarget.send(`${player.name} 的刺杀剑术波及你，造成 ${extraDealt} 点伤害。`);
           if (tryApplyHealBlockEffect(player, extraTarget)) {
             extraTarget.send('你受到禁疗影响，回血降低。');
             player.send(`禁疗效果作用于 ${extraTarget.name}。`);
@@ -4408,7 +4437,7 @@ async function combatTick() {
         if (skill.type === 'spell' || skill.type === 'aoe') {
           const mdefMultiplier = getMagicDefenseMultiplier(mob);
           const mdef = Math.floor((mob.mdef || 0) * mdefMultiplier);
-          const powerStat = skill.id === 'soul' ? (player.spirit || 0) : (player.mag || 0);
+          const powerStat = skill.id === 'soul' ? getSpiritValue(player) : (player.mag || 0);
           dmg = Math.floor((powerStat + randInt(0, powerStat / 2)) * skillPower - mdef * 0.6);
           if (dmg < 1) dmg = 1;
         } else if (skill.type === 'dot') {
@@ -4439,7 +4468,7 @@ async function combatTick() {
           // AOE伤害应该对每个目标独立计算，而不是使用主目标的伤害
           const mdefMultiplier = getMagicDefenseMultiplier(target);
           const mdef = Math.floor((target.mdef || 0) * mdefMultiplier);
-          const powerStat = skill.id === 'soul' ? (player.spirit || 0) : (player.mag || 0);
+          const powerStat = skill.id === 'soul' ? getSpiritValue(player) : (player.mag || 0);
           let aoeDmg = Math.max(1, Math.floor((powerStat + randInt(0, powerStat / 2)) * skillPower - mdef * 0.6));
           const elementAtk = Math.max(0, Math.floor(player.elementAtk || 0));
           if (elementAtk > 0) {
@@ -4600,7 +4629,7 @@ async function combatTick() {
         if (Math.random() <= hitChance) {
           const useTaoist = summon.id === 'skeleton' || summon.id === 'summon';
           const dmg = useTaoist
-            ? calcTaoistDamageFromValue(Number(summon.spirit ?? summon.atk ?? 0), mob)
+            ? calcTaoistDamageFromValue(getSpiritValue(summon), mob)
             : calcDamage(summon, mob, 1);
           const summonResult = applyDamageToMob(mob, dmg, player.name);
           if (summonResult?.damageTaken) {
@@ -4729,10 +4758,10 @@ async function combatTick() {
         }
       }
       if (mobTarget && mobTarget.userId) {
-        applyDamageToPlayer(mobTarget, dmg);
-        mobTarget.send(`${mob.name} 对你造成 ${dmg} 点伤害。`);
+        const damageDealt = applyDamageToPlayer(mobTarget, dmg);
+        mobTarget.send(`${mob.name} 对你造成 ${damageDealt} 点伤害。`);
         if (mobTarget !== player) {
-          player.send(`${mob.name} 攻击 ${mobTarget.name}，造成 ${dmg} 点伤害。`);
+          player.send(`${mob.name} 攻击 ${mobTarget.name}，造成 ${damageDealt} 点伤害。`);
         }
         if (mobTarget.hp <= 0 && mobTarget !== player && !tryRevive(mobTarget)) {
           handleDeath(mobTarget);
@@ -4749,8 +4778,8 @@ async function combatTick() {
           );
           
           roomPlayers.forEach((splashTarget) => {
-            applyDamageToPlayer(splashTarget, splashDmg);
-            splashTarget.send(`${mob.name} 的攻击溅射到你，造成 ${splashDmg} 点伤害。`);
+            const splashDealt = applyDamageToPlayer(splashTarget, splashDmg);
+            splashTarget.send(`${mob.name} 的攻击溅射到你，造成 ${splashDealt} 点伤害。`);
             if (splashTarget.hp <= 0 && !tryRevive(splashTarget)) {
               handleDeath(splashTarget);
             }
@@ -4758,7 +4787,7 @@ async function combatTick() {
             // 溅射到召唤物
             const splashSummons = getAliveSummons(splashTarget);
             splashSummons.forEach((summon) => {
-              applyDamage(summon, splashDmg);
+              applyDamageToSummon(summon, splashDmg);
               splashTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${splashDmg} 点伤害。`);
               if (summon.hp <= 0) {
                 splashTarget.send(`${summon.name} 被击败。`);
@@ -4772,7 +4801,7 @@ async function combatTick() {
           if (mobTarget && mobTarget.userId) {
             const targetSummons = getAliveSummons(mobTarget);
             targetSummons.forEach((summon) => {
-              applyDamage(summon, splashDmg);
+              applyDamageToSummon(summon, splashDmg);
               mobTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${splashDmg} 点伤害。`);
               if (summon.hp <= 0) {
                 mobTarget.send(`${summon.name} 被击败。`);
@@ -4783,7 +4812,7 @@ async function combatTick() {
           }
         }
       } else {
-        applyDamage(mobTarget, dmg);
+        applyDamageToSummon(mobTarget, dmg);
         player.send(`${mob.name} 对 ${mobTarget.name} 造成 ${dmg} 点伤害。`);
         
         // 特殊BOSS溅射效果：主目标是召唤物时，对玩家和房间所有其他玩家及召唤物造成BOSS攻击力50%的溅射伤害
@@ -4792,8 +4821,8 @@ async function combatTick() {
           
           // 溅射到召唤物的主人
           if (player && player.hp > 0) {
-            applyDamageToPlayer(player, splashDmg);
-            player.send(`${mob.name} 的攻击溅射到你，造成 ${splashDmg} 点伤害。`);
+            const splashDealt = applyDamageToPlayer(player, splashDmg);
+            player.send(`${mob.name} 的攻击溅射到你，造成 ${splashDealt} 点伤害。`);
             if (player.hp <= 0 && !tryRevive(player)) {
               handleDeath(player);
             }
@@ -4808,8 +4837,8 @@ async function combatTick() {
           );
           
           roomPlayers.forEach((splashTarget) => {
-            applyDamageToPlayer(splashTarget, splashDmg);
-            splashTarget.send(`${mob.name} 的攻击溅射到你，造成 ${splashDmg} 点伤害。`);
+            const splashDealt = applyDamageToPlayer(splashTarget, splashDmg);
+            splashTarget.send(`${mob.name} 的攻击溅射到你，造成 ${splashDealt} 点伤害。`);
             if (splashTarget.hp <= 0 && !tryRevive(splashTarget)) {
               handleDeath(splashTarget);
             }
@@ -4817,7 +4846,7 @@ async function combatTick() {
             // 溅射到其他玩家的召唤物
             const splashSummons = getAliveSummons(splashTarget);
             splashSummons.forEach((summon) => {
-              applyDamage(summon, splashDmg);
+              applyDamageToSummon(summon, splashDmg);
               splashTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${splashDmg} 点伤害。`);
               if (summon.hp <= 0) {
                 splashTarget.send(`${summon.name} 被击败。`);
@@ -4837,8 +4866,8 @@ async function combatTick() {
           const followChance = calcHitChance(mob, player);
           if (Math.random() <= followChance) {
             const followDmg = calcDamage(mob, player, 1);
-            applyDamageToPlayer(player, followDmg);
-            player.send(`${mob.name} 追击你，造成 ${followDmg} 点伤害。`);
+            const followDealt = applyDamageToPlayer(player, followDmg);
+            player.send(`${mob.name} 追击你，造成 ${followDealt} 点伤害。`);
           } else {
             player.send(`${mob.name} 追击落空。`);
           }
