@@ -619,14 +619,31 @@ export async function handleCommand({ player, players, input, source, send, part
         player.position.zone = zoneId;
         player.position.room = roomId;
       } else {
-        const targetRoom = WORLD[player.position.zone]?.rooms?.[dest];
+        let roomId = dest;
+        const zoneId = player.position.zone;
+        const hasNumberSuffix = /\d$/.test(roomId);
+        if (!hasNumberSuffix) {
+          const baseRoomId = roomId.replace(/\d+$/, '');
+          const hasRoomVariants = (() => {
+            for (let i = 1; i <= ROOM_VARIANT_COUNT; i++) {
+              if (WORLD[zoneId]?.rooms?.[`${baseRoomId}${i}`]) {
+                return true;
+              }
+            }
+            return false;
+          })();
+          if (hasRoomVariants) {
+            roomId = selectLeastPopulatedRoom(zoneId, roomId, players, player, partyApi);
+          }
+        }
+        const targetRoom = WORLD[zoneId]?.rooms?.[roomId];
         if (targetRoom?.sabakOnly) {
           if (!player.guild || !guildApi?.sabakState?.ownerGuildId || String(player.guild.id) !== String(guildApi.sabakState.ownerGuildId)) {
             send('只有沙巴克城主行会成员可以进入该区域。');
             return;
           }
         }
-        player.position.room = dest;
+        player.position.room = roomId;
       }
       const zone = WORLD[player.position.zone];
       const roomName = zone?.rooms[player.position.room]?.name;
