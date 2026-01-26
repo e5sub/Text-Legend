@@ -791,7 +791,7 @@ function isBossMob(mobTemplate) {
     id.includes('leader') ||
     id.includes('boss') ||
     id.includes('demon') ||
-    ['bug_queen', 'huangquan', 'evil_snake', 'pig_white'].includes(id)
+    ['bug_queen', 'huangquan'].includes(id)
   );
 }
 
@@ -1644,6 +1644,12 @@ function hasSpecialRingEquipped(player, itemId) {
   }
 
   return hasThisRing;
+}
+
+function canTriggerMagicRing(player, chosenSkillId, skill) {
+  if (!player) return false;
+  if (player.classId === 'warrior') return true;
+  return chosenSkillId === 'slash' && skill?.id === 'slash';
 }
 
 function hasComboWeapon(player) {
@@ -4213,7 +4219,9 @@ async function combatTick() {
       if (skill && ['attack', 'spell', 'cleave', 'dot', 'aoe'].includes(skill.type)) {
         notifyMastery(player, skill);
       }
-      if (hasSpecialRingEquipped(player, 'ring_magic') && Math.random() <= 0.1) {
+      if (hasSpecialRingEquipped(player, 'ring_magic') &&
+          canTriggerMagicRing(player, chosenSkillId, skill) &&
+          Math.random() <= 0.1) {
         if (!target.status) target.status = {};
         target.status.stunTurns = 2;
         player.send(`${target.name} 被麻痹戒指定身。`);
@@ -4226,6 +4234,12 @@ async function combatTick() {
         target.status.debuffs.weak = { expiresAt: Date.now() + 2000, dmgReduction: 0.2 };
         player.send(`弱化戒指生效，${target.name} 伤害降低20%！`);
         target.send('你受到弱化效果，伤害降低20%！');
+      }
+      // 吸血戒指：攻击时10%几率吸血，恢复造成伤害的20%
+      if (hasSpecialRingEquipped(player, 'ring_fire') && Math.random() <= 0.1) {
+        const heal = Math.max(1, Math.floor(dmg * 0.2));
+        player.hp = clamp(player.hp + heal, 1, player.max_hp);
+        player.send(`吸血戒指生效，恢复 ${heal} 点生命。`);
       }
       // 破防戒指：攻击时10%几率使目标防御魔御降低20%，持续2秒
       if (hasSpecialRingEquipped(player, 'ring_break') && Math.random() <= 0.1) {
@@ -4426,7 +4440,9 @@ async function combatTick() {
         }
       }
 
-      if (hasSpecialRingEquipped(player, 'ring_magic') && Math.random() <= 0.1) {
+      if (hasSpecialRingEquipped(player, 'ring_magic') &&
+          canTriggerMagicRing(player, chosenSkillId, skill) &&
+          Math.random() <= 0.1) {
         if (!mob.status) mob.status = {};
         mob.status.stunTurns = 2;
         player.send(`${mob.name} 被麻痹戒指定身。`);
@@ -4437,6 +4453,12 @@ async function combatTick() {
         if (!mob.status.debuffs) mob.status.debuffs = {};
         mob.status.debuffs.weak = { expiresAt: Date.now() + 2000, dmgReduction: 0.2 };
         player.send(`弱化戒指生效，${mob.name} 伤害降低20%！`);
+      }
+      // 吸血戒指：攻击时10%几率吸血，恢复造成伤害的20%
+      if (hasSpecialRingEquipped(player, 'ring_fire') && Math.random() <= 0.1) {
+        const heal = Math.max(1, Math.floor(dmg * 0.2));
+        player.hp = clamp(player.hp + heal, 1, player.max_hp);
+        player.send(`吸血戒指生效，恢复 ${heal} 点生命。`);
       }
       // 破防戒指：攻击时10%几率使目标防御魔御降低20%，持续2秒
       if (hasSpecialRingEquipped(player, 'ring_break') && Math.random() <= 0.1) {

@@ -303,6 +303,42 @@ body.dark .afk-skill-item {
   color: #e8e0d4;
 }
 
+body.dark .mail-item {
+  color: #f1e5ce;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+body.dark .mail-item.active {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+body.dark .mail-detail,
+body.dark .mail-list {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+body.dark .mail-detail-title,
+body.dark .mail-detail-body,
+body.dark .mail-detail-items,
+body.dark .mail-detail-meta {
+  color: #f1e5ce;
+}
+
+body.dark .mail-compose input,
+body.dark .mail-compose textarea,
+body.dark .mail-attach-row select {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.04);
+  color: #f1e5ce;
+}
+
+body.dark .mail-attach-item {
+  color: #f1e5ce;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
 body.dark .afk-skill-item.selected {
   background: #c86b2a;
   color: #fff7ea;

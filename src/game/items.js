@@ -173,7 +173,7 @@
   ring_rochie_mage: { id: 'ring_rochie_mage', name: '洛奇戒指(法师)', type: 'accessory', slot: 'ring', mag: 24, dex: 4, price: 150000, rarity: 'supreme', bossOnly: true },
   ring_rochie_tao: { id: 'ring_rochie_tao', name: '洛奇戒指(道士)', type: 'accessory', slot: 'ring', spirit: 24, dex: 4, price: 150000, rarity: 'supreme', bossOnly: true },
   ring_def: { id: 'ring_def', name: '防御戒指', type: 'accessory', slot: 'ring', def: 4, price: 22000 },
-  ring_fire: { id: 'ring_fire', name: '火焰戒指', type: 'accessory', slot: 'ring', mag: 4, price: 24000 },
+  ring_fire: { id: 'ring_fire', name: '吸血戒指', type: 'accessory', slot: 'ring', mag: 4, price: 24000 },
   ring_heal: { id: 'ring_heal', name: '治愈戒指', type: 'accessory', slot: 'ring', spirit: 4, price: 24000 },
   ring_teleport: { id: 'ring_teleport', name: '弱化戒指', type: 'accessory', slot: 'ring', atk: 1, def: 1, mag: 1, spirit: 1, dex: 1, price: 80000, rarity: 'legendary', bossOnly: true },
   ring_protect: { id: 'ring_protect', name: '护身戒指', type: 'accessory', slot: 'ring', atk: 1, def: 1, mag: 1, spirit: 1, dex: 1, price: 80000, rarity: 'legendary', bossOnly: true },

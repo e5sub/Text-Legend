@@ -268,7 +268,7 @@ export function removeMob(zoneId, roomId, mobId) {
     const isSpecial = Boolean(tpl && (tpl.worldBoss || tpl.sabakBoss || tpl.specialBoss));
     const delayMs = tpl && tpl.respawnMs
       ? tpl.respawnMs
-      : (isSpecial ? 60 * 60 * 1000 : 3 * 1000);
+      : (isSpecial ? 60 * 60 * 1000 : 1 * 1000);
     mob.respawnAt = Date.now() + delayMs;
     if (delayMs > 0) {
       RESPAWN_CACHE.set(respawnKey(zoneId, roomId, mob.slotIndex), {

@@ -2018,35 +2018,6 @@ export async function handleCommand({ player, players, input, source, send, part
       }
       return;
     }
-    case 'teleport': {
-      if (!player.equipment || !Object.values(player.equipment).some((e) => e && e.id === 'ring_teleport')) {
-        return send('需要佩戴传送戒指。');
-      }
-      if (!args) return;
-      let zoneId = '';
-      let roomId = '';
-      if (args.includes(':')) {
-        [zoneId, roomId] = args.split(':');
-      } else {
-        const parts = args.split(' ').filter(Boolean);
-        zoneId = parts[0];
-        roomId = parts[1];
-      }
-      if (!zoneId || !roomId || !WORLD[zoneId] || !WORLD[zoneId].rooms[roomId]) {
-        return send('目标地点无效。');
-      }
-      const targetRoom = WORLD[zoneId].rooms[roomId];
-      if (targetRoom?.sabakOnly) {
-        if (!player.guild || !guildApi?.sabakState?.ownerGuildId || String(player.guild.id) !== String(guildApi.sabakState.ownerGuildId)) {
-          return send('只有沙巴克城主行会成员可以进入该区域。');
-        }
-      }
-      player.position.zone = zoneId;
-      player.position.room = roomId;
-      send(`你使用传送戒指前往 ${WORLD[zoneId].rooms[roomId].name}。`);
-      sendRoomDescription(player, send);
-      return;
-    }
     case 'mail': {
       if (!mailApi) return send('邮件系统不可用。');
       const [subCmd, ...restArgs] = args.split(' ').filter(Boolean);
