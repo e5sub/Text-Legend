@@ -1790,6 +1790,7 @@ function transferOneEquipmentChance(from, to, chance) {
 
 // 房间状态缓存（用于BOSS房间优化）
 const roomStateCache = new Map();
+const roomStateDataCache = new Map();
 let roomStateLastUpdate = 0;
 let roomStateCachedData = null;
 const ROOM_STATE_TTL = 100; // 100ms缓存时间
@@ -1819,18 +1820,173 @@ function isBossRoom(zoneId, roomId) {
   });
 }
 
-async function buildState(player) {
-  computeDerived(player);
-  const zone = WORLD[player.position.zone];
-  const room = zone?.rooms[player.position.room];
-  if (zone && room) spawnMobs(player.position.zone, player.position.room);
-  const mobs = getAliveMobs(player.position.zone, player.position.room).map((m) => ({
+function buildRoomExits(zoneId, roomId) {
+  const zone = WORLD[zoneId];
+  const room = zone?.rooms?.[roomId];
+  if (!room) return [];
+  const allExits = Object.entries(room.exits).map(([dir, dest]) => {
+    let destZoneId = zoneId;
+    let destRoomId = dest;
+    if (dest.includes(':')) {
+      [destZoneId, destRoomId] = dest.split(':');
+    }
+    const destZone = WORLD[destZoneId];
+    const destRoom = destZone?.rooms?.[destRoomId];
+    const label = destRoom
+      ? (destZoneId === zoneId ? destRoom.name : `${destZone.name} - ${destRoom.name}`)
+      : dest;
+    return { dir, label };
+  });
+
+  // 合并带数字后缀的方向，只显示一个入口（暗之BOSS房间除外）
+  const filteredExits = [];
+  allExits.forEach((exit) => {
+    const dir = exit.dir;
+    const baseDir = dir.replace(/[0-9]+$/, '');
+
+    // 检查是否是前往暗之BOSS房间的入口
+    const isDarkBossExit = exit.dir.startsWith('southwest');
+
+    // 检查是否有数字后缀的变体
+    const hasVariants = allExits.some(
+      (e) => e.dir !== dir && e.dir.startsWith(baseDir) && /[0-9]+$/.test(e.dir)
+    );
+
+    if (isDarkBossExit) {
+      // 暗之BOSS入口不合并，全部显示
+      filteredExits.push(exit);
+    } else if (hasVariants) {
+      // 只添加基础方向，不添加数字后缀的
+      if (!/[0-9]+$/.test(dir) && !filteredExits.some((e) => e.dir === baseDir)) {
+        filteredExits.push({ dir: baseDir, label: exit.label.replace(/[0-9]+$/, '') });
+      }
+    } else {
+      // 没有变体，正常添加
+      filteredExits.push(exit);
+    }
+  });
+
+  // 移除标签中的数字后缀（如 "平原1" -> "平原"）（暗之BOSS房间除外）
+  return filteredExits.map((exit) => ({
+    dir: exit.dir,
+    label: exit.dir.startsWith('southwest') ? exit.label : exit.label.replace(/(\D)\d+$/, '$1')
+  }));
+}
+
+function getRoomCommonState(zoneId, roomId) {
+  const cacheKey = `${zoneId}:${roomId}`;
+  const now = Date.now();
+  const cached = roomStateDataCache.get(cacheKey);
+  if (cached && now - cached.at < ROOM_STATE_TTL) return cached.data;
+
+  const zone = WORLD[zoneId];
+  const room = zone?.rooms?.[roomId];
+  if (zone && room) spawnMobs(zoneId, roomId);
+
+  const mobs = getAliveMobs(zoneId, roomId).map((m) => ({
     id: m.id,
     name: m.name,
     hp: m.hp,
     max_hp: m.max_hp,
     mdef: m.mdef || 0
   }));
+  const roomMobs = getRoomMobs(zoneId, roomId);
+  const deadBosses = roomMobs.filter((m) => {
+    const tpl = MOB_TEMPLATES[m.templateId];
+    return tpl && m.hp <= 0 && isBossMob(tpl);
+  });
+  const nextRespawn = deadBosses.length > 0
+    ? deadBosses.sort((a, b) => (a.respawnAt || Infinity) - (b.respawnAt || Infinity))[0]?.respawnAt
+    : null;
+
+  let bossRank = [];
+  let bossNextRespawn = null;
+  const deadSpecialBosses = deadBosses.filter((m) => {
+    const tpl = MOB_TEMPLATES[m.templateId];
+    return tpl && tpl.specialBoss;
+  });
+  if (deadSpecialBosses.length > 0) {
+    bossNextRespawn = deadSpecialBosses
+      .sort((a, b) => (a.respawnAt || Infinity) - (b.respawnAt || Infinity))[0]?.respawnAt;
+  }
+  const bossMob = getAliveMobs(zoneId, roomId).find((m) => {
+    const tpl = MOB_TEMPLATES[m.templateId];
+    return tpl && tpl.specialBoss;
+  });
+  if (bossMob) {
+    const { entries } = buildDamageRankMap(bossMob);
+    bossRank = entries.slice(0, 5).map(([name, damage]) => ({ name, damage }));
+  }
+
+  const roomPlayers = listOnlinePlayers()
+    .filter((p) => p.position.zone === zoneId && p.position.room === roomId)
+    .map((p) => ({
+      name: p.name,
+      classId: p.classId,
+      level: p.level,
+      guild: p.guild?.name || null,
+      guildId: p.guild?.id || null
+    }));
+
+  const data = {
+    mobs,
+    nextRespawn,
+    exits: buildRoomExits(zoneId, roomId),
+    roomPlayers,
+    bossRank,
+    bossNextRespawn
+  };
+  roomStateDataCache.set(cacheKey, { at: now, data });
+  return data;
+}
+
+async function buildState(player) {
+  computeDerived(player);
+  const zone = WORLD[player.position.zone];
+  const room = zone?.rooms[player.position.room];
+  const isBoss = isBossRoom(player.position.zone, player.position.room);
+  let mobs = [];
+  let exits = [];
+  let nextRespawn = null;
+  let roomPlayers = [];
+  let bossRank = [];
+  let bossNextRespawn = null;
+  if (isBoss) {
+    const cached = getRoomCommonState(player.position.zone, player.position.room);
+    mobs = cached.mobs;
+    exits = cached.exits;
+    nextRespawn = cached.nextRespawn;
+    roomPlayers = cached.roomPlayers;
+    bossRank = cached.bossRank;
+    bossNextRespawn = cached.bossNextRespawn;
+  } else {
+    if (zone && room) spawnMobs(player.position.zone, player.position.room);
+    mobs = getAliveMobs(player.position.zone, player.position.room).map((m) => ({
+      id: m.id,
+      name: m.name,
+      hp: m.hp,
+      max_hp: m.max_hp,
+      mdef: m.mdef || 0
+    }));
+    const roomMobs = getRoomMobs(player.position.zone, player.position.room);
+    const deadBosses = roomMobs.filter((m) => {
+      const tpl = MOB_TEMPLATES[m.templateId];
+      return tpl && m.hp <= 0 && isBossMob(tpl);
+    });
+    nextRespawn = deadBosses.length > 0
+      ? deadBosses.sort((a, b) => (a.respawnAt || Infinity) - (b.respawnAt || Infinity))[0]?.respawnAt
+      : null;
+    exits = buildRoomExits(player.position.zone, player.position.room);
+    roomPlayers = listOnlinePlayers()
+      .filter((p) => p.position.zone === player.position.zone && p.position.room === player.position.room)
+      .map((p) => ({
+        name: p.name,
+        classId: p.classId,
+        level: p.level,
+        guild: p.guild?.name || null,
+        guildId: p.guild?.id || null
+      }));
+  }
   const summonList = getAliveSummons(player);
   const summonPayloads = summonList.map((summon) => ({
     id: summon.id,
@@ -1847,65 +2003,6 @@ async function buildState(player) {
   }));
 
   // 检查房间是否有BOSS，获取下次刷新时间
-  const roomMobs = getRoomMobs(player.position.zone, player.position.room);
-  const deadBosses = roomMobs.filter((m) => {
-    const tpl = MOB_TEMPLATES[m.templateId];
-    return tpl && m.hp <= 0 && isBossMob(tpl);
-  });
-  const nextRespawn = deadBosses.length > 0
-    ? deadBosses.sort((a, b) => (a.respawnAt || Infinity) - (b.respawnAt || Infinity))[0]?.respawnAt
-    : null;
-  const exits = room ? (() => {
-    const allExits = Object.entries(room.exits).map(([dir, dest]) => {
-      let zoneId = player.position.zone;
-      let roomId = dest;
-      if (dest.includes(':')) {
-        [zoneId, roomId] = dest.split(':');
-      }
-      const destZone = WORLD[zoneId];
-      const destRoom = destZone?.rooms[roomId];
-      const label = destRoom
-        ? (zoneId === player.position.zone ? destRoom.name : `${destZone.name} - ${destRoom.name}`)
-        : dest;
-      return { dir, label };
-    });
-
-    // 合并带数字后缀的方向，只显示一个入口（暗之BOSS房间除外）
-    const filteredExits = [];
-    allExits.forEach(exit => {
-      const dir = exit.dir;
-      const baseDir = dir.replace(/[0-9]+$/, '');
-
-      // 检查是否是前往暗之BOSS房间的入口
-      const isDarkBossExit = exit.dir.startsWith('southwest');
-
-      // 检查是否有数字后缀的变体
-      const hasVariants = allExits.some(e =>
-        e.dir !== dir && e.dir.startsWith(baseDir) && /[0-9]+$/.test(e.dir)
-      );
-
-      if (isDarkBossExit) {
-        // 暗之BOSS入口不合并，全部显示
-        filteredExits.push(exit);
-      } else if (hasVariants) {
-        // 只添加基础方向，不添加数字后缀的
-        if (!/[0-9]+$/.test(dir) && !filteredExits.some(e => e.dir === baseDir)) {
-          filteredExits.push({ dir: baseDir, label: exit.label.replace(/[0-9]+$/, '') });
-        }
-      } else {
-        // 没有变体，正常添加
-        filteredExits.push(exit);
-      }
-    });
-
-    // 移除标签中的数字后缀（如 "平原1" -> "平原"）（暗之BOSS房间除外）
-    const cleanExits = filteredExits.map(exit => ({
-      dir: exit.dir,
-      label: exit.dir.startsWith('southwest') ? exit.label : exit.label.replace(/(\D)\d+$/, '$1')
-    }));
-
-    return cleanExits;
-  })() : [];
   const skills = getLearnedSkills(player).map((s) => ({
     id: s.id,
     name: s.name,
@@ -1959,38 +2056,7 @@ async function buildState(player) {
   const sabakBonus = Boolean(
     player.guild && sabakState.ownerGuildId && String(player.guild.id) === String(sabakState.ownerGuildId)
   );
-  // 优化：BOSS房间使用缓存的公共数据
-  const isBoss = isBossRoom(player.position.zone, player.position.room);
   const onlineCount = players.size;
-  const roomPlayers = listOnlinePlayers()
-    .filter((p) => p.position.zone === player.position.zone && p.position.room === player.position.room)
-    .map((p) => ({
-      name: p.name,
-      classId: p.classId,
-      level: p.level,
-      guild: p.guild?.name || null,
-      guildId: p.guild?.id || null
-    }));
-  
-  let bossRank = [];
-  let bossNextRespawn = null;
-  
-  // 检查魔龙教主、世界BOSS、沙巴克BOSS、暗之BOSS的刷新时间
-  const deadSpecialBosses = deadBosses.filter((m) => {
-    const tpl = MOB_TEMPLATES[m.templateId];
-    return tpl && tpl.specialBoss;
-  });
-  if (deadSpecialBosses.length > 0) {
-    bossNextRespawn = deadSpecialBosses.sort((a, b) => (a.respawnAt || Infinity) - (b.respawnAt || Infinity))[0]?.respawnAt;
-  }
-  const bossMob = getAliveMobs(player.position.zone, player.position.room).find((m) => {
-    const tpl = MOB_TEMPLATES[m.templateId];
-    return tpl && tpl.specialBoss;
-  });
-  if (bossMob) {
-    const { entries } = buildDamageRankMap(bossMob);
-    bossRank = entries.slice(0, 5).map(([name, damage]) => ({ name, damage }));
-  }
   
   // VIP自领状态缓存
   let vipSelfClaimEnabled;
@@ -3936,6 +4002,8 @@ function updateSpecialBossStatsBasedOnPlayers() {
 
 async function combatTick() {
   const online = listOnlinePlayers();
+  const roomMobsCache = new Map();
+  const regenRooms = new Set();
 
   // 更新特殊BOSS属性
   updateSpecialBossStatsBasedOnPlayers();
@@ -3949,8 +4017,16 @@ async function combatTick() {
     refreshBuffs(player);
     processPotionRegen(player);
     updateRedNameAutoClear(player);
-    const roomMobs = getAliveMobs(player.position.zone, player.position.room);
-    roomMobs.forEach((mob) => tickMobRegen(mob));
+    const roomKey = `${player.position.zone}:${player.position.room}`;
+    let roomMobs = roomMobsCache.get(roomKey);
+    if (!roomMobs) {
+      roomMobs = getAliveMobs(player.position.zone, player.position.room);
+      roomMobsCache.set(roomKey, roomMobs);
+    }
+    if (!regenRooms.has(roomKey)) {
+      roomMobs.forEach((mob) => tickMobRegen(mob));
+      regenRooms.add(roomKey);
+    }
     const poisonSource = player.status?.poison?.sourceName;
       const playerPoisonTick = tickStatus(player);
       if (playerPoisonTick && playerPoisonTick.type === 'poison') {
