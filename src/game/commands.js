@@ -464,6 +464,18 @@ function rarityByPrice(item) {
   return 'common';
 }
 
+function isEquipmentItem(item) {
+  return Boolean(item && ['weapon', 'armor', 'accessory'].includes(item.type));
+}
+
+function hasSpecialEffects(effects) {
+  return effects && Object.keys(effects).length > 0;
+}
+
+function isBelowEpic(rarity) {
+  return ['common', 'uncommon', 'rare'].includes(rarity);
+}
+
 function skillByName(player, name) {
   if (!name) return null;
   const list = getLearnedSkills(player);
@@ -1384,6 +1396,32 @@ export async function handleCommand({ player, players, input, source, send, part
       const stock = getShopStock(player);
       if (!stock.length) return send('商店暂无商品。');
       send(`商店商品: ${stock.map((i) => `${i.name}(${i.price}金)`).join(', ')}`);
+      return;
+    }
+    case 'sell_bulk': {
+      if (!canShop(player)) return send('这里没有商店。');
+      const inventory = Array.isArray(player.inventory) ? player.inventory.slice() : [];
+      let soldCount = 0;
+      let totalGold = 0;
+      inventory.forEach((slot) => {
+        if (!slot || !slot.id) return;
+        const item = ITEM_TEMPLATES[slot.id];
+        if (!item) return;
+        if (item.type === 'currency') return;
+        if (!isEquipmentItem(item)) return;
+        const rarity = rarityByPrice(item);
+        const effectless = !hasSpecialEffects(slot.effects);
+        if (!effectless || !isBelowEpic(rarity)) return;
+        const qty = Math.max(0, Number(slot.qty || 0));
+        if (qty <= 0) return;
+        if (!removeItem(player, item.id, qty, slot.effects)) return;
+        const price = Math.max(1, Math.floor((item.price || 10) * 0.5));
+        totalGold += price * qty;
+        soldCount += qty;
+      });
+      if (soldCount <= 0) return send('没有可一键售卖的装备。');
+      player.gold += totalGold;
+      send(`一键售卖完成：售出 ${soldCount} 件装备，获得 ${totalGold} 金币。`);
       return;
     }
     case 'sell': {

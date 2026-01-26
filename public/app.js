@@ -210,7 +210,8 @@ const shopUi = {
   list: document.getElementById('shop-list'),
   subtitle: document.getElementById('shop-subtitle'),
   sellList: document.getElementById('shop-sell-list'),
-  close: document.getElementById('shop-close')
+  close: document.getElementById('shop-close'),
+  sellBulk: document.getElementById('shop-sell-bulk')
 };
 const repairUi = {
   modal: document.getElementById('repair-modal'),
@@ -3857,6 +3858,17 @@ if (shopUi.close) {
   shopUi.close.addEventListener('click', () => {
     shopUi.modal.classList.add('hidden');
     hideItemTooltip();
+  });
+}
+if (shopUi.sellBulk) {
+  shopUi.sellBulk.addEventListener('click', async () => {
+    if (!socket) return;
+    const confirmed = await confirmModal({
+      title: '\u4E00\u952E\u552E\u5356',
+      text: '\u5C06\u51FA\u552E\u65E0\u7279\u6548\u88C5\u5907\uFF0C\u4EE5\u53CA\u53F2\u8BD7\u4EE5\u4E0B\u88C5\u5907\u3002\u786E\u5B9A\u5417\uFF1F'
+    });
+    if (!confirmed) return;
+    socket.emit('cmd', { text: 'sell_bulk', source: 'ui' });
   });
 }
 if (repairUi.close) {
