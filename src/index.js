@@ -4340,9 +4340,9 @@ async function combatTick() {
       }
     }
 
-    const summons = getAliveSummons(player);
-    if (summons.length && mob.hp > 0) {
-      summons.forEach((summon) => {
+    const aliveSummons = getAliveSummons(player);
+    if (aliveSummons.length && mob.hp > 0) {
+      aliveSummons.forEach((summon) => {
         const hitChance = calcHitChance(summon, mob);
         if (Math.random() <= hitChance) {
           const useTaoist = summon.id === 'skeleton' || summon.id === 'summon';
@@ -4370,7 +4370,7 @@ async function combatTick() {
     }
 
 
-    const primarySummon = summons[0] || null;
+    const primarySummon = aliveSummons[0] || null;
     const summonAlive = Boolean(primarySummon);
     if (player.flags?.summonAggro && summonAlive) {
       const lastAttackAt = player.flags.lastAttackAt || 0;
