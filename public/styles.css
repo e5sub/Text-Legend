@@ -2977,6 +2977,12 @@ body.dark .sabak-guild-list .guild-member {
   color: #e8d5c0;
 }
 
+body.dark #sabak-modal .modal-card {
+  background: linear-gradient(180deg, #2a2420 0%, #1f1a17 100%);
+  border-color: #4a3a30;
+  color: #e8d5c0;
+}
+
 /* 深色模式下的沙巴克信息卡片 */
 body.dark .sabak-info-section {
   background: rgba(255, 255, 255, 0.08);
