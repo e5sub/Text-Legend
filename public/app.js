@@ -220,6 +220,7 @@ const repairUi = {
 const forgeUi = {
   modal: document.getElementById('forge-modal'),
   list: document.getElementById('forge-main-list'),
+  secondaryList: document.getElementById('forge-secondary-list'),
   main: document.getElementById('forge-main-selected'),
   secondary: document.getElementById('forge-secondary-selected'),
   confirm: document.getElementById('forge-confirm'),
@@ -385,6 +386,37 @@ function exitGame() {
   lastState = null;
   localStorage.removeItem('savedToken');
   show(authSection);
+}
+
+async function switchCharacter() {
+  if (serverTimeTimer) {
+    clearInterval(serverTimeTimer);
+    serverTimeTimer = null;
+  }
+  serverTimeBase = null;
+  serverTimeLocal = null;
+  if (socket) {
+    socket.disconnect();
+    socket = null;
+  }
+  activeChar = null;
+  lastState = null;
+  const username = localStorage.getItem('rememberedUser');
+  const charsKey = getUserStorageKey('savedCharacters', username);
+  let savedChars = [];
+  try {
+    const data = await apiGet('/api/characters', true);
+    savedChars = Array.isArray(data.characters) ? data.characters : [];
+    localStorage.setItem(charsKey, JSON.stringify(savedChars));
+  } catch {
+    try {
+      savedChars = JSON.parse(localStorage.getItem(charsKey) || '[]');
+    } catch {
+      savedChars = [];
+    }
+  }
+  renderCharacters(savedChars);
+  show(characterSection);
 }
 
 function getUserStorageKey(key, username) {
@@ -907,11 +939,14 @@ function promptDualModal({
   placeholderSecondary,
   valueMain,
   valueSecondary,
+  typeMain,
+  typeSecondary,
   allowEmpty
 }) {
   if (!promptUi.modal || !promptUi.input || !promptUi.inputSecondary) return Promise.resolve(null);
   return new Promise((resolve) => {
     const prevType = promptUi.input.type;
+    const prevSecondaryType = promptUi.inputSecondary.type;
     const onCancel = () => {
       cleanup();
       resolve(null);
@@ -934,6 +969,7 @@ function promptDualModal({
       promptUi.inputSecondary.removeEventListener('keydown', onKey);
       promptUi.modal.classList.add('hidden');
       promptUi.input.type = prevType || 'text';
+      promptUi.inputSecondary.type = prevSecondaryType || 'text';
       if (promptUi.label) {
         promptUi.label.classList.add('hidden');
         promptUi.label.textContent = '';
@@ -973,9 +1009,10 @@ function promptDualModal({
     promptUi.input.classList.remove('hidden');
     promptUi.input.placeholder = placeholderMain || '';
     promptUi.input.value = valueMain || '';
-    promptUi.input.type = 'text';
+    promptUi.input.type = typeMain || 'text';
     promptUi.inputSecondary.placeholder = placeholderSecondary || '';
     promptUi.inputSecondary.value = valueSecondary || '';
+    promptUi.inputSecondary.type = typeSecondary || 'text';
     promptUi.ok.addEventListener('click', onOk);
     promptUi.cancel.addEventListener('click', onCancel);
     promptUi.input.addEventListener('keydown', onKey);
@@ -1358,39 +1395,84 @@ function showRepairModal() {
 
 let forgeSelection = null;
 
-function findForgeMatch(equippedEntry, items) {
-  if (!equippedEntry || !equippedEntry.item) return null;
-  const itemId = equippedEntry.item.id;
-  const matches = (items || []).filter((item) =>
+function listForgeSecondaries(itemId, items) {
+  return (items || []).filter((item) =>
     item.id === itemId &&
     ['legendary', 'supreme'].includes(item.rarity) &&
     (item.qty || 0) > 0
   );
-  if (!matches.length) return null;
-  const secondary = matches
-    .slice()
-    .sort((a, b) => (b.effects?.elementAtk || 0) - (a.effects?.elementAtk || 0))[0];
-  return {
-    main: equippedEntry.item,
-    secondary,
-    mainSlot: equippedEntry.slot,
-    secondaryKey: secondary.key
-  };
+}
+
+function renderForgeSecondaryList(itemId) {
+  if (!forgeUi.secondaryList || !forgeUi.secondary || !forgeUi.confirm) return;
+  forgeUi.secondaryList.innerHTML = '';
+  forgeSelection = forgeSelection ? { ...forgeSelection, secondary: null, secondaryKey: null } : null;
+  forgeUi.secondary.textContent = '副件: 请选择';
+  forgeUi.confirm.disabled = true;
+  if (!itemId) {
+    const empty = document.createElement('div');
+    empty.textContent = '请先选择主件';
+    forgeUi.secondaryList.appendChild(empty);
+    return;
+  }
+  const candidates = listForgeSecondaries(itemId, lastState?.items || []);
+  if (!candidates.length) {
+    const empty = document.createElement('div');
+    empty.textContent = '背包没有同名传说及以上装备';
+    forgeUi.secondaryList.appendChild(empty);
+    return;
+  }
+  candidates.forEach((item) => {
+    const btn = document.createElement('div');
+    btn.className = 'forge-item';
+    btn.innerHTML = `${formatItemName(item)} x${item.qty || 1}<span class="forge-item-meta">${formatForgeMeta(item)}</span>`;
+    btn.addEventListener('click', () => {
+      Array.from(forgeUi.secondaryList.querySelectorAll('.forge-item')).forEach((node) =>
+        node.classList.remove('selected')
+      );
+      btn.classList.add('selected');
+      if (!forgeSelection) return;
+      forgeSelection.secondary = item;
+      forgeSelection.secondaryKey = item.key;
+      forgeUi.secondary.textContent = `副件: ${formatItemName(item)}`;
+      forgeUi.confirm.disabled = !forgeSelection.main || !forgeSelection.secondary;
+    });
+    forgeUi.secondaryList.appendChild(btn);
+  });
+}
+
+function formatForgeMeta(item) {
+  if (!item) return '';
+  const tags = [];
+  if (item.effects && item.effects.combo) tags.push('连击');
+  if (item.effects && item.effects.fury) tags.push('狂攻');
+  if (item.effects && item.effects.unbreakable) tags.push('不磨');
+  if (item.effects && item.effects.defense) tags.push('守护');
+  if (item.effects && item.effects.dodge) tags.push('闪避');
+  if (item.effects && item.effects.poison) tags.push('毒');
+  if (item.effects && item.effects.healblock) tags.push('禁疗');
+  if (item.effects && item.effects.elementAtk) tags.push(`元素攻击+${Math.floor(item.effects.elementAtk)}`);
+  if (!tags.length) return '特效: 无';
+  return `特效: ${tags.join(' / ')}`;
 }
 
 function renderForgeModal() {
-  if (!forgeUi.list || !forgeUi.main || !forgeUi.secondary || !forgeUi.confirm) return;
+  if (!forgeUi.list || !forgeUi.secondaryList || !forgeUi.main || !forgeUi.secondary || !forgeUi.confirm) return;
   const equipped = (lastState?.equipment || [])
     .filter((entry) => entry.item && ['legendary', 'supreme'].includes(entry.item.rarity));
   forgeUi.list.innerHTML = '';
+  forgeUi.secondaryList.innerHTML = '';
   forgeSelection = null;
   forgeUi.main.textContent = '主件: 未选择';
-  forgeUi.secondary.textContent = '副件: 等待匹配';
+  forgeUi.secondary.textContent = '副件: 等待选择';
   forgeUi.confirm.disabled = true;
   if (!equipped.length) {
     const empty = document.createElement('div');
     empty.textContent = '暂无已穿戴的传说及以上装备';
     forgeUi.list.appendChild(empty);
+    const subEmpty = document.createElement('div');
+    subEmpty.textContent = '请先选择主件';
+    forgeUi.secondaryList.appendChild(subEmpty);
     return;
   }
   equipped.forEach((entry) => {
@@ -1403,18 +1485,14 @@ function renderForgeModal() {
         node.classList.remove('selected')
       );
       btn.classList.add('selected');
-      const match = findForgeMatch(entry, lastState?.items || []);
-      if (!match) {
-        forgeSelection = null;
-        forgeUi.main.textContent = `主件: ${formatItemName(item)}`;
-        forgeUi.secondary.textContent = '副件: 背包没有同名传说及以上装备';
-        forgeUi.confirm.disabled = true;
-        return;
-      }
-      forgeSelection = match;
-      forgeUi.main.textContent = `主件: ${formatItemName(match.main)}`;
-      forgeUi.secondary.textContent = `副件: ${formatItemName(match.secondary)}`;
-      forgeUi.confirm.disabled = false;
+      forgeSelection = {
+        main: item,
+        mainSlot: entry.slot,
+        secondary: null,
+        secondaryKey: null
+      };
+      forgeUi.main.textContent = `主件: ${formatItemName(item)}`;
+      renderForgeSecondaryList(item.id);
     });
     forgeUi.list.appendChild(btn);
   });
@@ -2459,21 +2537,18 @@ async function promptChangePassword() {
     type: 'password'
   });
   if (!oldPassword) return;
-  const newPassword = await promptModal({
+  const newPasswordInputs = await promptDualModal({
     title: '修改密码',
-    text: '请输入新密码（至少4位）',
-    placeholder: '新密码',
-    type: 'password'
+    text: '请输入并确认新密码（至少4位）',
+    labelMain: '新密码',
+    labelSecondary: '确认新密码',
+    placeholderMain: '新密码',
+    placeholderSecondary: '确认新密码',
+    typeMain: 'password',
+    typeSecondary: 'password'
   });
-  if (!newPassword) return;
-  const confirmPassword = await promptModal({
-    title: '修改密码',
-    text: '请再次输入新密码',
-    placeholder: '确认新密码',
-    type: 'password'
-  });
-  if (!confirmPassword) return;
-  if (newPassword !== confirmPassword) {
+  if (!newPasswordInputs || !newPasswordInputs.main || !newPasswordInputs.secondary) return;
+  if (newPasswordInputs.main !== newPasswordInputs.secondary) {
     showToast('两次密码不一致');
     return;
   }
@@ -2481,7 +2556,7 @@ async function promptChangePassword() {
     await apiPost('/api/password', {
       token,
       oldPassword,
-      newPassword
+      newPassword: newPasswordInputs.main
     });
     showToast('密码已更新，请重新登录');
     const rememberedUser = localStorage.getItem('rememberedUser');
@@ -3093,6 +3168,7 @@ function renderState(state) {
     { id: 'forge', label: '\u88C5\u5907\u5408\u6210' },
     { id: 'consign', label: '\u5BC4\u552E' },
     { id: 'drops', label: '\u5957\u88c5\u6389\u843d' },
+    { id: 'switch', label: '\u5207\u6362\u89d2\u8272' },
     { id: 'logout', label: '\u9000\u51fa\u6e38\u620f' }
   ];
   // 只对非VIP玩家显示VIP激活按钮，并且自助领取功能开启时显示领取按钮
@@ -3173,6 +3249,10 @@ function renderState(state) {
       showDropsModal();
       return;
     }
+    if (a.id === 'switch') {
+      switchCharacter();
+      return;
+    }
     socket.emit('cmd', { text: a.id });
   });
 }
@@ -3208,6 +3288,17 @@ async function apiPost(path, body) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+async function apiGet(path, withAuth = false) {
+  const headers = {};
+  if (withAuth && token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  const res = await fetch(path, { headers });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Request failed');
   return data;
@@ -3772,7 +3863,7 @@ if (forgeUi.close) {
 }
 if (forgeUi.confirm) {
   forgeUi.confirm.addEventListener('click', () => {
-    if (!socket || !forgeSelection) return;
+    if (!socket || !forgeSelection || !forgeSelection.mainSlot || !forgeSelection.secondaryKey) return;
     socket.emit('cmd', {
       text: `forge equip:${forgeSelection.mainSlot} | ${forgeSelection.secondaryKey}`,
       source: 'ui'

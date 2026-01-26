@@ -219,6 +219,10 @@ body.dark .forge-item {
   color: var(--ink);
 }
 
+body.dark .forge-item-meta {
+  color: #b8a898;
+}
+
 body.dark #trade-item,
 body.dark #trade-qty,
 body.dark #trade-gold {
@@ -1376,6 +1380,10 @@ button:hover {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.prompt-field.hidden {
+  display: none;
 }
 
 .prompt-label {
@@ -2759,6 +2767,13 @@ button:hover {
 
 .forge-item.selected {
   box-shadow: 0 0 0 2px rgba(199, 122, 58, 0.6);
+}
+
+.forge-item-meta {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: #8a5a2d;
 }
 
 .forge-selection {

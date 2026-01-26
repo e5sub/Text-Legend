@@ -166,6 +166,14 @@ app.post('/api/character', async (req, res) => {
   res.json({ ok: true });
 });
 
+app.get('/api/characters', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  const session = await getSession(token);
+  if (!session) return res.status(401).json({ error: '登录已过期。' });
+  const chars = await listCharacters(session.user_id);
+  res.json({ ok: true, characters: chars });
+});
+
 app.get('/api/mail', async (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   const session = await getSession(token);
