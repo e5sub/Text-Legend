@@ -879,12 +879,14 @@ export async function handleCommand({ player, players, input, source, send, part
       const resolved = resolveInventoryItem(player, args);
       if (!resolved.slot || !resolved.item) return send('背包里没有该物品。');
       const res = equipItem(player, resolved.slot.id, resolved.slot.effects || null);
+      if (res.ok) player.forceStateRefresh = true;
       send(res.msg);
       return;
     }
     case 'unequip': {
       if (!args) return send('要卸下哪个部位？');
       const res = unequipItem(player, args);
+      if (res.ok) player.forceStateRefresh = true;
       send(res.msg);
       return;
     }
@@ -903,6 +905,7 @@ export async function handleCommand({ player, players, input, source, send, part
         if (hasSkill(player, skill.id)) return send('你已学会该技能。');
         if (!removeItem(player, item.id, 1, resolved.slot.effects)) return send('背包里没有该物品。');
         player.skills.push(skill.id);
+        player.forceStateRefresh = true;
         send(`学会技能: ${skill.name}。`);
         return;
       }
@@ -991,6 +994,7 @@ export async function handleCommand({ player, players, input, source, send, part
           send(`使用了 ${useCount} 个修炼果，${resultParts.join('、')}。`);
         }
         computeDerived(player);
+        player.forceStateRefresh = true;
         return;
       }
       if (!removeItem(player, item.id, 1, resolved.slot.effects)) return send('背包里没有该物品。');
@@ -1005,6 +1009,7 @@ export async function handleCommand({ player, players, input, source, send, part
         } else {
           player.position = { ...item.teleport };
         }
+        player.forceStateRefresh = true;
         send(`使用了 ${item.name}。`);
         return;
       }
@@ -1026,6 +1031,7 @@ export async function handleCommand({ player, players, input, source, send, part
             player.hp = clamp(player.hp + hpGain, 1, player.max_hp);
           }
           if (item.mp) player.mp = clamp(player.mp + item.mp, 0, player.max_mp);
+          player.forceStateRefresh = true;
           send(`使用了 ${item.name}。`);
           return;
         }
@@ -1037,6 +1043,7 @@ export async function handleCommand({ player, players, input, source, send, part
         };
         if (!player.status.potionLock) player.status.potionLock = {};
         player.status.potionLock[lockKey] = now + ticks * 1000;
+        player.forceStateRefresh = true;
         send(`使用了 ${item.name}，将持续恢复 5 秒。`);
         return;
       }
