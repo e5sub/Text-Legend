@@ -24,7 +24,7 @@
   book_war_halfmoon: { id: 'book_war_halfmoon', name: '技能书: 半月弯刀', type: 'book', price: 2800 },
   book_war_fire: { id: 'book_war_fire', name: '技能书: 烈火剑法', type: 'book', price: 6800 },
   book_war_savage: { id: 'book_war_savage', name: '技能书: 野蛮冲撞', type: 'book', price: 5200 },
-  book_war_earth_spike: { id: 'book_war_earth_spike', name: '技能书: 彻地钉', type: 'book', price: 9800, rarity: 'supreme' },
+  book_war_earth_spike: { id: 'book_war_earth_spike', name: '技能书: 彻地钉', type: 'book', price: 9800, rarity: 'supreme', worldBossOnly: true },
   book_mage_fireball: { id: 'book_mage_fireball', name: '技能书: 小火球', type: 'book', price: 1200 },
   book_mage_resist: { id: 'book_mage_resist', name: '技能书: 抗拒火环', type: 'book', price: 1800 },
   book_mage_inferno: { id: 'book_mage_inferno', name: '技能书: 地狱火', type: 'book', price: 2200 },
@@ -32,7 +32,7 @@
   book_mage_lightning: { id: 'book_mage_lightning', name: '技能书: 雷电术', type: 'book', price: 4800 },
   book_mage_flash: { id: 'book_mage_flash', name: '技能书: 疾光电影', type: 'book', price: 5200 },
   book_mage_thunder: { id: 'book_mage_thunder', name: '技能书: 地狱雷光', type: 'book', price: 6200 },
-  book_mage_thunderstorm: { id: 'book_mage_thunderstorm', name: '技能书: 雷霆万钧', type: 'book', price: 9800, rarity: 'supreme' },
+  book_mage_thunderstorm: { id: 'book_mage_thunderstorm', name: '技能书: 雷霆万钧', type: 'book', price: 9800, rarity: 'supreme', worldBossOnly: true },
   book_mage_shield: { id: 'book_mage_shield', name: '技能书: 魔法盾', type: 'book', price: 8800 },
   book_mage_ice: { id: 'book_mage_ice', name: '技能书: 冰咆哮', type: 'book', price: 9800 },
   book_tao_heal: { id: 'book_tao_heal', name: '技能书: 治愈术', type: 'book', price: 1400 },
@@ -45,7 +45,7 @@
   book_tao_shield: { id: 'book_tao_shield', name: '技能书: 幽灵盾', type: 'book', price: 5200 },
   book_tao_skeleton: { id: 'book_tao_skeleton', name: '技能书: 召唤骷髅', type: 'book', price: 5200 },
   book_tao_summon: { id: 'book_tao_summon', name: '技能书: 召唤神兽', type: 'book', price: 12000 },
-  book_tao_white_tiger: { id: 'book_tao_white_tiger', name: '技能书: 召唤白虎', type: 'book', price: 15000, rarity: 'supreme' },
+  book_tao_white_tiger: { id: 'book_tao_white_tiger', name: '技能书: 召唤白虎', type: 'book', price: 15000, rarity: 'supreme', worldBossOnly: true },
 
   // Warrior weapons
   sword_wood: { id: 'sword_wood', name: '木剑', type: 'weapon', slot: 'weapon', atk: 2, price: 120 },

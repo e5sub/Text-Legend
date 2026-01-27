@@ -14,7 +14,7 @@ import { addGuildMember, createGuild, getGuildByName, getGuildMember, getSabakOw
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
 import { sendMail, listMail, markMailRead, markMailClaimed } from './db/mail.js';
 import { createVipCodes, listVipCodes, useVipCode } from './db/vip.js';
-import { getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getStateThrottleEnabled, setStateThrottleEnabled, canUserClaimVip, incrementUserVipClaimCount, getWorldBossKillCount, setWorldBossKillCount } from './db/settings.js';
+import { getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, canUserClaimVip, incrementUserVipClaimCount, getWorldBossKillCount, setWorldBossKillCount } from './db/settings.js';
 import { listMobRespawns, upsertMobRespawn, clearMobRespawn, saveMobState } from './db/mobs.js';
 import {
   listConsignments,
@@ -434,18 +434,23 @@ app.get('/admin/state-throttle-status', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
   const enabled = await getStateThrottleEnabled();
-  res.json({ ok: true, enabled });
+  const intervalSec = await getStateThrottleIntervalSec();
+  res.json({ ok: true, enabled, intervalSec });
 });
 
 app.post('/admin/state-throttle-toggle', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
-  const { enabled } = req.body || {};
+  const { enabled, intervalSec } = req.body || {};
   const nextEnabled = enabled === true;
   await setStateThrottleEnabled(nextEnabled);
+  if (intervalSec !== undefined) {
+    await setStateThrottleIntervalSec(intervalSec);
+  }
   stateThrottleCachedValue = nextEnabled;
   stateThrottleLastUpdate = Date.now();
-  res.json({ ok: true, enabled: nextEnabled });
+  const intervalValue = await getStateThrottleIntervalSec();
+  res.json({ ok: true, enabled: nextEnabled, intervalSec: intervalValue });
 });
 
 app.get('/admin/backup', async (req, res) => {
@@ -848,7 +853,9 @@ function rollRarityDrop(mobTemplate, bonus = 1) {
       // 排除bossOnly标记的装备，这些应该只在特定BOSS掉落
       const filteredPool = pool.filter((id) => {
         const item = ITEM_TEMPLATES[id];
-        return !item?.bossOnly;
+        if (item?.bossOnly) return false;
+        if (item?.worldBossOnly && !mobTemplate.worldBoss) return false;
+        return true;
       });
       if (!filteredPool.length) return null;
       return filteredPool[randInt(0, filteredPool.length - 1)];
@@ -873,7 +880,9 @@ function rollRarityEquipmentDrop(mobTemplate, bonus = 1) {
       // 排除bossOnly标记的装备
       const filteredPool = equipPool.filter((id) => {
         const item = ITEM_TEMPLATES[id];
-        return !item?.bossOnly;
+        if (item?.bossOnly) return false;
+        if (item?.worldBossOnly && !mobTemplate.worldBoss) return false;
+        return true;
       });
       if (!filteredPool.length) return null;
       return filteredPool[randInt(0, filteredPool.length - 1)];
@@ -892,6 +901,7 @@ function dropLoot(mobTemplate, bonus = 1) {
     mobTemplate.drops.forEach((drop) => {
       const dropItem = ITEM_TEMPLATES[drop.id];
       if (dropItem?.bossOnly && !isBossMob(mobTemplate)) return;
+      if (dropItem?.worldBossOnly && !mobTemplate.worldBoss) return;
       // 史诗和传说级别的bossOnly装备只能在魔龙教主、世界BOSS、沙巴克BOSS掉落
       if (dropItem?.bossOnly) {
         const rarity = rarityByPrice(dropItem);
@@ -1879,6 +1889,8 @@ let vipSelfClaimCachedValue = null;
 let vipSelfClaimLastUpdate = 0;
 let stateThrottleCachedValue = null;
 let stateThrottleLastUpdate = 0;
+let stateThrottleIntervalCachedValue = null;
+let stateThrottleIntervalLastUpdate = 0;
 let lootLogEnabled = false;
 
 function logLoot(message) {
@@ -2158,6 +2170,15 @@ async function buildState(player) {
   } else {
     stateThrottleEnabled = stateThrottleCachedValue;
   }
+
+  let stateThrottleIntervalSec;
+  if (Date.now() - stateThrottleIntervalLastUpdate > STATE_THROTTLE_CACHE_TTL) {
+    stateThrottleIntervalSec = await getStateThrottleIntervalSec();
+    stateThrottleIntervalCachedValue = stateThrottleIntervalSec;
+    stateThrottleIntervalLastUpdate = Date.now();
+  } else {
+    stateThrottleIntervalSec = stateThrottleIntervalCachedValue;
+  }
   return {
     player: {
       name: player.name,
@@ -2233,7 +2254,8 @@ async function buildState(player) {
     bossRespawn: nextRespawn,
     server_time: Date.now(),
     vip_self_claim_enabled: vipSelfClaimEnabled,
-    state_throttle_enabled: stateThrottleEnabled
+    state_throttle_enabled: stateThrottleEnabled,
+    state_throttle_interval_sec: stateThrottleIntervalSec
   };
 }
 

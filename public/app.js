@@ -16,7 +16,7 @@ let stateThrottleEnabled = false;
 let pendingState = null;
 let stateThrottleTimer = null;
 let lastStateRenderAt = 0;
-const STATE_THROTTLE_INTERVAL = 10000;
+let stateThrottleIntervalMs = 10000;
 let stateThrottleOverride = localStorage.getItem('stateThrottleOverride') === 'true';
 let bossRespawnTimer = null;
 let bossRespawnTarget = null;
@@ -2880,6 +2880,10 @@ function handleIncomingState(payload) {
     stateThrottleEnabled = payload.state_throttle_enabled === true;
     syncStateThrottleToggle();
   }
+  if (payload.state_throttle_interval_sec !== undefined) {
+    const intervalSec = Math.max(1, Number(payload.state_throttle_interval_sec) || 10);
+    stateThrottleIntervalMs = intervalSec * 1000;
+  }
   const inBossRoom = isBossRoomState(payload) || isBossRoomState(lastState);
   const effectiveThrottleEnabled = stateThrottleEnabled && !stateThrottleOverride && !inBossRoom;
   if (!effectiveThrottleEnabled) {
@@ -2895,7 +2899,7 @@ function handleIncomingState(payload) {
   pendingState = payload;
   const now = Date.now();
   const elapsed = now - lastStateRenderAt;
-  if (elapsed >= STATE_THROTTLE_INTERVAL) {
+  if (elapsed >= stateThrottleIntervalMs) {
     renderState(pendingState);
     pendingState = null;
     lastStateRenderAt = now;
@@ -2908,7 +2912,7 @@ function handleIncomingState(payload) {
       renderState(pendingState);
       pendingState = null;
       lastStateRenderAt = Date.now();
-    }, Math.max(0, STATE_THROTTLE_INTERVAL - elapsed));
+    }, Math.max(0, stateThrottleIntervalMs - elapsed));
   }
 }
 

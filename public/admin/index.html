@@ -164,8 +164,12 @@
             <label class="admin-switch">
               <input type="checkbox" id="state-throttle-toggle">
               <span class="admin-switch-slider" aria-hidden="true"></span>
-              <span class="admin-switch-label">开启节流(10秒)</span>
+              <span class="admin-switch-label">开启节流</span>
             </label>
+            <div class="row" style="margin-top: 6px;">
+              <input id="state-throttle-interval" type="number" min="1" value="10" style="max-width: 120px;">
+              <button id="state-throttle-save" class="btn-small">保存秒数</button>
+            </div>
             <div id="state-throttle-msg" class="msg"></div>
           </div>
         </div>

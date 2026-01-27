@@ -74,6 +74,17 @@ export async function setStateThrottleEnabled(enabled) {
   await setSetting('state_throttle_enabled', enabled ? 'true' : 'false');
 }
 
+export async function getStateThrottleIntervalSec() {
+  const value = await getSetting('state_throttle_interval_sec', '10');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 10;
+}
+
+export async function setStateThrottleIntervalSec(seconds) {
+  const normalized = Math.max(1, Math.floor(Number(seconds) || 1));
+  await setSetting('state_throttle_interval_sec', String(normalized));
+}
+
 /**
  * 获取玩家已领取的VIP激活码数量
  */
