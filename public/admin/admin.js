@@ -28,6 +28,10 @@ const consignExpireStatus = document.getElementById('consign-expire-status');
 const consignExpireMsg = document.getElementById('consign-expire-msg');
 const consignExpireInput = document.getElementById('consign-expire-hours');
 const consignExpireSaveBtn = document.getElementById('consign-expire-save');
+const roomVariantStatus = document.getElementById('room-variant-status');
+const roomVariantMsg = document.getElementById('room-variant-msg');
+const roomVariantInput = document.getElementById('room-variant-count');
+const roomVariantSaveBtn = document.getElementById('room-variant-save');
 const usersSearchInput = document.getElementById('users-search');
 const usersSearchBtn = document.getElementById('users-search-btn');
 const adminPwModal = document.getElementById('admin-pw-modal');
@@ -117,6 +121,7 @@ async function login() {
     await refreshLootLogStatus();
     await refreshStateThrottleStatus();
     await refreshConsignExpireStatus();
+    await refreshRoomVariantStatus();
   } catch (err) {
     loginMsg.textContent = err.message;
   }
@@ -445,6 +450,35 @@ async function saveConsignExpireHours() {
   }
 }
 
+async function refreshRoomVariantStatus() {
+  if (!roomVariantStatus) return;
+  try {
+    const data = await api('/admin/room-variant-status', 'GET');
+    const count = Number(data.count || 5);
+    roomVariantStatus.textContent = `已设置(${count})`;
+    roomVariantStatus.style.color = 'green';
+    if (roomVariantInput) roomVariantInput.value = String(count);
+  } catch (err) {
+    roomVariantStatus.textContent = '加载失败';
+  }
+}
+
+async function saveRoomVariantCount() {
+  if (!roomVariantMsg) return;
+  roomVariantMsg.textContent = '';
+  try {
+    const count = roomVariantInput ? Number(roomVariantInput.value || 5) : 5;
+    if (!Number.isFinite(count) || count < 1) {
+      throw new Error('请输入有效数量');
+    }
+    await api('/admin/room-variant-update', 'POST', { count });
+    roomVariantMsg.textContent = '房间变种数量已保存';
+    await refreshRoomVariantStatus();
+  } catch (err) {
+    roomVariantMsg.textContent = err.message;
+  }
+}
+
 async function toggleStateThrottle(enabled) {
   if (!stateThrottleMsg) return;
   stateThrottleMsg.textContent = '';
@@ -536,6 +570,7 @@ if (adminToken) {
   refreshLootLogStatus();
   refreshStateThrottleStatus();
   refreshConsignExpireStatus();
+  refreshRoomVariantStatus();
 }
 
 applyTheme(localStorage.getItem('adminTheme') || 'light');
@@ -590,6 +625,9 @@ if (stateThrottleSaveBtn) {
 }
 if (consignExpireSaveBtn) {
   consignExpireSaveBtn.addEventListener('click', saveConsignExpireHours);
+}
+if (roomVariantSaveBtn) {
+  roomVariantSaveBtn.addEventListener('click', saveRoomVariantCount);
 }
 document.getElementById('backup-download').addEventListener('click', downloadBackup);
 document.getElementById('import-btn').addEventListener('click', importBackup);

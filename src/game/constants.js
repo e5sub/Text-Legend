@@ -19,7 +19,13 @@ export const CLASSES = {
   }
 };
 
-export const ROOM_VARIANT_COUNT = 5;
+export let ROOM_VARIANT_COUNT = 5;
+
+export function setRoomVariantCount(count) {
+  const normalized = Math.max(1, Math.floor(Number(count) || 1));
+  ROOM_VARIANT_COUNT = normalized;
+  return ROOM_VARIANT_COUNT;
+}
 
 const EXP_TABLE = [
   0,

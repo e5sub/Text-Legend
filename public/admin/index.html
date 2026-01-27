@@ -197,6 +197,22 @@
 
         <div class="block" data-collapsible>
           <div class="block-title">
+            <h2>房间变种数量</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <p>当前状态: <span id="room-variant-status">加载中...</span></p>
+            <div class="row" style="margin-top: 6px;">
+              <input id="room-variant-count" type="number" min="1" value="5" style="max-width: 120px;">
+              <button id="room-variant-save" class="btn-small">保存数量</button>
+            </div>
+            <p class="muted" style="margin-top: 6px;">修改后立即生效；减少时仅影响分流选择</p>
+            <div id="room-variant-msg" class="msg"></div>
+          </div>
+        </div>
+
+        <div class="block" data-collapsible>
+          <div class="block-title">
             <h2>数据备份与导入</h2>
             <button class="btn-small block-toggle">折叠</button>
           </div>

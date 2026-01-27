@@ -105,6 +105,17 @@ export async function setConsignExpireHours(hours) {
   await setSetting('consign_expire_hours', String(normalized));
 }
 
+export async function getRoomVariantCount() {
+  const value = await getSetting('room_variant_count', '5');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 5;
+}
+
+export async function setRoomVariantCount(count) {
+  const normalized = Math.max(1, Math.floor(Number(count) || 1));
+  await setSetting('room_variant_count', String(normalized));
+}
+
 /**
  * 获取玩家已领取的VIP激活码数量
  */

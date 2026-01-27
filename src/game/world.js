@@ -1067,7 +1067,7 @@ export const WORLD = {
   }
 };
 
-function expandRoomVariants(world) {
+export function expandRoomVariants(world) {
   const extraCount = Math.max(0, ROOM_VARIANT_COUNT - 3);
   if (!extraCount) return;
   const extraSuffixes = Array.from({ length: extraCount }, (_, idx) => idx + 4);
@@ -1141,6 +1141,66 @@ function expandRoomVariants(world) {
             nextExits[newDir] = replaceSuffix(dest, suffix);
           }
         });
+      });
+      room.exits = nextExits;
+    });
+  });
+}
+
+export function shrinkRoomVariants(world, maxCount) {
+  const limit = Math.max(1, Math.floor(Number(maxCount) || 1));
+  const removedRoomsByZone = new Map();
+
+  Object.entries(world).forEach(([zoneId, zone]) => {
+    if (!zone?.rooms) return;
+    const toRemove = new Set();
+    Object.keys(zone.rooms).forEach((roomId) => {
+      const match = roomId.match(/^(.*?)(\d+)$/);
+      if (!match) return;
+      const suffix = parseInt(match[2], 10);
+      if (Number.isFinite(suffix) && suffix > limit) {
+        toRemove.add(roomId);
+      }
+    });
+    if (toRemove.size) {
+      toRemove.forEach((roomId) => delete zone.rooms[roomId]);
+      removedRoomsByZone.set(zoneId, toRemove);
+    }
+  });
+
+  Object.entries(world).forEach(([zoneId, zone]) => {
+    if (!zone?.rooms) return;
+    Object.values(zone.rooms).forEach((room) => {
+      if (!room?.exits) return;
+      const nextExits = { ...room.exits };
+      Object.entries(room.exits).forEach(([dir, dest]) => {
+        const dirMatch = dir.match(/^(.*?)(\d+)$/);
+        if (dirMatch) {
+          const suffix = parseInt(dirMatch[2], 10);
+          if (Number.isFinite(suffix) && suffix > limit) {
+            delete nextExits[dir];
+            return;
+          }
+        }
+        if (typeof dest !== 'string') return;
+        const target = dest.includes(':') ? dest.split(':')[1] : dest;
+        const targetMatch = target.match(/^(.*?)(\d+)$/);
+        if (targetMatch) {
+          const suffix = parseInt(targetMatch[2], 10);
+          if (Number.isFinite(suffix) && suffix > limit) {
+            delete nextExits[dir];
+            return;
+          }
+        }
+        if (dest.includes(':')) {
+          const [destZone, destRoom] = dest.split(':');
+          const destZoneRooms = world[destZone]?.rooms;
+          if (!destZoneRooms || !destZoneRooms[destRoom]) {
+            delete nextExits[dir];
+          }
+        } else if (!zone.rooms[dest]) {
+          delete nextExits[dir];
+        }
       });
       room.exits = nextExits;
     });

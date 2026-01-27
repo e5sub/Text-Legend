@@ -14,7 +14,7 @@ import { addGuildMember, createGuild, getGuildByName, getGuildMember, getSabakOw
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
 import { sendMail, listMail, markMailRead, markMailClaimed } from './db/mail.js';
 import { createVipCodes, listVipCodes, useVipCode } from './db/vip.js';
-import { getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, canUserClaimVip, incrementUserVipClaimCount, getWorldBossKillCount, setWorldBossKillCount } from './db/settings.js';
+import { getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, canUserClaimVip, incrementUserVipClaimCount, getWorldBossKillCount, setWorldBossKillCount } from './db/settings.js';
 import { listMobRespawns, upsertMobRespawn, clearMobRespawn, saveMobState } from './db/mobs.js';
 import {
   listConsignments,
@@ -56,11 +56,11 @@ import {
 } from './game/skills.js';
 import { MOB_TEMPLATES } from './game/mobs.js';
 import { ITEM_TEMPLATES } from './game/items.js';
-import { WORLD } from './game/world.js';
+import { WORLD, expandRoomVariants, shrinkRoomVariants } from './game/world.js';
 import { getRoomMobs, getAliveMobs, spawnMobs, removeMob, seedRespawnCache, setRespawnStore, getAllAliveMobs, incrementWorldBossKills, setWorldBossKillCount as setWorldBossKillCountState } from './game/state.js';
 import { calcHitChance, calcDamage, applyDamage, applyPoison, tickStatus, getDefenseMultiplier } from './game/combat.js';
 import { randInt, clamp } from './game/utils.js';
-import { expForLevel } from './game/constants.js';
+import { expForLevel, setRoomVariantCount as applyRoomVariantCount } from './game/constants.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -479,6 +479,27 @@ app.post('/admin/consign-expire-update', async (req, res) => {
   consignExpireHoursCachedValue = hours;
   consignExpireHoursLastUpdate = Date.now();
   res.json({ ok: true, hours });
+});
+
+app.get('/admin/room-variant-status', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const count = await getRoomVariantCount();
+  res.json({ ok: true, count });
+});
+
+app.post('/admin/room-variant-update', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const count = Math.max(1, Math.floor(Number(req.body?.count || 0) || 0));
+  if (!Number.isFinite(count) || count < 1) {
+    return res.status(400).json({ error: '请输入有效数量' });
+  }
+  await setRoomVariantCount(count);
+  applyRoomVariantCount(count);
+  shrinkRoomVariants(WORLD, count);
+  expandRoomVariants(WORLD);
+  res.json({ ok: true, count });
 });
 
 app.get('/admin/backup', async (req, res) => {
@@ -5413,6 +5434,10 @@ async function start() {
   lootLogEnabled = await getLootLogEnabled();
   const worldBossKillCount = await getWorldBossKillCount();
   setWorldBossKillCountState(worldBossKillCount);
+  const roomVariantCount = await getRoomVariantCount();
+  applyRoomVariantCount(roomVariantCount);
+  shrinkRoomVariants(WORLD, roomVariantCount);
+  expandRoomVariants(WORLD);
   checkMobRespawn();
   setInterval(() => checkMobRespawn(), 5000);
   setInterval(() => sabakTick().catch(() => {}), 5000);
