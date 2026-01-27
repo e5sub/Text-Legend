@@ -147,7 +147,8 @@ const chat = {
   sabakRegisterBtn: document.getElementById('chat-sabak-register'),
   locationBtn: document.getElementById('chat-send-location'),
   emojiToggle: document.getElementById('chat-emoji-toggle'),
-  emojiPanel: document.getElementById('chat-emoji-panel')
+  emojiPanel: document.getElementById('chat-emoji-panel'),
+  clearBtn: document.getElementById('chat-clear')
 };
 const EMOJI_LIST = ['😀', '😁', '😂', '🤣', '😅', '😊', '😍', '😘', '😎', '🤔', '😴', '😡', '😭', '😇', '🤝', '👍', '👎', '🔥', '💯', '🎉'];
 const tradeUi = {
@@ -3843,6 +3844,7 @@ function enterGame(name) {
   socket.on('connect', () => {
     socket.emit('auth', { token, name });
     socket.emit('cmd', { text: 'stats' });
+    socket.emit('state_throttle_override', { enabled: stateThrottleOverride });
   });
   socket.on('auth_error', (payload) => {
     appendLine(`认证失败: ${payload.error}`);
@@ -4059,6 +4061,12 @@ if (chat.emojiToggle) {
     if (!chat.emojiPanel) return;
     renderEmojiPanel();
     chat.emojiPanel.classList.toggle('hidden');
+  });
+}
+if (chat.clearBtn) {
+  chat.clearBtn.addEventListener('click', () => {
+    clearChatLog();
+    showToast('聊天已清屏');
   });
 }
 if (chat.emojiPanel) {
@@ -4718,6 +4726,18 @@ if (logShowExpGold) {
   });
 }
 
+function clearChatLog() {
+  if (!chat.log) return;
+  chat.log.innerHTML = '';
+  const name = activeChar || '';
+  try {
+    const key = chatCacheKey(name);
+    localStorage.setItem(key, JSON.stringify([]));
+  } catch {
+    // ignore cache failures
+  }
+}
+
 function syncStateThrottleToggle() {
   if (!logThrottleNormal) return;
   logThrottleNormal.checked = stateThrottleOverride;
@@ -4729,6 +4749,7 @@ if (logThrottleNormal) {
   logThrottleNormal.addEventListener('change', () => {
     stateThrottleOverride = logThrottleNormal.checked;
     localStorage.setItem('stateThrottleOverride', stateThrottleOverride.toString());
+    if (socket) socket.emit('state_throttle_override', { enabled: stateThrottleOverride });
   });
 }
 

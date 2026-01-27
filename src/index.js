@@ -1892,6 +1892,24 @@ let stateThrottleLastUpdate = 0;
 let stateThrottleIntervalCachedValue = null;
 let stateThrottleIntervalLastUpdate = 0;
 let lootLogEnabled = false;
+const stateThrottleLastSent = new Map();
+const stateThrottleLastExits = new Map();
+
+async function getStateThrottleSettingsCached() {
+  const now = Date.now();
+  if (now - stateThrottleLastUpdate > STATE_THROTTLE_CACHE_TTL) {
+    stateThrottleCachedValue = await getStateThrottleEnabled();
+    stateThrottleLastUpdate = now;
+  }
+  if (now - stateThrottleIntervalLastUpdate > STATE_THROTTLE_CACHE_TTL) {
+    stateThrottleIntervalCachedValue = await getStateThrottleIntervalSec();
+    stateThrottleIntervalLastUpdate = now;
+  }
+  return {
+    enabled: Boolean(stateThrottleCachedValue),
+    intervalSec: Math.max(1, Number(stateThrottleIntervalCachedValue) || 10)
+  };
+}
 
 function logLoot(message) {
   if (!lootLogEnabled) return;
@@ -2162,23 +2180,8 @@ async function buildState(player) {
     vipSelfClaimEnabled = vipSelfClaimCachedValue;
   }
 
-  let stateThrottleEnabled;
-  if (Date.now() - stateThrottleLastUpdate > STATE_THROTTLE_CACHE_TTL) {
-    stateThrottleEnabled = await getStateThrottleEnabled();
-    stateThrottleCachedValue = stateThrottleEnabled;
-    stateThrottleLastUpdate = Date.now();
-  } else {
-    stateThrottleEnabled = stateThrottleCachedValue;
-  }
-
-  let stateThrottleIntervalSec;
-  if (Date.now() - stateThrottleIntervalLastUpdate > STATE_THROTTLE_CACHE_TTL) {
-    stateThrottleIntervalSec = await getStateThrottleIntervalSec();
-    stateThrottleIntervalCachedValue = stateThrottleIntervalSec;
-    stateThrottleIntervalLastUpdate = Date.now();
-  } else {
-    stateThrottleIntervalSec = stateThrottleIntervalCachedValue;
-  }
+  const { enabled: stateThrottleEnabled, intervalSec: stateThrottleIntervalSec } =
+    await getStateThrottleSettingsCached();
   return {
     player: {
       name: player.name,
@@ -2261,8 +2264,42 @@ async function buildState(player) {
 
 async function sendState(player) {
   if (!player.socket) return;
+  const { enabled, intervalSec } = await getStateThrottleSettingsCached();
+  const override = Boolean(player.stateThrottleOverride);
+  const inBossRoom = player.position
+    ? isBossRoom(player.position.zone, player.position.room)
+    : false;
+  let forceSend = false;
+  let exitsHash = null;
+  if (enabled && !override && !inBossRoom) {
+    if (player.position) {
+      const exits = buildRoomExits(player.position.zone, player.position.room);
+      exitsHash = JSON.stringify(exits);
+      const key = player.userId || player.name || player.socket.id;
+      const lastHash = stateThrottleLastExits.get(key);
+      if (lastHash !== exitsHash) {
+        forceSend = true;
+      }
+    }
+  }
+  if (enabled && !override && !inBossRoom && !forceSend) {
+    const key = player.userId || player.name || player.socket.id;
+    const now = Date.now();
+    const lastSent = stateThrottleLastSent.get(key) || 0;
+    if (now - lastSent < intervalSec * 1000) {
+      return;
+    }
+    stateThrottleLastSent.set(key, now);
+  } else if (enabled && !override && !inBossRoom) {
+    const key = player.userId || player.name || player.socket.id;
+    stateThrottleLastSent.set(key, Date.now());
+  }
   const state = await buildState(player);
   player.socket.emit('state', state);
+  if (exitsHash && (player.userId || player.name || player.socket.id)) {
+    const key = player.userId || player.name || player.socket.id;
+    stateThrottleLastExits.set(key, exitsHash);
+  }
 }
 
 async function sendRoomState(zoneId, roomId) {
@@ -2985,6 +3022,13 @@ function tryAutoPotion(player) {
 }
 
 io.on('connection', (socket) => {
+  socket.on('state_throttle_override', (payload) => {
+    socket.data.stateThrottleOverride = payload?.enabled === true;
+    const player = players.get(socket.id);
+    if (player) {
+      player.stateThrottleOverride = socket.data.stateThrottleOverride;
+    }
+  });
   socket.on('auth', async ({ token, name }) => {
     const session = await getSession(token);
     if (!session) {
@@ -3031,6 +3075,7 @@ io.on('connection', (socket) => {
     loaded.combat = null;
     loaded.guild = null;
     if (!loaded.flags) loaded.flags = {};
+    loaded.stateThrottleOverride = socket.data?.stateThrottleOverride === true;
 
     // 自动恢复召唤物
     const savedSummons = Array.isArray(loaded.flags.savedSummons)
