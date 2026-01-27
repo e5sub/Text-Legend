@@ -41,15 +41,15 @@ export async function getLootLogEnabled() {
   return enabled === 'true' || enabled === '1';
 }
 
-export async function getWorldBossKillCount() {
-  const count = await getSetting('world_boss_kill_count', '0');
+export async function getWorldBossKillCount(realmId = 1) {
+  const count = await getSetting(`world_boss_kill_count_${realmId}`, '0');
   const parsed = parseInt(count, 10);
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-export async function setWorldBossKillCount(count) {
+export async function setWorldBossKillCount(count, realmId = 1) {
   const normalized = Math.max(0, Math.floor(Number(count) || 0));
-  await setSetting('world_boss_kill_count', String(normalized));
+  await setSetting(`world_boss_kill_count_${realmId}`, String(normalized));
 }
 
 /**
@@ -114,6 +114,17 @@ export async function getRoomVariantCount() {
 export async function setRoomVariantCount(count) {
   const normalized = Math.max(1, Math.floor(Number(count) || 1));
   await setSetting('room_variant_count', String(normalized));
+}
+
+export async function getRealmCount() {
+  const value = await getSetting('realm_count', '1');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 1;
+}
+
+export async function setRealmCount(count) {
+  const normalized = Math.max(1, Math.floor(Number(count) || 1));
+  await setSetting('realm_count', String(normalized));
 }
 
 /**

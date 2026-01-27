@@ -5,14 +5,14 @@ import { randInt } from './utils.js';
 const ROOM_MOBS = new Map();
 const RESPAWN_CACHE = new Map();
 let respawnStore = null;
-let worldBossKillCount = 0;
+const worldBossKillCounts = new Map();
 const BOSS_SCALE = { hp: 1.25, atk: 1.42, def: 1.77 };
 const MOB_HP_SCALE = 2;
 const MOB_STAT_SCALE = 1.69;
 const MOB_DEF_SCALE = 1.5;
 
-function respawnKey(zoneId, roomId, slotIndex) {
-  return `${zoneId}:${roomId}:${slotIndex}`;
+function respawnKey(realmId, zoneId, roomId, slotIndex) {
+  return `${realmId}:${zoneId}:${roomId}:${slotIndex}`;
 }
 
 function isBossTemplate(tpl) {
@@ -26,7 +26,7 @@ function isBossTemplate(tpl) {
   );
 }
 
-function scaledStats(tpl) {
+function scaledStats(tpl, realmId = 1) {
   if (!tpl) return { hp: 0, atk: 0, def: 0, mdef: 0 };
   if (!isBossTemplate(tpl)) {
     const def = Math.floor(tpl.def * MOB_STAT_SCALE * MOB_DEF_SCALE);
@@ -48,7 +48,8 @@ function scaledStats(tpl) {
     mdef: Math.floor(def * 0.5)
   };
   if (tpl.worldBoss) {
-    const growth = 1 + Math.floor(worldBossKillCount / 5) * 0.01;
+    const count = worldBossKillCounts.get(realmId) || 0;
+    const growth = 1 + Math.floor(count / 5) * 0.01;
     stats = {
       hp: Math.floor(stats.hp * growth),
       atk: Math.floor(stats.atk * growth),
@@ -59,8 +60,8 @@ function scaledStats(tpl) {
   return stats;
 }
 
-function roomKey(zoneId, roomId) {
-  return `${zoneId}:${roomId}`;
+function roomKey(realmId, zoneId, roomId) {
+  return `${realmId}:${zoneId}:${roomId}`;
 }
 
 export function getRoom(zoneId, roomId) {
@@ -69,8 +70,8 @@ export function getRoom(zoneId, roomId) {
   return zone.rooms[roomId] || null;
 }
 
-export function getRoomMobs(zoneId, roomId) {
-  const key = roomKey(zoneId, roomId);
+export function getRoomMobs(zoneId, roomId, realmId = 1) {
+  const key = roomKey(realmId, zoneId, roomId);
   if (!ROOM_MOBS.has(key)) {
     ROOM_MOBS.set(key, []);
   }
@@ -85,6 +86,7 @@ export function seedRespawnCache(records) {
     const zoneId = row.zone_id || row.zoneId;
     const roomId = row.room_id || row.roomId;
     const slotIndex = Number(row.slot_index ?? row.slotIndex);
+    const realmId = Number(row.realm_id ?? row.realmId ?? 1) || 1;
     if (!zoneId || !roomId || Number.isNaN(slotIndex)) return;
     
     let status = {};
@@ -96,7 +98,7 @@ export function seedRespawnCache(records) {
       }
     }
     
-    RESPAWN_CACHE.set(respawnKey(zoneId, roomId, slotIndex), {
+    RESPAWN_CACHE.set(respawnKey(realmId, zoneId, roomId, slotIndex), {
       templateId: row.template_id || row.templateId,
       respawnAt: Number(row.respawn_at ?? row.respawnAt),
       currentHp: row.current_hp ?? row.currentHp ?? null,
@@ -109,14 +111,14 @@ export function setRespawnStore(store) {
   respawnStore = store;
 }
 
-export function getAliveMobs(zoneId, roomId) {
-  return getRoomMobs(zoneId, roomId).filter((m) => m.hp > 0);
+export function getAliveMobs(zoneId, roomId, realmId = 1) {
+  return getRoomMobs(zoneId, roomId, realmId).filter((m) => m.hp > 0);
 }
 
-export function spawnMobs(zoneId, roomId) {
+export function spawnMobs(zoneId, roomId, realmId = 1) {
   const room = getRoom(zoneId, roomId);
   if (!room || !room.spawns || room.spawns.length === 0) return [];
-  const mobList = getRoomMobs(zoneId, roomId);
+  const mobList = getRoomMobs(zoneId, roomId, realmId);
   let spawnList = room.spawns.slice();
   const bossIds = spawnList.filter((id) => isBossTemplate(MOB_TEMPLATES[id]));
   const normalIds = spawnList.filter((id) => !isBossTemplate(MOB_TEMPLATES[id]));
@@ -144,9 +146,9 @@ export function spawnMobs(zoneId, roomId) {
   spawnList.forEach((templateId, index) => {
     let mob = mobList.find((m) => m.slotIndex === index);
     const tpl = MOB_TEMPLATES[templateId];
-    const scaled = scaledStats(tpl);
+    const scaled = scaledStats(tpl, realmId);
     if (!mob) {
-      const cached = RESPAWN_CACHE.get(respawnKey(zoneId, roomId, index));
+      const cached = RESPAWN_CACHE.get(respawnKey(realmId, zoneId, roomId, index));
       if (cached && cached.respawnAt > now) {
         // 检查缓存的怪物类型是否匹配当前配置
         if (!cached.templateId || cached.templateId === templateId) {
@@ -170,9 +172,9 @@ export function spawnMobs(zoneId, roomId) {
           return;
         }
         // 缓存的怪物类型不匹配，清理旧缓存，直接创建新怪物
-        RESPAWN_CACHE.delete(respawnKey(zoneId, roomId, index));
+        RESPAWN_CACHE.delete(respawnKey(realmId, zoneId, roomId, index));
         if (respawnStore && respawnStore.clear) {
-          respawnStore.clear(zoneId, roomId, index);
+          respawnStore.clear(realmId, zoneId, roomId, index);
         }
       } else if (cached && cached.respawnAt <= now && cached.currentHp !== null && cached.currentHp !== undefined) {
         // 缓存已过期但有血量数据：恢复怪物血量（重启服务器加载）
@@ -199,9 +201,9 @@ export function spawnMobs(zoneId, roomId) {
         return;
       } else if (cached && cached.respawnAt <= now) {
         // 缓存已过期，清理缓存记录
-        RESPAWN_CACHE.delete(respawnKey(zoneId, roomId, index));
+        RESPAWN_CACHE.delete(respawnKey(realmId, zoneId, roomId, index));
         if (respawnStore && respawnStore.clear) {
-          respawnStore.clear(zoneId, roomId, index);
+          respawnStore.clear(realmId, zoneId, roomId, index);
         }
       }
       mob = {
@@ -237,28 +239,31 @@ export function spawnMobs(zoneId, roomId) {
       mob.status = { baseStats: { atk: scaled.atk, def: scaled.def, mdef: scaled.mdef, max_hp: scaled.hp } };
       mob.respawnAt = null;
       mob.justRespawned = Boolean(tpl.worldBoss || tpl.sabakBoss || tpl.respawnMs);
-      RESPAWN_CACHE.delete(respawnKey(zoneId, roomId, index));
+      RESPAWN_CACHE.delete(respawnKey(realmId, zoneId, roomId, index));
       if (respawnStore && respawnStore.clear) {
-        respawnStore.clear(zoneId, roomId, index);
+        respawnStore.clear(realmId, zoneId, roomId, index);
       }
     }
   });
   return mobList;
 }
 
-export function incrementWorldBossKills(amount = 1) {
+export function incrementWorldBossKills(amount = 1, realmId = 1) {
   const delta = Number(amount) || 0;
-  worldBossKillCount = Math.max(0, worldBossKillCount + delta);
-  return worldBossKillCount;
+  const current = worldBossKillCounts.get(realmId) || 0;
+  const next = Math.max(0, current + delta);
+  worldBossKillCounts.set(realmId, next);
+  return next;
 }
 
-export function setWorldBossKillCount(count) {
-  worldBossKillCount = Math.max(0, Math.floor(Number(count) || 0));
-  return worldBossKillCount;
+export function setWorldBossKillCount(count, realmId = 1) {
+  const next = Math.max(0, Math.floor(Number(count) || 0));
+  worldBossKillCounts.set(realmId, next);
+  return next;
 }
 
-export function removeMob(zoneId, roomId, mobId) {
-  const mobs = getRoomMobs(zoneId, roomId);
+export function removeMob(zoneId, roomId, mobId, realmId = 1) {
+  const mobs = getRoomMobs(zoneId, roomId, realmId);
   const idx = mobs.findIndex((m) => m.id === mobId);
   if (idx >= 0) {
     const mob = mobs[idx];
@@ -271,17 +276,17 @@ export function removeMob(zoneId, roomId, mobId) {
       : (isSpecial ? 60 * 60 * 1000 : 1 * 1000);
     mob.respawnAt = Date.now() + delayMs;
     if (delayMs > 0) {
-      RESPAWN_CACHE.set(respawnKey(zoneId, roomId, mob.slotIndex), {
+      RESPAWN_CACHE.set(respawnKey(realmId, zoneId, roomId, mob.slotIndex), {
         templateId: mob.templateId,
         respawnAt: mob.respawnAt
       });
       if (respawnStore && respawnStore.set) {
-        respawnStore.set(zoneId, roomId, mob.slotIndex, mob.templateId, mob.respawnAt);
+        respawnStore.set(realmId, zoneId, roomId, mob.slotIndex, mob.templateId, mob.respawnAt);
       }
     } else {
-      RESPAWN_CACHE.delete(respawnKey(zoneId, roomId, mob.slotIndex));
+      RESPAWN_CACHE.delete(respawnKey(realmId, zoneId, roomId, mob.slotIndex));
       if (respawnStore && respawnStore.clear) {
-        respawnStore.clear(zoneId, roomId, mob.slotIndex);
+        respawnStore.clear(realmId, zoneId, roomId, mob.slotIndex);
       }
     }
     return mob;
@@ -289,17 +294,20 @@ export function removeMob(zoneId, roomId, mobId) {
   return null;
 }
 
-export function resetRoom(zoneId, roomId) {
-  ROOM_MOBS.delete(roomKey(zoneId, roomId));
+export function resetRoom(zoneId, roomId, realmId = 1) {
+  ROOM_MOBS.delete(roomKey(realmId, zoneId, roomId));
 }
 
-export function getAllAliveMobs() {
+export function getAllAliveMobs(realmId = 1) {
   const aliveMobs = [];
   for (const [key, mobs] of ROOM_MOBS.entries()) {
-    const [zoneId, roomId] = key.split(':');
+    const [realmKey, zoneId, roomId] = key.split(':');
+    const keyRealmId = Number(realmKey || 1) || 1;
+    if (keyRealmId !== realmId) continue;
     for (const mob of mobs) {
       if (mob.hp > 0 && mob.hp < mob.max_hp) {
         aliveMobs.push({
+          realmId: keyRealmId,
           zoneId,
           roomId,
           slotIndex: mob.slotIndex,

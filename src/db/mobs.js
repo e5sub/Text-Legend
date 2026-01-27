@@ -14,12 +14,15 @@ async function withSqliteRetry(operation, retries = 3, delayMs = 100) {
   }
 }
 
-export async function listMobRespawns() {
-  return knex('mob_respawns').select('zone_id', 'room_id', 'slot_index', 'template_id', 'respawn_at', 'current_hp', 'status');
+export async function listMobRespawns(realmId = 1) {
+  return knex('mob_respawns')
+    .where({ realm_id: realmId })
+    .select('zone_id', 'room_id', 'slot_index', 'template_id', 'respawn_at', 'current_hp', 'status', 'realm_id');
 }
 
-export async function upsertMobRespawn(zoneId, roomId, slotIndex, templateId, respawnAt, currentHp = null, status = null) {
+export async function upsertMobRespawn(realmId, zoneId, roomId, slotIndex, templateId, respawnAt, currentHp = null, status = null) {
   const data = {
+    realm_id: realmId,
     zone_id: zoneId,
     room_id: roomId,
     slot_index: slotIndex,
@@ -38,19 +41,19 @@ export async function upsertMobRespawn(zoneId, roomId, slotIndex, templateId, re
   return withSqliteRetry(() =>
     knex('mob_respawns')
       .insert(data)
-      .onConflict(['zone_id', 'room_id', 'slot_index'])
+      .onConflict(['realm_id', 'zone_id', 'room_id', 'slot_index'])
       .merge(data)
   );
 }
 
-export async function clearMobRespawn(zoneId, roomId, slotIndex) {
+export async function clearMobRespawn(realmId, zoneId, roomId, slotIndex) {
   return withSqliteRetry(() =>
     knex('mob_respawns')
-      .where({ zone_id: zoneId, room_id: roomId, slot_index: slotIndex })
+      .where({ realm_id: realmId, zone_id: zoneId, room_id: roomId, slot_index: slotIndex })
       .del()
   );
 }
 
-export async function saveMobState(zoneId, roomId, slotIndex, templateId, currentHp, status) {
-  return upsertMobRespawn(zoneId, roomId, slotIndex, templateId, 0, currentHp, status);
+export async function saveMobState(realmId, zoneId, roomId, slotIndex, templateId, currentHp, status) {
+  return upsertMobRespawn(realmId, zoneId, roomId, slotIndex, templateId, 0, currentHp, status);
 }

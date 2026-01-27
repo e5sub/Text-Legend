@@ -96,6 +96,7 @@ const directionLabels = {
   down: '下'
 };
 const ui = {
+  realm: document.getElementById('ui-realm'),
   name: document.getElementById('ui-name'),
   classLevel: document.getElementById('ui-class'),
   guild: document.getElementById('ui-guild'),
@@ -359,6 +360,7 @@ const authMsg = document.getElementById('auth-msg');
 const authToast = document.getElementById('auth-toast');
 const charMsg = document.getElementById('char-msg');
 const characterList = document.getElementById('character-list');
+const realmSelect = document.getElementById('realm-select');
 const loginUserInput = document.getElementById('login-username');
 const captchaUi = {
   loginInput: document.getElementById('login-captcha'),
@@ -370,6 +372,9 @@ const captchaUi = {
 };
 let lastSavedLevel = null;
 const CHAT_CACHE_LIMIT = 200;
+let realmList = [];
+let currentRealmId = 1;
+let realmInitPromise = null;
 
 function showToast(message) {
   authToast.textContent = message;
@@ -417,7 +422,10 @@ function exitGame() {
   }
   activeChar = null;
   lastState = null;
-  localStorage.removeItem('savedToken');
+  const username = localStorage.getItem('rememberedUser');
+  if (username) {
+    localStorage.removeItem(getUserStorageKey('savedToken', username));
+  }
   show(authSection);
 }
 
@@ -435,10 +443,10 @@ async function switchCharacter() {
   activeChar = null;
   lastState = null;
   const username = localStorage.getItem('rememberedUser');
-  const charsKey = getUserStorageKey('savedCharacters', username);
+  const charsKey = getUserStorageKey('savedCharacters', username, currentRealmId);
   let savedChars = [];
   try {
-    const data = await apiGet('/api/characters', true);
+    const data = await apiGet(`/api/characters?realmId=${currentRealmId}`, true);
     savedChars = Array.isArray(data.characters) ? data.characters : [];
     localStorage.setItem(charsKey, JSON.stringify(savedChars));
   } catch {
@@ -452,15 +460,93 @@ async function switchCharacter() {
   show(characterSection);
 }
 
-function getUserStorageKey(key, username) {
+function getUserStorageKey(key, username, realmId) {
   const user = username || localStorage.getItem('rememberedUser');
-  return user ? `${key}_${user}` : key;
+  const realmSuffix = realmId ? `_r${realmId}` : '';
+  return user ? `${key}_${user}${realmSuffix}` : key;
+}
+
+function normalizeRealmId(value, count) {
+  const parsed = Math.max(1, Math.floor(Number(value) || 1));
+  if (!count || count < 1) return 1;
+  return Math.min(parsed, count);
+}
+
+function getStoredRealmId(username) {
+  const key = getUserStorageKey('lastRealm', username);
+  return Number(localStorage.getItem(key) || 1);
+}
+
+function setCurrentRealmId(realmId, username) {
+  currentRealmId = realmId;
+  if (realmSelect) {
+    realmSelect.value = String(realmId);
+  }
+  if (username) {
+    const key = getUserStorageKey('lastRealm', username);
+    localStorage.setItem(key, String(realmId));
+  }
+}
+
+async function loadRealms() {
+  try {
+    const data = await apiGet('/api/realms');
+    realmList = Array.isArray(data.realms) ? data.realms : [];
+  } catch {
+    realmList = [];
+  }
+  if (!Array.isArray(realmList) || realmList.length === 0) {
+    realmList = [{ id: 1, name: '新区1' }];
+  }
+  if (realmSelect) {
+    realmSelect.innerHTML = '';
+    realmList.forEach((realm) => {
+      const option = document.createElement('option');
+      option.value = String(realm.id);
+      option.textContent = realm.name || `新区${realm.id}`;
+      realmSelect.appendChild(option);
+    });
+  }
+  const username = localStorage.getItem('rememberedUser');
+  const count = realmList.length;
+  const stored = getStoredRealmId(username);
+  setCurrentRealmId(normalizeRealmId(stored, count), username);
+}
+
+function ensureRealmsLoaded() {
+  if (!realmInitPromise) {
+    realmInitPromise = loadRealms();
+  }
+  return realmInitPromise;
+}
+
+async function refreshCharactersForRealm() {
+  const username = localStorage.getItem('rememberedUser');
+  const charsKey = getUserStorageKey('savedCharacters', username, currentRealmId);
+  if (!token) {
+    renderCharacters([]);
+    return;
+  }
+  try {
+    const data = await apiGet(`/api/characters?realmId=${currentRealmId}`, true);
+    const list = Array.isArray(data.characters) ? data.characters : [];
+    localStorage.setItem(charsKey, JSON.stringify(list));
+    renderCharacters(list);
+  } catch {
+    let cached = [];
+    try {
+      cached = JSON.parse(localStorage.getItem(charsKey) || '[]');
+    } catch {
+      cached = [];
+    }
+    renderCharacters(Array.isArray(cached) ? cached : []);
+  }
 }
 
 function updateSavedCharacters(player) {
   if (!player || !player.name) return;
   const username = localStorage.getItem('rememberedUser');
-  const storageKey = getUserStorageKey('savedCharacters', username);
+  const storageKey = getUserStorageKey('savedCharacters', username, currentRealmId);
   let chars = [];
   try {
     chars = JSON.parse(localStorage.getItem(storageKey) || '[]');
@@ -2980,6 +3066,8 @@ function renderState(state) {
     vipSelfClaimEnabled = state.vip_self_claim_enabled;
   }
   if (state.player) {
+    const realmName = realmList.find(r => r.id === currentRealmId)?.name || `新区${currentRealmId}`;
+    if (ui.realm) ui.realm.textContent = realmName;
     ui.name.textContent = state.player.name || '-';
     const classLabel = classNames[state.player.classId] || state.player.classId || '-';
     ui.classLevel.textContent = `${classLabel} | Lv ${state.player.level}`;
@@ -3686,27 +3774,33 @@ const remembered = localStorage.getItem('rememberedUser');
 if (remembered) {
   loginUserInput.value = remembered;
 }
-const tokenKey = getUserStorageKey('savedToken', remembered);
-const savedToken = localStorage.getItem(tokenKey);
-if (savedToken) {
-  token = savedToken;
-  const charsKey = getUserStorageKey('savedCharacters', remembered);
-  let savedChars = [];
-  try {
-    savedChars = JSON.parse(localStorage.getItem(charsKey) || '[]');
-  } catch {
-    savedChars = [];
+(async () => {
+  await ensureRealmsLoaded();
+  const tokenKey = getUserStorageKey('savedToken', remembered);
+  const savedToken = localStorage.getItem(tokenKey);
+  if (savedToken) {
+    token = savedToken;
+    const count = realmList.length || 1;
+    const initialRealm = normalizeRealmId(getStoredRealmId(remembered), count);
+    setCurrentRealmId(initialRealm, remembered);
+    const charsKey = getUserStorageKey('savedCharacters', remembered, currentRealmId);
+    let savedChars = [];
+    try {
+      savedChars = JSON.parse(localStorage.getItem(charsKey) || '[]');
+    } catch {
+      savedChars = [];
+    }
+    const lastCharKey = getUserStorageKey('lastCharacter', remembered, currentRealmId);
+    const lastChar = localStorage.getItem(lastCharKey);
+    const hasLastChar = lastChar && savedChars.some((c) => c.name === lastChar);
+    if (hasLastChar) {
+      enterGame(lastChar);
+    } else {
+      renderCharacters(savedChars);
+      show(characterSection);
+    }
   }
-  const lastCharKey = getUserStorageKey('lastCharacter', remembered);
-  const lastChar = localStorage.getItem(lastCharKey);
-  const hasLastChar = lastChar && savedChars.some((c) => c.name === lastChar);
-  if (hasLastChar) {
-    enterGame(lastChar);
-  } else {
-    renderCharacters(savedChars);
-    show(characterSection);
-  }
-}
+})();
 
 async function apiPost(path, body) {
   const res = await fetch(path, {
@@ -3739,14 +3833,22 @@ async function login() {
   const loginBtn = document.getElementById('login-btn');
   loginBtn.classList.add('btn-loading');
   try {
-    const data = await apiPost('/api/login', { username, password, captchaToken, captchaCode });
+    const data = await apiPost('/api/login', { username, password, captchaToken, captchaCode, realmId: currentRealmId });
     localStorage.setItem('rememberedUser', username);
     token = data.token;
     const storageKey = getUserStorageKey('savedToken', username);
     localStorage.setItem(storageKey, token);
-    const charsKey = getUserStorageKey('savedCharacters', username);
-    localStorage.setItem(charsKey, JSON.stringify(data.characters || []));
-    renderCharacters(data.characters || []);
+    await ensureRealmsLoaded();
+    const count = realmList.length || 1;
+    const preferredRealmId = normalizeRealmId(getStoredRealmId(username) || data.realmId || 1, count);
+    setCurrentRealmId(preferredRealmId, username);
+    if (preferredRealmId === data.realmId && Array.isArray(data.characters)) {
+      const charsKey = getUserStorageKey('savedCharacters', username, preferredRealmId);
+      localStorage.setItem(charsKey, JSON.stringify(data.characters || []));
+      renderCharacters(data.characters || []);
+    } else {
+      await refreshCharactersForRealm();
+    }
     show(characterSection);
     showToast('登录成功');
   } catch (err) {
@@ -3818,9 +3920,9 @@ async function createCharacter() {
     return;
   }
   try {
-    await apiPost('/api/character', { token, name, classId });
+    await apiPost('/api/character', { token, name, classId, realmId: currentRealmId });
     const username = localStorage.getItem('rememberedUser');
-    const charsKey = getUserStorageKey('savedCharacters', username);
+    const charsKey = getUserStorageKey('savedCharacters', username, currentRealmId);
     let saved = [];
     try {
       saved = JSON.parse(localStorage.getItem(charsKey) || '[]');
@@ -3853,7 +3955,7 @@ function enterGame(name) {
   
   activeChar = name;
   const username = localStorage.getItem('rememberedUser');
-  const storageKey = getUserStorageKey('lastCharacter', username);
+  const storageKey = getUserStorageKey('lastCharacter', username, currentRealmId);
   localStorage.setItem(storageKey, name);
   lastSavedLevel = null;
   show(gameSection);
@@ -3882,7 +3984,7 @@ function enterGame(name) {
     return rawEmit(event, payload);
   };
   socket.on('connect', () => {
-    socket.emit('auth', { token, name });
+    socket.emit('auth', { token, name, realmId: currentRealmId });
     socket.emit('cmd', { text: 'stats' });
     if (stateThrottleOverrideServerAllowed) {
       socket.emit('state_throttle_override', { enabled: stateThrottleOverride });
@@ -4084,6 +4186,17 @@ function showObserveModal(data) {
 document.getElementById('login-btn').addEventListener('click', login);
 document.getElementById('register-btn').addEventListener('click', register);
 document.getElementById('create-char-btn').addEventListener('click', createCharacter);
+if (realmSelect) {
+  realmSelect.addEventListener('change', () => {
+    const username = localStorage.getItem('rememberedUser');
+    const count = realmList.length || 1;
+    const nextRealm = normalizeRealmId(realmSelect.value, count);
+    setCurrentRealmId(nextRealm, username);
+    if (!characterSection.classList.contains('hidden')) {
+      refreshCharactersForRealm();
+    }
+  });
+}
 if (ui.changePasswordButtons && ui.changePasswordButtons.length) {
   ui.changePasswordButtons.forEach((btn) => {
     btn.addEventListener('click', () => {

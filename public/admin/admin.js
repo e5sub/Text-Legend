@@ -32,6 +32,10 @@ const roomVariantStatus = document.getElementById('room-variant-status');
 const roomVariantMsg = document.getElementById('room-variant-msg');
 const roomVariantInput = document.getElementById('room-variant-count');
 const roomVariantSaveBtn = document.getElementById('room-variant-save');
+const realmCountStatus = document.getElementById('realm-count-status');
+const realmCountMsg = document.getElementById('realm-count-msg');
+const realmCountInput = document.getElementById('realm-count-input');
+const realmCountSaveBtn = document.getElementById('realm-count-save');
 const usersSearchInput = document.getElementById('users-search');
 const usersSearchBtn = document.getElementById('users-search-btn');
 const adminPwModal = document.getElementById('admin-pw-modal');
@@ -122,6 +126,7 @@ async function login() {
     await refreshStateThrottleStatus();
     await refreshConsignExpireStatus();
     await refreshRoomVariantStatus();
+    await refreshRealmCountStatus();
   } catch (err) {
     loginMsg.textContent = err.message;
   }
@@ -479,6 +484,35 @@ async function saveRoomVariantCount() {
   }
 }
 
+async function refreshRealmCountStatus() {
+  if (!realmCountStatus) return;
+  try {
+    const data = await api('/admin/realm-count-status', 'GET');
+    const count = Number(data.count || 1);
+    realmCountStatus.textContent = `已设置(${count})`;
+    realmCountStatus.style.color = 'green';
+    if (realmCountInput) realmCountInput.value = String(count);
+  } catch (err) {
+    realmCountStatus.textContent = '加载失败';
+  }
+}
+
+async function saveRealmCount() {
+  if (!realmCountMsg) return;
+  realmCountMsg.textContent = '';
+  try {
+    const count = realmCountInput ? Number(realmCountInput.value || 1) : 1;
+    if (!Number.isFinite(count) || count < 1) {
+      throw new Error('请输入有效数量');
+    }
+    await api('/admin/realm-count-update', 'POST', { count });
+    realmCountMsg.textContent = '新区数量已保存';
+    await refreshRealmCountStatus();
+  } catch (err) {
+    realmCountMsg.textContent = err.message;
+  }
+}
+
 async function toggleStateThrottle(enabled) {
   if (!stateThrottleMsg) return;
   stateThrottleMsg.textContent = '';
@@ -571,6 +605,7 @@ if (adminToken) {
   refreshStateThrottleStatus();
   refreshConsignExpireStatus();
   refreshRoomVariantStatus();
+  refreshRealmCountStatus();
 }
 
 applyTheme(localStorage.getItem('adminTheme') || 'light');
@@ -628,6 +663,9 @@ if (consignExpireSaveBtn) {
 }
 if (roomVariantSaveBtn) {
   roomVariantSaveBtn.addEventListener('click', saveRoomVariantCount);
+}
+if (realmCountSaveBtn) {
+  realmCountSaveBtn.addEventListener('click', saveRealmCount);
 }
 document.getElementById('backup-download').addEventListener('click', downloadBackup);
 document.getElementById('import-btn').addEventListener('click', importBackup);

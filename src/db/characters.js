@@ -9,16 +9,19 @@ function parseJson(value, fallback) {
   }
 }
 
-export async function listCharacters(userId) {
-  return knex('characters').where({ user_id: userId }).select('name', 'class', 'level');
+export async function listCharacters(userId, realmId = 1) {
+  return knex('characters')
+    .where({ user_id: userId, realm_id: realmId })
+    .select('name', 'class', 'level');
 }
 
-export async function loadCharacter(userId, name) {
-  const row = await knex('characters').where({ user_id: userId, name }).first();
+export async function loadCharacter(userId, name, realmId = 1) {
+  const row = await knex('characters').where({ user_id: userId, name, realm_id: realmId }).first();
   if (!row) return null;
   const player = {
     id: row.id,
     user_id: row.user_id,
+    realmId: row.realm_id || realmId,
     name: row.name,
     classId: row.class,
     level: row.level,
@@ -46,7 +49,12 @@ export async function findCharacterByName(name) {
   return knex('characters').where({ name }).first();
 }
 
-export async function saveCharacter(userId, player) {
+export async function findCharacterByNameInRealm(name, realmId = 1) {
+  return knex('characters').where({ name, realm_id: realmId }).first();
+}
+
+export async function saveCharacter(userId, player, realmId = 1) {
+  const resolvedRealmId = Number(player?.realmId ?? realmId ?? 1) || 1;
   normalizeInventory(player);
   // 保存召唤物信息到flags中（只有在召唤物存在且活着时保存）
   if (!player.flags) player.flags = {};
@@ -69,6 +77,7 @@ export async function saveCharacter(userId, player) {
   }
   const data = {
     user_id: userId,
+    realm_id: resolvedRealmId,
     name: player.name,
     class: player.classId,
     level: player.level,
@@ -87,9 +96,11 @@ export async function saveCharacter(userId, player) {
     flags_json: JSON.stringify(player.flags || {})
   };
 
-  const exists = await knex('characters').where({ user_id: userId, name: player.name }).first();
+  const exists = await knex('characters').where({ user_id: userId, name: player.name, realm_id: resolvedRealmId }).first();
   if (exists) {
-    await knex('characters').where({ user_id: userId, name: player.name }).update({ ...data, updated_at: knex.fn.now() });
+    await knex('characters')
+      .where({ user_id: userId, name: player.name, realm_id: resolvedRealmId })
+      .update({ ...data, updated_at: knex.fn.now() });
     return exists.id;
   }
   const [id] = await knex('characters').insert(data);

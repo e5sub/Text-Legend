@@ -55,6 +55,10 @@
 
     <section id="character" class="panel hidden">
       <h2>角色列表</h2>
+      <div class="realm-row">
+        <label for="realm-select">新区</label>
+        <select id="realm-select"></select>
+      </div>
       <div id="character-list"></div>
       <div class="divider"></div>
       <h3>创建角色</h3>
@@ -75,6 +79,7 @@
       <div class="status-grid">
         <div class="status-card">
           <div class="status-title">角色信息</div>
+          <div class="status-row"><span>区服</span><strong id="ui-realm">-</strong></div>
           <div class="status-row"><span>角色</span><strong id="ui-name">-</strong></div>
           <div class="status-row"><span>职业/等级</span><strong id="ui-class">-</strong></div>
           <div class="status-row"><span>行会</span><strong id="ui-guild">-</strong></div>

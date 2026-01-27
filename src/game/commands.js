@@ -232,8 +232,8 @@ function roomLabel(player) {
 }
 
 function listMobs(zoneId, roomId) {
-  spawnMobs(zoneId, roomId);
-  const mobs = getAliveMobs(zoneId, roomId);
+      spawnMobs(zoneId, roomId, player.realmId || 1);
+      const mobs = getAliveMobs(zoneId, roomId, player.realmId || 1);
   if (mobs.length === 0) return '这里没有怪物。';
   return mobs.map((m) => `${m.name} (生命 ${m.hp}/${m.max_hp})`).join(', ');
 }
@@ -1052,7 +1052,7 @@ export async function handleCommand({ player, players, input, source, send, part
     case 'attack':
     case 'kill': {
       if (!args) return send('要攻击哪个怪物？');
-      const mobs = getAliveMobs(player.position.zone, player.position.room);
+      const mobs = getAliveMobs(player.position.zone, player.position.room, player.realmId || 1);
       const target = mobs.find((m) => m.name.toLowerCase() === args.toLowerCase() || m.id === args);
       if (!target) {
         const pvpTarget = players.find(
@@ -1330,7 +1330,7 @@ export async function handleCommand({ player, players, input, source, send, part
       if (skill.type === 'repel') {
         if (player.mp < skill.mp) return send('魔法不足。');
         player.mp -= skill.mp;
-        const mobs = getAliveMobs(player.position.zone, player.position.room);
+        const mobs = getAliveMobs(player.position.zone, player.position.room, player.realmId || 1);
         if (!mobs.length) return send('这里没有怪物。');
         mobs.forEach((mob) => {
           const dmg = Math.max(1, Math.floor(player.mag * 0.6 * power));
@@ -1345,7 +1345,7 @@ export async function handleCommand({ player, players, input, source, send, part
       if (skill.type === 'dot') {
         // 施毒术不再消耗药粉
       }
-      const mobs = getAliveMobs(player.position.zone, player.position.room);
+      const mobs = getAliveMobs(player.position.zone, player.position.room, player.realmId || 1);
       const target = mobs.find((m) => m.name.toLowerCase() === targetName.toLowerCase() || m.id === targetName);
       if (!target) return send('未找到怪物。');
       player.combat = { targetId: target.id, targetType: 'mob', skillId: skill.id };
@@ -1923,7 +1923,7 @@ export async function handleCommand({ player, players, input, source, send, part
         if (target.guild) return send('对方已有行会，请先退出行会再邀请。');
         const isLeader = await guildApi.isGuildLeader(player.guild.id, player.userId, player.name);
         if (!isLeader) return send('只有会长可以邀请。');
-        await guildApi.listGuildMembers(player.guild.id);
+        await guildApi.listGuildMembers(player.guild.id, player.realmId || 1);
         await guildApi.addGuildMember(player.guild.id, target.userId, target.name);
         target.guild = { id: player.guild.id, name: player.guild.name, role: 'member' };
         send(`${target.name} 已加入行会。`);
@@ -1939,7 +1939,7 @@ export async function handleCommand({ player, players, input, source, send, part
         if (!isLeader) return send('只有会长可以踢人。');
 
         // 从数据库中获取行会成员列表
-        const members = await guildApi.listGuildMembers(player.guild.id);
+        const members = await guildApi.listGuildMembers(player.guild.id, player.realmId || 1);
         const targetMember = members.find((m) => m.char_name === nameArg);
 
         if (!targetMember) return send('该玩家不在你的行会中。');
@@ -2008,7 +2008,7 @@ export async function handleCommand({ player, players, input, source, send, part
 
       if (sub === 'info') {
         if (!player.guild) return send('你不在行会中。');
-        const members = await guildApi.listGuildMembers(player.guild.id);
+        const members = await guildApi.listGuildMembers(player.guild.id, player.realmId || 1);
         send(`行会: ${player.guild.name}`);
         send(`成员: ${members.map((m) => `${m.char_name}(${m.role})`).join(', ')}`);
         return;

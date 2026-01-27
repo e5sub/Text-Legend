@@ -9,12 +9,13 @@ import crypto from 'node:crypto';
 import config from './config.js';
 import knex from './db/index.js';
 import { createUser, verifyUser, createSession, getSession, getUserByName, setAdminFlag, verifyUserPassword, updateUserPassword, clearUserSessions } from './db/users.js';
-import { listCharacters, loadCharacter, saveCharacter, findCharacterByName } from './db/characters.js';
-import { addGuildMember, createGuild, getGuildByName, getGuildMember, getSabakOwner, isGuildLeader, listGuildMembers, listSabakRegistrations, registerSabak, removeGuildMember, leaveGuild, setSabakOwner, clearSabakRegistrations, transferGuildLeader } from './db/guilds.js';
+import { listCharacters, loadCharacter, saveCharacter, findCharacterByName, findCharacterByNameInRealm } from './db/characters.js';
+import { addGuildMember, createGuild, getGuildByName, getGuildByNameInRealm, getGuildMember, getSabakOwner, isGuildLeader, listGuildMembers, listSabakRegistrations, registerSabak, removeGuildMember, leaveGuild, setSabakOwner, clearSabakRegistrations, transferGuildLeader, ensureSabakState } from './db/guilds.js';
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
 import { sendMail, listMail, markMailRead, markMailClaimed } from './db/mail.js';
 import { createVipCodes, listVipCodes, useVipCode } from './db/vip.js';
 import { getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, canUserClaimVip, incrementUserVipClaimCount, getWorldBossKillCount, setWorldBossKillCount } from './db/settings.js';
+import { listRealms, getRealmById, updateRealmName, createRealm } from './db/realms.js';
 import { listMobRespawns, upsertMobRespawn, clearMobRespawn, saveMobState } from './db/mobs.js';
 import {
   listConsignments,
@@ -158,10 +159,24 @@ function verifyCaptcha(token, code) {
   return String(code).trim().toUpperCase() === entry.code;
 }
 
+async function resolveRealmId(rawRealmId) {
+  const realmId = Math.max(1, Math.floor(Number(rawRealmId) || 1));
+  const realm = await getRealmById(realmId);
+  if (!realm) {
+    return { error: '新区不存在。', realmId: null };
+  }
+  return { realmId };
+}
+
 app.get('/api/captcha', (req, res) => {
   cleanupCaptchas();
   const payload = generateCaptcha();
   res.json({ ok: true, token: payload.token, svg: payload.svg });
+});
+
+app.get('/api/realms', async (req, res) => {
+  const realms = await refreshRealmCache();
+  res.json({ ok: true, count: realms.length, realms });
 });
 
 app.post('/api/register', async (req, res) => {
@@ -177,16 +192,18 @@ app.post('/api/register', async (req, res) => {
 });
 
 app.post('/api/login', async (req, res) => {
-  const { username, password, captchaToken, captchaCode } = req.body || {};
+  const { username, password, captchaToken, captchaCode, realmId: rawRealmId } = req.body || {};
   if (!username || !password) return res.status(400).json({ error: '账号或密码缺失。' });
   if (!verifyCaptcha(captchaToken, captchaCode)) {
     return res.status(400).json({ error: '验证码错误。' });
   }
+  const realmInfo = await resolveRealmId(rawRealmId);
+  if (realmInfo.error) return res.status(400).json({ error: realmInfo.error });
   const user = await verifyUser(username, password);
   if (!user) return res.status(401).json({ error: '账号或密码错误。' });
   const token = await createSession(user.id);
-  const chars = await listCharacters(user.id);
-  res.json({ ok: true, token, characters: chars });
+  const chars = await listCharacters(user.id, realmInfo.realmId);
+  res.json({ ok: true, token, characters: chars, realmId: realmInfo.realmId });
 });
 
 app.post('/api/password', async (req, res) => {
@@ -204,16 +221,19 @@ app.post('/api/password', async (req, res) => {
 });
 
 app.post('/api/character', async (req, res) => {
-  const { token, name, classId } = req.body || {};
+  const { token, name, classId, realmId: rawRealmId } = req.body || {};
   const session = await getSession(token);
   if (!session) return res.status(401).json({ error: '登录已过期。' });
+  const realmInfo = await resolveRealmId(rawRealmId);
+  if (realmInfo.error) return res.status(400).json({ error: realmInfo.error });
   if (!name || !classId) return res.status(400).json({ error: '角色名或职业缺失。' });
   const existing = await findCharacterByName(name);
   if (existing) return res.status(400).json({ error: '角色名已存在。' });
 
   const player = newCharacter(name, classId);
+  player.realmId = realmInfo.realmId;
   computeDerived(player);
-  await saveCharacter(session.user_id, player);
+  await saveCharacter(session.user_id, player, realmInfo.realmId);
   res.json({ ok: true });
 });
 
@@ -221,15 +241,19 @@ app.get('/api/characters', async (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   const session = await getSession(token);
   if (!session) return res.status(401).json({ error: '登录已过期。' });
-  const chars = await listCharacters(session.user_id);
-  res.json({ ok: true, characters: chars });
+  const realmInfo = await resolveRealmId(req.query.realmId);
+  if (realmInfo.error) return res.status(400).json({ error: realmInfo.error });
+  const chars = await listCharacters(session.user_id, realmInfo.realmId);
+  res.json({ ok: true, characters: chars, realmId: realmInfo.realmId });
 });
 
 app.get('/api/mail', async (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   const session = await getSession(token);
   if (!session) return res.status(401).json({ error: '登录已过期。' });
-  const mails = await listMail(session.user_id);
+  const realmInfo = await resolveRealmId(req.query.realmId);
+  if (realmInfo.error) return res.status(400).json({ error: realmInfo.error });
+  const mails = await listMail(session.user_id, realmInfo.realmId);
   res.json({ ok: true, mails: mails.map(buildMailPayload) });
 });
 
@@ -238,7 +262,9 @@ app.post('/api/mail/read', async (req, res) => {
   const session = await getSession(token);
   if (!session) return res.status(401).json({ error: '登录已过期。' });
   const { mailId } = req.body || {};
-  await markMailRead(session.user_id, mailId);
+  const realmInfo = await resolveRealmId(req.body?.realmId);
+  if (realmInfo.error) return res.status(400).json({ error: realmInfo.error });
+  await markMailRead(session.user_id, mailId, realmInfo.realmId);
   res.json({ ok: true });
 });
 
@@ -249,6 +275,7 @@ async function requireAdmin(req) {
 }
 
 const BACKUP_TABLES = [
+  'realms',
   'users',
   'sessions',
   'characters',
@@ -360,10 +387,13 @@ app.post('/admin/characters/update', async (req, res) => {
   const { username, name, patch } = req.body || {};
   const user = await getUserByName(username);
   if (!user) return res.status(404).json({ error: '用户不存在。' });
-  const player = await loadCharacter(user.id, name);
+  const row = await findCharacterByName(name);
+  if (!row || row.user_id !== user.id) return res.status(404).json({ error: '角色不存在。' });
+  const realmId = row.realm_id || 1;
+  const player = await loadCharacter(user.id, name, realmId);
   if (!player) return res.status(404).json({ error: '角色不存在。' });
   Object.assign(player, patch || {});
-  await saveCharacter(user.id, player);
+  await saveCharacter(user.id, player, realmId);
   res.json({ ok: true });
 });
 
@@ -377,10 +407,12 @@ app.post('/admin/characters/cleanup', async (req, res) => {
 app.post('/admin/mail/send', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
-  const { username, title, body } = req.body || {};
+  const { username, title, body, realmId: rawRealmId } = req.body || {};
   const user = await getUserByName(username);
   if (!user) return res.status(404).json({ error: '用户不存在。' });
-  await sendMail(user.id, 'GM', title, body, null, 0);
+  const realmInfo = await resolveRealmId(rawRealmId);
+  if (realmInfo.error) return res.status(400).json({ error: realmInfo.error });
+  await sendMail(user.id, 'GM', title, body, null, 0, realmInfo.realmId);
   res.json({ ok: true });
 });
 
@@ -502,6 +534,142 @@ app.post('/admin/room-variant-update', async (req, res) => {
   res.json({ ok: true, count });
 });
 
+app.get('/admin/realms', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const realms = await listRealms();
+  res.json({ ok: true, realms });
+});
+
+app.post('/admin/realms/update', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const realmId = Math.max(1, Math.floor(Number(req.body?.realmId || 0) || 0));
+  const name = String(req.body?.name || '').trim();
+  if (!realmId) return res.status(400).json({ error: '缺少区服ID。' });
+  if (!name) return res.status(400).json({ error: '区服名不能为空。' });
+  const realm = await getRealmById(realmId);
+  if (!realm) return res.status(404).json({ error: '区服不存在。' });
+  await updateRealmName(realmId, name);
+  await refreshRealmCache();
+  res.json({ ok: true, realmId, name });
+});
+
+app.post('/admin/realms/create', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const name = String(req.body?.name || '').trim();
+  if (!name) return res.status(400).json({ error: '区服名不能为空。' });
+  const id = await createRealm(name);
+  await ensureSabakState(id);
+  await refreshRealmCache();
+  res.json({ ok: true, realmId: id, name });
+});
+
+app.post('/admin/realms/merge', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const sourceId = Math.max(1, Math.floor(Number(req.body?.sourceId || 0) || 0));
+  const targetId = Math.max(1, Math.floor(Number(req.body?.targetId || 0) || 0));
+  if (!sourceId || !targetId) return res.status(400).json({ error: '缺少区服ID。' });
+  if (sourceId === targetId) return res.status(400).json({ error: '源区和目标区不能相同。' });
+  const sourceRealm = await getRealmById(sourceId);
+  const targetRealm = await getRealmById(targetId);
+  if (!sourceRealm || !targetRealm) return res.status(404).json({ error: '区服不存在。' });
+
+  // 检查是否存在重名行会
+  const sourceGuilds = await knex('guilds').where({ realm_id: sourceId }).select('id', 'name');
+  const targetGuildNames = new Set((await knex('guilds').where({ realm_id: targetId }).select('name')).map(g => g.name));
+  const conflictingGuilds = sourceGuilds.filter(g => targetGuildNames.has(g.name));
+  if (conflictingGuilds.length > 0) {
+    return res.status(400).json({
+      error: '存在重名行会，无法合区。',
+      conflicts: conflictingGuilds.map(g => ({ id: g.id, name: g.name }))
+    });
+  }
+
+  // 强制下线所有玩家
+  for (const player of Array.from(players.values())) {
+    try {
+      player.send('GM正在执行合区操作，已强制下线。');
+      player.socket.disconnect();
+    } catch {}
+  }
+
+  // 统计合并的数据
+  const stats = {
+    characters: 0,
+    guilds: 0,
+    mails: 0,
+    consignments: 0,
+    consignmentHistory: 0,
+    sabakRegistrations: 0
+  };
+
+  await knex.transaction(async (trx) => {
+    // 更新角色
+    const charactersResult = await trx('characters').where({ realm_id: sourceId }).update({ realm_id: targetId });
+    stats.characters = charactersResult;
+
+    // 更新行会
+    const guildsResult = await trx('guilds').where({ realm_id: sourceId }).update({ realm_id: targetId });
+    stats.guilds = guildsResult;
+
+    // 更新行会成员
+    await trx('guild_members').where({ realm_id: sourceId }).update({ realm_id: targetId });
+
+    // 更新邮件（合并到目标区）
+    const mailsResult = await trx('mails').where({ realm_id: sourceId }).update({ realm_id: targetId });
+    stats.mails = mailsResult;
+
+    // 更新寄售（合并到目标区）
+    const consignmentsResult = await trx('consignments').where({ realm_id: sourceId }).update({ realm_id: targetId });
+    stats.consignments = consignmentsResult;
+
+    // 更新寄售历史（合并到目标区）
+    const consignmentHistoryResult = await trx('consignment_history').where({ realm_id: sourceId }).update({ realm_id: targetId });
+    stats.consignmentHistory = consignmentHistoryResult;
+
+    // 更新沙巴克报名
+    const sabakRegistrationsResult = await trx('sabak_registrations').where({ realm_id: sourceId }).update({ realm_id: targetId });
+    stats.sabakRegistrations = sabakRegistrationsResult;
+
+    // 删除源区怪物刷新缓存，避免与目标区冲突
+    await trx('mob_respawns').where({ realm_id: sourceId }).del();
+
+    // 重置目标区沙巴克状态为无人占领，并删除源区沙巴克状态
+    await trx('sabak_state').where({ realm_id: targetId }).update({
+      owner_guild_id: null,
+      owner_guild_name: null,
+      updated_at: trx.fn.now()
+    });
+    await trx('sabak_state').where({ realm_id: sourceId }).del();
+
+    // 删除源区
+    await trx('realms').where({ id: sourceId }).del();
+  });
+
+  // 清理内存状态
+  realmStates.delete(sourceId);
+  const targetState = getRealmState(targetId);
+  targetState.sabakState = createSabakState();
+  targetState.parties.clear();
+  targetState.partyInvites.clear();
+  targetState.partyFollowInvites.clear();
+  targetState.guildInvites.clear();
+  targetState.tradeInvites.clear();
+  targetState.tradesByPlayer.clear();
+  targetState.lastSaveTime.clear();
+
+  await refreshRealmCache();
+  res.json({
+    ok: true,
+    sourceId,
+    targetId,
+    message: `合区完成。角色: ${stats.characters}, 行会: ${stats.guilds}, 邮件: ${stats.mails}, 寄售: ${stats.consignments}, 寄售历史: ${stats.consignmentHistory}, 沙巴克报名: ${stats.sabakRegistrations}。`
+  });
+});
+
 app.get('/admin/backup', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
@@ -568,46 +736,84 @@ app.post('/admin/import', async (req, res) => {
 });
 
 const players = new Map();
-const parties = new Map();
-const partyInvites = new Map();
-const partyFollowInvites = new Map();
-const guildInvites = new Map();
-const tradeInvites = new Map();
-const tradesByPlayer = new Map();
-const lastSaveTime = new Map(); // 记录每个玩家上次保存时间
+const realmStates = new Map();
+let realmCache = [];
+
+function createSabakState() {
+  return {
+    active: false,
+    ownerGuildId: null,
+    ownerGuildName: null,
+    captureGuildId: null,
+    captureGuildName: null,
+    captureStart: null,
+    siegeEndsAt: null,
+    killStats: {},
+    noRegAnnounceDate: null
+  };
+}
+
+function getRealmState(realmId = 1) {
+  const id = Number(realmId) || 1;
+  if (!realmStates.has(id)) {
+    realmStates.set(id, {
+      parties: new Map(),
+      partyInvites: new Map(),
+      partyFollowInvites: new Map(),
+      guildInvites: new Map(),
+      tradeInvites: new Map(),
+      tradesByPlayer: new Map(),
+      lastSaveTime: new Map(),
+      sabakState: createSabakState()
+    });
+  }
+  return realmStates.get(id);
+}
+
+async function refreshRealmCache() {
+  const realms = await listRealms();
+  realmCache = Array.isArray(realms) && realms.length ? realms : [{ id: 1, name: '新区1' }];
+  return realmCache;
+}
+
+function getRealmIds() {
+  const ids = realmCache.map((r) => r.id);
+  return Array.from(new Set([1, ...ids]));
+}
 
 const sabakConfig = {
   startHour: 20,
   durationMinutes: 30,
   siegeMinutes: 30
 };
-let sabakState = {
-  active: false,
-  ownerGuildId: null,
-  ownerGuildName: null,
-  captureGuildId: null,
-  captureGuildName: null,
-  captureStart: null,
-  siegeEndsAt: null,
-  killStats: {},
-  noRegAnnounceDate: null
-};
 
-function listOnlinePlayers() {
-  return Array.from(players.values());
+function listOnlinePlayers(realmId = null) {
+  const list = Array.from(players.values());
+  if (!realmId) return list;
+  return list.filter((p) => p.realmId === realmId);
 }
 
-function listSabakMembersOnline() {
-  if (!sabakState.ownerGuildId) return [];
-  return listOnlinePlayers().filter((p) => p.guild && String(p.guild.id) === String(sabakState.ownerGuildId));
+function listSabakMembersOnline(realmId) {
+  const state = getRealmState(realmId);
+  if (!state.sabakState.ownerGuildId) return [];
+  return listOnlinePlayers(realmId).filter((p) => p.guild && String(p.guild.id) === String(state.sabakState.ownerGuildId));
+}
+
+function getSabakState(realmId) {
+  return getRealmState(realmId).sabakState;
 }
 
 function sendTo(player, message) {
   player.socket.emit('output', { text: message });
 }
 
-function emitAnnouncement(text, color, location) {
+function emitAnnouncement(text, color, location, realmId = null) {
   const payload = { text, prefix: '公告', prefixColor: 'announce', color, location };
+  if (realmId) {
+    io.to(`realm:${realmId}`).emit('output', payload);
+    io.to(`realm:${realmId}`).emit('chat', payload);
+    return;
+  }
   io.emit('output', payload);
   io.emit('chat', payload);
 }
@@ -979,45 +1185,49 @@ function dropLoot(mobTemplate, bonus = 1) {
 
 async function savePlayer(player) {
   if (!player.userId) return;
-  await saveCharacter(player.userId, player);
+  await saveCharacter(player.userId, player, player.realmId || 1);
 }
 
-function createParty(leaderName) {
+function createParty(leaderName, realmId) {
+  const state = getRealmState(realmId);
   const partyId = `party-${Date.now()}-${randInt(100, 999)}`;
-  parties.set(partyId, { id: partyId, leader: leaderName, members: [leaderName], lootIndex: 0 });
-  return parties.get(partyId);
+  state.parties.set(partyId, { id: partyId, leader: leaderName, members: [leaderName], lootIndex: 0 });
+  return state.parties.get(partyId);
 }
 
-function getPartyById(partyId) {
+function getPartyById(partyId, realmId) {
   if (!partyId) return null;
-  return parties.get(partyId) || null;
+  const state = getRealmState(realmId);
+  return state.parties.get(partyId) || null;
 }
 
-function getPartyByMember(name) {
-  for (const party of parties.values()) {
+function getPartyByMember(name, realmId) {
+  const state = getRealmState(realmId);
+  for (const party of state.parties.values()) {
     if (party.members.includes(name)) return party;
   }
   return null;
 }
 
-function removeFromParty(name) {
-  const party = getPartyByMember(name);
+function removeFromParty(name, realmId) {
+  const state = getRealmState(realmId);
+  const party = getPartyByMember(name, realmId);
   if (!party) return null;
   party.members = party.members.filter((m) => m !== name);
   if (party.leader === name) {
     party.leader = party.members[0] || null;
   }
   if (party.members.length === 0) {
-    parties.delete(party.id);
+    state.parties.delete(party.id);
     return null;
   }
   return party;
 }
 
-async function updatePartyFlags(name, partyId, members) {
+async function updatePartyFlags(name, partyId, members, realmId) {
   if (!name) return;
   const memberList = Array.isArray(members) ? Array.from(new Set(members)) : [];
-  const onlinePlayer = playersByName(name);
+  const onlinePlayer = playersByName(name, realmId);
   if (onlinePlayer) {
     if (!onlinePlayer.flags) onlinePlayer.flags = {};
     onlinePlayer.flags.partyId = partyId || null;
@@ -1026,22 +1236,22 @@ async function updatePartyFlags(name, partyId, members) {
     await savePlayer(onlinePlayer);
     return;
   }
-  const row = await findCharacterByName(name);
+  const row = await findCharacterByNameInRealm(name, realmId);
   if (!row) return;
-  const player = await loadCharacter(row.user_id, row.name);
+  const player = await loadCharacter(row.user_id, row.name, row.realm_id || 1);
   if (!player) return;
   if (!player.flags) player.flags = {};
   player.flags.partyId = partyId || null;
   player.flags.partyMembers = memberList;
   player.flags.partyLeader = memberList.length ? (player.flags.partyLeader || null) : null;
-  await saveCharacter(row.user_id, player);
+  await saveCharacter(row.user_id, player, row.realm_id || 1);
 }
 
-async function clearPartyFlags(name) {
-  await updatePartyFlags(name, null, []);
+async function clearPartyFlags(name, realmId) {
+  await updatePartyFlags(name, null, [], realmId);
 }
 
-async function persistParty(party) {
+async function persistParty(party, realmId) {
   if (!party || !party.id) return;
   const members = Array.from(new Set(party.members || []));
   party.members = members;
@@ -1049,42 +1259,45 @@ async function persistParty(party) {
     party.leader = members[0] || null;
   }
   for (const member of members) {
-    const online = playersByName(member);
+    const online = playersByName(member, realmId);
     if (online) {
       if (!online.flags) online.flags = {};
       online.flags.partyLeader = party.leader;
     } else {
-      const row = await findCharacterByName(member);
+      const row = await findCharacterByNameInRealm(member, realmId);
       if (row) {
-        const stored = await loadCharacter(row.user_id, row.name);
+        const stored = await loadCharacter(row.user_id, row.name, row.realm_id || 1);
         if (stored) {
           if (!stored.flags) stored.flags = {};
           stored.flags.partyLeader = party.leader;
-          await saveCharacter(row.user_id, stored);
+          await saveCharacter(row.user_id, stored, row.realm_id || 1);
         }
       }
     }
-    await updatePartyFlags(member, party.id, members);
+    await updatePartyFlags(member, party.id, members, realmId);
   }
 }
 
-function getTradeByPlayer(name) {
-  return tradesByPlayer.get(name);
+function getTradeByPlayer(name, realmId) {
+  const state = getRealmState(realmId);
+  return state.tradesByPlayer.get(name);
 }
 
-function clearTrade(trade, reason) {
+function clearTrade(trade, reason, realmId) {
+  const state = getRealmState(realmId);
   const names = [trade.a.name, trade.b.name];
-  names.forEach((n) => tradesByPlayer.delete(n));
+  names.forEach((n) => state.tradesByPlayer.delete(n));
   if (reason) {
     names.forEach((n) => {
-      const p = playersByName(n);
+      const p = playersByName(n, realmId);
       if (p) p.send(reason);
     });
   }
 }
 
-function playersByName(name) {
-  return Array.from(players.values()).find((p) => p.name === name);
+function playersByName(name, realmId = null) {
+  const list = Array.from(players.values());
+  return list.find((p) => p.name === name && (!realmId || p.realmId === realmId));
 }
 
 function ensureOffer(trade, playerName) {
@@ -1152,8 +1365,11 @@ function applyOfferItems(from, to, offer) {
 }
 
 function createTrade(player, target) {
+  const realmId = player.realmId || 1;
+  const state = getRealmState(realmId);
   const trade = {
     id: `trade-${Date.now()}-${randInt(100, 999)}`,
+    realmId,
     a: { name: player.name },
     b: { name: target.name },
     offers: {
@@ -1163,41 +1379,45 @@ function createTrade(player, target) {
     locked: { [player.name]: false, [target.name]: false },
     confirmed: { [player.name]: false, [target.name]: false }
   };
-  tradesByPlayer.set(player.name, trade);
-  tradesByPlayer.set(target.name, trade);
+  state.tradesByPlayer.set(player.name, trade);
+  state.tradesByPlayer.set(target.name, trade);
   return trade;
 }
 
 const tradeApi = {
   requestTrade(player, targetName) {
-    if (getTradeByPlayer(player.name)) return { ok: false, msg: '你正在交易中。' };
-    const target = playersByName(targetName);
+    const realmId = player.realmId || 1;
+    const state = getRealmState(realmId);
+    if (getTradeByPlayer(player.name, realmId)) return { ok: false, msg: '你正在交易中。' };
+    const target = playersByName(targetName, realmId);
     if (!target) return { ok: false, msg: '玩家不在线。' };
     if (target.name === player.name) return { ok: false, msg: '不能和自己交易。' };
-    if (getTradeByPlayer(target.name)) return { ok: false, msg: '对方正在交易中。' };
-    const existing = tradeInvites.get(target.name);
+    if (getTradeByPlayer(target.name, realmId)) return { ok: false, msg: '对方正在交易中。' };
+    const existing = state.tradeInvites.get(target.name);
     if (existing && existing.from !== player.name) {
       return { ok: false, msg: '对方已有交易请求。' };
     }
-    tradeInvites.set(target.name, { from: player.name, at: Date.now() });
+    state.tradeInvites.set(target.name, { from: player.name, at: Date.now() });
     target.send(`${player.name} 请求交易。`);
     return { ok: true, msg: `交易请求已发送给 ${target.name}。` };
   },
   acceptTrade(player, fromName) {
-    const invite = tradeInvites.get(player.name);
+    const realmId = player.realmId || 1;
+    const state = getRealmState(realmId);
+    const invite = state.tradeInvites.get(player.name);
     if (!invite || invite.from !== fromName) return { ok: false, msg: '没有该交易请求。' };
-    if (getTradeByPlayer(player.name)) return { ok: false, msg: '你正在交易中。' };
-    const inviter = playersByName(fromName);
+    if (getTradeByPlayer(player.name, realmId)) return { ok: false, msg: '你正在交易中。' };
+    const inviter = playersByName(fromName, realmId);
     if (!inviter) return { ok: false, msg: '对方不在线。' };
-    if (getTradeByPlayer(inviter.name)) return { ok: false, msg: '对方正在交易中。' };
-    tradeInvites.delete(player.name);
+    if (getTradeByPlayer(inviter.name, realmId)) return { ok: false, msg: '对方正在交易中。' };
+    state.tradeInvites.delete(player.name);
     const trade = createTrade(inviter, player);
     inviter.send('交易建立。');
     player.send('交易建立。');
     return { ok: true, trade };
   },
   addItem(player, itemId, qty, effects = null) {
-    const trade = getTradeByPlayer(player.name);
+    const trade = getTradeByPlayer(player.name, player.realmId || 1);
     if (!trade) return { ok: false, msg: '你不在交易中。' };
     if (trade.locked[player.name] || trade.locked[trade.a.name === player.name ? trade.b.name : trade.a.name]) {
       return { ok: false, msg: '交易已锁定，无法修改。' };
@@ -1230,7 +1450,7 @@ const tradeApi = {
     return { ok: true, trade };
   },
   addGold(player, amount) {
-    const trade = getTradeByPlayer(player.name);
+    const trade = getTradeByPlayer(player.name, player.realmId || 1);
     if (!trade) return { ok: false, msg: '你不在交易中。' };
     if (trade.locked[player.name] || trade.locked[trade.a.name === player.name ? trade.b.name : trade.a.name]) {
       return { ok: false, msg: '交易已锁定，无法修改。' };
@@ -1249,13 +1469,13 @@ const tradeApi = {
     return { ok: true, trade };
   },
   lock(player) {
-    const trade = getTradeByPlayer(player.name);
+    const trade = getTradeByPlayer(player.name, player.realmId || 1);
     if (!trade) return { ok: false, msg: '你不在交易中。' };
     trade.locked[player.name] = true;
     return { ok: true, trade };
   },
   confirm(player) {
-    const trade = getTradeByPlayer(player.name);
+    const trade = getTradeByPlayer(player.name, player.realmId || 1);
     if (!trade) return { ok: false, msg: '你不在交易中。' };
     if (!trade.locked[trade.a.name] || !trade.locked[trade.b.name]) {
       return { ok: false, msg: '双方都锁定后才能确认。' };
@@ -1264,28 +1484,31 @@ const tradeApi = {
     return { ok: true, trade };
   },
   cancel(player, reason) {
-    const trade = getTradeByPlayer(player.name);
+    const realmId = player.realmId || 1;
+    const state = getRealmState(realmId);
+    const trade = getTradeByPlayer(player.name, realmId);
     if (trade) {
-      clearTrade(trade, reason || `交易已取消（${player.name}）。`);
+      clearTrade(trade, reason || `交易已取消（${player.name}）。`, realmId);
       return { ok: true };
     }
-    if (tradeInvites.get(player.name)) {
-      tradeInvites.delete(player.name);
+    if (state.tradeInvites.get(player.name)) {
+      state.tradeInvites.delete(player.name);
       return { ok: true, msg: '已取消交易请求。' };
     }
-    for (const [targetName, invite] of tradeInvites.entries()) {
+    for (const [targetName, invite] of state.tradeInvites.entries()) {
       if (invite.from === player.name) {
-        tradeInvites.delete(targetName);
+        state.tradeInvites.delete(targetName);
         return { ok: true, msg: '已取消交易请求。' };
       }
     }
     return { ok: false, msg: '没有可取消的交易。' };
   },
   finalize(trade) {
-    const playerA = playersByName(trade.a.name);
-    const playerB = playersByName(trade.b.name);
+    const realmId = trade?.realmId || null;
+    const playerA = playersByName(trade.a.name, realmId);
+    const playerB = playersByName(trade.b.name, realmId);
     if (!playerA || !playerB) {
-      clearTrade(trade, '交易失败，对方已离线。');
+      clearTrade(trade, '交易失败，对方已离线。', realmId);
       return { ok: false };
     }
 
@@ -1296,13 +1519,13 @@ const tradeApi = {
     // 双方再次验证金币和物品（防止锁定后客户端修改数据）
     if (playerA.gold < offerA.gold || playerB.gold < offerB.gold ||
       !hasOfferItems(playerA, offerA) || !hasOfferItems(playerB, offerB)) {
-      clearTrade(trade, '交易失败，物品或金币不足。');
+      clearTrade(trade, '交易失败，物品或金币不足。', realmId);
       return { ok: false };
     }
 
     // 再次验证交易状态（防止重复提交）
     if (!trade.locked[playerA.name] || !trade.locked[playerB.name]) {
-      clearTrade(trade, '交易失败，未完全锁定。');
+      clearTrade(trade, '交易失败，未完全锁定。', realmId);
       return { ok: false };
     }
 
@@ -1312,7 +1535,7 @@ const tradeApi = {
     playerA.gold += offerB.gold;
     applyOfferItems(playerA, playerB, offerA);
     applyOfferItems(playerB, playerA, offerB);
-    clearTrade(trade, '交易完成。');
+    clearTrade(trade, '交易完成。', realmId);
     return { ok: true };
   },
   getTrade(playerName) {
@@ -1329,8 +1552,8 @@ let consignCleanupRunning = false;
 
 const consignApi = {
     async listMarket(player) {
-      await cleanupExpiredConsignments();
-      const rows = await listConsignments();
+      await cleanupExpiredConsignments(player.realmId || 1);
+      const rows = await listConsignments(player.realmId || 1);
       const items = rows.map((row) => ({
         id: row.id,
         seller: row.seller_name,
@@ -1342,8 +1565,8 @@ const consignApi = {
       return items;
     },
     async listMine(player) {
-      await cleanupExpiredConsignments();
-      const rows = await listConsignmentsBySeller(player.name);
+      await cleanupExpiredConsignments(player.realmId || 1);
+      const rows = await listConsignmentsBySeller(player.name, player.realmId || 1);
       const items = rows.map((row) => ({
         id: row.id,
         seller: row.seller_name,
@@ -1392,14 +1615,15 @@ const consignApi = {
         price: priceResult.value,
         effectsJson: effectsResult.value ? JSON.stringify(effectsResult.value) : null,
         durability,
-        maxDurability
+        maxDurability,
+        realmId: player.realmId || 1
       });
       await consignApi.listMine(player);
       await consignApi.listMarket(player);
       return { ok: true, msg: `寄售成功，编号 ${id}。` };
     },
   async buy(player, listingId, qty) {
-    await cleanupExpiredConsignments();
+    await cleanupExpiredConsignments(player.realmId || 1);
     // 验证listingId和qty
     const idResult = validateNumber(listingId, 1, Number.MAX_SAFE_INTEGER);
     if (!idResult.ok) return { ok: false, msg: '寄售ID无效。' };
@@ -1407,7 +1631,7 @@ const consignApi = {
     const qtyResult = validateItemQty(qty);
     if (!qtyResult.ok) return { ok: false, msg: '购买数量无效。' };
     
-    const row = await getConsignment(idResult.value);
+    const row = await getConsignment(idResult.value, player.realmId || 1);
     if (!row) return { ok: false, msg: '寄售不存在。' };
     if (row.seller_name === player.name) return { ok: false, msg: '不能购买自己的寄售。' };
     if (row.qty < qtyResult.value) return { ok: false, msg: '寄售数量不足。' };
@@ -1424,9 +1648,9 @@ const consignApi = {
 
     const remain = row.qty - qtyResult.value;
     if (remain > 0) {
-      await updateConsignmentQty(idResult.value, remain);
+      await updateConsignmentQty(idResult.value, remain, player.realmId || 1);
     } else {
-      await deleteConsignment(idResult.value);
+      await deleteConsignment(idResult.value, player.realmId || 1);
     }
 
     // 记录寄售历史
@@ -1438,10 +1662,11 @@ const consignApi = {
       price: row.price,
       effectsJson: row.effects_json,
       durability: row.durability,
-      maxDurability: row.max_durability
+      maxDurability: row.max_durability,
+      realmId: player.realmId || 1
     });
 
-    const seller = playersByName(row.seller_name);
+    const seller = playersByName(row.seller_name, player.realmId || 1);
     if (seller) {
       seller.gold += sellerGain;
       seller.send(`寄售成交: ${ITEM_TEMPLATES[row.item_id]?.name || row.item_id} x${qtyResult.value}，获得 ${sellerGain} 金币（手续费 ${fee}）。`);
@@ -1449,12 +1674,12 @@ const consignApi = {
       await consignApi.listMine(seller);
       await consignApi.listMarket(seller);
     } else {
-      const sellerRow = await findCharacterByName(row.seller_name);
+      const sellerRow = await findCharacterByNameInRealm(row.seller_name, player.realmId || 1);
       if (sellerRow) {
-        const sellerPlayer = await loadCharacter(sellerRow.user_id, sellerRow.name);
+        const sellerPlayer = await loadCharacter(sellerRow.user_id, sellerRow.name, sellerRow.realm_id || 1);
         if (sellerPlayer) {
           sellerPlayer.gold += sellerGain;
-          await saveCharacter(sellerRow.user_id, sellerPlayer);
+          await saveCharacter(sellerRow.user_id, sellerPlayer, sellerRow.realm_id || 1);
         }
       }
     }
@@ -1463,22 +1688,22 @@ const consignApi = {
     return { ok: true, msg: `购买成功，花费 ${serverTotal} 金币。` };
   },
   async cancel(player, listingId) {
-    await cleanupExpiredConsignments();
+    await cleanupExpiredConsignments(player.realmId || 1);
     // 验证listingId
     const idResult = validateNumber(listingId, 1, Number.MAX_SAFE_INTEGER);
     if (!idResult.ok) return { ok: false, msg: '寄售ID无效。' };
     
-    const row = await getConsignment(idResult.value);
+    const row = await getConsignment(idResult.value, player.realmId || 1);
     if (!row) return { ok: false, msg: '寄售不存在。' };
     if (row.seller_name !== player.name) return { ok: false, msg: '只能取消自己的寄售。' };
       addItem(player, row.item_id, row.qty, parseJson(row.effects_json), row.durability, row.max_durability);
-    await deleteConsignment(idResult.value);
+    await deleteConsignment(idResult.value, player.realmId || 1);
     await consignApi.listMine(player);
     await consignApi.listMarket(player);
     return { ok: true, msg: '寄售已取消，物品已返回背包。' };
   },
   async listHistory(player, limit = 50) {
-    const rows = await listConsignmentHistory(player.name, limit);
+    const rows = await listConsignmentHistory(player.name, player.realmId || 1, limit);
     const items = rows.map((row) => ({
       id: row.id,
       seller: row.seller_name,
@@ -1494,7 +1719,7 @@ const consignApi = {
   }
 };
 
-async function cleanupExpiredConsignments() {
+async function cleanupExpiredConsignments(realmId = 1) {
   if (consignCleanupRunning) return;
   consignCleanupRunning = true;
   try {
@@ -1502,17 +1727,17 @@ async function cleanupExpiredConsignments() {
     const effectiveHours = Number.isFinite(hours) ? Math.max(0, hours) : CONSIGN_EXPIRE_DEFAULT_HOURS;
     if (effectiveHours <= 0) return;
     const cutoff = new Date(Date.now() - effectiveHours * 60 * 60 * 1000);
-    const rows = await listExpiredConsignments(cutoff);
+    const rows = await listExpiredConsignments(cutoff, realmId);
     if (!rows.length) return;
     const refreshedSellers = new Set();
     for (const row of rows) {
       const qty = Math.max(0, Number(row.qty || 0));
       if (!qty) {
-        await deleteConsignment(row.id);
+        await deleteConsignment(row.id, realmId);
         continue;
       }
       const effects = parseJson(row.effects_json);
-      const seller = playersByName(row.seller_name);
+      const seller = playersByName(row.seller_name, realmId);
       if (seller) {
         addItem(seller, row.item_id, qty, effects, row.durability, row.max_durability);
         seller.send(`寄售到期自动下架：${ITEM_TEMPLATES[row.item_id]?.name || row.item_id} x${qty} 已返还背包。`);
@@ -1520,16 +1745,16 @@ async function cleanupExpiredConsignments() {
         refreshedSellers.add(seller);
         savePlayer(seller);
       } else {
-        const sellerRow = await findCharacterByName(row.seller_name);
+        const sellerRow = await findCharacterByNameInRealm(row.seller_name, realmId);
         if (sellerRow) {
-          const sellerPlayer = await loadCharacter(sellerRow.user_id, sellerRow.name);
+          const sellerPlayer = await loadCharacter(sellerRow.user_id, sellerRow.name, sellerRow.realm_id || 1);
           if (sellerPlayer) {
             addItem(sellerPlayer, row.item_id, qty, effects, row.durability, row.max_durability);
-            await saveCharacter(sellerRow.user_id, sellerPlayer);
+            await saveCharacter(sellerRow.user_id, sellerPlayer, sellerRow.realm_id || 1);
           }
         }
       }
-      await deleteConsignment(row.id);
+      await deleteConsignment(row.id, realmId);
     }
     for (const seller of refreshedSellers) {
       await consignApi.listMine(seller);
@@ -1582,11 +1807,12 @@ function distributeLoot(party, partyMembers, drops) {
   return results;
 }
 
-async function loadSabakState() {
-  const owner = await getSabakOwner();
+async function loadSabakState(realmId) {
+  const state = getSabakState(realmId);
+  const owner = await getSabakOwner(realmId);
   if (owner) {
-    sabakState.ownerGuildId = owner.owner_guild_id || null;
-    sabakState.ownerGuildName = owner.owner_guild_name || null;
+    state.ownerGuildId = owner.owner_guild_id || null;
+    state.ownerGuildName = owner.owner_guild_name || null;
   }
 }
 
@@ -1598,7 +1824,8 @@ function isSabakPalace(zoneId, roomId) {
   return zoneId === 'sb_town' && roomId === 'palace';
 }
 
-function getSabakPalaceKillStats() {
+function getSabakPalaceKillStats(realmId) {
+  const sabakState = getSabakState(realmId);
   if (!sabakState.active || !sabakState.ownerGuildId) return null;
 
   const stats = [];
@@ -1646,15 +1873,17 @@ function sabakWindowInfo() {
 
 async function autoCaptureSabak(player) {
   if (!player || !player.guild || !isSabakZone(player.position.zone)) return false;
+  const sabakState = getSabakState(player.realmId || 1);
   if (sabakState.ownerGuildId) return false;
   sabakState.ownerGuildId = player.guild.id;
   sabakState.ownerGuildName = player.guild.name;
-  await setSabakOwner(player.guild.id, player.guild.name);
-  emitAnnouncement(`沙巴克无人占领，${player.guild.name} 已占领沙巴克。`, 'announce');
+  await setSabakOwner(player.realmId || 1, player.guild.id, player.guild.name);
+  emitAnnouncement(`沙巴克无人占领，${player.guild.name} 已占领沙巴克。`, 'announce', null, player.realmId || 1);
   return true;
 }
 
-function startSabakSiege(attackerGuild) {
+function startSabakSiege(attackerGuild, realmId) {
+  const sabakState = getSabakState(realmId);
   if (sabakState.active || !sabakState.ownerGuildId) return;
   if (!isSabakActive()) return;
   const { end } = sabakWindowRange(new Date());
@@ -1673,10 +1902,11 @@ function startSabakSiege(attackerGuild) {
       kills: 0
     };
   }
-  emitAnnouncement(`沙巴克攻城战开始！时长 ${sabakConfig.siegeMinutes} 分钟。`, 'announce');
+  emitAnnouncement(`沙巴克攻城战开始！时长 ${sabakConfig.siegeMinutes} 分钟。`, 'announce', null, realmId);
 }
 
-async function finishSabakSiege() {
+async function finishSabakSiege(realmId) {
+  const sabakState = getSabakState(realmId);
   sabakState.active = false;
   sabakState.siegeEndsAt = null;
   const entries = Object.entries(sabakState.killStats || {});
@@ -1696,14 +1926,14 @@ async function finishSabakSiege() {
     }
   });
   if (entries.length === 0 || tie) {
-    emitAnnouncement('沙巴克攻城战结束，守城方继续守城。', 'announce');
+    emitAnnouncement('沙巴克攻城战结束，守城方继续守城。', 'announce', null, realmId);
   } else if (winnerId && winnerId !== sabakState.ownerGuildId) {
     sabakState.ownerGuildId = winnerId;
     sabakState.ownerGuildName = winnerName;
-    await setSabakOwner(winnerId, winnerName || '未知行会');
-    emitAnnouncement(`沙巴克被 ${winnerName} 占领！`, 'announce');
+    await setSabakOwner(realmId, winnerId, winnerName || '未知行会');
+    emitAnnouncement(`沙巴克被 ${winnerName} 占领！`, 'announce', null, realmId);
   } else {
-    emitAnnouncement('沙巴克攻城战结束，守城方成功守住。', 'announce');
+    emitAnnouncement('沙巴克攻城战结束，守城方成功守住。', 'announce', null, realmId);
   }
   sabakState.killStats = {};
 }
@@ -1718,6 +1948,7 @@ function recordSabakKill(attacker, target) {
   // 不统计同阵营击杀
   if (attacker.guild && target.guild && String(attacker.guild.id) === String(target.guild.id)) return;
   // 必须有沙巴克占领者且攻城战已开始才统计
+  const sabakState = getSabakState(attacker.realmId || 1);
   if (!sabakState.ownerGuildId) return;
   if (!sabakState.active) return;
   // 只有攻守双方行会才参与统计
@@ -1737,12 +1968,13 @@ function recordSabakKill(attacker, target) {
 async function handleSabakEntry(player) {
   if (!player || !player.guild) return;
   if (!isSabakZone(player.position.zone)) return;
+  const sabakState = getSabakState(player.realmId || 1);
   if (!sabakState.ownerGuildId) {
     await autoCaptureSabak(player);
     return;
   }
   if (String(player.guild.id) !== String(sabakState.ownerGuildId) && !sabakState.active) {
-    startSabakSiege(player.guild);
+    startSabakSiege(player.guild, player.realmId || 1);
   }
 }
 
@@ -2049,7 +2281,7 @@ function logLoot(message) {
 }
 
 // 判断是否是BOSS房间（魔龙教主/世界BOSS/沙巴克BOSS/暗之系列）
-function isBossRoom(zoneId, roomId) {
+function isBossRoom(zoneId, roomId, realmId = 1) {
   if (!zoneId || !roomId) return false;
   const zone = WORLD[zoneId];
   if (!zone) return false;
@@ -2057,7 +2289,7 @@ function isBossRoom(zoneId, roomId) {
   if (!room) return false;
   
   // 检查房间内的怪物是否有特殊BOSS
-  const mobs = getRoomMobs(zoneId, roomId);
+  const mobs = getRoomMobs(zoneId, roomId, realmId);
   return mobs.some(m => {
     const tpl = MOB_TEMPLATES[m.templateId];
     return tpl && tpl.specialBoss;
@@ -2117,24 +2349,24 @@ function buildRoomExits(zoneId, roomId) {
   }));
 }
 
-function getRoomCommonState(zoneId, roomId) {
-  const cacheKey = `${zoneId}:${roomId}`;
+function getRoomCommonState(zoneId, roomId, realmId = 1) {
+  const cacheKey = `${realmId}:${zoneId}:${roomId}`;
   const now = Date.now();
   const cached = roomStateDataCache.get(cacheKey);
   if (cached && now - cached.at < ROOM_STATE_TTL) return cached.data;
 
   const zone = WORLD[zoneId];
   const room = zone?.rooms?.[roomId];
-  if (zone && room) spawnMobs(zoneId, roomId);
+  if (zone && room) spawnMobs(zoneId, roomId, realmId);
 
-  const mobs = getAliveMobs(zoneId, roomId).map((m) => ({
+  const mobs = getAliveMobs(zoneId, roomId, realmId).map((m) => ({
     id: m.id,
     name: m.name,
     hp: m.hp,
     max_hp: m.max_hp,
     mdef: m.mdef || 0
   }));
-  const roomMobs = getRoomMobs(zoneId, roomId);
+  const roomMobs = getRoomMobs(zoneId, roomId, realmId);
   const deadBosses = roomMobs.filter((m) => {
     const tpl = MOB_TEMPLATES[m.templateId];
     return tpl && m.hp <= 0 && isBossMob(tpl);
@@ -2153,7 +2385,7 @@ function getRoomCommonState(zoneId, roomId) {
     bossNextRespawn = deadSpecialBosses
       .sort((a, b) => (a.respawnAt || Infinity) - (b.respawnAt || Infinity))[0]?.respawnAt;
   }
-  const bossMob = getAliveMobs(zoneId, roomId).find((m) => {
+  const bossMob = getAliveMobs(zoneId, roomId, realmId).find((m) => {
     const tpl = MOB_TEMPLATES[m.templateId];
     return tpl && tpl.specialBoss;
   });
@@ -2162,7 +2394,7 @@ function getRoomCommonState(zoneId, roomId) {
     bossRank = entries.slice(0, 5).map(([name, damage]) => ({ name, damage }));
   }
 
-  const roomPlayers = listOnlinePlayers()
+  const roomPlayers = listOnlinePlayers(realmId)
     .filter((p) => p.position.zone === zoneId && p.position.room === roomId)
     .map((p) => ({
       name: p.name,
@@ -2186,9 +2418,10 @@ function getRoomCommonState(zoneId, roomId) {
 
 async function buildState(player) {
   computeDerived(player);
+  const realmId = player.realmId || 1;
   const zone = WORLD[player.position.zone];
   const room = zone?.rooms[player.position.room];
-  const isBoss = isBossRoom(player.position.zone, player.position.room);
+  const isBoss = isBossRoom(player.position.zone, player.position.room, realmId);
   let mobs = [];
   let exits = [];
   let nextRespawn = null;
@@ -2196,7 +2429,7 @@ async function buildState(player) {
   let bossRank = [];
   let bossNextRespawn = null;
   if (isBoss) {
-    const cached = getRoomCommonState(player.position.zone, player.position.room);
+    const cached = getRoomCommonState(player.position.zone, player.position.room, realmId);
     mobs = cached.mobs;
     exits = cached.exits;
     nextRespawn = cached.nextRespawn;
@@ -2204,15 +2437,15 @@ async function buildState(player) {
     bossRank = cached.bossRank;
     bossNextRespawn = cached.bossNextRespawn;
   } else {
-    if (zone && room) spawnMobs(player.position.zone, player.position.room);
-    mobs = getAliveMobs(player.position.zone, player.position.room).map((m) => ({
+    if (zone && room) spawnMobs(player.position.zone, player.position.room, realmId);
+    mobs = getAliveMobs(player.position.zone, player.position.room, realmId).map((m) => ({
       id: m.id,
       name: m.name,
       hp: m.hp,
       max_hp: m.max_hp,
       mdef: m.mdef || 0
     }));
-    const roomMobs = getRoomMobs(player.position.zone, player.position.room);
+    const roomMobs = getRoomMobs(player.position.zone, player.position.room, realmId);
     const deadBosses = roomMobs.filter((m) => {
       const tpl = MOB_TEMPLATES[m.templateId];
       return tpl && m.hp <= 0 && isBossMob(tpl);
@@ -2221,7 +2454,7 @@ async function buildState(player) {
       ? deadBosses.sort((a, b) => (a.respawnAt || Infinity) - (b.respawnAt || Infinity))[0]?.respawnAt
       : null;
     exits = buildRoomExits(player.position.zone, player.position.room);
-    roomPlayers = listOnlinePlayers()
+    roomPlayers = listOnlinePlayers(realmId)
       .filter((p) => p.position.zone === player.position.zone && p.position.room === player.position.room)
       .map((p) => ({
         name: p.name,
@@ -2290,17 +2523,18 @@ async function buildState(player) {
       max_durability: equipped.max_durability ?? null,
       item: buildItemView(equipped.id, equipped.effects || null)
     }));
-  const party = getPartyByMember(player.name);
+  const party = getPartyByMember(player.name, realmId);
   const partyMembers = party
     ? party.members.map((name) => ({
         name,
-        online: Boolean(playersByName(name))
+        online: Boolean(playersByName(name, realmId))
       }))
     : null;
   const sabakBonus = Boolean(
-    player.guild && sabakState.ownerGuildId && String(player.guild.id) === String(sabakState.ownerGuildId)
+    player.guild && getRealmState(realmId).sabakState.ownerGuildId &&
+      String(player.guild.id) === String(getRealmState(realmId).sabakState.ownerGuildId)
   );
-  const onlineCount = players.size;
+  const onlineCount = listOnlinePlayers(realmId).length;
   
   // VIP自领状态缓存
   let vipSelfClaimEnabled;
@@ -2359,8 +2593,8 @@ async function buildState(player) {
     party: party ? { size: party.members.length, leader: party.leader, members: partyMembers } : null,
     training: player.flags?.training || { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 },
     online: { count: onlineCount },
-    trade: getTradeByPlayer(player.name) ? (() => {
-      const trade = getTradeByPlayer(player.name);
+    trade: getTradeByPlayer(player.name, realmId) ? (() => {
+      const trade = getTradeByPlayer(player.name, realmId);
       const myOffer = trade.offers[player.name];
       const partnerName = trade.a.name === player.name ? trade.b.name : trade.a.name;
       const partnerOffer = trade.offers[partnerName];
@@ -2376,12 +2610,12 @@ async function buildState(player) {
     })() : null,
     sabak: {
       inZone: isSabakZone(player.position.zone),
-      active: sabakState.active,
-      ownerGuildId: sabakState.ownerGuildId,
-      ownerGuildName: sabakState.ownerGuildName,
+      active: getSabakState(realmId).active,
+      ownerGuildId: getSabakState(realmId).ownerGuildId,
+      ownerGuildName: getSabakState(realmId).ownerGuildName,
       inPalace: isSabakPalace(player.position.zone, player.position.room),
-      palaceKillStats: isSabakPalace(player.position.zone, player.position.room) ? getSabakPalaceKillStats() : null,
-      siegeEndsAt: sabakState.siegeEndsAt || null
+      palaceKillStats: isSabakPalace(player.position.zone, player.position.room) ? getSabakPalaceKillStats(realmId) : null,
+      siegeEndsAt: getSabakState(realmId).siegeEndsAt || null
     },
     worldBossRank: bossRank,
     worldBossNextRespawn: bossNextRespawn,
@@ -2400,7 +2634,7 @@ async function sendState(player) {
   const { enabled, intervalSec, overrideServerAllowed } = await getStateThrottleSettingsCached();
   const override = Boolean(player.stateThrottleOverride) && overrideServerAllowed;
   const inBossRoom = player.position
-    ? isBossRoom(player.position.zone, player.position.room)
+    ? isBossRoom(player.position.zone, player.position.room, player.realmId || 1)
     : false;
   let forceSend = Boolean(player.forceStateRefresh);
   let exitsHash = null;
@@ -2444,18 +2678,18 @@ async function sendState(player) {
   }
 }
 
-async function sendRoomState(zoneId, roomId) {
-  const players = listOnlinePlayers()
+async function sendRoomState(zoneId, roomId, realmId = 1) {
+  const players = listOnlinePlayers(realmId)
     .filter((p) => p.position.zone === zoneId && p.position.room === roomId);
   
   if (players.length === 0) return;
   
   // BOSS房间优化：批量处理，减少序列化开销
-  const isBoss = isBossRoom(zoneId, roomId);
+  const isBoss = isBossRoom(zoneId, roomId, realmId);
   
   if (isBoss && players.length > 5) {
     // BOSS房间且人很多时，使用节流，每100ms最多更新一次
-    const cacheKey = `${zoneId}:${roomId}`;
+    const cacheKey = `${realmId}:${zoneId}:${roomId}`;
     const now = Date.now();
     const lastUpdate = roomStateCache.get(cacheKey) || 0;
     
@@ -2473,7 +2707,7 @@ const WORLD_BOSS_ROOM = { zoneId: 'wb', roomId: 'lair' };
 const SUMMON_MAX_LEVEL = 8;
 const SUMMON_EXP_PER_LEVEL = 5;
 
-function checkMobRespawn() {
+function checkMobRespawn(realmId = 1) {
   // 检查所有房间的怪物刷新（包括BOSS和普通怪物）
   Object.keys(WORLD).forEach((zoneId) => {
     const zone = WORLD[zoneId];
@@ -2481,7 +2715,7 @@ function checkMobRespawn() {
 
     Object.keys(zone.rooms).forEach((roomId) => {
       const room = zone.rooms[roomId];
-      const mobs = spawnMobs(zoneId, roomId);
+      const mobs = spawnMobs(zoneId, roomId, realmId);
       const respawned = mobs.filter((m) => m.justRespawned);
 
       if (respawned.length) {
@@ -2505,7 +2739,8 @@ function checkMobRespawn() {
           emitAnnouncement(
             `${bossName} 已刷新，点击前往。`,
             'announce',
-            locationData
+            locationData,
+            realmId
           );
         }
       }
@@ -2570,7 +2805,7 @@ function gainSummonExp(player) {
   }
 }
 
-function applyDamageToMob(mob, dmg, attackerName) {
+function applyDamageToMob(mob, dmg, attackerName, realmId = null) {
   const mobTemplate = MOB_TEMPLATES[mob.templateId];
   const isSpecialBoss = Boolean(mobTemplate?.specialBoss);
   const isWorldBoss = Boolean(mobTemplate?.worldBoss);
@@ -2583,7 +2818,7 @@ function applyDamageToMob(mob, dmg, attackerName) {
     if (mob.status?.invincible && mob.status.invincible > now) {
       // 无敌状态，伤害为0
       if (attackerName) {
-        const attacker = playersByName(attackerName);
+        const attacker = playersByName(attackerName, realmId);
         if (attacker) {
           attacker.send(`${mob.name} 处于无敌状态，免疫了所有伤害！`);
         }
@@ -2611,9 +2846,9 @@ function applyDamageToMob(mob, dmg, attackerName) {
       }
 
       if (attackerName) {
-        const attacker = playersByName(attackerName);
+        const attacker = playersByName(attackerName, realmId);
         if (attacker) {
-          const online = listOnlinePlayers();
+          const online = listOnlinePlayers(realmId);
           const roomPlayers = online.filter((p) =>
             p.position.zone === attacker.position.zone &&
             p.position.room === attacker.position.room &&
@@ -2644,7 +2879,9 @@ function applyDamageToMob(mob, dmg, attackerName) {
         mob.status[key] = true;
         emitAnnouncement(
           `${mob.name} 剩余 ${Math.floor(hpPct * 100)}% 血量！`,
-          'warn'
+          'warn',
+          null,
+          realmId
         );
       }
     }
@@ -3097,7 +3334,7 @@ function tryAutoPotion(player) {
   // 检查是否在特殊BOSS房间（魔龙教主、世界BOSS、沙巴克BOSS）
   const zone = WORLD[player.position.zone];
   const room = zone?.rooms[player.position.room];
-  const roomMobs = getAliveMobs(player.position.zone, player.position.room);
+  const roomMobs = getAliveMobs(player.position.zone, player.position.room, player.realmId || 1);
   const isSpecialBossRoom = roomMobs.some((m) => {
     const tpl = MOB_TEMPLATES[m.templateId];
     return tpl && tpl.specialBoss;
@@ -3171,7 +3408,7 @@ io.on('connection', (socket) => {
       player.stateThrottleOverride = socket.data.stateThrottleOverride;
     }
   });
-  socket.on('auth', async ({ token, name }) => {
+  socket.on('auth', async ({ token, name, realmId: rawRealmId }) => {
     const session = await getSession(token);
     if (!session) {
       socket.emit('auth_error', { error: '登录已过期。' });
@@ -3179,7 +3416,14 @@ io.on('connection', (socket) => {
       return;
     }
 
-    const loaded = await loadCharacter(session.user_id, name);
+    const realmInfo = await resolveRealmId(rawRealmId);
+    if (realmInfo.error) {
+      socket.emit('auth_error', { error: realmInfo.error });
+      socket.disconnect();
+      return;
+    }
+
+    const loaded = await loadCharacter(session.user_id, name, realmInfo.realmId);
     if (!loaded) {
       socket.emit('auth_error', { error: '角色不存在。' });
       socket.disconnect();
@@ -3200,11 +3444,11 @@ io.on('connection', (socket) => {
         // 移除旧的玩家数据
         players.delete(existingSocketId);
         // 从队伍中移除
-        const party = getPartyByMember(name);
+        const party = getPartyByMember(name, existingPlayer.realmId || realmInfo.realmId);
         if (party) {
           party.members = party.members.filter(m => m !== name);
           if (party.members.length === 0) {
-            parties.delete(party.id);
+            getRealmState(existingPlayer.realmId || realmInfo.realmId).parties.delete(party.id);
           }
         }
       }
@@ -3212,6 +3456,7 @@ io.on('connection', (socket) => {
 
     computeDerived(loaded);
     loaded.userId = session.user_id;
+    loaded.realmId = realmInfo.realmId;
     loaded.socket = socket;
     loaded.send = (msg) => sendTo(loaded, msg);
     loaded.combat = null;
@@ -3251,15 +3496,15 @@ io.on('connection', (socket) => {
     if (loaded.flags?.partyId && Array.isArray(loaded.flags.partyMembers) && loaded.flags.partyMembers.length) {
       const partyId = loaded.flags.partyId;
       const memberList = Array.from(new Set(loaded.flags.partyMembers.concat(loaded.name)));
-      let party = getPartyById(partyId);
+      let party = getPartyById(partyId, loaded.realmId || 1);
       if (!party) {
-        parties.set(partyId, {
+        getRealmState(loaded.realmId || 1).parties.set(partyId, {
           id: partyId,
           leader: loaded.flags.partyLeader || memberList[0] || loaded.name,
           members: memberList,
           lootIndex: 0
         });
-        party = parties.get(partyId);
+        party = getRealmState(loaded.realmId || 1).parties.get(partyId);
       } else {
         memberList.forEach((member) => {
           if (!party.members.includes(member)) party.members.push(member);
@@ -3274,7 +3519,7 @@ io.on('connection', (socket) => {
       loaded.flags.partyLeader = party.leader || null;
     }
 
-    const member = await getGuildMember(session.user_id, name);
+    const member = await getGuildMember(session.user_id, name, loaded.realmId || 1);
     if (member && member.guild) {
       loaded.guild = { id: member.guild.id, name: member.guild.name, role: member.role };
     }
@@ -3284,7 +3529,7 @@ io.on('connection', (socket) => {
     loaded.send(`金币: ${loaded.gold}`);
     if (loaded.guild) loaded.send(`行会: ${loaded.guild.name}`);
     applyOfflineRewards(loaded);
-    spawnMobs(loaded.position.zone, loaded.position.room);
+    spawnMobs(loaded.position.zone, loaded.position.room, loaded.realmId || 1);
     await handleSabakEntry(loaded);
     const zone = WORLD[loaded.position.zone];
     const room = zone?.rooms[loaded.position.room];
@@ -3300,41 +3545,48 @@ io.on('connection', (socket) => {
     const prevRoom = player.position.room;
     await handleCommand({
       player,
-      players: listOnlinePlayers(),
+      players: listOnlinePlayers(player.realmId || 1),
       input: payload.text || '',
       source: payload.source || '',
       send: (msg) => sendTo(player, msg),
       onMove: ({ from, to }) => {
         if (from && from.zone && from.room) {
-          sendRoomState(from.zone, from.room);
+          sendRoomState(from.zone, from.room, player.realmId || 1);
         }
         if (to && to.zone && to.room) {
-          sendRoomState(to.zone, to.room);
+          sendRoomState(to.zone, to.room, player.realmId || 1);
         }
       },
       partyApi: {
-        parties,
-        invites: partyInvites,
-        followInvites: partyFollowInvites,
-        createParty,
-        getPartyByMember,
-        removeFromParty,
-        persistParty,
-        clearPartyFlags
+        parties: getRealmState(player.realmId || 1).parties,
+        invites: getRealmState(player.realmId || 1).partyInvites,
+        followInvites: getRealmState(player.realmId || 1).partyFollowInvites,
+        createParty: (leaderName) => createParty(leaderName, player.realmId || 1),
+        getPartyByMember: (name) => getPartyByMember(name, player.realmId || 1),
+        removeFromParty: (name) => removeFromParty(name, player.realmId || 1),
+        persistParty: (party) => persistParty(party, player.realmId || 1),
+        clearPartyFlags: (name) => clearPartyFlags(name, player.realmId || 1)
       },
       guildApi: {
-        invites: guildInvites,
-        createGuild,
+        invites: getRealmState(player.realmId || 1).guildInvites,
+        createGuild: (name, leaderUserId, leaderCharName) =>
+          createGuild(name, leaderUserId, leaderCharName, player.realmId || 1),
         getGuildByName,
-        addGuildMember,
-        removeGuildMember,
-        leaveGuild,
+        addGuildMember: (guildId, userId, charName) =>
+          addGuildMember(guildId, userId, charName, player.realmId || 1),
+        removeGuildMember: (guildId, userId, charName) =>
+          removeGuildMember(guildId, userId, charName, player.realmId || 1),
+        leaveGuild: (userId, charName) =>
+          leaveGuild(userId, charName, player.realmId || 1),
         listGuildMembers,
-        isGuildLeader,
-        transferGuildLeader,
-        registerSabak,
-        listSabakRegistrations,
-        sabakState,
+        isGuildLeader: (guildId, userId, charName) =>
+          isGuildLeader(guildId, userId, charName, player.realmId || 1),
+        transferGuildLeader: (guildId, oldLeaderUserId, oldLeaderCharName, newLeaderUserId, newLeaderCharName) =>
+          transferGuildLeader(guildId, oldLeaderUserId, oldLeaderCharName, newLeaderUserId, newLeaderCharName, player.realmId || 1),
+        registerSabak: (guildId) => registerSabak(guildId, player.realmId || 1),
+        listSabakRegistrations: () => listSabakRegistrations(player.realmId || 1),
+        hasSabakRegistrationToday: (guildId) => hasSabakRegistrationToday(guildId, player.realmId || 1),
+        sabakState: getSabakState(player.realmId || 1),
         sabakConfig,
         sabakWindowInfo,
         useVipCode,
@@ -3371,7 +3623,7 @@ io.on('connection', (socket) => {
   socket.on('mail_list', async () => {
     const player = players.get(socket.id);
     if (!player) return;
-    const mails = await listMail(player.userId);
+    const mails = await listMail(player.userId, player.realmId || 1);
     socket.emit('mail_list', { ok: true, mails: mails.map(buildMailPayload) });
   });
 
@@ -3387,7 +3639,7 @@ io.on('connection', (socket) => {
     if (!title) return socket.emit('mail_send_result', { ok: false, msg: '请输入邮件标题。' });
     if (!body) return socket.emit('mail_send_result', { ok: false, msg: '请输入邮件内容。' });
 
-    const target = await findCharacterByName(toName);
+    const target = await findCharacterByNameInRealm(toName, player.realmId || 1);
     if (!target) return socket.emit('mail_send_result', { ok: false, msg: '收件人不存在。' });
 
     const items = [];
@@ -3440,8 +3692,8 @@ io.on('connection', (socket) => {
       player.gold -= gold;
     }
 
-    await sendMail(target.user_id, player.name, title, body, items.length ? items : null, gold);
-    const onlineTarget = playersByName(toName);
+    await sendMail(target.user_id, player.name, title, body, items.length ? items : null, gold, player.realmId || 1);
+    const onlineTarget = playersByName(toName, player.realmId || 1);
     if (onlineTarget) {
       onlineTarget.send(`你收到来自 ${player.name} 的邮件：${title}`);
     }
@@ -3455,14 +3707,14 @@ io.on('connection', (socket) => {
     if (!player) return;
     const mailId = Number(payload?.mailId || 0);
     if (!mailId) return socket.emit('mail_claim_result', { ok: false, msg: '邮件ID无效。' });
-    const mails = await listMail(player.userId);
+    const mails = await listMail(player.userId, player.realmId || 1);
     const mail = mails.find((m) => m.id === mailId);
     if (!mail) return socket.emit('mail_claim_result', { ok: false, msg: '邮件不存在。' });
     if (mail.claimed_at) return socket.emit('mail_claim_result', { ok: false, msg: '附件已领取。' });
     const items = parseJson(mail.items_json, []);
     const gold = Number(mail.gold || 0);
     if ((!items || !items.length) && gold <= 0) {
-      await markMailRead(player.userId, mailId);
+      await markMailRead(player.userId, mailId, player.realmId || 1);
       return socket.emit('mail_claim_result', { ok: false, msg: '该邮件没有附件。' });
     }
     if (items && items.length) {
@@ -3474,8 +3726,8 @@ io.on('connection', (socket) => {
     if (gold > 0) {
       player.gold += gold;
     }
-    await markMailClaimed(player.userId, mailId);
-    await markMailRead(player.userId, mailId);
+    await markMailClaimed(player.userId, mailId, player.realmId || 1);
+    await markMailRead(player.userId, mailId, player.realmId || 1);
     socket.emit('mail_claim_result', { ok: true, msg: '附件已领取。' });
     await sendState(player);
     await savePlayer(player);
@@ -3486,8 +3738,8 @@ io.on('connection', (socket) => {
     if (!player) return;
     const mailId = Number(payload?.mailId || 0);
     if (!mailId) return;
-    await markMailRead(player.userId, mailId);
-    const mails = await listMail(player.userId);
+    await markMailRead(player.userId, mailId, player.realmId || 1);
+    const mails = await listMail(player.userId, player.realmId || 1);
     socket.emit('mail_list', { ok: true, mails: mails.map(buildMailPayload) });
   });
 
@@ -3498,7 +3750,7 @@ io.on('connection', (socket) => {
       return;
     }
     const members = await listGuildMembers(player.guild.id);
-    const online = listOnlinePlayers();
+    const online = listOnlinePlayers(player.realmId || 1);
     const memberList = members.map((m) => ({
       name: m.char_name,
       role: m.role,
@@ -3516,9 +3768,10 @@ io.on('connection', (socket) => {
     const player = players.get(socket.id);
     if (!player) return;
 
+    const sabakState = getSabakState(player.realmId || 1);
     const ownerGuildName = sabakState.ownerGuildName || '无';
     const windowInfo = sabakWindowInfo();
-    const registrations = await listSabakRegistrations();
+    const registrations = await listSabakRegistrations(player.realmId || 1);
     const today = new Date();
     const start = new Date(today);
     start.setHours(0, 0, 0, 0);
@@ -3566,6 +3819,7 @@ io.on('connection', (socket) => {
       player.send('只有会长可以报名。');
       return;
     }
+    const sabakState = getSabakState(player.realmId || 1);
     const isOwner = String(player.guild.id) === String(sabakState.ownerGuildId);
     if (isOwner) {
       player.send('守城行会无需报名。');
@@ -3586,7 +3840,7 @@ io.on('connection', (socket) => {
       player.send('该行会今天已经报名过了。');
       return;
     }
-    const registrations = await listSabakRegistrations();
+    const registrations = await listSabakRegistrations(player.realmId || 1);
     const today = new Date();
     const todayRegistrations = registrations.filter(r => {
       if (!r.registered_at) return false;
@@ -3603,7 +3857,7 @@ io.on('connection', (socket) => {
     }
     player.gold -= 5000000;
     try {
-      await registerSabak(player.guild.id);
+        await registerSabak(player.guild.id, player.realmId || 1);
       player.send('已报名沙巴克攻城，支付500万金币。');
     } catch {
       player.send('该行会已经报名。');
@@ -3618,12 +3872,12 @@ io.on('connection', (socket) => {
         if (!player.flags) player.flags = {};
         player.flags.offlineAt = Date.now();
       setSummons(player, []);
-        const trade = getTradeByPlayer(player.name);
+        const trade = getTradeByPlayer(player.name, player.realmId || 1);
       if (trade) {
-        clearTrade(trade, `交易已取消（${player.name} 离线）。`);
+        clearTrade(trade, `交易已取消（${player.name} 离线）。`, player.realmId || 1);
       }
       await savePlayer(player);
-      lastSaveTime.delete(player.name); // 清理保存时间记录
+      getRealmState(player.realmId || 1).lastSaveTime.delete(player.name); // 清理保存时间记录
       const throttleKey = getStateThrottleKey(player, socket);
       if (throttleKey) {
         stateThrottleLastSent.delete(throttleKey);
@@ -3725,11 +3979,11 @@ function tryAutoHeal(player) {
     }
   });
 
-  const party = getPartyByMember(player.name);
+  const party = getPartyByMember(player.name, player.realmId || 1);
   if (party && party.members.length > 0) {
     party.members.forEach((memberName) => {
       if (memberName === player.name) return;
-      const member = playersByName(memberName);
+      const member = playersByName(memberName, player.realmId || 1);
       if (member &&
           member.position.zone === player.position.zone &&
           member.position.room === player.position.room &&
@@ -3744,7 +3998,7 @@ function tryAutoHeal(player) {
   const summonTargets = [];
   if (party && party.members.length > 0) {
     party.members.forEach((memberName) => {
-      const member = playersByName(memberName);
+      const member = playersByName(memberName, player.realmId || 1);
       if (member) {
         const memberSummons = getAliveSummons(member);
         memberSummons.forEach((summon) => {
@@ -3846,9 +4100,9 @@ function tryAutoBuff(player) {
       return true;
     }
 
-    const party = getPartyByMember(player.name);
+    const party = getPartyByMember(player.name, player.realmId || 1);
     const members = party
-      ? listOnlinePlayers().filter(
+      ? listOnlinePlayers(player.realmId || 1).filter(
           (p) =>
             party.members.includes(p.name) &&
             p.position.zone === player.position.zone &&
@@ -4054,6 +4308,7 @@ function handleDeath(player) {
 }
 
 function processMobDeath(player, mob, online) {
+  const realmId = player?.realmId || 1;
   const damageSnapshot = mob.status?.damageBy ? { ...mob.status.damageBy } : {};
   const lastHitSnapshot = mob.status?.lastHitBy || null;
   const template = MOB_TEMPLATES[mob.templateId];
@@ -4061,12 +4316,12 @@ function processMobDeath(player, mob, online) {
   const mobRoomId = mob.roomId || player.position.room;
   const isPlayerInMobRoom = (target) =>
     Boolean(target && target.position && target.position.zone === mobZoneId && target.position.room === mobRoomId);
-  removeMob(player.position.zone, player.position.room, mob.id);
+  removeMob(player.position.zone, player.position.room, mob.id, realmId);
   gainSummonExp(player);
   const exp = template.exp;
   const gold = randInt(template.gold[0], template.gold[1]);
 
-  const party = getPartyByMember(player.name);
+  const party = getPartyByMember(player.name, realmId);
   // 检查队伍成员是否都在同一个房间
   const allPartyInSameRoom = party ? partyMembersInSameRoom(party, online, player.position.zone, player.position.room) : false;
   // 物品分配：只有队友都在同一个房间才能分掉落的物品
@@ -4082,8 +4337,8 @@ function processMobDeath(player, mob, online) {
   const isMolongBoss = template.id === 'molong_boss';
   const isSpecialBoss = isWorldBoss || isSabakBoss || isMolongBoss;
   if (isWorldBoss) {
-    const nextKills = incrementWorldBossKills(1);
-    void setWorldBossKillCount(nextKills).catch((err) => {
+    const nextKills = incrementWorldBossKills(1, realmId);
+    void setWorldBossKillCount(nextKills, realmId).catch((err) => {
       console.warn('Failed to persist world boss kill count:', err);
     });
   }
@@ -4104,7 +4359,7 @@ function processMobDeath(player, mob, online) {
       ownerName = lastHitSnapshot;
     }
     if (!ownerName) ownerName = player.name;
-    lootOwner = playersByName(ownerName) || player;
+    lootOwner = playersByName(ownerName, realmId) || player;
     partyMembersForReward = [lootOwner];
     partyMembersForLoot = [lootOwner];
   }
@@ -4117,8 +4372,9 @@ function processMobDeath(player, mob, online) {
 
     let sabakTaxExp = 0;
     let sabakTaxGold = 0;
-    const sabakMembers = listSabakMembersOnline();
+    const sabakMembers = listSabakMembersOnline(realmId);
     partyMembersForReward.forEach((member) => {
+      const sabakState = getSabakState(realmId);
       const isSabakMember = member.guild && sabakState.ownerGuildId && String(member.guild.id) === String(sabakState.ownerGuildId);
       const sabakBonus = isSabakMember ? 2 : 1;
       const vipBonus = member.flags?.vip ? 2 : 1;
@@ -4160,7 +4416,7 @@ function processMobDeath(player, mob, online) {
       const totalDamage = entries.reduce((sum, [, dmg]) => sum + dmg, 0) || 1;
       const top10Count = topEntries.length;
       topEntries.forEach(([name, damage]) => {
-        const player = playersByName(name);
+        const player = playersByName(name, realmId);
         if (!player) return;
         if (isBoss && !isPlayerInMobRoom(player)) return;
         const damageRatio = damage / totalDamage;
@@ -4179,7 +4435,7 @@ function processMobDeath(player, mob, online) {
 
     if (isWorldBoss && entries.length) {
       const [topName, topDamage] = entries[0];
-      let topPlayer = topDamage > 0 ? playersByName(topName) : null;
+      let topPlayer = topDamage > 0 ? playersByName(topName, realmId) : null;
       if (topPlayer && !isPlayerInMobRoom(topPlayer)) {
         topPlayer = null;
       }
@@ -4201,10 +4457,10 @@ function processMobDeath(player, mob, online) {
           if (forcedItem) {
             const forcedRarity = rarityByPrice(forcedItem);
             if (['epic', 'legendary', 'supreme'].includes(forcedRarity)) {
-              emitAnnouncement(`${topPlayer.name} 获得世界BOSS伤害第一奖励 ${formatItemLabel(forcedId, forcedEffects)}！`, forcedRarity);
+              emitAnnouncement(`${topPlayer.name} 获得世界BOSS伤害第一奖励 ${formatItemLabel(forcedId, forcedEffects)}！`, forcedRarity, null, realmId);
             }
             if (isEquipmentItem(forcedItem) && hasSpecialEffects(forcedEffects)) {
-              emitAnnouncement(`${topPlayer.name} 获得特效装备 ${formatItemLabel(forcedId, forcedEffects)}！`, 'announce');
+              emitAnnouncement(`${topPlayer.name} 获得特效装备 ${formatItemLabel(forcedId, forcedEffects)}！`, 'announce', null, realmId);
             }
           }
         }
@@ -4223,10 +4479,10 @@ function processMobDeath(player, mob, online) {
           const rarity = rarityByPrice(item);
           if (['epic', 'legendary', 'supreme'].includes(rarity)) {
             const text = `${target.name} 击败 ${template.name} 获得${RARITY_LABELS[rarity] || '稀有'}装备 ${formatItemLabel(id, effects)}！`;
-            emitAnnouncement(formatLegendaryAnnouncement(text, rarity), rarity);
+            emitAnnouncement(formatLegendaryAnnouncement(text, rarity), rarity, null, realmId);
           }
           if (isEquipmentItem(item) && hasSpecialEffects(effects)) {
-            emitAnnouncement(`${target.name} 获得特效装备 ${formatItemLabel(id, effects)}！`, 'announce');
+            emitAnnouncement(`${target.name} 获得特效装备 ${formatItemLabel(id, effects)}！`, 'announce', null, realmId);
           }
         });
       } else if (isSpecialBoss) {
@@ -4273,10 +4529,10 @@ function processMobDeath(player, mob, online) {
           const rarity = rarityByPrice(item);
           if (['epic', 'legendary', 'supreme'].includes(rarity)) {
             const text = `${owner.name} 击败 ${template.name} 获得${RARITY_LABELS[rarity] || '稀有'}装备 ${formatItemLabel(entry.id, entry.effects)}！`;
-            emitAnnouncement(formatLegendaryAnnouncement(text, rarity), rarity);
+            emitAnnouncement(formatLegendaryAnnouncement(text, rarity), rarity, null, realmId);
           }
           if (isEquipmentItem(item) && hasSpecialEffects(entry.effects)) {
-            emitAnnouncement(`${owner.name} 获得特效装备 ${formatItemLabel(entry.id, entry.effects)}！`, 'announce');
+            emitAnnouncement(`${owner.name} 获得特效装备 ${formatItemLabel(entry.id, entry.effects)}！`, 'announce', null, realmId);
           }
         });
         if (actualDrops.length > 0) {
@@ -4297,10 +4553,10 @@ function processMobDeath(player, mob, online) {
           const rarity = rarityByPrice(item);
           if (['epic', 'legendary', 'supreme'].includes(rarity)) {
             const text = `${owner.name} 击败 ${template.name} 获得${RARITY_LABELS[rarity] || '稀有'}装备 ${formatItemLabel(entry.id, entry.effects)}！`;
-            emitAnnouncement(formatLegendaryAnnouncement(text, rarity), rarity);
+            emitAnnouncement(formatLegendaryAnnouncement(text, rarity), rarity, null, realmId);
           }
           if (isEquipmentItem(item) && hasSpecialEffects(entry.effects)) {
-            emitAnnouncement(`${owner.name} 获得特效装备 ${formatItemLabel(entry.id, entry.effects)}！`, 'announce');
+            emitAnnouncement(`${owner.name} 获得特效装备 ${formatItemLabel(entry.id, entry.effects)}！`, 'announce', null, realmId);
           }
         });
       }
@@ -4308,64 +4564,61 @@ function processMobDeath(player, mob, online) {
 }
 
 function updateSpecialBossStatsBasedOnPlayers() {
-  const online = listOnlinePlayers();
+  const realmIds = Array.from(new Set([1, ...realmStates.keys()]));
 
-  // 检查所有房间的特殊BOSS
-  Object.keys(WORLD).forEach((zoneId) => {
-    const zone = WORLD[zoneId];
-    if (!zone?.rooms) return;
+  realmIds.forEach((realmId) => {
+    const online = listOnlinePlayers(realmId);
+    Object.keys(WORLD).forEach((zoneId) => {
+      const zone = WORLD[zoneId];
+      if (!zone?.rooms) return;
 
-    Object.keys(zone.rooms).forEach((roomId) => {
-      const roomMobs = getAliveMobs(zoneId, roomId);
-      const specialBoss = roomMobs.find((m) => {
-        const tpl = MOB_TEMPLATES[m.templateId];
-        return tpl && tpl.specialBoss;
+      Object.keys(zone.rooms).forEach((roomId) => {
+        const roomMobs = getAliveMobs(zoneId, roomId, realmId);
+        const specialBoss = roomMobs.find((m) => {
+          const tpl = MOB_TEMPLATES[m.templateId];
+          return tpl && tpl.specialBoss;
+        });
+
+        if (!specialBoss) return;
+
+        const playersInRoom = online.filter(
+          (p) => p.position.zone === zoneId && p.position.room === roomId
+        ).length;
+
+        const tpl = MOB_TEMPLATES[specialBoss.templateId];
+        const baseStats = specialBoss.status?.baseStats;
+        const baseAtk = baseStats?.atk ?? tpl.atk;
+        const baseDef = baseStats?.def ?? tpl.def;
+        const baseMdef = baseStats?.mdef ?? tpl.mdef;
+
+        let atkBonus = 0;
+        let defBonus = 0;
+        let mdefBonus = 0;
+
+        const isWorldBoss = specialBoss.templateId === 'world_boss';
+
+        if (playersInRoom < 2) {
+          atkBonus = isWorldBoss ? 3000 : 800;
+          defBonus = 5000;
+          mdefBonus = 5000;
+          if (!specialBoss.status?.enhancedMode) {
+            specialBoss.status.enhancedMode = true;
+            specialBoss.atk = baseAtk + atkBonus;
+            specialBoss.def = baseDef + defBonus;
+            specialBoss.mdef = baseMdef + mdefBonus;
+          }
+        } else {
+          atkBonus = isWorldBoss ? 3000 : 800;
+          defBonus = isWorldBoss ? 0 : 0;
+          mdefBonus = isWorldBoss ? 0 : 0;
+          if (specialBoss.status?.enhancedMode !== 'partial') {
+            specialBoss.status.enhancedMode = 'partial';
+            specialBoss.atk = baseAtk + atkBonus;
+            specialBoss.def = baseDef + defBonus;
+            specialBoss.mdef = baseMdef + mdefBonus;
+          }
+        }
       });
-
-      if (!specialBoss) return;
-
-      // 统计房间内玩家人数
-      const playersInRoom = online.filter(
-        (p) => p.position.zone === zoneId && p.position.room === roomId
-      ).length;
-
-      const tpl = MOB_TEMPLATES[specialBoss.templateId];
-      const baseStats = specialBoss.status?.baseStats;
-      const baseAtk = baseStats?.atk ?? tpl.atk;
-      const baseDef = baseStats?.def ?? tpl.def;
-      const baseMdef = baseStats?.mdef ?? tpl.mdef;
-
-      let atkBonus = 0;
-      let defBonus = 0;
-      let mdefBonus = 0;
-
-      // 判断是否是世界BOSS
-      const isWorldBoss = specialBoss.templateId === 'world_boss';
-
-      // 单人时增加攻击、5000防御、5000魔御
-      if (playersInRoom < 2) {
-        atkBonus = isWorldBoss ? 3000 : 800;
-        defBonus = 5000;
-        mdefBonus = 5000;
-        if (!specialBoss.status?.enhancedMode) {
-          specialBoss.status.enhancedMode = true;
-          specialBoss.atk = baseAtk + atkBonus;
-          specialBoss.def = baseDef + defBonus;
-          specialBoss.mdef = baseMdef + mdefBonus;
-        }
-      }
-      // 2人及以上时增加攻击，世界BOSS额外增加0防御/魔御
-      else {
-        atkBonus = isWorldBoss ? 3000 : 800;
-        defBonus = isWorldBoss ? 0 : 0;
-        mdefBonus = isWorldBoss ? 0 : 0;
-        if (specialBoss.status?.enhancedMode !== 'partial') {
-          specialBoss.status.enhancedMode = 'partial';
-          specialBoss.atk = baseAtk + atkBonus;
-          specialBoss.def = baseDef + defBonus;
-          specialBoss.mdef = baseMdef + mdefBonus;
-        }
-      }
     });
   });
 }
@@ -4387,10 +4640,11 @@ async function combatTick() {
     refreshBuffs(player);
     processPotionRegen(player);
     updateRedNameAutoClear(player);
-    const roomKey = `${player.position.zone}:${player.position.room}`;
+    const realmId = player.realmId || 1;
+    const roomKey = `${realmId}:${player.position.zone}:${player.position.room}`;
     let roomMobs = roomMobsCache.get(roomKey);
     if (!roomMobs) {
-      roomMobs = getAliveMobs(player.position.zone, player.position.room);
+      roomMobs = getAliveMobs(player.position.zone, player.position.room, realmId);
       roomMobsCache.set(roomKey, roomMobs);
     }
     if (!regenRooms.has(roomKey)) {
@@ -4402,7 +4656,7 @@ async function combatTick() {
       if (playerPoisonTick && playerPoisonTick.type === 'poison') {
         player.send(`你受到 ${playerPoisonTick.dmg} 点中毒伤害。`);
         if (poisonSource) {
-          const source = playersByName(poisonSource);
+          const source = playersByName(poisonSource, realmId);
           if (source) {
             source.send(`你的施毒对 ${player.name} 造成 ${playerPoisonTick.dmg} 点伤害。`);
           }
@@ -4466,7 +4720,7 @@ async function combatTick() {
             continue;
           }
         }
-        const myParty = getPartyByMember(player.name);
+        const myParty = getPartyByMember(player.name, player.realmId || 1);
         const sameParty = myParty && myParty.members.includes(target.name);
         if (sameParty) {
           player.combat = null;
@@ -4837,7 +5091,7 @@ async function combatTick() {
           if (elementAtk > 0) {
             aoeDmg += elementAtk * 10;
           }
-          const result = applyDamageToMob(target, aoeDmg, player.name);
+          const result = applyDamageToMob(target, aoeDmg, player.name, player.realmId || 1);
           if (result?.damageTaken) {
             player.send(`你对 ${target.name} 造成 ${aoeDmg} 点伤害。`);
           }
@@ -4856,21 +5110,21 @@ async function combatTick() {
           if (deadTargets.some((target) => target.id === mob.id)) {
             player.combat = null;
           }
-          sendRoomState(player.position.zone, player.position.room);
+          sendRoomState(player.position.zone, player.position.room, player.realmId || 1);
           continue;
         }
-        sendRoomState(player.position.zone, player.position.room);
+        sendRoomState(player.position.zone, player.position.room, player.realmId || 1);
       } else {
         const elementAtk = Math.max(0, Math.floor(player.elementAtk || 0));
         if (elementAtk > 0) {
           dmg += elementAtk * 10;
         }
-        const result = applyDamageToMob(mob, dmg, player.name);
+        const result = applyDamageToMob(mob, dmg, player.name, player.realmId || 1);
         if (result?.damageTaken) {
           player.send(`你对 ${mob.name} 造成 ${dmg} 点伤害。`);
         }
         if (hasComboWeapon(player) && mob.hp > 0 && Math.random() <= COMBO_PROC_CHANCE) {
-          const comboResult = applyDamageToMob(mob, dmg, player.name);
+          const comboResult = applyDamageToMob(mob, dmg, player.name, player.realmId || 1);
           if (comboResult?.damageTaken) {
             player.send(`连击触发，对 ${mob.name} 造成 ${dmg} 点伤害。`);
           }
@@ -4883,7 +5137,7 @@ async function combatTick() {
           if (extraTargets.length) {
             const extraTarget = extraTargets[randInt(0, extraTargets.length - 1)];
           const extraDmg = Math.max(1, Math.floor(dmg * ASSASSINATE_SECONDARY_DAMAGE_RATE));
-          const extraResult = applyDamageToMob(extraTarget, extraDmg, player.name);
+          const extraResult = applyDamageToMob(extraTarget, extraDmg, player.name, player.realmId || 1);
           if (extraResult?.damageTaken) {
             player.send(`刺杀剑术波及 ${extraTarget.name}，造成 ${extraDmg} 点伤害。`);
           }
@@ -4899,7 +5153,7 @@ async function combatTick() {
           }
         }
         if (mob.hp > 0) {
-          sendRoomState(player.position.zone, player.position.room);
+          sendRoomState(player.position.zone, player.position.room, player.realmId || 1);
         }
       }
 
@@ -4947,7 +5201,7 @@ async function combatTick() {
           if (elementAtk > 0) {
             cleaveDmg += elementAtk * 10;
           }
-          const cleaveResult = applyDamageToMob(other, cleaveDmg, player.name);
+          const cleaveResult = applyDamageToMob(other, cleaveDmg, player.name, player.realmId || 1);
           if (cleaveResult?.damageTaken) {
             player.send(`你对 ${other.name} 造成 ${cleaveDmg} 点伤害。`);
           }
@@ -4976,7 +5230,7 @@ async function combatTick() {
         for (const [sourceName, damage] of Object.entries(statusTick.damageBySource)) {
           if (sourceName && sourceName !== 'unknown') {
             recordMobDamage(mob, sourceName, damage);
-            const source = playersByName(sourceName);
+            const source = playersByName(sourceName, player.realmId || 1);
             if (source && source.name !== player.name) {
               source.send(`你的施毒对 ${mob.name} 造成 ${damage} 点伤害。`);
             }
@@ -4996,7 +5250,7 @@ async function combatTick() {
               if (target.id !== mob.id) {
                 dmg = Math.max(1, Math.floor(dmg * 0.5));
               }
-              const summonResult = applyDamageToMob(target, dmg, player.name);
+              const summonResult = applyDamageToMob(target, dmg, player.name, player.realmId || 1);
               if (summonResult?.damageTaken) {
                 player.send(`${summon.name} 对 ${target.name} 造成 ${dmg} 点伤害。`);
               }
@@ -5010,7 +5264,7 @@ async function combatTick() {
           const dmg = useTaoist
             ? calcTaoistDamageFromValue(getSpiritValue(summon), mob)
             : calcDamage(summon, mob, 1);
-          const summonResult = applyDamageToMob(mob, dmg, player.name);
+          const summonResult = applyDamageToMob(mob, dmg, player.name, player.realmId || 1);
           if (summonResult?.damageTaken) {
             player.send(`${summon.name} 对 ${mob.name} 造成 ${dmg} 点伤害。`);
           }
@@ -5021,7 +5275,7 @@ async function combatTick() {
     if (mob.hp <= 0) {
       processMobDeath(player, mob, online);
       player.combat = null;
-      sendRoomState(player.position.zone, player.position.room);
+      sendRoomState(player.position.zone, player.position.room, player.realmId || 1);
       continue;
     }
 
@@ -5263,24 +5517,25 @@ async function combatTick() {
 
     // 每30秒保存一次玩家数据,避免频繁写入数据库
     const now = Date.now();
-    const lastSave = lastSaveTime.get(player.name) || 0;
+    const lastSave = getRealmState(player.realmId || 1).lastSaveTime.get(player.name) || 0;
     if (now - lastSave >= 30000) {
       savePlayer(player);
-      lastSaveTime.set(player.name, now);
+      getRealmState(player.realmId || 1).lastSaveTime.set(player.name, now);
     }
   }
 }
 
 setInterval(combatTick, 1000);
 
-async function sabakTick() {
+async function sabakTick(realmId) {
+  const sabakState = getSabakState(realmId);
   const now = Date.now();
   const nowDate = new Date(now);
 
   // 自动开始攻城战
   if (!sabakState.active && isSabakActive(nowDate) && sabakState.ownerGuildId) {
     // 检查是否有行会报名
-    const registrations = await listSabakRegistrations();
+    const registrations = await listSabakRegistrations(realmId);
     const today = new Date();
     const todayRegistrations = registrations.filter(r => {
       if (!r.registered_at) return false;
@@ -5293,18 +5548,18 @@ async function sabakTick() {
       const todayKey = today.toDateString();
       if (sabakState.noRegAnnounceDate !== todayKey) {
         sabakState.noRegAnnounceDate = todayKey;
-        emitAnnouncement('今日无行会报名攻城，守城方自动获胜！', 'announce');
+        emitAnnouncement('今日无行会报名攻城，守城方自动获胜！', 'announce', null, realmId);
       }
     } else {
       sabakState.noRegAnnounceDate = null;
       // 有行会报名，正常开始攻城战
-      startSabakSiege(null);
+      startSabakSiege(null, realmId);
     }
   }
 
   // 检查皇宫占领情况（仅攻城战期间）
   if (sabakState.active && isSabakActive(nowDate)) {
-    const palacePlayers = listOnlinePlayers().filter(p =>
+    const palacePlayers = listOnlinePlayers(realmId).filter(p =>
       isSabakPalace(p.position.zone, p.position.room) && p.guild
     );
 
@@ -5335,7 +5590,7 @@ async function sabakTick() {
       sabakState.captureGuildName = controllingGuildName;
       sabakState.captureStart = controllingGuildId ? now : null;
       if (controllingGuildId) {
-        emitAnnouncement(`${controllingGuildName} 开始占领沙城皇宫！`, 'announce');
+        emitAnnouncement(`${controllingGuildName} 开始占领沙城皇宫！`, 'announce', null, realmId);
       }
     }
 
@@ -5349,8 +5604,8 @@ async function sabakTick() {
         // 占领成功，立即结束攻城
         sabakState.ownerGuildId = sabakState.captureGuildId;
         sabakState.ownerGuildName = sabakState.captureGuildName;
-        await setSabakOwner(sabakState.captureGuildId, sabakState.captureGuildName);
-        emitAnnouncement(`${sabakState.captureGuildName} 占领沙城皇宫5分钟，成功夺取沙巴克！`, 'announce');
+        await setSabakOwner(realmId, sabakState.captureGuildId, sabakState.captureGuildName);
+        emitAnnouncement(`${sabakState.captureGuildName} 占领沙城皇宫5分钟，成功夺取沙巴克！`, 'announce', null, realmId);
         sabakState.active = false;
         sabakState.siegeEndsAt = null;
         sabakState.captureGuildId = null;
@@ -5360,7 +5615,7 @@ async function sabakTick() {
       } else if (Math.floor(captureDuration / 1000) % 30 === 0 && captureDuration > 0) {
         // 每30秒提醒一次占领时间
         const remainingMinutes = Math.ceil((占领所需分钟 * 60 * 1000 - captureDuration) / 60000);
-        emitAnnouncement(`${sabakState.captureGuildName} 已占领沙城皇宫 ${Math.floor(captureMinutes)} 分钟，还需 ${remainingMinutes} 分钟即可获胜。`, 'announce');
+        emitAnnouncement(`${sabakState.captureGuildName} 已占领沙城皇宫 ${Math.floor(captureMinutes)} 分钟，还需 ${remainingMinutes} 分钟即可获胜。`, 'announce', null, realmId);
       }
     }
   }
@@ -5368,7 +5623,7 @@ async function sabakTick() {
   // 结束攻城战
   if (sabakState.active) {
     if (!isSabakActive(nowDate) || (sabakState.siegeEndsAt && now >= sabakState.siegeEndsAt)) {
-      await finishSabakSiege();
+      await finishSabakSiege(realmId);
     }
   }
 }
@@ -5379,13 +5634,18 @@ async function start() {
     await mkdir(dir, { recursive: true });
   }
   await runMigrations();
+  await refreshRealmCache();
   setRespawnStore({
-    set: (zoneId, roomId, slotIndex, templateId, respawnAt) =>
-      upsertMobRespawn(zoneId, roomId, slotIndex, templateId, respawnAt),
-    clear: (zoneId, roomId, slotIndex) =>
-      clearMobRespawn(zoneId, roomId, slotIndex)
+    set: (realmId, zoneId, roomId, slotIndex, templateId, respawnAt) =>
+      upsertMobRespawn(realmId, zoneId, roomId, slotIndex, templateId, respawnAt),
+    clear: (realmId, zoneId, roomId, slotIndex) =>
+      clearMobRespawn(realmId, zoneId, roomId, slotIndex)
   });
-  const respawnRows = await listMobRespawns();
+  const respawnRows = [];
+  for (const realm of realmCache) {
+    const rows = await listMobRespawns(realm.id);
+    respawnRows.push(...rows);
+  }
   const now = Date.now();
   const activeRespawns = [];
   for (const row of respawnRows) {
@@ -5395,7 +5655,7 @@ async function start() {
       // 保留有血量数据的怪物，即使重生时间已过期
       activeRespawns.push(row);
     } else {
-      await clearMobRespawn(row.zone_id, row.room_id, row.slot_index);
+      await clearMobRespawn(row.realm_id || 1, row.zone_id, row.room_id, row.slot_index);
     }
   }
   seedRespawnCache(activeRespawns);
@@ -5403,16 +5663,20 @@ async function start() {
   // 定期保存怪物血量状态（每30秒）
   setInterval(async () => {
     try {
-      const aliveMobs = getAllAliveMobs();
-      for (const mob of aliveMobs) {
-        await saveMobState(
-          mob.zoneId,
-          mob.roomId,
-          mob.slotIndex,
-          mob.templateId,
-          mob.currentHp,
-          mob.status
-        );
+      const realmIds = getRealmIds();
+      for (const realmId of realmIds) {
+        const aliveMobs = getAllAliveMobs(realmId);
+        for (const mob of aliveMobs) {
+          await saveMobState(
+            realmId,
+            mob.zoneId,
+            mob.roomId,
+            mob.slotIndex,
+            mob.templateId,
+            mob.currentHp,
+            mob.status
+          );
+        }
       }
     } catch (err) {
       console.warn('Failed to save mob states:', err);
@@ -5422,7 +5686,10 @@ async function start() {
   // 寄售到期自动下架（每10分钟）
   setInterval(async () => {
     try {
-      await cleanupExpiredConsignments();
+      const realmIds = getRealmIds();
+      for (const realmId of realmIds) {
+        await cleanupExpiredConsignments(realmId);
+      }
     } catch (err) {
       console.warn('Failed to cleanup expired consignments:', err);
     }
@@ -5437,17 +5704,33 @@ async function start() {
     console.warn('Failed to cleanup invalid items on startup.');
     console.warn(err);
   }
-  await loadSabakState();
+  for (const realm of realmCache) {
+    await ensureSabakState(realm.id);
+    await loadSabakState(realm.id);
+  }
   lootLogEnabled = await getLootLogEnabled();
-  const worldBossKillCount = await getWorldBossKillCount();
-  setWorldBossKillCountState(worldBossKillCount);
+  // 世界BOSS击杀次数改为按区服维护
+  for (const realm of realmCache) {
+    const worldBossKillCount = await getWorldBossKillCount(realm.id);
+    setWorldBossKillCountState(worldBossKillCount, realm.id);
+  }
   const roomVariantCount = await getRoomVariantCount();
   applyRoomVariantCount(roomVariantCount);
   shrinkRoomVariants(WORLD, roomVariantCount);
   expandRoomVariants(WORLD);
-  checkMobRespawn();
-  setInterval(() => checkMobRespawn(), 5000);
-  setInterval(() => sabakTick().catch(() => {}), 5000);
+  for (const realm of realmCache) {
+    checkMobRespawn(realm.id);
+  }
+  setInterval(() => {
+    getRealmIds().forEach((realmId) => {
+      checkMobRespawn(realmId);
+    });
+  }, 5000);
+  setInterval(() => {
+    getRealmIds().forEach((realmId) => {
+      sabakTick(realmId).catch(() => {});
+    });
+  }, 5000);
   if (config.adminBootstrapSecret && config.adminBootstrapUser) {
     const admins = await knex('users').where({ is_admin: true }).first();
     if (!admins) {

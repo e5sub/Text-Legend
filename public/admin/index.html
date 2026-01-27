@@ -213,6 +213,22 @@
 
         <div class="block" data-collapsible>
           <div class="block-title">
+            <h2>新区数量</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <p>当前状态: <span id="realm-count-status">加载中...</span></p>
+            <div class="row" style="margin-top: 6px;">
+              <input id="realm-count-input" type="number" min="1" value="1" style="max-width: 120px;">
+              <button id="realm-count-save" class="btn-small">保存数量</button>
+            </div>
+            <p class="muted" style="margin-top: 6px;">修改后需要前台刷新页面生效</p>
+            <div id="realm-count-msg" class="msg"></div>
+          </div>
+        </div>
+
+        <div class="block" data-collapsible>
+          <div class="block-title">
             <h2>数据备份与导入</h2>
             <button class="btn-small block-toggle">折叠</button>
           </div>

@@ -889,6 +889,22 @@ button:hover {
   gap: 12px;
 }
 
+.realm-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 14px;
+}
+
+.realm-row label {
+  font-weight: 600;
+  color: #7a4a1f;
+}
+
+.realm-row select {
+  min-width: 140px;
+}
+
 .char-card {
   padding: 12px 14px;
   border-radius: 12px;
