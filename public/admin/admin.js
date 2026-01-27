@@ -106,6 +106,9 @@ async function login() {
     localStorage.setItem('adminToken', adminToken);
     showDashboard();
     await refreshUsers();
+    await refreshVipSelfClaimStatus();
+    await refreshLootLogStatus();
+    await refreshStateThrottleStatus();
   } catch (err) {
     loginMsg.textContent = err.message;
   }
