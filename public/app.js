@@ -520,7 +520,7 @@ async function loadRealms() {
   const stored = getStoredRealmId(username);
   // 确保设置的realmId在当前服务器列表中存在
   const storedRealm = realmList.find(r => r.id === stored);
-  const validRealmId = storedRealm ? stored : Math.max(1, realmList[0]?.id);
+  const validRealmId = storedRealm ? storedRealm.id : Math.max(1, realmList[0]?.id);
   setCurrentRealmId(normalizeRealmId(validRealmId, count), username);
 }
 
