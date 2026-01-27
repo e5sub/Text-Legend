@@ -64,5 +64,5 @@ export async function clearUserSessions(userId) {
 
 export async function clearAllSessions() {
   // 只清除玩家 session（token不以 'adm_' 开头），保留管理员 session
-  await knex('sessions').whereNotLike('token', 'adm_%').del();
+  await knex('sessions').whereNot('token', 'like', 'adm_%').del();
 }
