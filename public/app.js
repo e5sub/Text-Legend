@@ -4053,8 +4053,8 @@ function enterGame(name) {
     return rawEmit(event, payload);
   };
   socket.on('connect', async () => {
-    // 确保realmList是最新的
-    await ensureRealmsLoaded();
+    // 登录时已经确保realmList是最新的，这里不需要重新加载
+    // await ensureRealmsLoaded();
     socket.emit('auth', { token, name, realmId: currentRealmId });
     socket.emit('cmd', { text: 'stats' });
     if (stateThrottleOverrideServerAllowed) {
