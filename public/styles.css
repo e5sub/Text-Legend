@@ -3585,6 +3585,13 @@ body.dark .sabak-empty {
 .rarity-legendary { color: #8f5a12; }
 .rarity-supreme { color: #b63c3c; }
 
+body.dark .rarity-common { color: #b9a48b; }
+body.dark .rarity-uncommon { color: #7ed18a; }
+body.dark .rarity-rare { color: #7fb8ff; }
+body.dark .rarity-epic { color: #e08bd3; }
+body.dark .rarity-legendary { color: #f2c464; }
+body.dark .rarity-supreme { color: #ff8c8c; }
+
 .bag-item.rarity-uncommon,
 .bag-item.rarity-rare,
 .bag-item.rarity-epic,
