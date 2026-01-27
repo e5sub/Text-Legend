@@ -15,58 +15,58 @@ export async function up(knex) {
       });
     }
 
-    // 将所有角色迁移到新区1
+    // 将所有角色迁移到新区1（使用 OR 条件的正确语法）
     await trx('characters')
-      .where('realm_id', null)
+      .whereNull('realm_id')
       .orWhere('realm_id', 0)
       .orWhereRaw('realm_id NOT IN (SELECT id FROM realms)')
       .update({ realm_id: 1 });
 
     // 将所有行会迁移到新区1
     await trx('guilds')
-      .where('realm_id', null)
+      .whereNull('realm_id')
       .orWhere('realm_id', 0)
       .orWhereRaw('realm_id NOT IN (SELECT id FROM realms)')
       .update({ realm_id: 1 });
 
     // 将所有行会成员迁移到新区1
     await trx('guild_members')
-      .where('realm_id', null)
+      .whereNull('realm_id')
       .orWhere('realm_id', 0)
       .orWhereRaw('realm_id NOT IN (SELECT id FROM realms)')
       .update({ realm_id: 1 });
 
     // 将所有邮件迁移到新区1
     await trx('mails')
-      .where('realm_id', null)
+      .whereNull('realm_id')
       .orWhere('realm_id', 0)
       .orWhereRaw('realm_id NOT IN (SELECT id FROM realms)')
       .update({ realm_id: 1 });
 
     // 将所有寄售迁移到新区1
     await trx('consignments')
-      .where('realm_id', null)
+      .whereNull('realm_id')
       .orWhere('realm_id', 0)
       .orWhereRaw('realm_id NOT IN (SELECT id FROM realms)')
       .update({ realm_id: 1 });
 
     // 将所有寄售历史迁移到新区1
     await trx('consignment_history')
-      .where('realm_id', null)
+      .whereNull('realm_id')
       .orWhere('realm_id', 0)
       .orWhereRaw('realm_id NOT IN (SELECT id FROM realms)')
       .update({ realm_id: 1 });
 
     // 将所有沙巴克报名迁移到新区1
     await trx('sabak_registrations')
-      .where('realm_id', null)
+      .whereNull('realm_id')
       .orWhere('realm_id', 0)
       .orWhereRaw('realm_id NOT IN (SELECT id FROM realms)')
       .update({ realm_id: 1 });
 
     // 将所有怪物刷新记录迁移到新区1
     await trx('mob_respawns')
-      .where('realm_id', null)
+      .whereNull('realm_id')
       .orWhere('realm_id', 0)
       .orWhereRaw('realm_id NOT IN (SELECT id FROM realms)')
       .update({ realm_id: 1 });

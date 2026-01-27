@@ -592,6 +592,93 @@ app.post('/admin/realms/create', async (req, res) => {
   res.json({ ok: true, realmId: id, name });
 });
 
+// 临时API：手动修复旧数据的realm_id
+app.post('/admin/fix-realm-id', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+
+  const stats = {};
+
+  await knex.transaction(async (trx) => {
+    // 确保新区1存在
+    const existingRealm = await trx('realms').where('id', 1).first();
+    if (!existingRealm) {
+      await trx('realms').insert({
+        id: 1,
+        name: '玛法大陆',
+        created_at: trx.fn.now(),
+        updated_at: trx.fn.now()
+      });
+    }
+
+    // 修复角色
+    stats.characters = await trx('characters')
+      .whereNull('realm_id')
+      .orWhere('realm_id', 0)
+      .update({ realm_id: 1 });
+
+    // 修复行会
+    stats.guilds = await trx('guilds')
+      .whereNull('realm_id')
+      .orWhere('realm_id', 0)
+      .update({ realm_id: 1 });
+
+    // 修复行会成员
+    stats.guildMembers = await trx('guild_members')
+      .whereNull('realm_id')
+      .orWhere('realm_id', 0)
+      .update({ realm_id: 1 });
+
+    // 修复邮件
+    stats.mails = await trx('mails')
+      .whereNull('realm_id')
+      .orWhere('realm_id', 0)
+      .update({ realm_id: 1 });
+
+    // 修复寄售
+    stats.consignments = await trx('consignments')
+      .whereNull('realm_id')
+      .orWhere('realm_id', 0)
+      .update({ realm_id: 1 });
+
+    // 修复寄售历史
+    stats.consignHistory = await trx('consignment_history')
+      .whereNull('realm_id')
+      .orWhere('realm_id', 0)
+      .update({ realm_id: 1 });
+
+    // 修复沙巴克报名
+    stats.sabakReg = await trx('sabak_registrations')
+      .whereNull('realm_id')
+      .orWhere('realm_id', 0)
+      .update({ realm_id: 1 });
+
+    // 修复怪物刷新
+    stats.mobRespawns = await trx('mob_respawns')
+      .whereNull('realm_id')
+      .orWhere('realm_id', 0)
+      .update({ realm_id: 1 });
+
+    // 确保沙巴克状态
+    const existingSabak = await trx('sabak_state').where('realm_id', 1).first();
+    if (!existingSabak) {
+      await trx('sabak_state').insert({
+        realm_id: 1,
+        owner_guild_id: null,
+        owner_guild_name: null,
+        updated_at: trx.fn.now()
+      });
+    }
+  });
+
+  await refreshRealmCache();
+  res.json({
+    ok: true,
+    message: '数据修复完成',
+    stats
+  });
+});
+
 app.post('/admin/realms/merge', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });

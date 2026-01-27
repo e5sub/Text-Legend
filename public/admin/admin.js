@@ -728,34 +728,53 @@ async function mergeRealms() {
   if (!mergeSourceSelect || !mergeTargetSelect || !mergeMsg) return;
   const sourceId = Number(mergeSourceSelect.value);
   const targetId = Number(mergeTargetSelect.value);
-  
+
   if (!sourceId || !targetId) {
     mergeMsg.textContent = '请选择源区和目标区';
     return;
   }
-  
+
   if (sourceId === targetId) {
     mergeMsg.textContent = '源区和目标区不能相同';
     return;
   }
-  
+
   const sourceText = mergeSourceSelect.options[mergeSourceSelect.selectedIndex].text;
   const targetText = mergeTargetSelect.options[mergeTargetSelect.selectedIndex].text;
-  
+
   if (!confirm(`⚠️ 警告：合区操作将强制下线所有玩家！\n\n源区: ${sourceText}\n目标区: ${targetText}\n\n确定要继续吗？`)) {
     return;
   }
-  
+
   if (!confirm(`⚠️ 最终确认：合区后源区将被删除，所有数据（角色、行会、邮件、寄售）将合并到目标区，目标区沙巴克状态将重置为无人占领！\n\n确定要执行合区吗？`)) {
     return;
   }
-  
+
   try {
     const data = await api('/admin/realms/merge', 'POST', { sourceId, targetId });
     mergeMsg.textContent = data.message || '合区完成';
     await refreshRealms();
   } catch (err) {
     mergeMsg.textContent = err.message;
+  }
+}
+
+async function fixRealmId() {
+  if (!realmsMsg) return;
+  if (!confirm('确定要修复旧数据吗？\n\n此操作将所有realm_id为null或0的记录设置为1。\n通常用于升级后修复历史数据。')) {
+    return;
+  }
+
+  try {
+    const data = await api('/admin/fix-realm-id', 'POST');
+    const stats = data.stats || {};
+    const summary = Object.entries(stats)
+      .map(([key, count]) => `${key}: ${count}`)
+      .join(', ');
+    realmsMsg.textContent = `修复完成！${summary}`;
+    await refreshRealms();
+  } catch (err) {
+    realmsMsg.textContent = `修复失败: ${err.message}`;
   }
 }
 
@@ -836,6 +855,9 @@ if (document.getElementById('realm-create-btn')) {
 }
 if (document.getElementById('realm-refresh-btn')) {
   document.getElementById('realm-refresh-btn').addEventListener('click', refreshRealms);
+}
+if (document.getElementById('fix-realm-btn')) {
+  document.getElementById('fix-realm-btn').addEventListener('click', fixRealmId);
 }
 if (document.getElementById('merge-realms-btn')) {
   document.getElementById('merge-realms-btn').addEventListener('click', mergeRealms);
