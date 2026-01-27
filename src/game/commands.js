@@ -231,9 +231,9 @@ function roomLabel(player) {
   return `${zone.name} - ${room.name}`;
 }
 
-function listMobs(zoneId, roomId) {
-      spawnMobs(zoneId, roomId, player.realmId || 1);
-      const mobs = getAliveMobs(zoneId, roomId, player.realmId || 1);
+function listMobs(zoneId, roomId, realmId) {
+      spawnMobs(zoneId, roomId, realmId || 1);
+      const mobs = getAliveMobs(zoneId, roomId, realmId || 1);
   if (mobs.length === 0) return '这里没有怪物。';
   return mobs.map((m) => `${m.name} (生命 ${m.hp}/${m.max_hp})`).join(', ');
 }
@@ -416,7 +416,7 @@ function sendRoomDescription(player, send) {
   if (room.npcs && room.npcs.length) {
     send(`NPC: ${room.npcs.map((id) => NPCS[id].name).join(', ')}`);
   }
-  send(`怪物: ${listMobs(player.position.zone, player.position.room)}`);
+  send(`怪物: ${listMobs(player.position.zone, player.position.room, player.realmId)}`);
 }
 
 function canShop(player) {
