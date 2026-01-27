@@ -2471,7 +2471,8 @@ function formatItemTooltip(item) {
   lines.push(item.name || '');
   if (item.is_set) lines.push('\u5957\u88c5');
   if (item.rarity) {
-    lines.push(`\u7a00\u6709\u5ea6: ${RARITY_LABELS[item.rarity] || item.rarity}`);
+    const rarityKey = typeof item.rarity === 'string' ? item.rarity.toLowerCase() : item.rarity;
+    lines.push(`\u7a00\u6709\u5ea6: ${RARITY_LABELS[rarityKey] || item.rarity}`);
   }
   if (item.effects && item.effects.combo) {
     lines.push('\u7279\u6548: \u8fde\u51fb(10%\u53cc\u51fb)');
@@ -2738,7 +2739,8 @@ function formatItemName(item) {
 
 function applyRarityClass(el, item) {
   if (!el || !item || !item.rarity) return;
-  el.classList.add(`rarity-${item.rarity}`);
+  const rarityKey = typeof item.rarity === 'string' ? item.rarity.toLowerCase() : item.rarity;
+  el.classList.add(`rarity-${rarityKey}`);
 }
 
 function findItemByDisplayName(name, extraItems = null) {
