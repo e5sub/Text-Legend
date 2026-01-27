@@ -66,9 +66,9 @@
   nujian: { id: 'nujian', name: '怒斩', type: 'weapon', slot: 'weapon', atk: 19, dex: 4, price: 72000 },
   wulong: { id: 'wulong', name: '屠龙', type: 'weapon', slot: 'weapon', atk: 31, price: 200000, rarity: 'epic' },
   kaitian: { id: 'kaitian', name: '开天', type: 'weapon', slot: 'weapon', atk: 47, price: 300000, rarity: 'legendary', bossOnly: true },
-  sword_rochie: { id: 'sword_rochie', name: '洛奇王者之刃', type: 'weapon', slot: 'weapon', atk: 94, price: 600000, rarity: 'supreme', bossOnly: true },
-  staff_rochie: { id: 'staff_rochie', name: '洛奇王者权杖', type: 'weapon', slot: 'weapon', mag: 66, price: 600000, rarity: 'supreme', bossOnly: true },
-  sword_rochie_tao: { id: 'sword_rochie_tao', name: '洛奇王者之剑', type: 'weapon', slot: 'weapon', spirit: 66, price: 600000, rarity: 'supreme', bossOnly: true },
+  sword_rochie: { id: 'sword_rochie', name: '洛奇王者之刃', type: 'weapon', slot: 'weapon', atk: 94, price: 600000, rarity: 'supreme', worldBossOnly: true },
+  staff_rochie: { id: 'staff_rochie', name: '洛奇王者权杖', type: 'weapon', slot: 'weapon', mag: 66, price: 600000, rarity: 'supreme', worldBossOnly: true },
+  sword_rochie_tao: { id: 'sword_rochie_tao', name: '洛奇王者之剑', type: 'weapon', slot: 'weapon', spirit: 66, price: 600000, rarity: 'supreme', worldBossOnly: true },
 
   // Mage weapons
   staff_apprentice: { id: 'staff_apprentice', name: '学徒法杖', type: 'weapon', slot: 'weapon', atk: 2, mag: 4, price: 380 },
@@ -106,9 +106,9 @@
   armor_thunder: { id: 'armor_thunder', name: '雷霆战甲', type: 'armor', slot: 'chest', def: 33, atk: 3, price: 78000, rarity: 'legendary', bossOnly: true },
   armor_flame: { id: 'armor_flame', name: '烈焰魔衣', type: 'armor', slot: 'chest', def: 29, dex: 3, mag: 9, price: 27000, rarity: 'legendary', bossOnly: true },
   armor_glow: { id: 'armor_glow', name: '光芒道袍', type: 'armor', slot: 'chest', def: 32, dex: 3, spirit: 9, price: 27000, rarity: 'legendary', bossOnly: true },
-  armor_rochie_war: { id: 'armor_rochie_war', name: '洛奇战甲', type: 'armor', slot: 'chest', def: 44, atk: 6, price: 150000, rarity: 'supreme', bossOnly: true },
-  armor_rochie_mage: { id: 'armor_rochie_mage', name: '洛奇法袍', type: 'armor', slot: 'chest', def: 38, dex: 6, mag: 18, price: 150000, rarity: 'supreme', bossOnly: true },
-  armor_rochie_tao: { id: 'armor_rochie_tao', name: '洛奇道袍', type: 'armor', slot: 'chest', def: 42, dex: 6, spirit: 12, price: 150000, rarity: 'supreme', bossOnly: true },
+  armor_rochie_war: { id: 'armor_rochie_war', name: '洛奇战甲', type: 'armor', slot: 'chest', def: 44, atk: 6, price: 150000, rarity: 'supreme', worldBossOnly: true },
+  armor_rochie_mage: { id: 'armor_rochie_mage', name: '洛奇法袍', type: 'armor', slot: 'chest', def: 38, dex: 6, mag: 18, price: 150000, rarity: 'supreme', worldBossOnly: true },
+  armor_rochie_tao: { id: 'armor_rochie_tao', name: '洛奇道袍', type: 'armor', slot: 'chest', def: 42, dex: 6, spirit: 12, price: 150000, rarity: 'supreme', worldBossOnly: true },
   armor_molong: { id: 'armor_molong', name: '魔龙战甲', type: 'armor', slot: 'chest', def: 24, atk: 2, price: 42000 },
 
   // Helms
@@ -122,9 +122,9 @@
   helm_sacred: { id: 'helm_sacred', name: '圣魔头盔(套)', type: 'armor', slot: 'head', def: 9, dex: 2, mag: 3, price: 7200, rarity: 'legendary', bossOnly: true },
   helm_tao: { id: 'helm_tao', name: '天尊头盔(套)', type: 'armor', slot: 'head', def: 6, dex: 1, spirit: 2, price: 4800, bossOnly: true },
   helm_true: { id: 'helm_true', name: '真魂头盔(套)', type: 'armor', slot: 'head', def: 9, dex: 2, spirit: 3, price: 7200, rarity: 'legendary', bossOnly: true },
-  helm_rochie_war: { id: 'helm_rochie_war', name: '洛奇头盔(战士)', type: 'armor', slot: 'head', def: 22, atk: 4, price: 150000, rarity: 'supreme', bossOnly: true },
-  helm_rochie_mage: { id: 'helm_rochie_mage', name: '洛奇头盔(法师)', type: 'armor', slot: 'head', def: 18, dex: 4, mag: 6, price: 150000, rarity: 'supreme', bossOnly: true },
-  helm_rochie_tao: { id: 'helm_rochie_tao', name: '洛奇头盔(道士)', type: 'armor', slot: 'head', def: 18, dex: 4, spirit: 6, price: 150000, rarity: 'supreme', bossOnly: true },
+  helm_rochie_war: { id: 'helm_rochie_war', name: '洛奇头盔(战士)', type: 'armor', slot: 'head', def: 22, atk: 4, price: 150000, rarity: 'supreme', worldBossOnly: true },
+  helm_rochie_mage: { id: 'helm_rochie_mage', name: '洛奇头盔(法师)', type: 'armor', slot: 'head', def: 18, dex: 4, mag: 6, price: 150000, rarity: 'supreme', worldBossOnly: true },
+  helm_rochie_tao: { id: 'helm_rochie_tao', name: '洛奇头盔(道士)', type: 'armor', slot: 'head', def: 18, dex: 4, spirit: 6, price: 150000, rarity: 'supreme', worldBossOnly: true },
   helm_holy: { id: 'helm_holy', name: '圣战头盔(套)', type: 'armor', slot: 'head', def: 7, atk: 1, price: 12000, bossOnly: true },
   helm_wargod: { id: 'helm_wargod', name: '战神头盔(套)', type: 'armor', slot: 'head', def: 11, atk: 2, price: 18000, rarity: 'legendary', bossOnly: true },
 
@@ -136,9 +136,9 @@
   boots_sacred: { id: 'boots_sacred', name: '圣魔靴子(套)', type: 'armor', slot: 'feet', def: 9, dex: 2, mag: 3, price: 6900, rarity: 'legendary', bossOnly: true },
   boots_tao: { id: 'boots_tao', name: '天尊靴(套)', type: 'armor', slot: 'feet', def: 6, dex: 1, spirit: 2, price: 4600, bossOnly: true },
   boots_true: { id: 'boots_true', name: '真魂靴子(套)', type: 'armor', slot: 'feet', def: 9, dex: 2, spirit: 3, price: 6900, rarity: 'legendary', bossOnly: true },
-  boots_rochie_war: { id: 'boots_rochie_war', name: '洛奇靴子(战士)', type: 'armor', slot: 'feet', def: 22, atk: 4, price: 150000, rarity: 'supreme', bossOnly: true },
-  boots_rochie_mage: { id: 'boots_rochie_mage', name: '洛奇靴子(法师)', type: 'armor', slot: 'feet', def: 18, dex: 4, mag: 6, price: 150000, rarity: 'supreme', bossOnly: true },
-  boots_rochie_tao: { id: 'boots_rochie_tao', name: '洛奇靴子(道士)', type: 'armor', slot: 'feet', def: 18, dex: 4, spirit: 6, price: 150000, rarity: 'supreme', bossOnly: true },
+  boots_rochie_war: { id: 'boots_rochie_war', name: '洛奇靴子(战士)', type: 'armor', slot: 'feet', def: 22, atk: 4, price: 150000, rarity: 'supreme', worldBossOnly: true },
+  boots_rochie_mage: { id: 'boots_rochie_mage', name: '洛奇靴子(法师)', type: 'armor', slot: 'feet', def: 18, dex: 4, mag: 6, price: 150000, rarity: 'supreme', worldBossOnly: true },
+  boots_rochie_tao: { id: 'boots_rochie_tao', name: '洛奇靴子(道士)', type: 'armor', slot: 'feet', def: 18, dex: 4, spirit: 6, price: 150000, rarity: 'supreme', worldBossOnly: true },
   boots_holy: { id: 'boots_holy', name: '圣战靴(套)', type: 'armor', slot: 'feet', def: 7, atk: 1, price: 12000, bossOnly: true },
   boots_wargod: { id: 'boots_wargod', name: '战神靴子(套)', type: 'armor', slot: 'feet', def: 11, atk: 2, price: 18000, rarity: 'legendary', bossOnly: true },
 
@@ -150,9 +150,9 @@
   belt_sacred: { id: 'belt_sacred', name: '圣魔腰带(套)', type: 'armor', slot: 'waist', def: 9, dex: 2, mag: 3, price: 7800, rarity: 'legendary', bossOnly: true },
   belt_tao: { id: 'belt_tao', name: '天尊腰带(套)', type: 'armor', slot: 'waist', def: 6, dex: 1, spirit: 2, price: 5200, bossOnly: true },
   belt_true: { id: 'belt_true', name: '真魂腰带(套)', type: 'armor', slot: 'waist', def: 9, dex: 2, spirit: 3, price: 7800, rarity: 'legendary', bossOnly: true },
-  belt_rochie_war: { id: 'belt_rochie_war', name: '洛奇腰带(战士)', type: 'armor', slot: 'waist', def: 22, atk: 4, price: 150000, rarity: 'supreme', bossOnly: true },
-  belt_rochie_mage: { id: 'belt_rochie_mage', name: '洛奇腰带(法师)', type: 'armor', slot: 'waist', def: 18, dex: 4, mag: 6, price: 150000, rarity: 'supreme', bossOnly: true },
-  belt_rochie_tao: { id: 'belt_rochie_tao', name: '洛奇腰带(道士)', type: 'armor', slot: 'waist', def: 18, dex: 4, spirit: 6, price: 150000, rarity: 'supreme', bossOnly: true },
+  belt_rochie_war: { id: 'belt_rochie_war', name: '洛奇腰带(战士)', type: 'armor', slot: 'waist', def: 22, atk: 4, price: 150000, rarity: 'supreme', worldBossOnly: true },
+  belt_rochie_mage: { id: 'belt_rochie_mage', name: '洛奇腰带(法师)', type: 'armor', slot: 'waist', def: 18, dex: 4, mag: 6, price: 150000, rarity: 'supreme', worldBossOnly: true },
+  belt_rochie_tao: { id: 'belt_rochie_tao', name: '洛奇腰带(道士)', type: 'armor', slot: 'waist', def: 18, dex: 4, spirit: 6, price: 150000, rarity: 'supreme', worldBossOnly: true },
   belt_holy: { id: 'belt_holy', name: '圣战腰带(套)', type: 'armor', slot: 'waist', def: 7, atk: 1, price: 12000, bossOnly: true },
   belt_wargod: { id: 'belt_wargod', name: '战神腰带(套)', type: 'armor', slot: 'waist', def: 11, atk: 2, price: 18000, rarity: 'legendary', bossOnly: true },
 
@@ -172,9 +172,9 @@
   ring_sacred: { id: 'ring_sacred', name: '圣魔戒指(套)', type: 'accessory', slot: 'ring', mag: 12, dex: 2, price: 72000, rarity: 'legendary', bossOnly: true },
   ring_tianzun: { id: 'ring_tianzun', name: '天尊戒指(套)', type: 'accessory', slot: 'ring', spirit: 8, dex: 1, price: 48000, bossOnly: true },
   ring_true: { id: 'ring_true', name: '真魂戒指(套)', type: 'accessory', slot: 'ring', spirit: 12, dex: 2, price: 72000, rarity: 'legendary', bossOnly: true },
-  ring_rochie_war: { id: 'ring_rochie_war', name: '洛奇戒指(战士)', type: 'accessory', slot: 'ring', atk: 24, price: 150000, rarity: 'supreme', bossOnly: true },
-  ring_rochie_mage: { id: 'ring_rochie_mage', name: '洛奇戒指(法师)', type: 'accessory', slot: 'ring', mag: 24, dex: 4, price: 150000, rarity: 'supreme', bossOnly: true },
-  ring_rochie_tao: { id: 'ring_rochie_tao', name: '洛奇戒指(道士)', type: 'accessory', slot: 'ring', spirit: 24, dex: 4, price: 150000, rarity: 'supreme', bossOnly: true },
+  ring_rochie_war: { id: 'ring_rochie_war', name: '洛奇戒指(战士)', type: 'accessory', slot: 'ring', atk: 24, price: 150000, rarity: 'supreme', worldBossOnly: true },
+  ring_rochie_mage: { id: 'ring_rochie_mage', name: '洛奇戒指(法师)', type: 'accessory', slot: 'ring', mag: 24, dex: 4, price: 150000, rarity: 'supreme', worldBossOnly: true },
+  ring_rochie_tao: { id: 'ring_rochie_tao', name: '洛奇戒指(道士)', type: 'accessory', slot: 'ring', spirit: 24, dex: 4, price: 150000, rarity: 'supreme', worldBossOnly: true },
   ring_def: { id: 'ring_def', name: '防御戒指', type: 'accessory', slot: 'ring', def: 4, price: 22000 },
   ring_fire: { id: 'ring_fire', name: '吸血戒指', type: 'accessory', slot: 'ring', mag: 4, price: 24000 },
   ring_heal: { id: 'ring_heal', name: '治愈戒指', type: 'accessory', slot: 'ring', spirit: 4, price: 24000 },
@@ -200,9 +200,9 @@
   necklace_sacred: { id: 'necklace_sacred', name: '圣魔项链(套)', type: 'accessory', slot: 'neck', def: 2, dex: 2, mag: 9, price: 72000, rarity: 'legendary', bossOnly: true },
   necklace_tianzun: { id: 'necklace_tianzun', name: '天尊项链(套)', type: 'accessory', slot: 'neck', def: 1, dex: 1, spirit: 6, price: 48000, bossOnly: true },
   necklace_true: { id: 'necklace_true', name: '真魂项链(套)', type: 'accessory', slot: 'neck', def: 2, dex: 2, spirit: 9, price: 72000, rarity: 'legendary', bossOnly: true },
-  necklace_rochie_war: { id: 'necklace_rochie_war', name: '洛奇项链(战士)', type: 'accessory', slot: 'neck', atk: 18, price: 150000, rarity: 'supreme', bossOnly: true },
-  necklace_rochie_mage: { id: 'necklace_rochie_mage', name: '洛奇项链(法师)', type: 'accessory', slot: 'neck', def: 4, dex: 4, mag: 18, price: 150000, rarity: 'supreme', bossOnly: true },
-  necklace_rochie_tao: { id: 'necklace_rochie_tao', name: '洛奇项链(道士)', type: 'accessory', slot: 'neck', def: 4, dex: 4, spirit: 18, price: 150000, rarity: 'supreme', bossOnly: true },
+  necklace_rochie_war: { id: 'necklace_rochie_war', name: '洛奇项链(战士)', type: 'accessory', slot: 'neck', atk: 18, price: 150000, rarity: 'supreme', worldBossOnly: true },
+  necklace_rochie_mage: { id: 'necklace_rochie_mage', name: '洛奇项链(法师)', type: 'accessory', slot: 'neck', def: 4, dex: 4, mag: 18, price: 150000, rarity: 'supreme', worldBossOnly: true },
+  necklace_rochie_tao: { id: 'necklace_rochie_tao', name: '洛奇项链(道士)', type: 'accessory', slot: 'neck', def: 4, dex: 4, spirit: 18, price: 150000, rarity: 'supreme', worldBossOnly: true },
   necklace_luck: { id: 'necklace_luck', name: '幸运项链', type: 'accessory', slot: 'neck', dex: 3, price: 26000 },
 
   // Bracelets
@@ -219,9 +219,9 @@
   bracelet_sacred: { id: 'bracelet_sacred', name: '圣魔手镯(套)', type: 'accessory', slot: 'bracelet', def: 2, dex: 2, mag: 9, price: 72000, rarity: 'legendary', bossOnly: true },
   bracelet_tianzun: { id: 'bracelet_tianzun', name: '天尊手镯(套)', type: 'accessory', slot: 'bracelet', def: 1, dex: 1, spirit: 6, price: 48000, bossOnly: true },
   bracelet_true: { id: 'bracelet_true', name: '真魂手镯(套)', type: 'accessory', slot: 'bracelet', def: 2, dex: 2, spirit: 9, price: 72000, rarity: 'legendary', bossOnly: true },
-  bracelet_rochie_war: { id: 'bracelet_rochie_war', name: '洛奇手镯(战士)', type: 'accessory', slot: 'bracelet', atk: 18, price: 150000, rarity: 'supreme', bossOnly: true },
-  bracelet_rochie_mage: { id: 'bracelet_rochie_mage', name: '洛奇手镯(法师)', type: 'accessory', slot: 'bracelet', def: 4, dex: 4, mag: 18, price: 150000, rarity: 'supreme', bossOnly: true },
-  bracelet_rochie_tao: { id: 'bracelet_rochie_tao', name: '洛奇手镯(道士)', type: 'accessory', slot: 'bracelet', def: 4, dex: 4, spirit: 18, price: 150000, rarity: 'supreme', bossOnly: true }
+  bracelet_rochie_war: { id: 'bracelet_rochie_war', name: '洛奇手镯(战士)', type: 'accessory', slot: 'bracelet', atk: 18, price: 150000, rarity: 'supreme', worldBossOnly: true },
+  bracelet_rochie_mage: { id: 'bracelet_rochie_mage', name: '洛奇手镯(法师)', type: 'accessory', slot: 'bracelet', def: 4, dex: 4, mag: 18, price: 150000, rarity: 'supreme', worldBossOnly: true },
+  bracelet_rochie_tao: { id: 'bracelet_rochie_tao', name: '洛奇手镯(道士)', type: 'accessory', slot: 'bracelet', def: 4, dex: 4, spirit: 18, price: 150000, rarity: 'supreme', worldBossOnly: true }
 };
 
 export const SHOP_STOCKS = {
