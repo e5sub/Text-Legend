@@ -3361,6 +3361,13 @@ io.on('connection', (socket) => {
     await savePlayer(player);
   });
 
+  socket.on('state_request', async () => {
+    const player = players.get(socket.id);
+    if (!player) return;
+    player.forceStateRefresh = true;
+    await sendState(player);
+  });
+
   socket.on('mail_list', async () => {
     const player = players.get(socket.id);
     if (!player) return;

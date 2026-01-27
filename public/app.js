@@ -2007,6 +2007,9 @@ function handleItemAction(item) {
 
 function showBagModal() {
     hideItemTooltip();
+    if (socket && isStateThrottleActive()) {
+      socket.emit('state_request', { reason: 'bag' });
+    }
     bagFilter = 'all';
     bagPage = 0;
     if (bagUi.tabs && bagUi.tabs.length) {
@@ -3597,6 +3600,9 @@ function renderState(state) {
   const afkLabel = state.stats && state.stats.autoSkillId ? '\u505c\u6b62\u6302\u673a' : '\u6302\u673a';
   actions.push({ id: 'afk', label: afkLabel });
   renderChips(ui.actions, actions, async (a) => {
+    if (socket && isStateThrottleActive()) {
+      socket.emit('state_request', { reason: `action:${a.id}` });
+    }
     if (a.id === 'stats') {
       showStatsModal();
       return;
