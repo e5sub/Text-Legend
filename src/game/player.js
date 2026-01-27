@@ -308,7 +308,7 @@ export function computeDerived(player) {
     let def = Math.floor((item.def || 0) * setBonus);
     let mdef = Math.floor((item.mdef || 0) * setBonus);
     const dex = Math.floor((item.dex || 0) * setBonus);
-    if (entry.effects?.fury && item.type === 'weapon') {
+    if (entry.effects?.fury) {
       atk = Math.floor(atk * 1.25);
       mag = Math.floor(mag * 1.25);
       spirit = Math.floor(spirit * 1.25);

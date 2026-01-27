@@ -779,9 +779,10 @@ function rollEquipmentEffects(itemId) {
   if (!item || !['weapon', 'armor', 'accessory'].includes(item.type)) return null;
   const candidates = [];
   if (item.type === 'weapon') {
-    candidates.push('combo', 'fury');
+    candidates.push('combo');
     candidates.push('poison');
   }
+  candidates.push('fury');
   if (item.type !== 'weapon') {
     candidates.push('defense');
   }
@@ -812,9 +813,10 @@ function forceEquipmentEffects(itemId) {
   if (existing) return existing;
   const candidates = [];
   if (item.type === 'weapon') {
-    candidates.push('combo', 'fury');
+    candidates.push('combo');
     candidates.push('poison');
   }
+  candidates.push('fury');
   if (item.type !== 'weapon') {
     candidates.push('defense');
   }
