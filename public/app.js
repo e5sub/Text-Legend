@@ -480,7 +480,14 @@ function getStoredRealmId(username) {
 function setCurrentRealmId(realmId, username) {
   currentRealmId = realmId;
   if (realmSelect) {
-    realmSelect.value = String(realmId);
+    const stringValue = String(realmId);
+    // 检查选择框中是否存在该选项，如果不存在则不设置（避免无效值）
+    const hasOption = Array.from(realmSelect.options).some(opt => opt.value === stringValue);
+    if (hasOption) {
+      realmSelect.value = stringValue;
+    } else {
+      console.warn(`realmId ${realmId} not found in select options`);
+    }
   }
   if (username) {
     const key = getUserStorageKey('lastRealm', username);
@@ -3790,9 +3797,7 @@ if (remembered) {
   const savedToken = localStorage.getItem(tokenKey);
   if (savedToken) {
     token = savedToken;
-    const count = realmList.length || 1;
-    const initialRealm = normalizeRealmId(getStoredRealmId(remembered), count);
-    setCurrentRealmId(initialRealm, remembered);
+    // loadRealms()已经正确设置了currentRealmId，不需要重复设置
     const charsKey = getUserStorageKey('savedCharacters', remembered, currentRealmId);
     let savedChars = [];
     try {
