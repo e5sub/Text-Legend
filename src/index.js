@@ -837,6 +837,32 @@ app.post('/admin/realms/merge', async (req, res) => {
 
     // 删除源区
     await trx('realms').where({ id: sourceId }).del();
+
+    // 重新排序所有服务器的ID，保持连续性
+    const allRealms = await trx('realms').select('id').orderBy('id', 'asc');
+    const idMapping = {};
+    for (let i = 0; i < allRealms.length; i++) {
+      const oldId = allRealms[i].id;
+      const newId = i + 1; // 从1开始
+      if (oldId !== newId) {
+        idMapping[oldId] = newId;
+        await trx('realms').where({ id: oldId }).update({ id: newId });
+      }
+    }
+
+    // 更新所有引用realm_id的表
+    const tablesWithRealmId = [
+      'characters', 'guilds', 'guild_members', 'sabak_state', 'sabak_registrations',
+      'mails', 'mob_respawns', 'consignments', 'consignment_history'
+    ];
+
+    for (const tableName of tablesWithRealmId) {
+      if (await trx.schema.hasTable(tableName)) {
+        for (const [oldId, newId] of Object.entries(idMapping)) {
+          await trx(tableName).where({ realm_id: parseInt(oldId) }).update({ realm_id: newId });
+        }
+      }
+    }
   });
 
   // 清理内存状态
@@ -863,7 +889,7 @@ app.post('/admin/realms/merge', async (req, res) => {
     ok: true,
     sourceId,
     targetId,
-    message: `合区完成。角色: ${stats.characters}, 行会: ${stats.guilds}, 邮件: ${stats.mails}, 寄售: ${stats.consignments}, 寄售历史: ${stats.consignmentHistory}, 沙巴克报名: ${stats.sabakRegistrations}。所有玩家已强制下线，请重新登录。`,
+    message: `合区完成。角色: ${stats.characters}, 行会: ${stats.guilds}, 邮件: ${stats.mails}, 寄售: ${stats.consignments}, 寄售历史: ${stats.consignmentHistory}, 沙巴克报名: ${stats.sabakRegistrations}。所有服务器ID已重新编号，保持连续性。所有玩家已强制下线，请重新登录。`,
     backupData: backupPayload
   });
 });

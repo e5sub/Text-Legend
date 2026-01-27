@@ -3086,7 +3086,18 @@ function renderState(state) {
     vipSelfClaimEnabled = state.vip_self_claim_enabled;
   }
   if (state.player) {
-    const realmName = realmList.find(r => r.id === currentRealmId)?.name || `新区${currentRealmId}`;
+    // 如果当前 realmId 不在列表中，使用第一个可用服务器
+    const realm = realmList.find(r => r.id === currentRealmId) || realmList[0];
+    const realmName = realm?.name || `新区${currentRealmId}`;
+    // 自动更新 currentRealmId 为有效的服务器ID
+    if (realm && realm.id !== currentRealmId) {
+      currentRealmId = realm.id;
+      const username = localStorage.getItem('rememberedUser');
+      if (username) {
+        const key = getUserStorageKey('lastRealm', username);
+        localStorage.setItem(key, String(realm.id));
+      }
+    }
     console.log(`renderState: currentRealmId=${currentRealmId}, realmList=${JSON.stringify(realmList.map(r => ({id: r.id, name: r.name})))}, realmName=${realmName}`);
     if (ui.realm) ui.realm.textContent = realmName;
     ui.name.textContent = state.player.name || '-';
