@@ -3930,6 +3930,10 @@ function processMobDeath(player, mob, online) {
   const damageSnapshot = mob.status?.damageBy ? { ...mob.status.damageBy } : {};
   const lastHitSnapshot = mob.status?.lastHitBy || null;
   const template = MOB_TEMPLATES[mob.templateId];
+  const mobZoneId = mob.zoneId || player.position.zone;
+  const mobRoomId = mob.roomId || player.position.room;
+  const isPlayerInMobRoom = (target) =>
+    Boolean(target && target.position && target.position.zone === mobZoneId && target.position.room === mobRoomId);
   removeMob(player.position.zone, player.position.room, mob.id);
   gainSummonExp(player);
   const exp = template.exp;
@@ -4031,21 +4035,28 @@ function processMobDeath(player, mob, online) {
       topEntries.forEach(([name, damage]) => {
         const player = playersByName(name);
         if (!player) return;
+        if (isBoss && !isPlayerInMobRoom(player)) return;
         const damageRatio = damage / totalDamage;
         dropTargets.push({ player, damageRatio, rank: entries.findIndex(([n]) => n === name) + 1 });
       });
       if (!dropTargets.length) {
-        dropTargets.push({ player: lootOwner, damageRatio: 1, rank: 1 });
+        if (!isBoss || isPlayerInMobRoom(lootOwner)) {
+          dropTargets.push({ player: lootOwner, damageRatio: 1, rank: 1 });
+        }
       }
     } else {
-      dropTargets.push({ player: lootOwner, damageRatio: 1, rank: 1 });
+      if (!isBoss || isPlayerInMobRoom(lootOwner)) {
+        dropTargets.push({ player: lootOwner, damageRatio: 1, rank: 1 });
+      }
     }
 
-    if (isSpecialBoss && entries.length) {
-      const topName = entries[0][0];
-      const topPlayer = playersByName(topName);
+    if (isWorldBoss && entries.length) {
+      const [topName, topDamage] = entries[0];
+      let topPlayer = topDamage > 0 ? playersByName(topName) : null;
+      if (topPlayer && !isPlayerInMobRoom(topPlayer)) {
+        topPlayer = null;
+      }
       if (topPlayer) {
-        const bossLabel = isWorldBoss ? '世界BOSS' : (isSabakBoss ? '沙巴克BOSS' : '魔龙教主');
         let forcedId = rollRarityEquipmentDrop(template, 1);
         if (!forcedId) {
           const equipPool = Object.values(ITEM_TEMPLATES)
@@ -4058,12 +4069,12 @@ function processMobDeath(player, mob, online) {
         if (forcedId) {
           const forcedEffects = forceEquipmentEffects(forcedId);
           addItem(topPlayer, forcedId, 1, forcedEffects);
-          topPlayer.send(`${bossLabel}排名第1奖励：${formatItemLabel(forcedId, forcedEffects)}。`);
+          topPlayer.send(`世界BOSS伤害第一奖励：${formatItemLabel(forcedId, forcedEffects)}。`);
           const forcedItem = ITEM_TEMPLATES[forcedId];
           if (forcedItem) {
             const forcedRarity = rarityByPrice(forcedItem);
             if (['epic', 'legendary', 'supreme'].includes(forcedRarity)) {
-              emitAnnouncement(`${topPlayer.name} 获得${bossLabel}首位奖励 ${formatItemLabel(forcedId, forcedEffects)}！`, forcedRarity);
+              emitAnnouncement(`${topPlayer.name} 获得世界BOSS伤害第一奖励 ${formatItemLabel(forcedId, forcedEffects)}！`, forcedRarity);
             }
             if (isEquipmentItem(forcedItem) && hasSpecialEffects(forcedEffects)) {
               emitAnnouncement(`${topPlayer.name} 获得特效装备 ${formatItemLabel(forcedId, forcedEffects)}！`, 'announce');
