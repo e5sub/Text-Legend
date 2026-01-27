@@ -709,6 +709,35 @@ app.post('/admin/realms/merge', async (req, res) => {
     } catch {}
   }
 
+  // 创建合区前的备份
+  const backupPayload = {
+    meta: {
+      version: 1,
+      db_client: config.db.client,
+      exported_at: new Date().toISOString(),
+      operation: 'realm_merge',
+      source_realm: { id: sourceId, name: sourceRealm?.name },
+      target_realm: { id: targetId, name: targetRealm?.name }
+    },
+    tables: {}
+  };
+
+  for (const tableName of BACKUP_TABLES) {
+    if (await knex.schema.hasTable(tableName)) {
+      let query = knex(tableName);
+      // 只备份涉及的两个区的数据
+      if (tableName !== 'realms' && tableName !== 'users' && tableName !== 'game_settings' && tableName !== 'vip_codes' && tableName !== 'sessions') {
+        query = query.where(function() {
+          this.where('realm_id', sourceId).orWhere('realm_id', targetId);
+        });
+      }
+      backupPayload.tables[tableName] = await query.select('*');
+    }
+  }
+
+  const backupStamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const backupJson = JSON.stringify(backupPayload, null, 2);
+
   // 统计合并的数据
   const stats = {
     characters: 0,
@@ -775,11 +804,16 @@ app.post('/admin/realms/merge', async (req, res) => {
   targetState.lastSaveTime.clear();
 
   await refreshRealmCache();
+
+  // 返回结果，包含备份数据用于下载
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="merge-backup-${backupStamp}.json"`);
   res.json({
     ok: true,
     sourceId,
     targetId,
-    message: `合区完成。角色: ${stats.characters}, 行会: ${stats.guilds}, 邮件: ${stats.mails}, 寄售: ${stats.consignments}, 寄售历史: ${stats.consignmentHistory}, 沙巴克报名: ${stats.sabakRegistrations}。`
+    message: `合区完成。角色: ${stats.characters}, 行会: ${stats.guilds}, 邮件: ${stats.mails}, 寄售: ${stats.consignments}, 寄售历史: ${stats.consignmentHistory}, 沙巴克报名: ${stats.sabakRegistrations}。`,
+    backupData: backupPayload
   });
 });
 

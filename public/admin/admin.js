@@ -742,7 +742,7 @@ async function mergeRealms() {
   const sourceText = mergeSourceSelect.options[mergeSourceSelect.selectedIndex].text;
   const targetText = mergeTargetSelect.options[mergeTargetSelect.selectedIndex].text;
 
-  if (!confirm(`⚠️ 警告：合区操作将强制下线所有玩家！\n\n源区: ${sourceText}\n目标区: ${targetText}\n\n确定要继续吗？`)) {
+  if (!confirm(`⚠️ 警告：合区操作将强制下线所有玩家！\n\n源区: ${sourceText}\n目标区: ${targetText}\n\n系统会自动创建合区前的完整备份，请稍候...`)) {
     return;
   }
 
@@ -751,11 +751,41 @@ async function mergeRealms() {
   }
 
   try {
-    const data = await api('/admin/realms/merge', 'POST', { sourceId, targetId });
-    mergeMsg.textContent = data.message || '合区完成';
+    mergeMsg.textContent = '正在创建备份并执行合区，请稍候...';
+
+    const res = await fetch('/admin/realms/merge', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: adminToken ? `Bearer ${adminToken}` : ''
+      },
+      body: JSON.stringify({ sourceId, targetId })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || '请求失败');
+    }
+
+    // 下载备份文件
+    if (data.backupData) {
+      const backupStamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const blob = new Blob([JSON.stringify(data.backupData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `merge-backup-${backupStamp}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    mergeMsg.textContent = `✅ ${data.message} 备份已自动下载。`;
     await refreshRealms();
   } catch (err) {
-    mergeMsg.textContent = err.message;
+    mergeMsg.textContent = `❌ 合区失败: ${err.message}`;
   }
 }
 
