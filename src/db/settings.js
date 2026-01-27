@@ -1,4 +1,4 @@
-import knex from './index.js';
+﻿import knex from './index.js';
 
 /**
  * 获取游戏设置
@@ -19,7 +19,7 @@ export async function setSetting(key, value) {
 }
 
 /**
- * 获取VIP自助获取开关
+ * 获取VIP自助领取开关
  */
 export async function getVipSelfClaimEnabled() {
   const enabled = await getSetting('vip_self_claim_enabled', 'true');
@@ -27,7 +27,7 @@ export async function getVipSelfClaimEnabled() {
 }
 
 /**
- * 设置VIP自助获取开关
+ * 设置VIP自助领取开关
  */
 export async function setVipSelfClaimEnabled(enabled) {
   await setSetting('vip_self_claim_enabled', enabled ? 'true' : 'false');
@@ -94,6 +94,17 @@ export async function setStateThrottleOverrideServerAllowed(enabled) {
   await setSetting('state_throttle_override_server_allowed', enabled ? 'true' : 'false');
 }
 
+export async function getConsignExpireHours() {
+  const value = await getSetting('consign_expire_hours', '48');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 48;
+}
+
+export async function setConsignExpireHours(hours) {
+  const normalized = Math.max(0, Math.floor(Number(hours) || 0));
+  await setSetting('consign_expire_hours', String(normalized));
+}
+
 /**
  * 获取玩家已领取的VIP激活码数量
  */
@@ -111,7 +122,7 @@ export async function incrementUserVipClaimCount(userId) {
 }
 
 /**
- * 获取玩家可以领取的VIP激活码数量（限制每个账号只能领取1次）
+ * 获取玩家可以领取的VIP激活码数量（限制每个账号只能领取一次）
  */
 export async function canUserClaimVip(userId) {
   const count = await getUserVipClaimCount(userId);

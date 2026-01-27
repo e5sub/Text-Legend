@@ -181,6 +181,22 @@
 
         <div class="block" data-collapsible>
           <div class="block-title">
+            <h2>寄售到期设置</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <p>当前状态: <span id="consign-expire-status">加载中...</span></p>
+            <div class="row" style="margin-top: 6px;">
+              <input id="consign-expire-hours" type="number" min="0" value="48" style="max-width: 120px;">
+              <button id="consign-expire-save" class="btn-small">保存小时</button>
+            </div>
+            <p class="muted" style="margin-top: 6px;">0 表示不自动下架</p>
+            <div id="consign-expire-msg" class="msg"></div>
+          </div>
+        </div>
+
+        <div class="block" data-collapsible>
+          <div class="block-title">
             <h2>数据备份与导入</h2>
             <button class="btn-small block-toggle">折叠</button>
           </div>

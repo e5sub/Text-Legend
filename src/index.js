@@ -14,7 +14,7 @@ import { addGuildMember, createGuild, getGuildByName, getGuildMember, getSabakOw
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
 import { sendMail, listMail, markMailRead, markMailClaimed } from './db/mail.js';
 import { createVipCodes, listVipCodes, useVipCode } from './db/vip.js';
-import { getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, canUserClaimVip, incrementUserVipClaimCount, getWorldBossKillCount, setWorldBossKillCount } from './db/settings.js';
+import { getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, canUserClaimVip, incrementUserVipClaimCount, getWorldBossKillCount, setWorldBossKillCount } from './db/settings.js';
 import { listMobRespawns, upsertMobRespawn, clearMobRespawn, saveMobState } from './db/mobs.js';
 import {
   listConsignments,
@@ -459,6 +459,26 @@ app.post('/admin/state-throttle-toggle', async (req, res) => {
   const intervalValue = await getStateThrottleIntervalSec();
   const overrideAllowed = await getStateThrottleOverrideServerAllowed();
   res.json({ ok: true, enabled: nextEnabled, intervalSec: intervalValue, overrideServerAllowed: overrideAllowed });
+});
+
+app.get('/admin/consign-expire-status', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const hours = await getConsignExpireHours();
+  res.json({ ok: true, hours });
+});
+
+app.post('/admin/consign-expire-update', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const hours = Math.max(0, Math.floor(Number(req.body?.hours || 0) || 0));
+  if (!Number.isFinite(hours) || hours < 0) {
+    return res.status(400).json({ error: '请输入有效小时数' });
+  }
+  await setConsignExpireHours(hours);
+  consignExpireHoursCachedValue = hours;
+  consignExpireHoursLastUpdate = Date.now();
+  res.json({ ok: true, hours });
 });
 
 app.get('/admin/backup', async (req, res) => {
@@ -1282,7 +1302,7 @@ const tradeApi = {
 
 const CONSIGN_EQUIPMENT_TYPES = new Set(['weapon', 'armor', 'accessory', 'book']);
 const CONSIGN_FEE_RATE = 0.1;
-const CONSIGN_EXPIRE_MS = 48 * 60 * 60 * 1000;
+const CONSIGN_EXPIRE_DEFAULT_HOURS = 48;
 const CONSIGN_CLEANUP_INTERVAL_MS = 10 * 60 * 1000;
 let consignCleanupRunning = false;
 
@@ -1457,7 +1477,10 @@ async function cleanupExpiredConsignments() {
   if (consignCleanupRunning) return;
   consignCleanupRunning = true;
   try {
-    const cutoff = new Date(Date.now() - CONSIGN_EXPIRE_MS);
+    const hours = await getConsignExpireHoursCached();
+    const effectiveHours = Number.isFinite(hours) ? Math.max(0, hours) : CONSIGN_EXPIRE_DEFAULT_HOURS;
+    if (effectiveHours <= 0) return;
+    const cutoff = new Date(Date.now() - effectiveHours * 60 * 60 * 1000);
     const rows = await listExpiredConsignments(cutoff);
     if (!rows.length) return;
     const refreshedSellers = new Set();
@@ -1953,6 +1976,8 @@ let stateThrottleIntervalCachedValue = null;
 let stateThrottleIntervalLastUpdate = 0;
 let stateThrottleOverrideAllowedCachedValue = null;
 let stateThrottleOverrideAllowedLastUpdate = 0;
+let consignExpireHoursCachedValue = null;
+let consignExpireHoursLastUpdate = 0;
 let lootLogEnabled = false;
 const stateThrottleLastSent = new Map();
 const stateThrottleLastExits = new Map();
@@ -1985,6 +2010,16 @@ async function getStateThrottleSettingsCached() {
     intervalSec: Math.max(1, Number(stateThrottleIntervalCachedValue) || 10),
     overrideServerAllowed: Boolean(stateThrottleOverrideAllowedCachedValue)
   };
+}
+
+async function getConsignExpireHoursCached() {
+  const now = Date.now();
+  if (now - consignExpireHoursLastUpdate > STATE_THROTTLE_CACHE_TTL) {
+    consignExpireHoursCachedValue = await getConsignExpireHours();
+    consignExpireHoursLastUpdate = now;
+  }
+  const parsed = parseInt(consignExpireHoursCachedValue, 10);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 48;
 }
 
 function logLoot(message) {

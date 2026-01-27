@@ -24,6 +24,10 @@ const stateThrottleIntervalInput = document.getElementById('state-throttle-inter
 const stateThrottleSaveBtn = document.getElementById('state-throttle-save');
 const stateThrottleStatus = document.getElementById('state-throttle-status');
 const stateThrottleMsg = document.getElementById('state-throttle-msg');
+const consignExpireStatus = document.getElementById('consign-expire-status');
+const consignExpireMsg = document.getElementById('consign-expire-msg');
+const consignExpireInput = document.getElementById('consign-expire-hours');
+const consignExpireSaveBtn = document.getElementById('consign-expire-save');
 const usersSearchInput = document.getElementById('users-search');
 const usersSearchBtn = document.getElementById('users-search-btn');
 const adminPwModal = document.getElementById('admin-pw-modal');
@@ -112,6 +116,7 @@ async function login() {
     await refreshVipSelfClaimStatus();
     await refreshLootLogStatus();
     await refreshStateThrottleStatus();
+    await refreshConsignExpireStatus();
   } catch (err) {
     loginMsg.textContent = err.message;
   }
@@ -406,6 +411,40 @@ async function refreshStateThrottleStatus() {
   }
 }
 
+async function refreshConsignExpireStatus() {
+  if (!consignExpireStatus) return;
+  try {
+    const data = await api('/admin/consign-expire-status', 'GET');
+    const hours = Number(data.hours ?? 48);
+    if (hours <= 0) {
+      consignExpireStatus.textContent = '已关闭';
+      consignExpireStatus.style.color = 'red';
+    } else {
+      consignExpireStatus.textContent = `已开启(${hours}小时)`;
+      consignExpireStatus.style.color = 'green';
+    }
+    if (consignExpireInput) consignExpireInput.value = String(hours);
+  } catch (err) {
+    consignExpireStatus.textContent = '加载失败';
+  }
+}
+
+async function saveConsignExpireHours() {
+  if (!consignExpireMsg) return;
+  consignExpireMsg.textContent = '';
+  try {
+    const hours = consignExpireInput ? Number(consignExpireInput.value || 48) : 48;
+    if (!Number.isFinite(hours) || hours < 0) {
+      throw new Error('请输入有效小时数');
+    }
+    await api('/admin/consign-expire-update', 'POST', { hours });
+    consignExpireMsg.textContent = '寄售到期已保存';
+    await refreshConsignExpireStatus();
+  } catch (err) {
+    consignExpireMsg.textContent = err.message;
+  }
+}
+
 async function toggleStateThrottle(enabled) {
   if (!stateThrottleMsg) return;
   stateThrottleMsg.textContent = '';
@@ -496,6 +535,7 @@ if (adminToken) {
   refreshVipSelfClaimStatus();
   refreshLootLogStatus();
   refreshStateThrottleStatus();
+  refreshConsignExpireStatus();
 }
 
 applyTheme(localStorage.getItem('adminTheme') || 'light');
@@ -547,6 +587,9 @@ if (stateThrottleOverrideAllowedToggle) {
 }
 if (stateThrottleSaveBtn) {
   stateThrottleSaveBtn.addEventListener('click', saveStateThrottleInterval);
+}
+if (consignExpireSaveBtn) {
+  consignExpireSaveBtn.addEventListener('click', saveConsignExpireHours);
 }
 document.getElementById('backup-download').addEventListener('click', downloadBackup);
 document.getElementById('import-btn').addEventListener('click', importBackup);
