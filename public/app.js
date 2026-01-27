@@ -511,7 +511,10 @@ async function loadRealms() {
   const username = localStorage.getItem('rememberedUser');
   const count = realmList.length;
   const stored = getStoredRealmId(username);
-  setCurrentRealmId(normalizeRealmId(stored, count), username);
+  // 确保设置的realmId在当前服务器列表中存在
+  const storedRealm = realmList.find(r => r.id === stored);
+  const validRealmId = storedRealm ? stored : Math.max(1, realmList[0]?.id);
+  setCurrentRealmId(normalizeRealmId(validRealmId, count), username);
 }
 
 function ensureRealmsLoaded() {
