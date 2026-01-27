@@ -3756,6 +3756,9 @@ io.on('connection', (socket) => {
     loaded.send(`欢迎回来，${loaded.name}。`);
     loaded.send(`金币: ${loaded.gold}`);
     if (loaded.guild) loaded.send(`行会: ${loaded.guild.name}`);
+    // 加入服务器房间，以便接收公告
+    const serverId = loaded.realmId || 1;
+    socket.join(`realm:${serverId}`);
     applyOfflineRewards(loaded);
     spawnMobs(loaded.position.zone, loaded.position.room, loaded.realmId || 1);
     await handleSabakEntry(loaded);
