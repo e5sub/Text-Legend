@@ -2089,8 +2089,8 @@ export async function handleCommand({ player, players, input, source, send, part
         if (player.flags.vip) {
           return send('你已经是VIP了。');
         }
-        if (!guildApi?.canUserClaimVip || !(await guildApi.canUserClaimVip(player.userId))) {
-          return send('每个账号只能领取一次VIP激活码。');
+        if (!guildApi?.canUserClaimVip || !(await guildApi.canUserClaimVip(player.name))) {
+          return send('每个角色只能领取一次VIP激活码。');
         }
         const codes = await guildApi?.createVipCodes?.(1);
         if (!codes || codes.length === 0) {
@@ -2098,7 +2098,7 @@ export async function handleCommand({ player, players, input, source, send, part
         }
         const used = await guildApi.useVipCode(codes[0], player.userId);
         if (!used) return send('激活失败，请稍后重试。');
-        await guildApi.incrementUserVipClaimCount(player.userId);
+        await guildApi.incrementCharacterVipClaimCount(player.name);
         player.flags.vip = true;
         send(`VIP 激活码领取成功！激活码: ${codes[0]}，已自动激活。`);
         return;

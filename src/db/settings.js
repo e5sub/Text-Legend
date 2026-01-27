@@ -128,25 +128,25 @@ export async function setRealmCount(count) {
 }
 
 /**
- * 获取玩家已领取的VIP激活码数量
+ * 获取角色已领取VIP激活码的次数（限制每个角色只能领取一次）
  */
-export async function getUserVipClaimCount(userId) {
-  const count = await getSetting(`vip_claim_count_${userId}`, '0');
+export async function getCharacterVipClaimCount(characterName) {
+  const count = await getSetting(`vip_claim_count_char_${characterName}`, '0');
   return parseInt(count, 10);
 }
 
 /**
- * 增加玩家已领取的VIP激活码数量
+ * 增加角色已领取VIP激活码的次数
  */
-export async function incrementUserVipClaimCount(userId) {
-  const current = await getUserVipClaimCount(userId);
-  await setSetting(`vip_claim_count_${userId}`, String(current + 1));
+export async function incrementCharacterVipClaimCount(characterName) {
+  const current = await getCharacterVipClaimCount(characterName);
+  await setSetting(`vip_claim_count_char_${characterName}`, String(current + 1));
 }
 
 /**
- * 获取玩家可以领取的VIP激活码数量（限制每个账号只能领取一次）
+ * 获取角色是否可以领取VIP激活码（限制每个角色只能领取一次）
  */
-export async function canUserClaimVip(userId) {
-  const count = await getUserVipClaimCount(userId);
+export async function canUserClaimVip(characterName) {
+  const count = await getCharacterVipClaimCount(characterName);
   return count === 0;
 }
