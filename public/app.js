@@ -3852,11 +3852,52 @@ async function login() {
     show(characterSection);
     showToast('登录成功');
   } catch (err) {
-    authMsg.textContent = err.message;
-    showToast('登录失败');
-    loginBtn.classList.add('shake');
-    setTimeout(() => loginBtn.classList.remove('shake'), 500);
-    refreshCaptcha('login');
+    // 如果是"新区不存在"错误,清除旧的realmId并重新尝试
+    if (err.message && err.message.includes('新区不存在')) {
+      const username = localStorage.getItem('rememberedUser');
+      if (username) {
+        const key = getUserStorageKey('lastRealm', username);
+        localStorage.removeItem(key);
+      }
+      // 重新加载服务器列表
+      realmList = [];
+      realmInitPromise = null;
+      await ensureRealmsLoaded();
+      const count = realmList.length || 1;
+      const newRealmId = normalizeRealmId(1, count);
+      setCurrentRealmId(newRealmId, username);
+      // 使用新的realmId重新登录
+      try {
+        const data = await apiPost('/api/login', { username, password, captchaToken, captchaCode, realmId: newRealmId });
+        localStorage.setItem('rememberedUser', username);
+        token = data.token;
+        const storageKey = getUserStorageKey('savedToken', username);
+        localStorage.setItem(storageKey, token);
+        const preferredRealmId = normalizeRealmId(getStoredRealmId(username) || data.realmId || 1, count);
+        setCurrentRealmId(preferredRealmId, username);
+        if (preferredRealmId === data.realmId && Array.isArray(data.characters)) {
+          const charsKey = getUserStorageKey('savedCharacters', username, preferredRealmId);
+          localStorage.setItem(charsKey, JSON.stringify(data.characters || []));
+          renderCharacters(data.characters || []);
+        } else {
+          await refreshCharactersForRealm();
+        }
+        show(characterSection);
+        showToast('登录成功(已自动切换服务器)');
+      } catch (retryErr) {
+        authMsg.textContent = retryErr.message;
+        showToast('登录失败');
+        loginBtn.classList.add('shake');
+        setTimeout(() => loginBtn.classList.remove('shake'), 500);
+        refreshCaptcha('login');
+      }
+    } else {
+      authMsg.textContent = err.message;
+      showToast('登录失败');
+      loginBtn.classList.add('shake');
+      setTimeout(() => loginBtn.classList.remove('shake'), 500);
+      refreshCaptcha('login');
+    }
   } finally {
     loginBtn.classList.remove('btn-loading');
   }

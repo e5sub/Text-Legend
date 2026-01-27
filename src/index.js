@@ -197,8 +197,16 @@ app.post('/api/login', async (req, res) => {
   if (!verifyCaptcha(captchaToken, captchaCode)) {
     return res.status(400).json({ error: '验证码错误。' });
   }
-  const realmInfo = await resolveRealmId(rawRealmId);
-  if (realmInfo.error) return res.status(400).json({ error: realmInfo.error });
+  let realmInfo = await resolveRealmId(rawRealmId);
+  // 如果请求的区服不存在（合区后可能发生），使用第一个可用的区服
+  if (realmInfo.error) {
+    const realms = await listRealms();
+    if (Array.isArray(realms) && realms.length > 0) {
+      realmInfo = { realmId: realms[0].id };
+    } else {
+      return res.status(400).json({ error: realmInfo.error });
+    }
+  }
   const user = await verifyUser(username, password);
   if (!user) return res.status(401).json({ error: '账号或密码错误。' });
   const token = await createSession(user.id);
@@ -224,8 +232,16 @@ app.post('/api/character', async (req, res) => {
   const { token, name, classId, realmId: rawRealmId } = req.body || {};
   const session = await getSession(token);
   if (!session) return res.status(401).json({ error: '登录已过期。' });
-  const realmInfo = await resolveRealmId(rawRealmId);
-  if (realmInfo.error) return res.status(400).json({ error: realmInfo.error });
+  let realmInfo = await resolveRealmId(rawRealmId);
+  // 如果请求的区服不存在（合区后可能发生），使用第一个可用的区服
+  if (realmInfo.error) {
+    const realms = await listRealms();
+    if (Array.isArray(realms) && realms.length > 0) {
+      realmInfo = { realmId: realms[0].id };
+    } else {
+      return res.status(400).json({ error: realmInfo.error });
+    }
+  }
   if (!name || !classId) return res.status(400).json({ error: '角色名或职业缺失。' });
   const existing = await findCharacterByName(name);
   if (existing) return res.status(400).json({ error: '角色名已存在。' });
@@ -241,8 +257,16 @@ app.get('/api/characters', async (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   const session = await getSession(token);
   if (!session) return res.status(401).json({ error: '登录已过期。' });
-  const realmInfo = await resolveRealmId(req.query.realmId);
-  if (realmInfo.error) return res.status(400).json({ error: realmInfo.error });
+  let realmInfo = await resolveRealmId(req.query.realmId);
+  // 如果请求的区服不存在（合区后可能发生），使用第一个可用的区服
+  if (realmInfo.error) {
+    const realms = await listRealms();
+    if (Array.isArray(realms) && realms.length > 0) {
+      realmInfo = { realmId: realms[0].id };
+    } else {
+      return res.status(400).json({ error: realmInfo.error });
+    }
+  }
   const chars = await listCharacters(session.user_id, realmInfo.realmId);
   res.json({ ok: true, characters: chars, realmId: realmInfo.realmId });
 });
@@ -251,8 +275,16 @@ app.get('/api/mail', async (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   const session = await getSession(token);
   if (!session) return res.status(401).json({ error: '登录已过期。' });
-  const realmInfo = await resolveRealmId(req.query.realmId);
-  if (realmInfo.error) return res.status(400).json({ error: realmInfo.error });
+  let realmInfo = await resolveRealmId(req.query.realmId);
+  // 如果请求的区服不存在（合区后可能发生），使用第一个可用的区服
+  if (realmInfo.error) {
+    const realms = await listRealms();
+    if (Array.isArray(realms) && realms.length > 0) {
+      realmInfo = { realmId: realms[0].id };
+    } else {
+      return res.status(400).json({ error: realmInfo.error });
+    }
+  }
   const mails = await listMail(session.user_id, realmInfo.realmId);
   res.json({ ok: true, mails: mails.map(buildMailPayload) });
 });
@@ -262,8 +294,16 @@ app.post('/api/mail/read', async (req, res) => {
   const session = await getSession(token);
   if (!session) return res.status(401).json({ error: '登录已过期。' });
   const { mailId } = req.body || {};
-  const realmInfo = await resolveRealmId(req.body?.realmId);
-  if (realmInfo.error) return res.status(400).json({ error: realmInfo.error });
+  let realmInfo = await resolveRealmId(req.body?.realmId);
+  // 如果请求的区服不存在（合区后可能发生），使用第一个可用的区服
+  if (realmInfo.error) {
+    const realms = await listRealms();
+    if (Array.isArray(realms) && realms.length > 0) {
+      realmInfo = { realmId: realms[0].id };
+    } else {
+      return res.status(400).json({ error: realmInfo.error });
+    }
+  }
   await markMailRead(session.user_id, mailId, realmInfo.realmId);
   res.json({ ok: true });
 });
@@ -410,8 +450,16 @@ app.post('/admin/mail/send', async (req, res) => {
   const { username, title, body, realmId: rawRealmId } = req.body || {};
   const user = await getUserByName(username);
   if (!user) return res.status(404).json({ error: '用户不存在。' });
-  const realmInfo = await resolveRealmId(rawRealmId);
-  if (realmInfo.error) return res.status(400).json({ error: realmInfo.error });
+  let realmInfo = await resolveRealmId(rawRealmId);
+  // 如果请求的区服不存在（合区后可能发生），使用第一个可用的区服
+  if (realmInfo.error) {
+    const realms = await listRealms();
+    if (Array.isArray(realms) && realms.length > 0) {
+      realmInfo = { realmId: realms[0].id };
+    } else {
+      return res.status(400).json({ error: realmInfo.error });
+    }
+  }
   await sendMail(user.id, 'GM', title, body, null, 0, realmInfo.realmId);
   res.json({ ok: true });
 });
@@ -3563,11 +3611,17 @@ io.on('connection', (socket) => {
       return;
     }
 
-    const realmInfo = await resolveRealmId(rawRealmId);
+    let realmInfo = await resolveRealmId(rawRealmId);
+    // 如果请求的区服不存在（合区后可能发生），使用第一个可用的区服
     if (realmInfo.error) {
-      socket.emit('auth_error', { error: realmInfo.error });
-      socket.disconnect();
-      return;
+      const realms = await listRealms();
+      if (Array.isArray(realms) && realms.length > 0) {
+        realmInfo = { realmId: realms[0].id };
+      } else {
+        socket.emit('auth_error', { error: realmInfo.error });
+        socket.disconnect();
+        return;
+      }
     }
 
     const loaded = await loadCharacter(session.user_id, name, realmInfo.realmId);
