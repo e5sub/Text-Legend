@@ -8,7 +8,7 @@ import crypto from 'node:crypto';
 
 import config from './config.js';
 import knex from './db/index.js';
-import { createUser, verifyUser, createSession, getSession, getUserByName, setAdminFlag, verifyUserPassword, updateUserPassword, clearUserSessions } from './db/users.js';
+import { createUser, verifyUser, createSession, getSession, getUserByName, setAdminFlag, verifyUserPassword, updateUserPassword, clearUserSessions, clearAllSessions } from './db/users.js';
 import { listCharacters, loadCharacter, saveCharacter, findCharacterByName, findCharacterByNameInRealm } from './db/characters.js';
 import { addGuildMember, createGuild, getGuildByName, getGuildByNameInRealm, getGuildMember, getSabakOwner, isGuildLeader, listGuildMembers, listSabakRegistrations, registerSabak, removeGuildMember, leaveGuild, setSabakOwner, clearSabakRegistrations, transferGuildLeader, ensureSabakState } from './db/guilds.js';
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
@@ -853,6 +853,9 @@ app.post('/admin/realms/merge', async (req, res) => {
 
   await refreshRealmCache();
 
+  // 清除所有session，强制玩家重新登录
+  await clearAllSessions();
+
   // 返回结果，包含备份数据用于下载
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="merge-backup-${backupStamp}.json"`);
@@ -860,7 +863,7 @@ app.post('/admin/realms/merge', async (req, res) => {
     ok: true,
     sourceId,
     targetId,
-    message: `合区完成。角色: ${stats.characters}, 行会: ${stats.guilds}, 邮件: ${stats.mails}, 寄售: ${stats.consignments}, 寄售历史: ${stats.consignmentHistory}, 沙巴克报名: ${stats.sabakRegistrations}。`,
+    message: `合区完成。角色: ${stats.characters}, 行会: ${stats.guilds}, 邮件: ${stats.mails}, 寄售: ${stats.consignments}, 寄售历史: ${stats.consignmentHistory}, 沙巴克报名: ${stats.sabakRegistrations}。所有玩家已强制下线，请重新登录。`,
     backupData: backupPayload
   });
 });

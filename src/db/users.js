@@ -61,3 +61,7 @@ export async function updateUserPassword(userId, newPassword) {
 export async function clearUserSessions(userId) {
   await knex('sessions').where({ user_id: userId }).del();
 }
+
+export async function clearAllSessions() {
+  await knex('sessions').del();
+}
