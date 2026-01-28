@@ -1074,6 +1074,8 @@ export function expandRoomVariants(world) {
   const baseByZone = new Map();
   Object.entries(world).forEach(([zoneId, zone]) => {
     if (!zone?.rooms) return;
+    // 跳过暗之BOSS区域，不为其创建变种
+    if (zoneId === 'dark_bosses') return;
     const baseMap = new Map();
     Object.keys(zone.rooms).forEach((roomId) => {
       const match = roomId.match(/^(.*?)([1-3])$/);
