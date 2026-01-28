@@ -312,7 +312,7 @@ function getPlayerBonusConfigFromUI() {
   return configs;
 }
 
-async function loadWorldBossSettings() {
+async function createVipCodes() {
   if (!document.getElementById('wb-msg')) return;
   const msg = document.getElementById('wb-msg');
   msg.textContent = '';
@@ -940,7 +940,6 @@ document.getElementById('wb-save-btn').addEventListener('click', saveWorldBossSe
 if (document.getElementById('wb-add-bonus-btn')) {
   document.getElementById('wb-add-bonus-btn').addEventListener('click', addPlayerBonusConfig);
 }
-document.getElementById('mail-send-btn').addEventListener('click', sendMail);
 document.getElementById('vip-create-btn').addEventListener('click', createVipCodes);
 document.getElementById('vip-list-btn').addEventListener('click', listVipCodes);
 if (vipSelfClaimToggle) {
