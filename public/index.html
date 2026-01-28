@@ -551,8 +551,28 @@
   <footer id="footer-copyright" style="display: flex; justify-content: center; align-items: center; gap: 30px; padding: 12px; background: rgba(120, 64, 20, 0.9); color: #fff3df; font-size: 0.85rem; margin-top: 20px;"></footer>
 
   <script>
-    !function(e){var t={};function r(n){if(t[n])return t[n].exports;var o=t[n]={i:n,l:!1,exports:{}};return e[n].call(o.exports,o,o.exports,r),o.l=!0,o.exports}r.m=e,r.c=t,r.d=function(e,t,n){r.o(e,t)||Object.defineProperty(e,t,{enumerable:!0,get:n})},r.o=function(e,t){return Object.prototype.hasOwnProperty.call(e,t)},r.r=function(e){"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(e,"__esModule",{value:!0})},r.p="",r(r.s=0)}([function(e,t,r){"use strict";function n(e){for(var t=0,r=0;r<e.length;r++){var n=e.charCodeAt(r);t=(t<<5)-t+n,t&=t}return t}var o=n("\u7248\u6743\u6240\u6709"),a=new Uint8Array([104,116,116,112,115,58,47,47,103,105,116,104,117,98,46,99,111,109,47,101,53,115,117,98,47,84,101,120,116,45,76,101,103,101,110,100]),i=new Uint8Array([104,116,116,112,115,58,47,47,99,113,46,48,55,49,55,49,55,46,120,121,122]),c=new Uint8Array([60,97,32,104,114,101,102,61,34]),u=new Uint8Array([34,32,116,97,114,103,101,116,61,34,95,98,108,97,110,107,34,32,114,101,108,61,34,110,111,111,112,101,110,101,114,32,110,111,114,101,102,101,114,114,101,114,34,32,115,116,121,108,101,61,34,99,111,108,111,114,5832,35,102,102,100,54,57,59,32,116,101,120,116,45,100,101,99,111,114,97,116,105,111,110,5832,110,111,110,101,59,34,62]),s=new Uint8Array([60,47,97,62]),l=new Uint8Array([60,115,112,97,110,32,115,116,121,108,101,61,34,99,111,108,111,114,5832,35,102,102,102,51,100,102,59,34,62]),f=new Uint8Array([60,47,115,112,97,110,62]),p=[[71,105,116,72,117,98,58,32,101,53,115,117,98,47,84,101,120,116,45,76,101,103,101,110,100],[231,142,174,231,167,144,81,81,231,190,140,58,32,49,54,57,57,50,52,51,53,57],[229,190,174,228,188,154,229,133,172,53,229,143,183,232,161,140,232,175,161,231,148,181,232,182,133],[230,188,148,231,164,186,231,171,171,65,58,104,116,116,112,115,58,47,47,99,113,46,48,55,49,55,49,55,46,120,121,122]];function d(e){for(var t="",r=0;r<e.length;r++)t+=String.fromCharCode(e[r]);return t}function h(e,t){for(var r=[],n=0;n<e.length;n++)r.push(e[n]^t[n%t.length]);return r}var v=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];function m(e){var t=e.toString(16);return 1===t.length?"0"+t:t}function g(){for(var e=0;e<o;e++)v[e]=Math.floor(Math.random()*256);return v.join("").toUpperCase().substring(0,16)}var y=g();function b(e,t){var r=new Uint8Array(e);return h(r,t)}function w(e,t){for(var r="",n=0;n<e.length;n++)r+=String.fromCharCode(e[n]^t.charCodeAt(n%t.length));return r}var _=new Uint8Array([171,239,146,170,243,151,132,233,151,244,234,157,132,246,146,239,149,132,234,157,135,233,152,235,157,132]),A=new Uint8Array([231,142,174,231,167,144,81,81,231,190,140,58,32,49,54,57,57,50,52,51,53,57]),x=new Uint8Array([229,190,174,228,188,154,229,133,172,53,229,143,183,232,161,140,232,175,161,231,148,181,232,182,133]),C=new Uint8Array([230,188,148,231,164,186,231,171,171,65,58,104,116,116,112,115,58,47,47,99,113,46,48,55,49,55,49,55,46,120,121,122]),T=new Uint8Array([50,55,48,57,49,48,48,49,48,50,51,52,53,54,55,56,57]);function E(e){for(var t="",r=0;r<e.length;r++)t+=m(e[r]);return t}function k(e){for(var t="",r=0;r<e.length;r++)t+=String.fromCharCode(e[r]);return t}function D(){var e=document.getElementById("footer-copyright");if(e){var t="";t+=k(c)+d(a)+k(u)+k(_)+k(s),t+=k(l)+k(A)+k(f),t+=k(l)+k(x)+k(f),t+=k(c)+d(i)+k(u)+k(C)+k(s),e.innerHTML=t}}window.addEventListener?window.addEventListener("load",D,!1):window.attachEvent&&window.attachEvent("onload",D)}]);
-  </script>
+  (function(){
+    var _k = function(str, key) {
+      var s = "";
+      for(var i = 0; i < str.length; i++) {
+        s += String.fromCharCode(str[i] ^ key.charCodeAt(i % key.length));
+      }
+      return s;
+    };
+    var _d = {
+      g1: atob("aHR0cHM6Ly9naXRodWIuY29tL2U1c3ViL1RleHQtTGVnZW5k"),
+      d1: atob("aHR0cHM6Ly9jcS4wNzE3MTcueHl6"),
+      g2: _k([71,105,116,72,117,98,58,32,101,53,115,117,98,47,84,101,120,116,45,76,101,103,101,110,100], "xK8mN2pL"),
+      q1: _k([231,142,174,231,167,144,81,81,231,190,140,58,32,49,54,57,57,50,52,51,53,57], "xK8mN2pL"),
+      w1: _k([229,190,174,228,188,154,229,133,172,53,229,143,183,232,161,140,232,175,161,231,148,181,232,182,133], "xK8mN2pL"),
+      d2: _k([230,188,148,231,164,186,231,171,171,65,58,104,116,116,112,115,58,47,47,99,113,46,48,55,49,55,49,55,46,120,121,122], "xK8mN2pL")
+    };
+    var _e = document.getElementById("footer-copyright");
+    if(_e) {
+      _e.innerHTML = '<a href="' + _d.g1 + '" target="_blank" rel="noopener noreferrer" style="color: #ffd699; text-decoration: none;">' + _d.g2 + '</a><span style="color: #fff3df;">' + _d.q1 + '</span><span style="color: #fff3df;">' + _d.w1 + '</span><a href="' + _d.d1 + '" target="_blank" rel="noopener noreferrer" style="color: #ffd699; text-decoration: none;">' + _d.d2 + '</a>';
+    }
+  })();
+</script>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="app.js?v=4"></script>
