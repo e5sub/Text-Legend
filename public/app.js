@@ -2597,6 +2597,8 @@ async function loadSponsors() {
   } catch (err) {
     console.error('获取赞助名单失败:', err);
   }
+  // 加载完成后更新赞助玩家称号按钮的显示状态
+  updateSponsorTitleButtonVisibility();
 }
 
 async function renderSponsorContent() {
