@@ -29,10 +29,7 @@ export const CLASS_LEVEL_BONUS = {
     magPerLevel: 0,
     mdefPerLevel: 0,
     spiritPerLevel: 0,
-    strPerLevel: 0,
-    dexPerLevel: 0,
-    intPerLevel: 0,
-    conPerLevel: 0
+    dexPerLevel: 0
   },
   mage: {
     hpPerLevel: 0,
@@ -42,10 +39,7 @@ export const CLASS_LEVEL_BONUS = {
     magPerLevel: 0,
     mdefPerLevel: 0,
     spiritPerLevel: 0,
-    strPerLevel: 0,
-    dexPerLevel: 0,
-    intPerLevel: 0,
-    conPerLevel: 0
+    dexPerLevel: 0
   },
   taoist: {
     hpPerLevel: 0,
@@ -55,10 +49,7 @@ export const CLASS_LEVEL_BONUS = {
     magPerLevel: 0,
     mdefPerLevel: 0,
     spiritPerLevel: 0,
-    strPerLevel: 0,
-    dexPerLevel: 0,
-    intPerLevel: 0,
-    conPerLevel: 0
+    dexPerLevel: 0
   }
 };
 

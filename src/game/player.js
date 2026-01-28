@@ -398,7 +398,8 @@ export function computeDerived(player) {
 
   player.atk = stats.str * 1.6 + level * 1.2 + trainingBonus.atk + trainingFruitBonus.atk + bonusAtk;
   player.def = stats.con * 1.1 + level * 0.8 + trainingBonus.def + trainingFruitBonus.def + bonusDef;
-  player.dex = stats.dex;
+  const bonusDex = levelBonus.dexPerLevel * levelUp;
+  player.dex = stats.dex + trainingFruitBonus.dex + bonusDex;
   player.mag = stats.int * 1.4 + stats.spirit * 0.6 + trainingBonus.mag + trainingFruitBonus.mag + bonusMag;
   player.spirit = stats.spirit + bonusSpirit;
   player.mdef = stats.spirit * 1.1 + level * 0.8 + trainingBonus.mdef + trainingFruitBonus.mdef + mdefBonus + bonusMdef;
