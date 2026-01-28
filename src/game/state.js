@@ -28,6 +28,32 @@ function isBossTemplate(tpl) {
 
 function scaledStats(tpl, realmId = 1) {
   if (!tpl) return { hp: 0, atk: 0, def: 0, mdef: 0 };
+
+  // 特殊BOSS和世界BOSS使用配置的值，不进行缩放
+  if (tpl.specialBoss || tpl.worldBoss) {
+    const baseStats = {
+      hp: tpl.hp || 0,
+      atk: tpl.atk || 0,
+      def: tpl.def || 0,
+      mdef: tpl.mdef || 0
+    };
+
+    // 世界BOSS根据击杀次数进行成长
+    if (tpl.worldBoss) {
+      const count = worldBossKillCounts.get(realmId) || 0;
+      const growth = 1 + Math.floor(count / 5) * 0.01;
+      return {
+        hp: Math.floor(baseStats.hp * growth),
+        atk: Math.floor(baseStats.atk * growth),
+        def: Math.floor(baseStats.def * growth),
+        mdef: Math.floor(baseStats.mdef * growth)
+      };
+    }
+
+    return baseStats;
+  }
+
+  // 普通怪物
   if (!isBossTemplate(tpl)) {
     const def = Math.floor(tpl.def * MOB_STAT_SCALE * MOB_DEF_SCALE);
     return {
@@ -37,27 +63,15 @@ function scaledStats(tpl, realmId = 1) {
       mdef: Math.floor(def * 0.5)
     };
   }
+
+  // 其他BOSS（不包括worldBoss和specialBoss）
   let def = Math.floor(tpl.def * BOSS_SCALE.def * MOB_STAT_SCALE * MOB_DEF_SCALE);
-  if (tpl.worldBoss) {
-    def = Math.floor(def * 0.7);
-  }
-  let stats = {
+  return {
     hp: Math.floor(tpl.hp * MOB_HP_SCALE * BOSS_SCALE.hp * MOB_STAT_SCALE),
     atk: Math.floor(tpl.atk * BOSS_SCALE.atk * MOB_STAT_SCALE),
     def,
     mdef: Math.floor(def * 0.5)
   };
-  if (tpl.worldBoss) {
-    const count = worldBossKillCounts.get(realmId) || 0;
-    const growth = 1 + Math.floor(count / 5) * 0.01;
-    stats = {
-      hp: Math.floor(stats.hp * growth),
-      atk: Math.floor(stats.atk * growth),
-      def: Math.floor(stats.def * growth),
-      mdef: Math.floor(stats.mdef * growth)
-    };
-  }
-  return stats;
 }
 
 function roomKey(realmId, zoneId, roomId) {
