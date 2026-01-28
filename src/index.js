@@ -815,6 +815,10 @@ app.post('/admin/specialboss-settings/update', async (req, res) => {
       return res.status(400).json({ error: '人数加成配置格式错误' });
     }
   }
+
+  // 应用新设置到特殊BOSS模板
+  await applySpecialBossSettings();
+
   res.json({ ok: true });
 });
 
@@ -1731,6 +1735,44 @@ async function applyWorldBossSettings() {
   await loadWorldBossSettingsCache();
 }
 
+async function applySpecialBossSettings() {
+  // 从数据库加载特殊BOSS设置并应用到所有特殊BOSS模板
+  const baseHp = await getSpecialBossBaseHp();
+  const baseAtk = await getSpecialBossBaseAtk();
+  const baseDef = await getSpecialBossBaseDef();
+  const baseMdef = await getSpecialBossBaseMdef();
+  const baseExp = await getSpecialBossBaseExp();
+  const baseGold = await getSpecialBossBaseGold();
+
+  // 应用到所有特殊BOSS模板（魔龙教主、暗之系列BOSS、沙巴克BOSS）
+  // 注意：world_boss虽然也有specialBoss标记，但它使用独立的世界BOSS配置，不在此处处理
+  const specialBossIds = [
+    'molong_boss',
+    'dark_woma_boss',
+    'dark_zuma_boss',
+    'dark_hongmo_boss',
+    'dark_huangquan_boss',
+    'dark_doublehead_boss',
+    'dark_skeleton_boss',
+    'sabak_boss'
+  ];
+
+  for (const bossId of specialBossIds) {
+    const bossTemplate = MOB_TEMPLATES[bossId];
+    if (bossTemplate) {
+      bossTemplate.hp = baseHp;
+      bossTemplate.atk = baseAtk;
+      bossTemplate.def = baseDef;
+      bossTemplate.mdef = baseMdef;
+      bossTemplate.exp = baseExp;
+      bossTemplate.gold = [baseGold, Math.floor(baseGold * 1.6)];
+    }
+  }
+
+  // 加载特殊BOSS人数加成配置缓存
+  await loadSpecialBossSettingsCache();
+}
+
 // 根据房间内玩家数量调整世界BOSS属性（按人数分段加成）
 function adjustWorldBossStatsByPlayerCount(zoneId, roomId, realmId) {
   const mobs = getAliveMobs(zoneId, roomId, realmId);
@@ -1793,6 +1835,19 @@ async function loadWorldBossSettingsCache() {
 
 function getWorldBossPlayerBonusConfigSync() {
   return worldBossSettingsCache.playerBonusConfig;
+}
+
+// 特殊BOSS设置缓存
+let specialBossSettingsCache = {
+  playerBonusConfig: []
+};
+
+async function loadSpecialBossSettingsCache() {
+  specialBossSettingsCache.playerBonusConfig = await getSpecialBossPlayerBonusConfig();
+}
+
+function getSpecialBossPlayerBonusConfigSync() {
+  return specialBossSettingsCache.playerBonusConfig;
 }
 
 function dropLoot(mobTemplate, bonus = 1) {
@@ -5283,33 +5338,40 @@ function updateSpecialBossStatsBasedOnPlayers() {
         const baseAtk = baseStats?.atk ?? tpl.atk;
         const baseDef = baseStats?.def ?? tpl.def;
         const baseMdef = baseStats?.mdef ?? tpl.mdef;
+        const baseMaxHp = baseStats?.max_hp ?? tpl.hp;
 
-        let atkBonus = 0;
-        let defBonus = 0;
-        let mdefBonus = 0;
-
+        // 根据BOSS类型选择配置
         const isWorldBoss = specialBoss.templateId === 'world_boss';
+        const playerBonusConfig = isWorldBoss
+          ? getWorldBossPlayerBonusConfigSync()
+          : getSpecialBossPlayerBonusConfigSync();
 
-        if (playersInRoom < 2) {
-          atkBonus = isWorldBoss ? 3000 : 800;
-          defBonus = 5000;
-          mdefBonus = 5000;
-          if (!specialBoss.status?.enhancedMode) {
-            specialBoss.status.enhancedMode = true;
-            specialBoss.atk = baseAtk + atkBonus;
-            specialBoss.def = baseDef + defBonus;
-            specialBoss.mdef = baseMdef + mdefBonus;
-          }
-        } else {
-          atkBonus = isWorldBoss ? 3000 : 800;
-          defBonus = isWorldBoss ? 0 : 0;
-          mdefBonus = isWorldBoss ? 0 : 0;
-          if (specialBoss.status?.enhancedMode !== 'partial') {
-            specialBoss.status.enhancedMode = 'partial';
-            specialBoss.atk = baseAtk + atkBonus;
-            specialBoss.def = baseDef + defBonus;
-            specialBoss.mdef = baseMdef + mdefBonus;
-          }
+        // 找到适用的人数加成配置
+        const bonusConfig = playerBonusConfig.find(config => playersInRoom >= config.min);
+        const atkBonus = bonusConfig ? (bonusConfig.atk || 0) : 0;
+        const defBonus = bonusConfig ? (bonusConfig.def || 0) : 0;
+        const mdefBonus = bonusConfig ? (bonusConfig.mdef || 0) : 0;
+        const hpBonus = bonusConfig ? (bonusConfig.hp || 0) : 0;
+
+        // 应用加成（基于基础属性计算，避免重复叠加）
+        specialBoss.atk = Math.floor(baseAtk + atkBonus);
+        specialBoss.def = Math.floor(baseDef + defBonus);
+        specialBoss.mdef = Math.floor(baseMdef + mdefBonus);
+
+        // 更新baseStats
+        if (!specialBoss.status) specialBoss.status = {};
+        specialBoss.status.baseStats = {
+          max_hp: baseMaxHp,
+          atk: specialBoss.atk,
+          def: specialBoss.def,
+          mdef: specialBoss.mdef
+        };
+
+        // 如果有HP加成，应用到max_hp
+        if (hpBonus > 0) {
+          specialBoss.max_hp = Math.floor(baseMaxHp + hpBonus);
+          specialBoss.hp = Math.min(specialBoss.hp, specialBoss.max_hp);
+          specialBoss.status.baseStats.max_hp = specialBoss.max_hp;
         }
       });
     });
@@ -6328,6 +6390,7 @@ async function start() {
   }
   await runMigrations();
   await applyWorldBossSettings();
+  await applySpecialBossSettings();
   await refreshRealmCache();
   setRespawnStore({
     set: (realmId, zoneId, roomId, slotIndex, templateId, respawnAt) =>
