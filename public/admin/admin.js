@@ -250,19 +250,115 @@ async function deleteUserAccount(userId, username) {
   }
 }
 
-async function updateCharacter() {
-  charMsg.textContent = '';
-  try {
-    const patch = JSON.parse(document.getElementById('char-patch').value || '{}');
-    await api('/admin/characters/update', 'POST', {
-      username: document.getElementById('char-username').value.trim(),
-      name: document.getElementById('char-name').value.trim(),
-      patch
-    });
-    charMsg.textContent = '角色已更新。';
-  } catch (err) {
-    charMsg.textContent = err.message;
+function renderPlayerBonusList(configs) {
+  const tbody = document.getElementById('wb-player-bonus-list');
+  tbody.innerHTML = '';
+
+  if (!configs || configs.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #999;">暂无配置，点击"添加配置"添加</td></tr>';
+    return;
   }
+
+  configs.sort((a, b) => a.min - b.min);
+
+  configs.forEach((config, index) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="padding: 4px 8px;"><input type="number" min="1" value="${config.min}" data-field="min" style="width: 80px;"></td>
+      <td style="padding: 4px 8px;"><input type="number" min="0" value="${config.hp || 0}" data-field="hp" style="width: 80px;"></td>
+      <td style="padding: 4px 8px;"><input type="number" min="0" value="${config.atk || 0}" data-field="atk" style="width: 80px;"></td>
+      <td style="padding: 4px 8px;"><input type="number" min="0" value="${config.def || 0}" data-field="def" style="width: 80px;"></td>
+      <td style="padding: 4px 8px;"><input type="number" min="0" value="${config.mdef || 0}" data-field="mdef" style="width: 80px;"></td>
+      <td style="padding: 4px 8px;">
+        <button class="btn-small btn-delete" data-index="${index}" style="padding: 2px 8px; font-size: 11px;">删除</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // 绑定删除按钮事件
+  tbody.querySelectorAll('.btn-delete').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const index = Number(btn.dataset.index);
+      configs.splice(index, 1);
+      renderPlayerBonusList(configs);
+    });
+  });
+}
+
+function getPlayerBonusConfigFromUI() {
+  const tbody = document.getElementById('wb-player-bonus-list');
+  const rows = tbody.querySelectorAll('tr');
+  const configs = [];
+
+  rows.forEach(tr => {
+    const minInput = tr.querySelector('input[data-field="min"]');
+    const hpInput = tr.querySelector('input[data-field="hp"]');
+    const atkInput = tr.querySelector('input[data-field="atk"]');
+    const defInput = tr.querySelector('input[data-field="def"]');
+    const mdefInput = tr.querySelector('input[data-field="mdef"]');
+
+    if (minInput) {
+      configs.push({
+        min: Number(minInput.value) || 0,
+        hp: Number(hpInput?.value) || 0,
+        atk: Number(atkInput?.value) || 0,
+        def: Number(defInput?.value) || 0,
+        mdef: Number(mdefInput?.value) || 0
+      });
+    }
+  });
+
+  return configs;
+}
+
+async function loadWorldBossSettings() {
+  if (!document.getElementById('wb-msg')) return;
+  const msg = document.getElementById('wb-msg');
+  msg.textContent = '';
+  try {
+    const data = await api('/admin/worldboss-settings', 'GET');
+    document.getElementById('wb-base-hp').value = data.baseHp || '';
+    document.getElementById('wb-base-atk').value = data.baseAtk || '';
+    document.getElementById('wb-base-def').value = data.baseDef || '';
+    document.getElementById('wb-base-mdef').value = data.baseMdef || '';
+    document.getElementById('wb-drop-bonus').value = data.dropBonus || '';
+    renderPlayerBonusList(data.playerBonusConfig || []);
+    msg.textContent = '加载成功';
+    msg.style.color = 'green';
+  } catch (err) {
+    msg.textContent = err.message;
+    msg.style.color = 'red';
+  }
+}
+
+async function saveWorldBossSettings() {
+  if (!document.getElementById('wb-msg')) return;
+  const msg = document.getElementById('wb-msg');
+  msg.textContent = '';
+  try {
+    const playerBonusConfig = getPlayerBonusConfigFromUI();
+    await api('/admin/worldboss-settings/update', 'POST', {
+      baseHp: Number(document.getElementById('wb-base-hp').value),
+      baseAtk: Number(document.getElementById('wb-base-atk').value),
+      baseDef: Number(document.getElementById('wb-base-def').value),
+      baseMdef: Number(document.getElementById('wb-base-mdef').value),
+      dropBonus: Number(document.getElementById('wb-drop-bonus').value),
+      playerBonusConfig
+    });
+    msg.textContent = '保存成功';
+    msg.style.color = 'green';
+  } catch (err) {
+    msg.textContent = err.message;
+    msg.style.color = 'red';
+  }
+}
+
+function addPlayerBonusConfig() {
+  const tbody = document.getElementById('wb-player-bonus-list');
+  const currentConfigs = getPlayerBonusConfigFromUI();
+  currentConfigs.push({ min: 1, hp: 0, atk: 0, def: 0, mdef: 0 });
+  renderPlayerBonusList(currentConfigs);
 }
 
 async function resetUserPassword(username) {
@@ -839,7 +935,11 @@ document.getElementById('users-next-page').addEventListener('click', () => {
     refreshUsers(currentUsersPage + 1);
   }
 });
-document.getElementById('char-update-btn').addEventListener('click', updateCharacter);
+document.getElementById('wb-load-btn').addEventListener('click', loadWorldBossSettings);
+document.getElementById('wb-save-btn').addEventListener('click', saveWorldBossSettings);
+if (document.getElementById('wb-add-bonus-btn')) {
+  document.getElementById('wb-add-bonus-btn').addEventListener('click', addPlayerBonusConfig);
+}
 document.getElementById('mail-send-btn').addEventListener('click', sendMail);
 document.getElementById('vip-create-btn').addEventListener('click', createVipCodes);
 document.getElementById('vip-list-btn').addEventListener('click', listVipCodes);
