@@ -19,6 +19,49 @@ export const CLASSES = {
   }
 };
 
+// 职业升级属性配置（默认值）
+export const CLASS_LEVEL_BONUS = {
+  warrior: {
+    hpPerLevel: 0,
+    mpPerLevel: 0,
+    atkPerLevel: 0,
+    defPerLevel: 0,
+    magPerLevel: 0,
+    mdefPerLevel: 0,
+    spiritPerLevel: 0,
+    strPerLevel: 0,
+    dexPerLevel: 0,
+    intPerLevel: 0,
+    conPerLevel: 0
+  },
+  mage: {
+    hpPerLevel: 0,
+    mpPerLevel: 0,
+    atkPerLevel: 0,
+    defPerLevel: 0,
+    magPerLevel: 0,
+    mdefPerLevel: 0,
+    spiritPerLevel: 0,
+    strPerLevel: 0,
+    dexPerLevel: 0,
+    intPerLevel: 0,
+    conPerLevel: 0
+  },
+  taoist: {
+    hpPerLevel: 0,
+    mpPerLevel: 0,
+    atkPerLevel: 0,
+    defPerLevel: 0,
+    magPerLevel: 0,
+    mdefPerLevel: 0,
+    spiritPerLevel: 0,
+    strPerLevel: 0,
+    dexPerLevel: 0,
+    intPerLevel: 0,
+    conPerLevel: 0
+  }
+};
+
 export let ROOM_VARIANT_COUNT = 5;
 
 export function setRoomVariantCount(count) {
