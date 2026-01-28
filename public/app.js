@@ -2783,8 +2783,15 @@ function updateSponsorTitleButtonVisibility() {
   if (!btn) return;
 
   const currentPlayerName = state.player?.name;
-  if (currentPlayerName && sponsorNames.has(currentPlayerName)) {
+  const sponsorList = Array.from(sponsorNames);
+  const isSponsor = currentPlayerName && sponsorNames.has(currentPlayerName);
+
+  // 在页面显示调试信息（仅在日志中）
+  appendLine(`[调试] 玩家: ${currentPlayerName}, 赞助人数: ${sponsorList.length}, 是赞助: ${isSponsor}`);
+
+  if (isSponsor) {
     btn.classList.remove('hidden');
+    appendLine('[调试] 显示设置称号按钮');
   } else {
     btn.classList.add('hidden');
   }
@@ -3392,8 +3399,6 @@ function renderState(state) {
         updateSavedCharacters(state.player);
       }
     }
-    // 更新赞助玩家称号按钮的显示状态
-    updateSponsorTitleButtonVisibility();
   }
   if (state.stats) {
     setBar(ui.hp, state.stats.hp, state.stats.max_hp);
