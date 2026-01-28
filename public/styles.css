@@ -41,14 +41,16 @@ body.dark::after {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 3rem;
+  font-size: 2rem;
   font-weight: 700;
   color: rgba(232, 160, 88, 0.06);
   font-family: var(--font-display);
   pointer-events: none;
   z-index: 0;
-  transform: rotate(-15deg);
+  transform: rotate(45deg);
   user-select: none;
+  left: 10%;
+  right: auto;
 }
 
 body.dark header p {
@@ -645,14 +647,16 @@ body::after {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 3rem;
+  font-size: 2rem;
   font-weight: 700;
   color: rgba(185, 84, 18, 0.06);
   font-family: var(--font-display);
   pointer-events: none;
   z-index: 0;
-  transform: rotate(-15deg);
+  transform: rotate(45deg);
   user-select: none;
+  left: 10%;
+  right: auto;
 }
 
 #app {

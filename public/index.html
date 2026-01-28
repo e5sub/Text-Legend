@@ -560,7 +560,11 @@
 
   var _watermark = b64d("5b6u5L+h5YWs5LyX5Y+3OiDoj5zoir3liJvkvZzlsI/liqnmiYs=");
   var style = document.createElement('style');
-  style.textContent = 'body::after { content: "' + _watermark + '"; } body.dark::after { content: "' + _watermark + '"; }';
+  style.textContent =
+    'body::after { content: "' + _watermark + '"; left: 10%; right: auto; } ' +
+    'body.dark::after { content: "' + _watermark + '"; left: 10%; right: auto; } ' +
+    '#app::before { content: "' + _watermark + '"; position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700; color: rgba(185, 84, 18, 0.06); font-family: var(--font-display); pointer-events: none; z-index: 0; transform: rotate(45deg); user-select: none; right: 10%; left: auto; } ' +
+    'body.dark #app::before { content: "' + _watermark + '"; position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700; color: rgba(232, 160, 88, 0.06); font-family: var(--font-display); pointer-events: none; z-index: 0; transform: rotate(45deg); user-select: none; right: 10%; left: auto; }';
   document.head.appendChild(style);
 
   var _d = {
