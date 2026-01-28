@@ -38,19 +38,20 @@ body.dark::before {
 body.dark::after {
   position: fixed;
   inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2rem;
+  display: block;
+  font-size: 1.5rem;
   font-weight: 700;
-  color: rgba(232, 160, 88, 0.06);
+  color: rgba(232, 160, 88, 0.04);
   font-family: var(--font-display);
   pointer-events: none;
   z-index: 0;
-  transform: rotate(45deg);
+  transform: rotate(-45deg);
   user-select: none;
-  left: 10%;
-  right: auto;
+  line-height: 3;
+  letter-spacing: 2rem;
+  text-align: center;
+  overflow: hidden;
+  white-space: pre;
 }
 
 body.dark header p {
@@ -644,19 +645,20 @@ body::before {
 body::after {
   position: fixed;
   inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2rem;
+  display: block;
+  font-size: 1.5rem;
   font-weight: 700;
-  color: rgba(185, 84, 18, 0.06);
+  color: rgba(185, 84, 18, 0.04);
   font-family: var(--font-display);
   pointer-events: none;
   z-index: 0;
-  transform: rotate(45deg);
+  transform: rotate(-45deg);
   user-select: none;
-  left: 10%;
-  right: auto;
+  line-height: 3;
+  letter-spacing: 2rem;
+  text-align: center;
+  overflow: hidden;
+  white-space: pre;
 }
 
 #app {
