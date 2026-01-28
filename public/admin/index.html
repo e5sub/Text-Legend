@@ -155,6 +155,58 @@
 
         <div class="block" data-collapsible>
           <div class="block-title">
+            <h2>特殊BOSS设置</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <p style="color: #666; margin-bottom: 6px; font-size: 13px;">基础属性（魔龙BOSS、暗之系列BOSS、沙巴克BOSS）</p>
+            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
+              <label style="min-width: 40px;">生命:</label>
+              <input id="sb-base-hp" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+              <label style="min-width: 40px;">攻击:</label>
+              <input id="sb-base-atk" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+            </div>
+            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
+              <label style="min-width: 40px;">防御:</label>
+              <input id="sb-base-def" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+              <label style="min-width: 40px;">魔御:</label>
+              <input id="sb-base-mdef" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+            </div>
+            <div class="row" style="margin-bottom: 6px; font-size: 13px; gap: 4px;">
+              <label style="min-width: 40px;">掉落加成:</label>
+              <input id="sb-drop-bonus" type="number" min="1" step="0.1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+            </div>
+
+            <p style="color: #666; margin: 10px 0 6px; font-size: 13px;">人数加成配置</p>
+            <div class="table-container">
+              <table style="font-size: 12px;">
+                <thead>
+                  <tr>
+                    <th style="padding: 6px 8px;">最小人数</th>
+                    <th style="padding: 6px 8px;">生命加成</th>
+                    <th style="padding: 6px 8px;">攻击加成</th>
+                    <th style="padding: 6px 8px;">防御加成</th>
+                    <th style="padding: 6px 8px;">魔御加成</th>
+                    <th style="padding: 6px 8px;">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="sb-player-bonus-list">
+                  <tr>
+                    <td colspan="6" style="text-align: center; color: #999;">点击加载获取数据</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="row" style="margin-top: 8px;">
+              <button id="sb-add-bonus-btn" class="btn-small">+ 添加配置</button>
+              <button id="sb-save-btn" class="btn-small">保存</button>
+            </div>
+            <div id="sb-msg" class="msg"></div>
+          </div>
+        </div>
+
+        <div class="block" data-collapsible>
+          <div class="block-title">
             <h2>VIP 设置</h2>
             <button class="btn-small block-toggle">折叠</button>
           </div>
@@ -269,6 +321,89 @@
 
         <div class="block" data-collapsible>
           <div class="block-title">
+            <h2>职业升级属性配置</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <div style="margin-bottom: 12px;">
+              <label for="class-select" style="font-weight: bold;">选择职业:</label>
+              <select id="class-select" style="max-width: 150px; margin-left: 8px;">
+                <option value="warrior">战士</option>
+                <option value="mage">法师</option>
+                <option value="taoist">道士</option>
+              </select>
+              <button id="class-bonus-load" class="btn-small" style="margin-left: 8px;">加载配置</button>
+            </div>
+            <div class="table-container">
+              <table style="font-size: 12px;">
+                <thead>
+                  <tr>
+                    <th style="padding: 6px 8px;">属性</th>
+                    <th style="padding: 6px 8px;">每级增加</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>HP加成</td>
+                    <td><input id="class-bonus-hp" type="number" step="0.1" style="width: 100px;"></td>
+                  </tr>
+                  <tr>
+                    <td>MP加成</td>
+                    <td><input id="class-bonus-mp" type="number" step="0.1" style="width: 100px;"></td>
+                  </tr>
+                  <tr>
+                    <td>攻击加成</td>
+                    <td><input id="class-bonus-atk" type="number" step="0.1" style="width: 100px;"></td>
+                  </tr>
+                  <tr>
+                    <td>防御加成</td>
+                    <td><input id="class-bonus-def" type="number" step="0.1" style="width: 100px;"></td>
+                  </tr>
+                  <tr>
+                    <td>魔法加成</td>
+                    <td><input id="class-bonus-mag" type="number" step="0.1" style="width: 100px;"></td>
+                  </tr>
+                  <tr>
+                    <td>精神加成</td>
+                    <td><input id="class-bonus-spirit" type="number" step="0.1" style="width: 100px;"></td>
+                  </tr>
+                  <tr>
+                    <td>魔防加成</td>
+                    <td><input id="class-bonus-mdef" type="number" step="0.1" style="width: 100px;"></td>
+                  </tr>
+                  <tr>
+                    <td>力量加成</td>
+                    <td><input id="class-bonus-str" type="number" step="0.1" style="width: 100px;"></td>
+                  </tr>
+                  <tr>
+                    <td>敏捷加成</td>
+                    <td><input id="class-bonus-dex" type="number" step="0.1" style="width: 100px;"></td>
+                  </tr>
+                  <tr>
+                    <td>智力加成</td>
+                    <td><input id="class-bonus-int" type="number" step="0.1" style="width: 100px;"></td>
+                  </tr>
+                  <tr>
+                    <td>体质加成</td>
+                    <td><input id="class-bonus-con" type="number" step="0.1" style="width: 100px;"></td>
+                  </tr>
+                  <tr>
+                    <td>基础精神加成</td>
+                    <td><input id="class-bonus-baseSpirit" type="number" step="0.1" style="width: 100px;"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="row" style="margin-top: 12px;">
+              <button id="class-bonus-save" class="btn-small">保存配置</button>
+              <button id="class-bonus-reset" class="btn-small" style="background: #c00;">恢复默认</button>
+            </div>
+            <div id="class-bonus-msg" class="msg"></div>
+          </div>
+        </div>
+
+        <div class="block" data-collapsible>
+          <div class="block-title">
             <h2>赞助名单管理</h2>
             <button class="btn-small block-toggle">折叠</button>
           </div>
@@ -278,7 +413,6 @@
               <input id="sponsor-name" type="text" placeholder="玩家名" style="max-width: 150px;">
               <input id="sponsor-amount" type="number" min="0" placeholder="金额" style="max-width: 100px;">
               <button id="sponsor-add-btn" class="btn-small">添加</button>
-              <button id="sponsor-refresh-btn" class="btn-small">刷新列表</button>
             </div>
             <div class="table-container">
               <table>
@@ -293,10 +427,17 @@
                 </thead>
                 <tbody id="sponsors-list">
                   <tr>
-                    <td colspan="5" style="text-align: center; color: #999;">点击刷新获取数据</td>
+                    <td colspan="5" style="text-align: center; color: #999;">加载中...</td>
                   </tr>
                 </tbody>
               </table>
+            </div>
+            <div class="row" style="margin-top: 12px;">
+              <div id="sponsors-pagination-info" style="color: #666;"></div>
+              <div>
+                <button id="sponsors-prev-page" class="btn-small">上一页</button>
+                <button id="sponsors-next-page" class="btn-small">下一页</button>
+              </div>
             </div>
             <div id="sponsor-msg" class="msg"></div>
           </div>

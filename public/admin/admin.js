@@ -38,6 +38,18 @@ const sponsorAmountInput = document.getElementById('sponsor-amount');
 const sponsorAddBtn = document.getElementById('sponsor-add-btn');
 const sponsorRefreshBtn = document.getElementById('sponsor-refresh-btn');
 const sponsorMsg = document.getElementById('sponsor-msg');
+const sponsorsPaginationInfo = document.getElementById('sponsors-pagination-info');
+const sponsorsPrevPageBtn = document.getElementById('sponsors-prev-page');
+const sponsorsNextPageBtn = document.getElementById('sponsors-next-page');
+
+// 世界BOSS相关
+const wbMsg = document.getElementById('wb-msg');
+const wbPlayerBonusList = document.getElementById('wb-player-bonus-list');
+
+// 特殊BOSS相关
+const sbMsg = document.getElementById('sb-msg');
+const sbPlayerBonusList = document.getElementById('sb-player-bonus-list');
+
 const adminPwModal = document.getElementById('admin-pw-modal');
 const adminPwTitle = document.getElementById('admin-pw-title');
 const adminPwText = document.getElementById('admin-pw-text');
@@ -73,6 +85,9 @@ let adminToken = localStorage.getItem('adminToken');
 let currentUsersPage = 1;
 let totalUsersPages = 1;
 let currentUsersSearch = '';
+let currentSponsorsPage = 1;
+let totalSponsorsPages = 1;
+let allSponsorsData = [];
 
 function showDashboard() {
   loginSection.classList.add('hidden');
@@ -986,19 +1001,36 @@ async function listSponsors() {
 
   try {
     const data = await api('/admin/sponsors', 'GET');
-    if (!data.sponsors || data.sponsors.length === 0) {
+    allSponsorsData = data.sponsors || [];
+    totalSponsorsPages = Math.ceil(allSponsorsData.length / 5) || 1;
+
+    if (allSponsorsData.length === 0) {
       const tr = document.createElement('tr');
       tr.innerHTML = '<td colspan="5" style="text-align: center; color: #999;">暂无赞助记录</td>';
       sponsorsList.appendChild(tr);
+      sponsorsPaginationInfo.textContent = '';
       return;
     }
 
-    data.sponsors.forEach((s, index) => {
+    // 计算当前页的数据
+    const startIndex = (currentSponsorsPage - 1) * 5;
+    const endIndex = Math.min(startIndex + 5, allSponsorsData.length);
+    const currentPageData = allSponsorsData.slice(startIndex, endIndex);
+
+    // 更新分页信息
+    sponsorsPaginationInfo.textContent = `第 ${currentSponsorsPage} / ${totalSponsorsPages} 页 (共 ${allSponsorsData.length} 个赞助者)`;
+
+    // 更新按钮状态
+    sponsorsPrevPageBtn.disabled = currentSponsorsPage === 1;
+    sponsorsNextPageBtn.disabled = currentSponsorsPage === totalSponsorsPages;
+
+    currentPageData.forEach((s) => {
+      const globalIndex = allSponsorsData.indexOf(s);
       const tr = document.createElement('tr');
 
       // 排名
       const tdRank = document.createElement('td');
-      tdRank.textContent = index + 1;
+      tdRank.textContent = globalIndex + 1;
       tdRank.style.fontWeight = 'bold';
       tr.appendChild(tdRank);
 
@@ -1074,6 +1106,7 @@ async function addSponsor() {
     sponsorMsg.textContent = '添加成功';
     sponsorNameInput.value = '';
     sponsorAmountInput.value = '';
+    currentSponsorsPage = 1;
     await listSponsors();
     setTimeout(() => {
       sponsorMsg.textContent = '';
@@ -1110,9 +1143,327 @@ async function deleteSponsor(id, playerName) {
 
   try {
     await api(`/admin/sponsors/${id}`, 'DELETE');
+    currentSponsorsPage = 1;
     await listSponsors();
   } catch (err) {
     alert(`删除失败: ${err.message}`);
+  }
+}
+
+// 职业升级属性配置
+const classBonusFields = {
+  hp: 'class-bonus-hp',
+  mp: 'class-bonus-mp',
+  atk: 'class-bonus-atk',
+  def: 'class-bonus-def',
+  mag: 'class-bonus-mag',
+  spirit: 'class-bonus-spirit',
+  mdef: 'class-bonus-mdef',
+  str: 'class-bonus-str',
+  dex: 'class-bonus-dex',
+  int: 'class-bonus-int',
+  con: 'class-bonus-con',
+  baseSpirit: 'class-bonus-baseSpirit'
+};
+
+const defaultClassBonusConfig = {
+  warrior: { hpPerLevel: 3, mpPerLevel: 10, atkPerLevel: 0.5, defPerLevel: 3, magPerLevel: 0, spiritPerLevel: 0, mdefPerLevel: 3, strPerLevel: 1.2, dexPerLevel: 0.6, intPerLevel: 0.3, conPerLevel: 1.0, baseSpiritPerLevel: 0.4 },
+  mage: { hpPerLevel: 5, mpPerLevel: 10, atkPerLevel: 0, defPerLevel: 2, magPerLevel: 2, spiritPerLevel: 0, mdefPerLevel: 1, strPerLevel: 0.4, dexPerLevel: 0.6, intPerLevel: 1.4, conPerLevel: 0.6, baseSpiritPerLevel: 1.0 },
+  taoist: { hpPerLevel: 5, mpPerLevel: 10, atkPerLevel: 0, defPerLevel: 2, magPerLevel: 0, spiritPerLevel: 2, mdefPerLevel: 1, strPerLevel: 0.7, dexPerLevel: 0.8, intPerLevel: 0.9, conPerLevel: 0.8, baseSpiritPerLevel: 1.2 }
+};
+
+async function loadClassBonusConfig() {
+  const classSelect = document.getElementById('class-select');
+  const classId = classSelect?.value;
+  if (!classId) return;
+
+  const classBonusMsg = document.getElementById('class-bonus-msg');
+  try {
+    const res = await api('/admin/class-level-bonus', 'GET');
+    if (res.ok && res.configs && res.configs[classId]) {
+      const config = res.configs[classId];
+      Object.keys(classBonusFields).forEach(field => {
+        const input = document.getElementById(classBonusFields[field]);
+        if (input) {
+          const fieldName = `${field}PerLevel`;
+          input.value = config[fieldName] !== undefined ? config[fieldName] : '';
+        }
+      });
+      if (classBonusMsg) classBonusMsg.textContent = '配置已加载';
+      setTimeout(() => {
+        if (classBonusMsg) classBonusMsg.textContent = '';
+      }, 2000);
+    } else {
+      // 使用默认配置填充
+      const defaultConfig = defaultClassBonusConfig[classId] || {};
+      Object.keys(classBonusFields).forEach(field => {
+        const input = document.getElementById(classBonusFields[field]);
+        if (input) {
+          const fieldName = `${field}PerLevel`;
+          input.value = defaultConfig[fieldName] !== undefined ? defaultConfig[fieldName] : '';
+        }
+      });
+      if (classBonusMsg) classBonusMsg.textContent = '使用默认配置（未设置自定义配置）';
+      setTimeout(() => {
+        if (classBonusMsg) classBonusMsg.textContent = '';
+      }, 2000);
+    }
+  } catch (err) {
+    if (classBonusMsg) classBonusMsg.textContent = `加载失败: ${err.message}`;
+  }
+}
+
+async function saveClassBonusConfig() {
+  const classSelect = document.getElementById('class-select');
+  const classId = classSelect?.value;
+  if (!classId) return;
+
+  const config = {};
+  Object.keys(classBonusFields).forEach(field => {
+    const input = document.getElementById(classBonusFields[field]);
+    if (input) {
+      const value = parseFloat(input.value);
+      const fieldName = `${field}PerLevel`;
+      config[fieldName] = isNaN(value) ? 0 : value;
+    }
+  });
+
+  const classBonusMsg = document.getElementById('class-bonus-msg');
+  try {
+    await api('/admin/class-level-bonus/update', 'POST', { classId, config });
+    if (classBonusMsg) classBonusMsg.textContent = '配置已保存，将在重启服务器后完全生效';
+    setTimeout(() => {
+      if (classBonusMsg) classBonusMsg.textContent = '';
+    }, 3000);
+  } catch (err) {
+    if (classBonusMsg) classBonusMsg.textContent = `保存失败: ${err.message}`;
+  }
+}
+
+async function resetClassBonusConfig() {
+  const classSelect = document.getElementById('class-select');
+  const classId = classSelect?.value;
+  if (!classId) return;
+
+  const confirmed = confirm(`确定要恢复 "${classId}" 的默认配置吗？`);
+  if (!confirmed) return;
+
+  const defaultConfig = defaultClassBonusConfig[classId] || {};
+  Object.keys(classBonusFields).forEach(field => {
+    const input = document.getElementById(classBonusFields[field]);
+    if (input) {
+      const fieldName = `${field}PerLevel`;
+      input.value = defaultConfig[fieldName] !== undefined ? defaultConfig[fieldName] : '';
+    }
+  });
+
+  const classBonusMsg = document.getElementById('class-bonus-msg');
+  try {
+    await api('/admin/class-level-bonus/update', 'POST', { classId, config: defaultConfig });
+    if (classBonusMsg) classBonusMsg.textContent = '已恢复默认配置，将在重启服务器后完全生效';
+    setTimeout(() => {
+      if (classBonusMsg) classBonusMsg.textContent = '';
+    }, 3000);
+  } catch (err) {
+    if (classBonusMsg) classBonusMsg.textContent = `恢复失败: ${err.message}`;
+  }
+}
+
+// 世界BOSS配置
+let worldBossPlayerBonusConfig = [];
+
+async function loadWorldBossSettings() {
+  try {
+    const data = await api('/admin/worldboss-settings', 'GET');
+    document.getElementById('wb-base-hp').value = data.baseHp || '';
+    document.getElementById('wb-base-atk').value = data.baseAtk || '';
+    document.getElementById('wb-base-def').value = data.baseDef || '';
+    document.getElementById('wb-base-mdef').value = data.baseMdef || '';
+    document.getElementById('wb-drop-bonus').value = data.dropBonus || '';
+    worldBossPlayerBonusConfig = data.playerBonusConfig || [];
+    renderWorldBossPlayerBonusList();
+  } catch (err) {
+    if (wbMsg) wbMsg.textContent = `加载失败: ${err.message}`;
+  }
+}
+
+function renderWorldBossPlayerBonusList() {
+  if (!wbPlayerBonusList) return;
+  wbPlayerBonusList.innerHTML = '';
+  if (!worldBossPlayerBonusConfig || worldBossPlayerBonusConfig.length === 0) {
+    wbPlayerBonusList.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #999;">暂无配置</td></tr>';
+    return;
+  }
+
+  worldBossPlayerBonusConfig.forEach((config, index) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="number" min="1" value="${config.min || 1}" style="width: 60px;" data-field="min" data-index="${index}"></td>
+      <td><input type="number" value="${config.hp || 0}" style="width: 60px;" data-field="hp" data-index="${index}"></td>
+      <td><input type="number" value="${config.atk || 0}" style="width: 60px;" data-field="atk" data-index="${index}"></td>
+      <td><input type="number" value="${config.def || 0}" style="width: 60px;" data-field="def" data-index="${index}"></td>
+      <td><input type="number" value="${config.mdef || 0}" style="width: 60px;" data-field="mdef" data-index="${index}"></td>
+      <td><button class="btn-small" style="background: #c00;" onclick="deleteWorldBossPlayerBonus(${index})">删除</button></td>
+    `;
+    wbPlayerBonusList.appendChild(tr);
+  });
+}
+
+function addPlayerBonusConfig() {
+  worldBossPlayerBonusConfig.push({ min: 1, hp: 0, atk: 0, def: 0, mdef: 0 });
+  renderWorldBossPlayerBonusList();
+}
+
+window.deleteWorldBossPlayerBonus = function(index) {
+  worldBossPlayerBonusConfig.splice(index, 1);
+  renderWorldBossPlayerBonusList();
+};
+
+async function saveWorldBossSettings() {
+  if (!wbMsg) return;
+  wbMsg.textContent = '';
+
+  // 收集人数加成配置
+  const rows = wbPlayerBonusList?.querySelectorAll('tr') || [];
+  const playerBonusConfig = [];
+  rows.forEach(tr => {
+    const minInput = tr.querySelector('[data-field="min"]');
+    const hpInput = tr.querySelector('[data-field="hp"]');
+    const atkInput = tr.querySelector('[data-field="atk"]');
+    const defInput = tr.querySelector('[data-field="def"]');
+    const mdefInput = tr.querySelector('[data-field="mdef"]');
+    
+    if (minInput) {
+      playerBonusConfig.push({
+        min: parseInt(minInput.value) || 1,
+        hp: hpInput ? parseInt(hpInput.value) || 0 : 0,
+        atk: atkInput ? parseInt(atkInput.value) || 0 : 0,
+        def: defInput ? parseInt(defInput.value) || 0 : 0,
+        mdef: mdefInput ? parseInt(mdefInput.value) || 0 : 0
+      });
+    }
+  });
+
+  try {
+    await api('/admin/worldboss-settings/update', 'POST', {
+      baseHp: document.getElementById('wb-base-hp').value,
+      baseAtk: document.getElementById('wb-base-atk').value,
+      baseDef: document.getElementById('wb-base-def').value,
+      baseMdef: document.getElementById('wb-base-mdef').value,
+      dropBonus: document.getElementById('wb-drop-bonus').value,
+      playerBonusConfig
+    });
+    wbMsg.textContent = '保存成功';
+    setTimeout(() => {
+      wbMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    wbMsg.textContent = `保存失败: ${err.message}`;
+  }
+}
+
+async function respawnWorldBoss() {
+  const confirmed = confirm('确定要刷新世界BOSS吗？');
+  if (!confirmed) return;
+
+  try {
+    await api('/admin/worldboss-respawn', 'POST', {});
+    alert('世界BOSS已刷新');
+  } catch (err) {
+    alert(`刷新失败: ${err.message}`);
+  }
+}
+
+// 特殊BOSS配置（魔龙BOSS、暗之系列BOSS、沙巴克BOSS）
+let specialBossPlayerBonusConfig = [];
+
+async function loadSpecialBossSettings() {
+  try {
+    const data = await api('/admin/specialboss-settings', 'GET');
+    document.getElementById('sb-base-hp').value = data.baseHp || '';
+    document.getElementById('sb-base-atk').value = data.baseAtk || '';
+    document.getElementById('sb-base-def').value = data.baseDef || '';
+    document.getElementById('sb-base-mdef').value = data.baseMdef || '';
+    document.getElementById('sb-drop-bonus').value = data.dropBonus || '';
+    specialBossPlayerBonusConfig = data.playerBonusConfig || [];
+    renderSpecialBossPlayerBonusList();
+  } catch (err) {
+    if (sbMsg) sbMsg.textContent = `加载失败: ${err.message}`;
+  }
+}
+
+function renderSpecialBossPlayerBonusList() {
+  if (!sbPlayerBonusList) return;
+  sbPlayerBonusList.innerHTML = '';
+  if (!specialBossPlayerBonusConfig || specialBossPlayerBonusConfig.length === 0) {
+    sbPlayerBonusList.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #999;">暂无配置</td></tr>';
+    return;
+  }
+
+  specialBossPlayerBonusConfig.forEach((config, index) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="number" min="1" value="${config.min || 1}" style="width: 60px;" data-field="min" data-index="${index}" data-type="special"></td>
+      <td><input type="number" value="${config.hp || 0}" style="width: 60px;" data-field="hp" data-index="${index}" data-type="special"></td>
+      <td><input type="number" value="${config.atk || 0}" style="width: 60px;" data-field="atk" data-index="${index}" data-type="special"></td>
+      <td><input type="number" value="${config.def || 0}" style="width: 60px;" data-field="def" data-index="${index}" data-type="special"></td>
+      <td><input type="number" value="${config.mdef || 0}" style="width: 60px;" data-field="mdef" data-index="${index}" data-type="special"></td>
+      <td><button class="btn-small" style="background: #c00;" onclick="deleteSpecialBossPlayerBonus(${index})">删除</button></td>
+    `;
+    sbPlayerBonusList.appendChild(tr);
+  });
+}
+
+function addSpecialBossPlayerBonusConfig() {
+  specialBossPlayerBonusConfig.push({ min: 1, hp: 0, atk: 0, def: 0, mdef: 0 });
+  renderSpecialBossPlayerBonusList();
+}
+
+window.deleteSpecialBossPlayerBonus = function(index) {
+  specialBossPlayerBonusConfig.splice(index, 1);
+  renderSpecialBossPlayerBonusList();
+};
+
+async function saveSpecialBossSettings() {
+  if (!sbMsg) return;
+  sbMsg.textContent = '';
+
+  // 收集人数加成配置
+  const rows = sbPlayerBonusList?.querySelectorAll('tr') || [];
+  const playerBonusConfig = [];
+  rows.forEach(tr => {
+    const minInput = tr.querySelector('[data-type="special"][data-field="min"]');
+    const hpInput = tr.querySelector('[data-type="special"][data-field="hp"]');
+    const atkInput = tr.querySelector('[data-type="special"][data-field="atk"]');
+    const defInput = tr.querySelector('[data-type="special"][data-field="def"]');
+    const mdefInput = tr.querySelector('[data-type="special"][data-field="mdef"]');
+
+    if (minInput) {
+      playerBonusConfig.push({
+        min: parseInt(minInput.value) || 1,
+        hp: hpInput ? parseInt(hpInput.value) || 0 : 0,
+        atk: atkInput ? parseInt(atkInput.value) || 0 : 0,
+        def: defInput ? parseInt(defInput.value) || 0 : 0,
+        mdef: mdefInput ? parseInt(mdefInput.value) || 0 : 0
+      });
+    }
+  });
+
+  try {
+    await api('/admin/specialboss-settings/update', 'POST', {
+      baseHp: document.getElementById('sb-base-hp').value,
+      baseAtk: document.getElementById('sb-base-atk').value,
+      baseDef: document.getElementById('sb-base-def').value,
+      baseMdef: document.getElementById('sb-base-mdef').value,
+      dropBonus: document.getElementById('sb-drop-bonus').value,
+      playerBonusConfig
+    });
+    sbMsg.textContent = '保存成功';
+    setTimeout(() => {
+      sbMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    sbMsg.textContent = `保存失败: ${err.message}`;
   }
 }
 
@@ -1125,7 +1476,9 @@ if (adminToken) {
   refreshConsignExpireStatus();
   refreshRoomVariantStatus();
   refreshRealms();
+  listSponsors();
   loadWorldBossSettings();
+  loadSpecialBossSettings();
 }
 
 applyTheme(localStorage.getItem('adminTheme') || 'light');
@@ -1211,8 +1564,40 @@ if (document.getElementById('merge-realms-btn')) {
 if (sponsorAddBtn) {
   sponsorAddBtn.addEventListener('click', addSponsor);
 }
-if (sponsorRefreshBtn) {
-  sponsorRefreshBtn.addEventListener('click', listSponsors);
+if (sponsorsPrevPageBtn) {
+  sponsorsPrevPageBtn.addEventListener('click', async () => {
+    if (currentSponsorsPage > 1) {
+      currentSponsorsPage--;
+      await listSponsors();
+    }
+  });
+}
+if (sponsorsNextPageBtn) {
+  sponsorsNextPageBtn.addEventListener('click', async () => {
+    if (currentSponsorsPage < totalSponsorsPages) {
+      currentSponsorsPage++;
+      await listSponsors();
+    }
+  });
+}
+
+// 职业升级属性配置事件
+if (document.getElementById('class-bonus-load')) {
+  document.getElementById('class-bonus-load').addEventListener('click', loadClassBonusConfig);
+}
+if (document.getElementById('class-bonus-save')) {
+  document.getElementById('class-bonus-save').addEventListener('click', saveClassBonusConfig);
+}
+if (document.getElementById('class-bonus-reset')) {
+  document.getElementById('class-bonus-reset').addEventListener('click', resetClassBonusConfig);
+}
+
+// 特殊BOSS配置事件
+if (document.getElementById('sb-add-bonus-btn')) {
+  document.getElementById('sb-add-bonus-btn').addEventListener('click', addSpecialBossPlayerBonusConfig);
+}
+if (document.getElementById('sb-save-btn')) {
+  document.getElementById('sb-save-btn').addEventListener('click', saveSpecialBossSettings);
 }
 
 if (adminPwCancel) {

@@ -4493,6 +4493,9 @@ function enterGame(name) {
   socket.on('observe_data', (data) => {
     showObserveModal(data);
   });
+  socket.on('sponsors_updated', async () => {
+    await loadSponsors();
+  });
 }
 
 function showObserveModal(data) {

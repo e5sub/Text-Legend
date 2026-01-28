@@ -14,7 +14,7 @@ import { addGuildMember, createGuild, getGuildByName, getGuildByNameInRealm, get
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
 import { sendMail, listMail, markMailRead, markMailClaimed } from './db/mail.js';
 import { createVipCodes, listVipCodes, useVipCode } from './db/vip.js';
-import { getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig } from './db/settings.js';
+import { getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig } from './db/settings.js';
 import { listRealms, getRealmById, updateRealmName, createRealm } from './db/realms.js';
 import { listMobRespawns, upsertMobRespawn, clearMobRespawn, saveMobState } from './db/mobs.js';
 import {
@@ -63,6 +63,7 @@ import { getRoomMobs, getAliveMobs, spawnMobs, removeMob, seedRespawnCache, setR
 import { calcHitChance, calcDamage, applyDamage, applyPoison, tickStatus, getDefenseMultiplier } from './game/combat.js';
 import { randInt, clamp } from './game/utils.js';
 import { expForLevel, setRoomVariantCount as applyRoomVariantCount } from './game/constants.js';
+import { setAllClassLevelBonusConfigs } from './game/settings.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -710,6 +711,113 @@ app.post('/admin/room-variant-update', async (req, res) => {
   res.json({ ok: true, count });
 });
 
+// 职业升级属性配置
+app.get('/admin/class-level-bonus', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const configs = {
+    warrior: await getClassLevelBonusConfig('warrior'),
+    mage: await getClassLevelBonusConfig('mage'),
+    taoist: await getClassLevelBonusConfig('taoist')
+  };
+  res.json({ ok: true, configs });
+});
+
+app.post('/admin/class-level-bonus/update', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const { classId, config } = req.body || {};
+  if (!classId || !config) {
+    return res.status(400).json({ error: '缺少必要参数' });
+  }
+  if (!['warrior', 'mage', 'taoist'].includes(classId)) {
+    return res.status(400).json({ error: '无效的职业ID' });
+  }
+  // 验证配置格式
+  const validFields = ['hpPerLevel', 'mpPerLevel', 'atkPerLevel', 'defPerLevel', 'magPerLevel', 'spiritPerLevel', 'mdefPerLevel', 'strPerLevel', 'dexPerLevel', 'intPerLevel', 'conPerLevel', 'baseSpiritPerLevel'];
+  for (const field of validFields) {
+    if (config[field] === undefined || config[field] === null || isNaN(config[field])) {
+      return res.status(400).json({ error: `字段 ${field} 必须为有效数字` });
+    }
+  }
+  await setClassLevelBonusConfig(classId, config);
+  res.json({ ok: true, classId, config });
+});
+
+// 特殊BOSS配置（魔龙BOSS、暗之系列BOSS、沙巴克BOSS）
+app.get('/admin/specialboss-settings', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const dropBonus = await getSpecialBossDropBonus();
+  const baseHp = await getSpecialBossBaseHp();
+  const baseAtk = await getSpecialBossBaseAtk();
+  const baseDef = await getSpecialBossBaseDef();
+  const baseMdef = await getSpecialBossBaseMdef();
+  const baseExp = await getSpecialBossBaseExp();
+  const baseGold = await getSpecialBossBaseGold();
+  const playerBonusConfig = await getSpecialBossPlayerBonusConfig();
+  res.json({
+    ok: true,
+    dropBonus,
+    baseHp,
+    baseAtk,
+    baseDef,
+    baseMdef,
+    baseExp,
+    baseGold,
+    playerBonusConfig
+  });
+});
+
+app.post('/admin/specialboss-settings/update', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const { dropBonus, baseHp, baseAtk, baseDef, baseMdef, baseExp, baseGold, playerBonusConfig } = req.body || {};
+
+  if (dropBonus !== undefined) {
+    await setSpecialBossDropBonus(Math.max(1, Math.floor(Number(dropBonus) || 1.5)));
+  }
+  if (baseHp !== undefined) {
+    await setSpecialBossBaseHp(Math.max(1, Math.floor(Number(baseHp) || 600000)));
+  }
+  if (baseAtk !== undefined) {
+    await setSpecialBossBaseAtk(Math.max(1, Math.floor(Number(baseAtk) || 180)));
+  }
+  if (baseDef !== undefined) {
+    await setSpecialBossBaseDef(Math.max(1, Math.floor(Number(baseDef) || 210)));
+  }
+  if (baseMdef !== undefined) {
+    await setSpecialBossBaseMdef(Math.max(1, Math.floor(Number(baseMdef) || 210)));
+  }
+  if (baseExp !== undefined) {
+    await setSpecialBossBaseExp(Math.max(1, Math.floor(Number(baseExp) || 9000)));
+  }
+  if (baseGold !== undefined) {
+    const goldMin = Math.max(0, Math.floor(Number(baseGold) || 2000));
+    await setSpecialBossBaseGold(goldMin);
+  }
+  if (playerBonusConfig !== undefined) {
+    let validConfig = [];
+    try {
+      const parsed = Array.isArray(playerBonusConfig) ? playerBonusConfig : JSON.parse(playerBonusConfig);
+      if (Array.isArray(parsed)) {
+        validConfig = parsed.filter(item => {
+          return item &&
+            typeof item.min === 'number' && item.min >= 1 &&
+            (typeof item.hp === 'undefined' || typeof item.hp === 'number') &&
+            (typeof item.atk === 'undefined' || typeof item.atk === 'number') &&
+            (typeof item.def === 'undefined' || typeof item.def === 'number') &&
+            (typeof item.mdef === 'undefined' || typeof item.mdef === 'number');
+        });
+      }
+      await setSpecialBossPlayerBonusConfig(validConfig);
+    } catch (err) {
+      return res.status(400).json({ error: '人数加成配置格式错误' });
+    }
+  }
+  res.json({ ok: true });
+});
+
 app.get('/admin/realms', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
@@ -1104,6 +1212,7 @@ app.post('/admin/sponsors', async (req, res) => {
   }
   try {
     await addSponsor(playerName, amount);
+    io.emit('sponsors_updated');
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: '添加失败: ' + err.message });
@@ -1123,6 +1232,7 @@ app.put('/admin/sponsors/:id', async (req, res) => {
   }
   try {
     await updateSponsor(Number(id), playerName, amount);
+    io.emit('sponsors_updated');
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: '更新失败: ' + err.message });
@@ -1135,6 +1245,7 @@ app.delete('/admin/sponsors/:id', async (req, res) => {
   const { id } = req.params;
   try {
     await deleteSponsor(Number(id));
+    io.emit('sponsors_updated');
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: '删除失败: ' + err.message });
@@ -1176,6 +1287,7 @@ app.post('/api/sponsors/custom-title', async (req, res) => {
       return res.status(403).json({ error: '您不是赞助玩家，无法设置自定义称号。' });
     }
     await updateSponsorCustomTitle(playerName, trimmedTitle || '赞助玩家');
+    io.emit('sponsors_updated');
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: '更新失败: ' + err.message });
@@ -6300,6 +6412,14 @@ async function start() {
   applyRoomVariantCount(roomVariantCount);
   shrinkRoomVariants(WORLD, roomVariantCount);
   expandRoomVariants(WORLD);
+
+  // 加载职业升级属性配置
+  const classLevelConfigs = {
+    warrior: await getClassLevelBonusConfig('warrior'),
+    mage: await getClassLevelBonusConfig('mage'),
+    taoist: await getClassLevelBonusConfig('taoist')
+  };
+  setAllClassLevelBonusConfigs(classLevelConfigs);
   for (const realm of realmCache) {
     checkMobRespawn(realm.id);
   }

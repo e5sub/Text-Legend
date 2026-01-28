@@ -247,3 +247,114 @@ export async function setWorldBossPlayerBonusConfig(config) {
   const normalized = JSON.stringify(config || []);
   await setSetting('world_boss_player_bonus', normalized);
 }
+
+// 特殊BOSS配置（魔龙BOSS、暗之系列BOSS、沙巴克BOSS统一配置）
+export async function getSpecialBossDropBonus() {
+  const value = await getSetting('special_boss_drop_bonus', '1.5');
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 1.5;
+}
+
+export async function setSpecialBossDropBonus(bonus) {
+  const normalized = Math.max(1, Math.floor(Number(bonus || 1.5) * 100) / 100);
+  await setSetting('special_boss_drop_bonus', String(normalized));
+}
+
+export async function getSpecialBossBaseHp() {
+  const value = await getSetting('special_boss_base_hp', '600000');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 600000;
+}
+
+export async function setSpecialBossBaseHp(hp) {
+  const normalized = Math.max(1, Math.floor(Number(hp) || 600000));
+  await setSetting('special_boss_base_hp', String(normalized));
+}
+
+export async function getSpecialBossBaseAtk() {
+  const value = await getSetting('special_boss_base_atk', '180');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 180;
+}
+
+export async function setSpecialBossBaseAtk(atk) {
+  const normalized = Math.max(1, Math.floor(Number(atk) || 180));
+  await setSetting('special_boss_base_atk', String(normalized));
+}
+
+export async function getSpecialBossBaseDef() {
+  const value = await getSetting('special_boss_base_def', '210');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 210;
+}
+
+export async function setSpecialBossBaseDef(def) {
+  const normalized = Math.max(1, Math.floor(Number(def) || 210));
+  await setSetting('special_boss_base_def', String(normalized));
+}
+
+export async function getSpecialBossBaseMdef() {
+  const value = await getSetting('special_boss_base_mdef', '210');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 210;
+}
+
+export async function setSpecialBossBaseMdef(mdef) {
+  const normalized = Math.max(1, Math.floor(Number(mdef) || 210));
+  await setSetting('special_boss_base_mdef', String(normalized));
+}
+
+export async function getSpecialBossBaseExp() {
+  const value = await getSetting('special_boss_base_exp', '9000');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 9000;
+}
+
+export async function setSpecialBossBaseExp(exp) {
+  const normalized = Math.max(1, Math.floor(Number(exp) || 9000));
+  await setSetting('special_boss_base_exp', String(normalized));
+}
+
+export async function getSpecialBossBaseGold() {
+  const value = await getSetting('special_boss_base_gold', '2000');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 2000;
+}
+
+export async function setSpecialBossBaseGold(gold) {
+  const normalized = Math.max(0, Math.floor(Number(gold) || 2000));
+  await setSetting('special_boss_base_gold', String(normalized));
+}
+
+export async function getSpecialBossPlayerBonusConfig() {
+  const value = await getSetting('special_boss_player_bonus', '[{"min":1,"hp":0,"atk":1000,"def":5000,"mdef":5000},{"min":2,"hp":0,"atk":1000,"def":0,"mdef":0}]');
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [{"min":1,"hp":0,"atk":1000,"def":5000,"mdef":5000},{"min":2,"hp":0,"atk":1000,"def":0,"mdef":0}];
+  } catch {
+    return [{"min":1,"hp":0,"atk":1000,"def":5000,"mdef":5000},{"min":2,"hp":0,"atk":1000,"def":0,"mdef":0}];
+  }
+}
+
+export async function setSpecialBossPlayerBonusConfig(config) {
+  const normalized = JSON.stringify(config || []);
+  await setSetting('special_boss_player_bonus', normalized);
+}
+
+// 职业升级属性配置
+export async function getClassLevelBonusConfig(classId) {
+  const value = await getSetting(`class_level_bonus_${classId}`, null);
+  if (value) {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+export async function setClassLevelBonusConfig(classId, config) {
+  const normalized = JSON.stringify(config || {});
+  await setSetting(`class_level_bonus_${classId}`, normalized);
+}

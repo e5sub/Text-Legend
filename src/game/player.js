@@ -2,6 +2,7 @@ import { CLASSES, getStartPosition, expForLevel, maxBagSlots } from './constants
 import { ITEM_TEMPLATES } from './items.js';
 import { DEFAULT_SKILLS } from './skills.js';
 import { clamp } from './utils.js';
+import { getClassLevelBonusConfig as getClassLevelBonusFromConfig } from './settings.js';
 
 function rarityByPrice(item) {
   if (!item) return 'common';
@@ -383,19 +384,14 @@ export function computeDerived(player) {
 
   player.stats = stats;
   const levelUp = Math.max(0, level - 1);
-  const levelBonusMap = {
-    warrior: { hp: 3, mp: 10, atk: 0.5, def: 3, mag: 0, spirit: 0, mdef: 3 },
-    mage: { hp: 5, mp: 10, atk: 0, def: 2, mag: 2, spirit: 0, mdef: 1 },
-    taoist: { hp: 5, mp: 10, atk: 0, def: 2, mag: 0, spirit: 2, mdef: 1 }
-  };
-  const levelBonus = levelBonusMap[player.classId] || levelBonusMap.warrior;
-  const bonusHp = levelBonus.hp * levelUp;
-  const bonusMp = levelBonus.mp * levelUp;
-  const bonusAtk = levelBonus.atk * levelUp;
-  const bonusDef = levelBonus.def * levelUp;
-  const bonusMag = levelBonus.mag * levelUp;
-  const bonusSpirit = levelBonus.spirit * levelUp;
-  const bonusMdef = levelBonus.mdef * levelUp;
+  const levelBonus = getClassLevelBonusFromConfig(player.classId);
+  const bonusHp = levelBonus.hpPerLevel * levelUp;
+  const bonusMp = levelBonus.mpPerLevel * levelUp;
+  const bonusAtk = levelBonus.atkPerLevel * levelUp;
+  const bonusDef = levelBonus.defPerLevel * levelUp;
+  const bonusMag = levelBonus.magPerLevel * levelUp;
+  const bonusSpirit = levelBonus.spiritPerLevel * levelUp;
+  const bonusMdef = levelBonus.mdefPerLevel * levelUp;
 
   player.max_hp = base.con * 10 + cls.hpPerLevel * level + stats.con * 2 + trainingBonus.hp + trainingFruitBonus.hp + bonusHp;
   player.max_mp = base.spirit * 8 + cls.mpPerLevel * level + stats.spirit * 2 + trainingBonus.mp + trainingFruitBonus.mp + bonusMp;
