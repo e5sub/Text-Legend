@@ -150,7 +150,8 @@ const chat = {
   locationBtn: document.getElementById('chat-send-location'),
   emojiToggle: document.getElementById('chat-emoji-toggle'),
   emojiPanel: document.getElementById('chat-emoji-panel'),
-  clearBtn: document.getElementById('chat-clear')
+  clearBtn: document.getElementById('chat-clear'),
+  setSponsorTitleBtn: document.getElementById('chat-set-sponsor-title')
 };
 const EMOJI_LIST = ['😀', '😁', '😂', '🤣', '😅', '😊', '😍', '😘', '😎', '🤔', '😴', '😡', '😭', '😇', '🤝', '👍', '👎', '🔥', '💯', '🎉'];
 const tradeUi = {
@@ -327,6 +328,14 @@ const sponsorUi = {
   content: document.getElementById('sponsor-content'),
   close: document.getElementById('sponsor-close')
 };
+
+const sponsorTitleUi = {
+  modal: document.getElementById('sponsor-title-modal'),
+  input: document.getElementById('title-input'),
+  cancelBtn: document.getElementById('title-cancel'),
+  saveBtn: document.getElementById('title-save'),
+  msg: document.getElementById('title-msg')
+};
 const itemTooltip = document.getElementById('item-tooltip');
 let lastShopItems = [];
 let consignMarketItems = [];
@@ -381,6 +390,7 @@ let realmList = [];
 let currentRealmId = 1;
 let realmInitPromise = null;
 let sponsorNames = new Set(); // 存储赞助玩家名称
+let sponsorCustomTitles = new Map(); // 存储赞助玩家自定义称号
 
 function showToast(message) {
   authToast.textContent = message;
@@ -661,10 +671,11 @@ function addSponsorBadge(line, playerName) {
   nameBtns.forEach((btn) => {
     if (btn.textContent === `[${playerName}]`) {
       btn.classList.add('sponsor-player-name');
-      // 在名字前添加赞助称号
+      // 在名字前添加赞助称号，使用自定义称号或默认称号
+      const customTitle = sponsorCustomTitles.get(playerName) || '赞助玩家';
       const badge = document.createElement('span');
       badge.className = 'sponsor-badge';
-      badge.textContent = '赞助玩家';
+      badge.textContent = customTitle;
       line.insertBefore(badge, btn);
     }
   });
@@ -2535,8 +2546,11 @@ function parseMarkdown(markdown) {
   // 简单的Markdown解析器
   let html = markdown;
 
+  // 解析粗体文本 **text**
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
   // 解析表格
-  html = html.replace(/\|([^|]+)\|([^|]+)\|/g, (match, col1, col2) => {
+  html = html.replace(/\|([^|]+)\|([^|]+)\|/g, (_match, col1, col2) => {
     // 表头行
     if (col1.trim() === '---' && col2.trim() === '---') {
       return '</tr></thead><tbody><tr>';
@@ -2548,8 +2562,20 @@ function parseMarkdown(markdown) {
   // 添加表格标签
   if (html.includes('<tr>')) {
     html = html.replace(/^[\s\S]*?(<tr>)/, '<table>$1');
-    html = html.replace(/(<\/tr>)[\s\S]*$/, '$1</tbody></table>');
+    html = html.replace(/(<\/table>)[\s\S]*$/, '$1');
   }
+
+  // 处理表格外的换行 - 只在表格之外的文本中处理
+  html = html.split('<table>').map((part, idx) => {
+    if (idx === 0) {
+      // 表格前的文本
+      return part.replace(/\n/g, '<br>');
+    }
+    const [table, ...rest] = part.split('</table>');
+    // 表格后的文本
+    const afterTable = rest.join('</table>').replace(/\n/g, '<br>');
+    return `<table>${table}</table>${afterTable}`;
+  }).join('<table>');
 
   return html;
 }
@@ -2560,6 +2586,13 @@ async function loadSponsors() {
     const data = await res.json();
     if (data.ok && Array.isArray(data.sponsors)) {
       sponsorNames = new Set(data.sponsors.map(s => s.player_name));
+      // 保存自定义称号
+      sponsorCustomTitles = new Map();
+      data.sponsors.forEach(s => {
+        if (s.custom_title && s.custom_title !== '赞助玩家') {
+          sponsorCustomTitles.set(s.player_name, s.custom_title);
+        }
+      });
     }
   } catch (err) {
     console.error('获取赞助名单失败:', err);
@@ -2589,7 +2622,8 @@ async function renderSponsorContent() {
     if (data.ok && Array.isArray(data.sponsors)) {
       sponsorList = data.sponsors.map(s => ({
         name: s.player_name,
-        amount: s.amount
+        amount: s.amount,
+        customTitle: s.custom_title
       }));
       // 按金额从高到低排序
       sponsorList.sort((a, b) => b.amount - a.amount);
@@ -2613,7 +2647,7 @@ async function renderSponsorContent() {
         ${displayList.length > 0 ? sponsorList.map((item, index) => `
           <div class="sponsor-item">
             <span class="sponsor-rank">${index + 1}</span>
-            <span class="sponsor-name">${item.name}</span>
+            <span class="sponsor-name">${item.name}${item.customTitle && item.customTitle !== '赞助玩家' ? ` (${item.customTitle})` : ''}</span>
             <span class="sponsor-amount">${item.amount}元</span>
           </div>
         `).join('') : '<div style="text-align: center; color: #999; padding: 20px;">暂无赞助名单</div>'}
@@ -2667,11 +2701,11 @@ function renderDropsContent(setId) {
   if (!dropsUi.content) return;
   const setData = SET_DROPS[setId];
   if (!setData) return;
-  
+
   dropsUi.content.innerHTML = `
     <div class="drops-header">${setData.name}</div>
   `;
-  
+
   setData.items.forEach((item) => {
     const itemDiv = document.createElement('div');
     itemDiv.className = 'drops-item';
@@ -2683,6 +2717,77 @@ function renderDropsContent(setId) {
     `;
     dropsUi.content.appendChild(itemDiv);
   });
+}
+
+async function showSponsorTitleModal() {
+  if (!sponsorTitleUi.modal) return;
+  hideItemTooltip();
+
+  const currentPlayerName = state.player?.name;
+  if (!currentPlayerName || !sponsorNames.has(currentPlayerName)) {
+    showToast('只有赞助玩家才能设置自定义称号');
+    return;
+  }
+
+  // 获取当前称号
+  const currentTitle = sponsorCustomTitles.get(currentPlayerName) || '';
+  sponsorTitleUi.input.value = currentTitle;
+  sponsorTitleUi.msg.textContent = '';
+  sponsorTitleUi.modal.classList.remove('hidden');
+
+  // 绑定取消按钮
+  sponsorTitleUi.cancelBtn.onclick = () => {
+    sponsorTitleUi.modal.classList.add('hidden');
+  };
+
+  // 绑定保存按钮
+  sponsorTitleUi.saveBtn.onclick = async () => {
+    const customTitle = sponsorTitleUi.input.value.trim();
+    if (customTitle.length > 10) {
+      sponsorTitleUi.msg.textContent = '称号长度不能超过10个字！';
+      sponsorTitleUi.msg.style.color = '#e74c3c';
+      return;
+    }
+    try {
+      sponsorTitleUi.msg.textContent = '保存中...';
+      sponsorTitleUi.msg.style.color = '#999';
+      const res = await fetch('/api/sponsors/custom-title', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, customTitle })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        sponsorTitleUi.msg.textContent = '保存成功！';
+        sponsorTitleUi.msg.style.color = '#27ae60';
+        // 重新加载赞助名单以更新显示
+        await loadSponsors();
+        // 延迟关闭模态框
+        setTimeout(() => {
+          sponsorTitleUi.modal.classList.add('hidden');
+        }, 500);
+      } else {
+        sponsorTitleUi.msg.textContent = data.error || '保存失败！';
+        sponsorTitleUi.msg.style.color = '#e74c3c';
+      }
+    } catch (err) {
+      console.error('保存称号失败:', err);
+      sponsorTitleUi.msg.textContent = '保存失败，请重试！';
+      sponsorTitleUi.msg.style.color = '#e74c3c';
+    }
+  };
+}
+
+function updateSponsorTitleButtonVisibility() {
+  const btn = document.getElementById('chat-set-sponsor-title');
+  if (!btn) return;
+
+  const currentPlayerName = state.player?.name;
+  if (currentPlayerName && sponsorNames.has(currentPlayerName)) {
+    btn.classList.remove('hidden');
+  } else {
+    btn.classList.add('hidden');
+  }
 }
 
 const ITEM_TYPE_LABELS = {
@@ -3886,18 +3991,18 @@ function renderState(state) {
     { id: 'consign', label: '\u5BC4\u552E' },
     { id: 'drops', label: '\u5957\u88c5\u6389\u843d' },
     { id: 'switch', label: '\u5207\u6362\u89d2\u8272' },
-    { id: 'logout', label: '\u9000\u51fa\u6e38\u620f' },
-    { id: 'sponsor', label: '\u8d5e\u52a9\u4f5c\u8005', highlight: true }
+    { id: 'logout', label: '\u9000\u51fa\u6e38\u620f' }
   ];
   // 只对非VIP玩家显示VIP激活按钮，并且自助领取功能开启时显示领取按钮
   if (!state.stats || !state.stats.vip) {
     if (vipSelfClaimEnabled) {
-      actions.splice(actions.length - 1, 0, { id: 'vip claim', label: 'VIP\u9886\u53d6' });
+      actions.splice(actions.length, 0, { id: 'vip claim', label: 'VIP\u9886\u53d6' });
     }
-    actions.splice(actions.length - 1, 0, { id: 'vip activate', label: 'VIP\u6fc0\u6d3b' });
+    actions.splice(actions.length, 0, { id: 'vip activate', label: 'VIP\u6fc0\u6d3b' });
   }
   const afkLabel = state.stats && state.stats.autoSkillId ? '\u505c\u6b62\u6302\u673a' : '\u6302\u673a';
   actions.push({ id: 'afk', label: afkLabel });
+  actions.push({ id: 'sponsor', label: '\u8d5e\u52a9\u4f5c\u8005', highlight: true });
   renderChips(ui.actions, actions, async (a) => {
     if (socket && isStateThrottleActive()) {
       socket.emit('state_request', { reason: `action:${a.id}` });
@@ -3982,14 +4087,19 @@ function renderState(state) {
       switchCharacter();
       return;
     }
-    socket.emit('cmd', { text: a.id });
+      socket.emit('cmd', { text: a.id });
   });
+
+  // 更新赞助玩家称号按钮的显示状态
+  updateSponsorTitleButtonVisibility();
 }
 const remembered = localStorage.getItem('rememberedUser');
 if (remembered) {
   loginUserInput.value = remembered;
 }
 (async () => {
+  // 加载赞助者名单，确保刷新页面后特效依然有效
+  loadSponsors();
   await ensureRealmsLoaded();
   const tokenKey = getUserStorageKey('savedToken', remembered);
   const savedToken = localStorage.getItem(tokenKey);
@@ -4504,6 +4614,11 @@ if (chat.clearBtn) {
   chat.clearBtn.addEventListener('click', () => {
     clearChatLog();
     showToast('聊天已清屏');
+  });
+}
+if (chat.setSponsorTitleBtn) {
+  chat.setSponsorTitleBtn.addEventListener('click', () => {
+    showSponsorTitleModal();
   });
 }
 if (chat.emojiPanel) {

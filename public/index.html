@@ -158,6 +158,7 @@
               <button class="chat-btn" id="chat-send-location">&#x53D1;&#x9001;&#x4F4D;&#x7F6E;</button>
               <button class="chat-btn" id="chat-trade-request">&#x4EA4;&#x6613;</button>
               <button class="chat-btn" id="chat-clear">&#x6E05;&#x5C4F;</button>
+              <button class="chat-btn hidden" id="chat-set-sponsor-title">&#x8BBE;&#x7F6E;&#x79F0;&#x53F7;</button>
             </div>
             <div class="chat-input-row">
               <input id="chat-input" type="text" placeholder="&#x8BF4;&#x70B9;&#x4EC0;&#x4E48;">
@@ -554,6 +555,24 @@
       <div class="sponsor-content" id="sponsor-content"></div>
       <div class="modal-actions">
         <button id="sponsor-close">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="sponsor-title-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-title">设置自定义称号</div>
+      <div class="modal-text">
+        <div style="margin-bottom: 15px;">
+          <label for="title-input" style="display: block; margin-bottom: 8px; font-weight: 600; color: #8f5a12;">输入自定义称号（10字以内）</label>
+          <input id="title-input" type="text" placeholder="输入自定义称号" maxlength="10" style="width: 100%; padding: 10px; border: 1px solid rgba(118, 70, 22, 0.3); border-radius: 6px; font-size: 1rem;">
+          <p style="font-size: 0.85rem; color: #999; margin-top: 8px;">留空则使用默认称号"赞助玩家"</p>
+        </div>
+      </div>
+      <div id="title-msg" style="margin-bottom: 10px; font-size: 0.9rem;"></div>
+      <div class="modal-actions">
+        <button id="title-cancel">取消</button>
+        <button id="title-save" style="background: #8f5a12; color: #fff3df;">保存</button>
       </div>
     </div>
   </div>

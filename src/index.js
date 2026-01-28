@@ -30,7 +30,7 @@ import {
   listConsignmentHistory,
   createConsignmentHistory
 } from './db/consignment_history.js';
-import { listAllSponsors, addSponsor, updateSponsor, deleteSponsor, getSponsorById } from './db/sponsors.js';
+import { listAllSponsors, addSponsor, updateSponsor, deleteSponsor, getSponsorById, updateSponsorCustomTitle, getSponsorByPlayerName } from './db/sponsors.js';
 import { runMigrations } from './db/migrate.js';
 import { newCharacter, computeDerived, gainExp, addItem, removeItem, getItemKey, normalizeInventory, normalizeEquipment } from './game/player.js';
 import { handleCommand, awardKill, summonStats } from './game/commands.js';
@@ -74,6 +74,7 @@ const io = new Server(server, {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 app.use(express.json({ limit: '20mb' }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
+app.use('/img', express.static(path.join(__dirname, '..', 'img')));
 
 const CAPTCHA_TTL_MS = 5 * 60 * 1000;
 const captchaStore = new Map();
@@ -1144,6 +1145,41 @@ app.delete('/admin/sponsors/:id', async (req, res) => {
 app.get('/api/sponsors', async (req, res) => {
   const sponsors = await listAllSponsors();
   res.json({ ok: true, sponsors });
+});
+
+// 更新赞助玩家自定义称号接口
+app.post('/api/sponsors/custom-title', async (req, res) => {
+  const { token, customTitle } = req.body || {};
+  if (!token) {
+    return res.status(401).json({ error: '未登录。' });
+  }
+  if (!customTitle || typeof customTitle !== 'string') {
+    return res.status(400).json({ error: '缺少参数。' });
+  }
+  const trimmedTitle = customTitle.trim();
+  if (trimmedTitle.length > 10) {
+    return res.status(400).json({ error: '称号长度不能超过10个字。' });
+  }
+  try {
+    const session = await getSession(token);
+    if (!session) {
+      return res.status(401).json({ error: '会话已过期，请重新登录。' });
+    }
+    const character = await loadCharacter(session.userId, session.realmId, session.characterName);
+    if (!character) {
+      return res.status(404).json({ error: '角色不存在。' });
+    }
+    const playerName = character.name;
+    // 检查是否是赞助玩家
+    const sponsor = await getSponsorByPlayerName(playerName);
+    if (!sponsor) {
+      return res.status(403).json({ error: '您不是赞助玩家，无法设置自定义称号。' });
+    }
+    await updateSponsorCustomTitle(playerName, trimmedTitle || '赞助玩家');
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: '更新失败: ' + err.message });
+  }
 });
 
 const players = new Map();
