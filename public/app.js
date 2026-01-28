@@ -2593,10 +2593,14 @@ async function loadSponsors() {
           sponsorCustomTitles.set(s.player_name, s.custom_title);
         }
       });
+      appendLine(`[调试] 赞助名单已加载，共 ${sponsorNames.size} 人: ${Array.from(sponsorNames).join(', ')}`);
       // 赞助名单加载完成后更新按钮显示
       updateSponsorTitleButtonVisibility();
+    } else {
+      appendLine(`[调试] 赞助名单加载失败: ${JSON.stringify(data)}`);
     }
   } catch (err) {
+    appendLine(`[调试] 获取赞助名单异常: ${err.message}`);
     console.error('获取赞助名单失败:', err);
   }
 }
@@ -2782,11 +2786,17 @@ async function showSponsorTitleModal() {
 
 function updateSponsorTitleButtonVisibility() {
   const btn = document.getElementById('chat-set-sponsor-title');
-  if (!btn) return;
+  if (!btn) {
+    appendLine('[调试] 找不到设置称号按钮元素');
+    return;
+  }
 
   const currentPlayerName = state.player?.name;
+  appendLine(`[调试] 更新称号按钮 - 当前玩家: ${currentPlayerName}, 是赞助: ${currentPlayerName ? sponsorNames.has(currentPlayerName) : false}`);
+
   if (currentPlayerName && sponsorNames.has(currentPlayerName)) {
     btn.classList.remove('hidden');
+    appendLine('[调试] 显示设置称号按钮');
   } else {
     btn.classList.add('hidden');
   }
