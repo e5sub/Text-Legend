@@ -14,7 +14,7 @@ import { addGuildMember, createGuild, getGuildByName, getGuildByNameInRealm, get
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
 import { sendMail, listMail, markMailRead, markMailClaimed } from './db/mail.js';
 import { createVipCodes, listVipCodes, useVipCode } from './db/vip.js';
-import { getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount } from './db/settings.js';
+import { getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig } from './db/settings.js';
 import { listRealms, getRealmById, updateRealmName, createRealm } from './db/realms.js';
 import { listMobRespawns, upsertMobRespawn, clearMobRespawn, saveMobState } from './db/mobs.js';
 import {
@@ -421,27 +421,99 @@ app.post('/admin/users/password', async (req, res) => {
   res.json({ ok: true });
 });
 
-app.post('/admin/characters/update', async (req, res) => {
-  const admin = await requireAdmin(req);
-  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
-  const { username, name, patch } = req.body || {};
-  const user = await getUserByName(username);
-  if (!user) return res.status(404).json({ error: '用户不存在。' });
-  const row = await findCharacterByName(name);
-  if (!row || row.user_id !== user.id) return res.status(404).json({ error: '角色不存在。' });
-  const realmId = row.realm_id || 1;
-  const player = await loadCharacter(user.id, name, realmId);
-  if (!player) return res.status(404).json({ error: '角色不存在。' });
-  Object.assign(player, patch || {});
-  await saveCharacter(user.id, player, realmId);
-  res.json({ ok: true });
-});
-
 app.post('/admin/characters/cleanup', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
   const result = await cleanupInvalidItems();
   res.json({ ok: true, ...result });
+});
+
+app.get('/admin/worldboss-settings', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const dropBonus = await getWorldBossDropBonus();
+  const baseHp = await getWorldBossBaseHp();
+  const baseAtk = await getWorldBossBaseAtk();
+  const baseDef = await getWorldBossBaseDef();
+  const baseMdef = await getWorldBossBaseMdef();
+  const baseExp = await getWorldBossBaseExp();
+  const baseGold = await getWorldBossBaseGold();
+  const playerBonusConfig = await getWorldBossPlayerBonusConfig();
+  res.json({
+    ok: true,
+    dropBonus,
+    baseHp,
+    baseAtk,
+    baseDef,
+    baseMdef,
+    baseExp,
+    baseGold,
+    playerBonusConfig
+  });
+});
+
+app.post('/admin/worldboss-settings/update', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const { dropBonus, baseHp, baseAtk, baseDef, baseMdef, baseExp, baseGold, playerBonusConfig } = req.body || {};
+
+  if (dropBonus !== undefined) {
+    await setWorldBossDropBonus(Math.max(1, Math.floor(Number(dropBonus) || 1.5)));
+  }
+  if (baseHp !== undefined) {
+    await setWorldBossBaseHp(Math.max(1, Math.floor(Number(baseHp) || 600000)));
+  }
+  if (baseAtk !== undefined) {
+    await setWorldBossBaseAtk(Math.max(1, Math.floor(Number(baseAtk) || 180)));
+  }
+  if (baseDef !== undefined) {
+    await setWorldBossBaseDef(Math.max(1, Math.floor(Number(baseDef) || 210)));
+  }
+  if (baseMdef !== undefined) {
+    await setWorldBossBaseMdef(Math.max(1, Math.floor(Number(baseMdef) || 210)));
+  }
+  if (baseExp !== undefined) {
+    await setWorldBossBaseExp(Math.max(1, Math.floor(Number(baseExp) || 9000)));
+  }
+  if (baseGold !== undefined) {
+    const goldMin = Math.max(0, Math.floor(Number(baseGold) || 2000));
+    await setWorldBossBaseGold(goldMin);
+  }
+  if (playerBonusConfig !== undefined) {
+    // 验证配置格式
+    let validConfig = [];
+    try {
+      const parsed = Array.isArray(playerBonusConfig) ? playerBonusConfig : JSON.parse(playerBonusConfig);
+      if (Array.isArray(parsed)) {
+        validConfig = parsed.filter(item => {
+          return item &&
+            typeof item.min === 'number' && item.min >= 1 &&
+            (typeof item.hp === 'undefined' || typeof item.hp === 'number') &&
+            (typeof item.atk === 'undefined' || typeof item.atk === 'number') &&
+            (typeof item.def === 'undefined' || typeof item.def === 'number') &&
+            (typeof item.mdef === 'undefined' || typeof item.mdef === 'number');
+        }).sort((a, b) => a.min - b.min);
+      }
+    } catch (e) {
+      console.error('Invalid playerBonusConfig:', e);
+    }
+    await setWorldBossPlayerBonusConfig(validConfig);
+  }
+
+  // 应用新设置到世界BOSS模板
+  await applyWorldBossSettings();
+
+  res.json({
+    ok: true,
+    dropBonus: await getWorldBossDropBonus(),
+    baseHp: await getWorldBossBaseHp(),
+    baseAtk: await getWorldBossBaseAtk(),
+    baseDef: await getWorldBossBaseDef(),
+    baseMdef: await getWorldBossBaseMdef(),
+    baseExp: await getWorldBossBaseExp(),
+    baseGold: await getWorldBossBaseGold(),
+    playerBonusConfig: await getWorldBossPlayerBonusConfig()
+  });
 });
 
 app.post('/admin/mail/send', async (req, res) => {
@@ -1370,7 +1442,92 @@ function rollRarityEquipmentDrop(mobTemplate, bonus = 1) {
   return null;
 }
 
-const WORLD_BOSS_DROP_BONUS = 1.5;
+let WORLD_BOSS_DROP_BONUS = 1.5;
+
+async function applyWorldBossSettings() {
+  // 从数据库加载世界BOSS设置并应用到常量
+  WORLD_BOSS_DROP_BONUS = await getWorldBossDropBonus();
+
+  // 应用到世界BOSS模板
+  const worldBossTemplate = MOB_TEMPLATES.world_boss;
+  if (worldBossTemplate) {
+    worldBossTemplate.hp = await getWorldBossBaseHp();
+    worldBossTemplate.atk = await getWorldBossBaseAtk();
+    worldBossTemplate.def = await getWorldBossBaseDef();
+    worldBossTemplate.mdef = await getWorldBossBaseMdef();
+    worldBossTemplate.exp = await getWorldBossBaseExp();
+
+    const baseGold = await getWorldBossBaseGold();
+    worldBossTemplate.gold = [baseGold, Math.floor(baseGold * 1.6)];
+  }
+
+  // 加载每名玩家增加的属性值缓存
+  await loadWorldBossSettingsCache();
+}
+
+// 根据房间内玩家数量调整世界BOSS属性（按人数分段加成）
+function adjustWorldBossStatsByPlayerCount(zoneId, roomId, realmId) {
+  const mobs = getAliveMobs(zoneId, roomId, realmId);
+  const worldBossMob = mobs.find(m => m.templateId === 'world_boss');
+  if (!worldBossMob) return;
+
+  // 获取房间内的在线玩家数量
+  const online = listOnlinePlayers(realmId);
+  const roomPlayers = online.filter(p =>
+    p.position &&
+    p.position.zone === zoneId &&
+    p.position.room === roomId
+  );
+  const playerCount = roomPlayers.length;
+
+  // 从模板获取基础属性（防止重复叠加）
+  const template = MOB_TEMPLATES.world_boss;
+  if (!template) return;
+
+  const baseHp = template.hp || worldBossMob.max_hp;
+  const baseAtk = template.atk || worldBossMob.atk;
+  const baseDef = template.def || worldBossMob.def;
+  const baseMdef = template.mdef || worldBossMob.mdef;
+
+  // 获取人数分段加成配置
+  const playerBonusConfig = getWorldBossPlayerBonusConfigSync() || [];
+  const bonusConfig = playerBonusConfig.find(config => playerCount >= config.min);
+
+  // 计算加成后的属性（基于基础属性 + 分段加成）
+  const addedHp = bonusConfig ? (bonusConfig.hp || 0) : 0;
+  const addedAtk = bonusConfig ? (bonusConfig.atk || 0) : 0;
+  const addedDef = bonusConfig ? (bonusConfig.def || 0) : 0;
+  const addedMdef = bonusConfig ? (bonusConfig.mdef || 0) : 0;
+
+  // 应用加成（基于基础属性计算，避免重复叠加）
+  worldBossMob.max_hp = Math.floor(baseHp + addedHp);
+  worldBossMob.hp = Math.min(worldBossMob.hp, worldBossMob.max_hp);
+  worldBossMob.atk = Math.floor(baseAtk + addedAtk);
+  worldBossMob.def = Math.floor(baseDef + addedDef);
+  worldBossMob.mdef = Math.floor(baseMdef + addedMdef);
+
+  // 更新baseStats
+  if (!worldBossMob.status) worldBossMob.status = {};
+  worldBossMob.status.baseStats = {
+    max_hp: worldBossMob.max_hp,
+    atk: worldBossMob.atk,
+    def: worldBossMob.def,
+    mdef: worldBossMob.mdef
+  };
+}
+
+// 同步获取设置（避免异步问题）
+let worldBossSettingsCache = {
+  playerBonusConfig: []
+};
+
+async function loadWorldBossSettingsCache() {
+  worldBossSettingsCache.playerBonusConfig = await getWorldBossPlayerBonusConfig();
+}
+
+function getWorldBossPlayerBonusConfigSync() {
+  return worldBossSettingsCache.playerBonusConfig;
+}
 
 function dropLoot(mobTemplate, bonus = 1) {
   const loot = [];
@@ -2580,6 +2737,9 @@ function getRoomCommonState(zoneId, roomId, realmId = 1) {
   const room = zone?.rooms?.[roomId];
   if (zone && room) spawnMobs(zoneId, roomId, realmId);
 
+  // 根据房间内玩家数量调整世界BOSS属性
+  adjustWorldBossStatsByPlayerCount(zoneId, roomId, realmId);
+
   const mobs = getAliveMobs(zoneId, roomId, realmId).map((m) => ({
     id: m.id,
     name: m.name,
@@ -2659,6 +2819,8 @@ async function buildState(player) {
     bossNextRespawn = cached.bossNextRespawn;
   } else {
     if (zone && room) spawnMobs(player.position.zone, player.position.room, realmId);
+    // 根据房间内玩家数量调整世界BOSS属性
+    adjustWorldBossStatsByPlayerCount(player.position.zone, player.position.room, realmId);
     mobs = getAliveMobs(player.position.zone, player.position.room, realmId).map((m) => ({
       id: m.id,
       name: m.name,
@@ -2937,6 +3099,10 @@ function checkMobRespawn(realmId = 1) {
     Object.keys(zone.rooms).forEach((roomId) => {
       const room = zone.rooms[roomId];
       const mobs = spawnMobs(zoneId, roomId, realmId);
+
+      // 根据房间内玩家数量调整世界BOSS属性
+      adjustWorldBossStatsByPlayerCount(zoneId, roomId, realmId);
+
       const respawned = mobs.filter((m) => m.justRespawned);
 
       if (respawned.length) {
@@ -4611,7 +4777,6 @@ function processMobDeath(player, mob, online) {
   // 追踪传说和至尊装备掉落数量
   let legendaryDropCount = 0;
   let supremeDropCount = 0;
-  const playerDropTracker = new Map(); // 玩家掉落追踪: playerName -> { legendary: count, supreme: count }
 
     let sabakTaxExp = 0;
     let sabakTaxGold = 0;
@@ -4651,11 +4816,10 @@ function processMobDeath(player, mob, online) {
       }
     }
 
-    const dropTargets = [];
-    if (isSpecialBoss) {
+  const dropTargets = [];
+  if (isSpecialBoss) {
       const topEntries = entries.slice(0, 10);
       const totalDamage = entries.reduce((sum, [, dmg]) => sum + dmg, 0) || 1;
-      const top10Count = topEntries.length;
       topEntries.forEach(([name, damage]) => {
         const player = playersByName(name, realmId);
         if (!player) return;
@@ -5897,6 +6061,7 @@ async function start() {
     await mkdir(dir, { recursive: true });
   }
   await runMigrations();
+  await applyWorldBossSettings();
   await refreshRealmCache();
   setRespawnStore({
     set: (realmId, zoneId, roomId, slotIndex, templateId, respawnAt) =>

@@ -150,3 +150,100 @@ export async function canUserClaimVip(characterName) {
   const count = await getCharacterVipClaimCount(characterName);
   return count === 0;
 }
+
+// 世界BOSS设置
+export async function getWorldBossDropBonus() {
+  const value = await getSetting('world_boss_drop_bonus', '1.5');
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 1.5;
+}
+
+export async function setWorldBossDropBonus(bonus) {
+  const normalized = Math.max(1, Math.floor(Number(bonus || 1.5) * 100) / 100);
+  await setSetting('world_boss_drop_bonus', String(normalized));
+}
+
+export async function getWorldBossBaseHp() {
+  const value = await getSetting('world_boss_base_hp', '600000');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 600000;
+}
+
+export async function setWorldBossBaseHp(hp) {
+  const normalized = Math.max(1, Math.floor(Number(hp) || 600000));
+  await setSetting('world_boss_base_hp', String(normalized));
+}
+
+export async function getWorldBossBaseAtk() {
+  const value = await getSetting('world_boss_base_atk', '180');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 180;
+}
+
+export async function setWorldBossBaseAtk(atk) {
+  const normalized = Math.max(1, Math.floor(Number(atk) || 180));
+  await setSetting('world_boss_base_atk', String(normalized));
+}
+
+export async function getWorldBossBaseDef() {
+  const value = await getSetting('world_boss_base_def', '210');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 210;
+}
+
+export async function setWorldBossBaseDef(def) {
+  const normalized = Math.max(1, Math.floor(Number(def) || 210));
+  await setSetting('world_boss_base_def', String(normalized));
+}
+
+export async function getWorldBossBaseMdef() {
+  const value = await getSetting('world_boss_base_mdef', '210');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 210;
+}
+
+export async function setWorldBossBaseMdef(mdef) {
+  const normalized = Math.max(1, Math.floor(Number(mdef) || 210));
+  await setSetting('world_boss_base_mdef', String(normalized));
+}
+
+export async function getWorldBossBaseExp() {
+  const value = await getSetting('world_boss_base_exp', '9000');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 9000;
+}
+
+export async function setWorldBossBaseExp(exp) {
+  const normalized = Math.max(1, Math.floor(Number(exp) || 9000));
+  await setSetting('world_boss_base_exp', String(normalized));
+}
+
+export async function getWorldBossBaseGold() {
+  const value = await getSetting('world_boss_base_gold', '2000');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 2000;
+}
+
+export async function setWorldBossBaseGold(gold) {
+  const normalized = Math.max(0, Math.floor(Number(gold) || 2000));
+  await setSetting('world_boss_base_gold', String(normalized));
+}
+
+// 按人数分段加成配置
+// 格式: [{"min":1,"hp":0,"atk":1000,"def":5000,"mdef":5000},{"min":2,"hp":0,"atk":1000,"def":0,"mdef":0}]
+// 1人: +1000攻击, +5000防御, +5000魔御
+// 2人及以上: +1000攻击, 防御和魔御恢复基础
+export async function getWorldBossPlayerBonusConfig() {
+  const value = await getSetting('world_boss_player_bonus', '[{"min":1,"hp":0,"atk":1000,"def":5000,"mdef":5000},{"min":2,"hp":0,"atk":1000,"def":0,"mdef":0}]');
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [{"min":1,"hp":0,"atk":1000,"def":5000,"mdef":5000},{"min":2,"hp":0,"atk":1000,"def":0,"mdef":0}];
+  } catch {
+    return [{"min":1,"hp":0,"atk":1000,"def":5000,"mdef":5000},{"min":2,"hp":0,"atk":1000,"def":0,"mdef":0}];
+  }
+}
+
+export async function setWorldBossPlayerBonusConfig(config) {
+  const normalized = JSON.stringify(config || []);
+  await setSetting('world_boss_player_bonus', normalized);
+}
