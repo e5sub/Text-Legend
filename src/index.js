@@ -2250,12 +2250,11 @@ function canTriggerMagicRing(player, chosenSkillId, skill) {
 }
 
 function hasComboWeapon(player) {
-  const weapon = player?.equipment?.weapon;
-  return Boolean(weapon && weapon.effects && weapon.effects.combo);
+  return Boolean(player?.flags?.hasComboEffect);
 }
 
 function hasHealBlockEffect(player) {
-  return Object.values(player.equipment || {}).some((eq) => eq && eq.effects && eq.effects.healblock);
+  return Boolean(player?.flags?.hasHealblockEffect);
 }
 
 function isInvincible(target) {
@@ -3505,8 +3504,7 @@ function calcPoisonEffectTickDamage(target) {
 
 function tryApplyPoisonEffect(attacker, target) {
   if (!attacker || !target) return false;
-  const weapon = attacker.equipment?.weapon;
-  if (!weapon || !weapon.effects || !weapon.effects.poison) return false;
+  if (!attacker?.flags?.hasPoisonEffect) return false;
   if (Math.random() > 0.1) return false;
   applyPoison(target, 10, calcPoisonEffectTickDamage(target), attacker.name);
   applyPoisonEffectDebuff(target);

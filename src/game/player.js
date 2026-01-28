@@ -299,6 +299,10 @@ export function computeDerived(player) {
   let mdefBonus = 0;
   let evadeChance = 0;
   let elementAtk = 0;
+  let dodgeEffectCount = 0;
+  let poisonEffectCount = 0;
+  let comboEffectCount = 0;
+  let healblockEffectCount = 0;
   for (const entry of bonus) {
     const item = entry.item;
     const setBonus = activeSetIds.has(item.id) ? (activeSetBonusRates.get(item.id) || SET_BONUS_RATE) : 1;
@@ -317,8 +321,25 @@ export function computeDerived(player) {
       def = Math.floor(def * 1.5);
       mdef = Math.floor(mdef * 1.5);
     }
-    if (entry.effects?.dodge) {
+    // 闪避特效只生效一个，不叠加
+    if (entry.effects?.dodge && dodgeEffectCount === 0) {
       evadeChance = 0.2;
+      dodgeEffectCount++;
+    }
+    // 毒特效只生效一个，不叠加
+    if (entry.effects?.poison && poisonEffectCount === 0) {
+      player.flags.hasPoisonEffect = true;
+      poisonEffectCount++;
+    }
+    // 连击特效只生效一个，不叠加
+    if (entry.effects?.combo && comboEffectCount === 0) {
+      player.flags.hasComboEffect = true;
+      comboEffectCount++;
+    }
+    // 禁疗特效只生效一个，不叠加
+    if (entry.effects?.healblock && healblockEffectCount === 0) {
+      player.flags.hasHealblockEffect = true;
+      healblockEffectCount++;
     }
     if (entry.effects?.elementAtk) {
       elementAtk += Math.max(0, Math.floor(entry.effects.elementAtk));
