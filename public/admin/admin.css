@@ -68,35 +68,35 @@ h2 {
 
 input, select, textarea {
   font-family: inherit;
-  font-size: 1rem;
-  padding: 10px 12px;
-  border-radius: 10px;
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 8px;
   border: 1px solid #d9b894;
   background: #fffaf1;
   width: 100%;
-  margin: 8px 0;
+  margin: 6px 0;
 }
 
 textarea { min-height: 90px; }
 
 button {
   font-family: inherit;
-  font-size: 1rem;
-  padding: 10px 16px;
-  border-radius: 10px;
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 8px;
   border: none;
   background: var(--accent);
   color: #fffaf1;
   cursor: pointer;
-  box-shadow: 0 6px 14px rgba(214, 109, 26, 0.3);
-  margin-right: 8px;
+  box-shadow: 0 4px 10px rgba(214, 109, 26, 0.3);
+  margin-right: 6px;
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
 button:hover {
   background: var(--accent-strong);
   transform: translateY(-1px);
-  box-shadow: 0 8px 16px rgba(143, 59, 11, 0.25);
+  box-shadow: 0 6px 12px rgba(143, 59, 11, 0.25);
 }
 
 .row {
@@ -245,16 +245,18 @@ thead {
 }
 
 th {
-  padding: 12px 16px;
+  padding: 8px 10px;
   text-align: left;
   font-weight: 600;
   color: var(--ink);
   border-bottom: 2px solid #c9b294;
+  font-size: 12px;
 }
 
 td {
-  padding: 12px 16px;
+  padding: 6px 8px;
   border-bottom: 1px solid #f0dcc2;
+  font-size: 12px;
 }
 
 tbody tr:last-child td {
@@ -286,8 +288,8 @@ tbody tr:hover {
 }
 
 .btn-small {
-  font-size: 0.85rem;
-  padding: 6px 12px;
+  font-size: 12px;
+  padding: 4px 10px;
   margin: 0 4px 0 0;
 }
 

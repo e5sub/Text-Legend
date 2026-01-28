@@ -264,13 +264,13 @@ function renderPlayerBonusList(configs) {
   configs.forEach((config, index) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td style="padding: 4px 8px;"><input type="number" min="1" value="${config.min}" data-field="min" style="width: 80px;"></td>
-      <td style="padding: 4px 8px;"><input type="number" min="0" value="${config.hp || 0}" data-field="hp" style="width: 80px;"></td>
-      <td style="padding: 4px 8px;"><input type="number" min="0" value="${config.atk || 0}" data-field="atk" style="width: 80px;"></td>
-      <td style="padding: 4px 8px;"><input type="number" min="0" value="${config.def || 0}" data-field="def" style="width: 80px;"></td>
-      <td style="padding: 4px 8px;"><input type="number" min="0" value="${config.mdef || 0}" data-field="mdef" style="width: 80px;"></td>
-      <td style="padding: 4px 8px;">
-        <button class="btn-small btn-delete" data-index="${index}" style="padding: 2px 8px; font-size: 11px;">删除</button>
+      <td style="padding: 4px 6px;"><input type="number" min="1" value="${config.min}" data-field="min" style="width: 60px; font-size: 12px; padding: 2px 4px;"></td>
+      <td style="padding: 4px 6px;"><input type="number" min="0" value="${config.hp || 0}" data-field="hp" style="width: 60px; font-size: 12px; padding: 2px 4px;"></td>
+      <td style="padding: 4px 6px;"><input type="number" min="0" value="${config.atk || 0}" data-field="atk" style="width: 60px; font-size: 12px; padding: 2px 4px;"></td>
+      <td style="padding: 4px 6px;"><input type="number" min="0" value="${config.def || 0}" data-field="def" style="width: 60px; font-size: 12px; padding: 2px 4px;"></td>
+      <td style="padding: 4px 6px;"><input type="number" min="0" value="${config.mdef || 0}" data-field="mdef" style="width: 60px; font-size: 12px; padding: 2px 4px;"></td>
+      <td style="padding: 4px 6px;">
+        <button class="btn-small btn-delete" data-index="${index}" style="padding: 2px 6px; font-size: 11px;">删除</button>
       </td>
     `;
     tbody.appendChild(tr);
