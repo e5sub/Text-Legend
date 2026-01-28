@@ -554,26 +554,29 @@
 (function () {
   function b64d(b64) {
     const bin = atob(b64);
-    const bytes = new Uint8Array([...bin].map(c => c.charCodeAt(0)));
-    return new TextDecoder('utf-8').decode(bytes);
+    const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+    return new TextDecoder("utf-8").decode(bytes);
   }
+
   var _d = {
     g1: b64d("aHR0cHM6Ly9naXRodWIuY29tL2U1c3ViL1RleHQtTGVnZW5k"),
     d1: b64d("aHR0cHM6Ly9jcS4wNzE3MTcueHl6"),
+
     g2: b64d("R2l0SHViOiBlNXN1Yi9UZXh0LUxlZ2VuZA=="),
-    q1: b64d("546p5a626FFF5766pTogMTY5OTI0MzU5"),
-    w1: b64d("5b6u5L+h5YWs5LyX5Y+3OiDoj5LmnaDliJ3kvZzlsI/liqDmiYvliK0="),
-    d2: b64d("5ryU56S65p6ZOmh0dHBzOi8vY3EuMDcxNzE3Lnh5eg==")
+    q1: b64d("546p5a62UVHnvqQ6IDE2OTkyNDM1OQ=="),
+    w1: b64d("5b6u5L+h5YWs5LyX5Y+3OiDoj5zoir3liJvkvZzlsI/liqnmiYs="),
+    d2: b64d("5ryU56S656uZOmh0dHBzOi8vY3EuMDcxNzE3Lnh5eg==")
   };
+
   var _e = document.getElementById("footer-copyright");
   if (_e) {
     _e.innerHTML =
-      '<a href="' + _d.g1 + '" target="_blank" style="color:#ffd699;text-decoration:none;">' +
+      '<a href="' + _d.g1 + '" target="_blank" rel="noopener noreferrer" style="color:#ffd699; text-decoration:none;">' +
       _d.g2 +
       '</a>' +
-      '<span style="margin-left:8px;">' + _d.q1 + '</span>' +
-      '<span style="margin-left:8px;">' + _d.w1 + '</span>' +
-      '<a href="' + _d.d1 + '" target="_blank" style="color:#ffd699;text-decoration:none;margin-left:8px;">' +
+      '<span style="color:#fff3df; margin-left:8px;">' + _d.q1 + '</span>' +
+      '<span style="color:#fff3df; margin-left:8px;">' + _d.w1 + '</span>' +
+      '<a href="' + _d.d1 + '" target="_blank" rel="noopener noreferrer" style="color:#ffd699; text-decoration:none; margin-left:8px;">' +
       _d.d2 +
       '</a>';
   }
