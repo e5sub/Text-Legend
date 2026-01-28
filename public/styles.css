@@ -37,7 +37,10 @@ body.dark::before {
 
 body.dark::after {
   position: fixed;
-  inset: 0;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
   display: block;
   font-size: 2.5rem;
   font-weight: 700;
@@ -50,7 +53,6 @@ body.dark::after {
   line-height: 2.5;
   letter-spacing: 1.5rem;
   text-align: center;
-  overflow: hidden;
   white-space: pre;
 }
 
@@ -644,7 +646,10 @@ body::before {
 
 body::after {
   position: fixed;
-  inset: 0;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
   display: block;
   font-size: 2.5rem;
   font-weight: 700;
@@ -657,7 +662,6 @@ body::after {
   line-height: 2.5;
   letter-spacing: 1.5rem;
   text-align: center;
-  overflow: hidden;
   white-space: pre;
 }
 
