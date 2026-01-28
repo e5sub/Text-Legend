@@ -36,9 +36,19 @@ body.dark::before {
 }
 
 body.dark::after {
-  background:
-    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.01) 0 16px, rgba(0, 0, 0, 0.05) 16px 32px),
-    radial-gradient(circle at center, transparent 45%, rgba(0, 0, 0, 0.2) 46%, rgba(0, 0, 0, 0.2) 47%, transparent 48%);
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  font-weight: 700;
+  color: rgba(232, 160, 88, 0.06);
+  font-family: var(--font-display);
+  pointer-events: none;
+  z-index: 0;
+  transform: rotate(-15deg);
+  user-select: none;
 }
 
 body.dark header p {
@@ -630,7 +640,6 @@ body::before {
 }
 
 body::after {
-  content: "微信公众号：菜芽创作小助手";
   position: fixed;
   inset: 0;
   display: flex;
@@ -644,18 +653,6 @@ body::after {
   z-index: 0;
   transform: rotate(-15deg);
   user-select: none;
-}
-
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background:
-    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0 16px, rgba(0, 0, 0, 0.02) 16px 32px),
-    radial-gradient(circle at center, transparent 45%, rgba(40, 24, 10, 0.08) 46%, rgba(40, 24, 10, 0.08) 47%, transparent 48%);
-  opacity: 0.6;
-  pointer-events: none;
-  z-index: 0;
 }
 
 #app {
