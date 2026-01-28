@@ -987,7 +987,7 @@ export async function handleCommand({ player, players, input, source, send, part
         }
 
         // 构建结果消息
-        const resultParts = Object.entries(attrStats).map(([name, value]) => `${name}+${value}`);
+        const resultParts = Object.entries(attrStats).map(([name, value]) => `${name}+${value.toFixed(1)}`);
         if (useCount === 1) {
           send(`使用了修炼果，${resultParts[0]}。`);
         } else {
