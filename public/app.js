@@ -2581,9 +2581,13 @@ function parseMarkdown(markdown) {
 }
 
 async function loadSponsors() {
+  appendLine('[调试] loadSponsors 函数开始执行');
   try {
+    appendLine('[调试] 正在请求 /api/sponsors...');
     const res = await fetch('/api/sponsors');
+    appendLine('[调试] API 响应已返回');
     const data = await res.json();
+    appendLine(`[调试] 数据解析完成: ${JSON.stringify(data).substring(0, 100)}...`);
     if (data.ok && Array.isArray(data.sponsors)) {
       sponsorNames = new Set(data.sponsors.map(s => s.player_name));
       // 保存自定义称号
@@ -2609,6 +2613,7 @@ async function loadSponsors() {
     appendLine(`[调试] 获取赞助名单异常: ${err.message}`);
     console.error('获取赞助名单失败:', err);
   }
+  appendLine('[调试] loadSponsors 函数执行结束');
 }
 
 async function renderSponsorContent() {
