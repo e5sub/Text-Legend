@@ -559,9 +559,10 @@
   }
 
   var _watermark = b64d("5b6u5L+h5YWs5LyX5Y+3OiDoj5zoir3liJvkvZzlsI/liqnmiYs=");
-  var watermarkText = (_watermark + ' ').repeat(50).split('').join('\n');
+  var watermarkText = (_watermark + '  ').repeat(30);
+  var watermarkLines = Array(20).fill(watermarkText).join('\\A');
   var style = document.createElement('style');
-  style.textContent = 'body::after { content: "' + watermarkText + '"; } body.dark::after { content: "' + watermarkText + '"; }';
+  style.textContent = 'body::after { content: "' + watermarkLines + '"; } body.dark::after { content: "' + watermarkLines + '"; }';
   document.head.appendChild(style);
 
   var _d = {
