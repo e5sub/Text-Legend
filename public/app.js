@@ -2581,13 +2581,9 @@ function parseMarkdown(markdown) {
 }
 
 async function loadSponsors() {
-  appendLine('[调试] loadSponsors 函数开始执行');
   try {
-    appendLine('[调试] 正在请求 /api/sponsors...');
     const res = await fetch('/api/sponsors');
-    appendLine('[调试] API 响应已返回');
     const data = await res.json();
-    appendLine(`[调试] 数据解析完成: ${JSON.stringify(data).substring(0, 100)}...`);
     if (data.ok && Array.isArray(data.sponsors)) {
       sponsorNames = new Set(data.sponsors.map(s => s.player_name));
       // 保存自定义称号
@@ -2597,23 +2593,12 @@ async function loadSponsors() {
           sponsorCustomTitles.set(s.player_name, s.custom_title);
         }
       });
-      const nameList = Array.from(sponsorNames);
-      appendLine(`[调试] ========== 赞助名单加载 ==========`);
-      appendLine(`[调试] 赞助人数: ${sponsorNames.size}`);
-      nameList.forEach((name, idx) => {
-        appendLine(`[调试] ${idx + 1}. ${name}`);
-      });
-      appendLine(`[调试] =================================`);
       // 赞助名单加载完成后更新按钮显示
       updateSponsorTitleButtonVisibility();
-    } else {
-      appendLine(`[调试] 赞助名单加载失败: ${JSON.stringify(data)}`);
     }
   } catch (err) {
-    appendLine(`[调试] 获取赞助名单异常: ${err.message}`);
     console.error('获取赞助名单失败:', err);
   }
-  appendLine('[调试] loadSponsors 函数执行结束');
 }
 
 async function renderSponsorContent() {
@@ -2797,29 +2782,14 @@ async function showSponsorTitleModal() {
 
 function updateSponsorTitleButtonVisibility() {
   const btn = document.getElementById('chat-set-sponsor-title');
-  if (!btn) {
-    appendLine('[调试] ========== 称号按钮检查 ==========');
-    appendLine('[调试] ❌ 找不到设置称号按钮元素');
-    return;
-  }
+  if (!btn) return;
 
   const currentPlayerName = state.player?.name;
-  const sponsorList = Array.from(sponsorNames);
-  appendLine(`[调试] ========== 称号按钮检查 ==========`);
-  appendLine(`[调试] 当前玩家: "${currentPlayerName}"`);
-  appendLine(`[调试] 赞助名单: [${sponsorList.join(', ')}]`);
-  appendLine(`[调试] 赞助名单大小: ${sponsorNames.size}`);
-  appendLine(`[调试] 是否在赞助名单中: ${currentPlayerName ? sponsorNames.has(currentPlayerName) : 'false (玩家名为空)'}`);
-  appendLine(`[调试] 按钮当前class: "${btn.className}"`);
-
   if (currentPlayerName && sponsorNames.has(currentPlayerName)) {
     btn.classList.remove('hidden');
-    appendLine('[调试] ✅ 显示设置称号按钮，移除 hidden class');
   } else {
     btn.classList.add('hidden');
-    appendLine('[调试] ❌ 隐藏设置称号按钮，添加 hidden class');
   }
-  appendLine(`[调试] =================================`);
 }
 
 const ITEM_TYPE_LABELS = {
@@ -4129,7 +4099,7 @@ const remembered = localStorage.getItem('rememberedUser');
 if (remembered) {
   loginUserInput.value = remembered;
 }
-document.addEventListener('DOMContentLoaded', async () => {
+(async () => {
   // 加载赞助者名单，确保刷新页面后特效依然有效
   await loadSponsors();
   await ensureRealmsLoaded();
@@ -4650,11 +4620,8 @@ if (chat.clearBtn) {
 }
 if (chat.setSponsorTitleBtn) {
   chat.setSponsorTitleBtn.addEventListener('click', () => {
-    appendLine('[调试] 设置称号按钮被点击了！');
     showSponsorTitleModal();
   });
-} else {
-  appendLine('[调试] ❌ 设置称号按钮元素不存在！');
 }
 if (chat.emojiPanel) {
   document.addEventListener('click', (evt) => {
