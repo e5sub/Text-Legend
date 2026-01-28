@@ -2804,17 +2804,20 @@ function updateSponsorTitleButtonVisibility() {
   }
 
   const currentPlayerName = state.player?.name;
+  const sponsorList = Array.from(sponsorNames);
   appendLine(`[调试] ========== 称号按钮检查 ==========`);
   appendLine(`[调试] 当前玩家: "${currentPlayerName}"`);
+  appendLine(`[调试] 赞助名单: [${sponsorList.join(', ')}]`);
   appendLine(`[调试] 赞助名单大小: ${sponsorNames.size}`);
   appendLine(`[调试] 是否在赞助名单中: ${currentPlayerName ? sponsorNames.has(currentPlayerName) : 'false (玩家名为空)'}`);
+  appendLine(`[调试] 按钮当前class: "${btn.className}"`);
 
   if (currentPlayerName && sponsorNames.has(currentPlayerName)) {
     btn.classList.remove('hidden');
-    appendLine('[调试] ✅ 显示设置称号按钮');
+    appendLine('[调试] ✅ 显示设置称号按钮，移除 hidden class');
   } else {
     btn.classList.add('hidden');
-    appendLine('[调试] ❌ 隐藏设置称号按钮');
+    appendLine('[调试] ❌ 隐藏设置称号按钮，添加 hidden class');
   }
   appendLine(`[调试] =================================`);
 }
@@ -4126,7 +4129,7 @@ const remembered = localStorage.getItem('rememberedUser');
 if (remembered) {
   loginUserInput.value = remembered;
 }
-(async () => {
+document.addEventListener('DOMContentLoaded', async () => {
   // 加载赞助者名单，确保刷新页面后特效依然有效
   await loadSponsors();
   await ensureRealmsLoaded();
@@ -4647,8 +4650,11 @@ if (chat.clearBtn) {
 }
 if (chat.setSponsorTitleBtn) {
   chat.setSponsorTitleBtn.addEventListener('click', () => {
+    appendLine('[调试] 设置称号按钮被点击了！');
     showSponsorTitleModal();
   });
+} else {
+  appendLine('[调试] ❌ 设置称号按钮元素不存在！');
 }
 if (chat.emojiPanel) {
   document.addEventListener('click', (evt) => {
