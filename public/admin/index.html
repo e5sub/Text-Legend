@@ -155,44 +155,42 @@
 
         <div class="block" data-collapsible>
           <div class="block-title">
-            <h2>VIP 激活码</h2>
+            <h2>VIP 设置</h2>
             <button class="btn-small block-toggle">折叠</button>
           </div>
           <div class="block-body">
-            <input id="vip-count" type="number" min="1" max="100" value="5">
-            <button id="vip-create-btn">生成激活码</button>
-            <button id="vip-list-btn">查看激活码列表</button>
-            <div id="vip-codes-result" class="list"></div>
-            
-            <div class="table-container" id="vip-codes-table-container" style="display: none;">
-              <table>
-                <thead>
-                  <tr>
-                    <th>激活码</th>
-                    <th>状态</th>
-                    <th>使用者ID</th>
-                    <th>使用时间</th>
-                  </tr>
-                </thead>
-                <tbody id="vip-codes-list"></tbody>
-              </table>
+            <div style="margin-bottom: 20px;">
+              <h3>VIP 自助激活开关</h3>
+              <p>当前状态: <span id="vip-self-claim-status">加载中...</span></p>
+              <label class="admin-switch">
+                <input type="checkbox" id="vip-self-claim-toggle">
+                <span class="admin-switch-slider" aria-hidden="true"></span>
+                <span class="admin-switch-label">开启自助激活</span>
+              </label>
+              <div id="vip-self-claim-msg" class="msg"></div>
             </div>
-          </div>
-        </div>
 
-        <div class="block" data-collapsible>
-          <div class="block-title">
-            <h2>VIP 自助激活开关</h2>
-            <button class="btn-small block-toggle">折叠</button>
-          </div>
-          <div class="block-body">
-            <p>当前状态: <span id="vip-self-claim-status">加载中...</span></p>
-            <label class="admin-switch">
-              <input type="checkbox" id="vip-self-claim-toggle">
-              <span class="admin-switch-slider" aria-hidden="true"></span>
-              <span class="admin-switch-label">开启自助激活</span>
-            </label>
-            <div id="vip-self-claim-msg" class="msg"></div>
+            <div style="border-top: 1px solid #ddd; padding-top: 20px;">
+              <h3>VIP 激活码管理</h3>
+              <input id="vip-count" type="number" min="1" max="100" value="5">
+              <button id="vip-create-btn">生成激活码</button>
+              <button id="vip-list-btn">查看激活码列表</button>
+              <div id="vip-codes-result" class="list"></div>
+              
+              <div class="table-container" id="vip-codes-table-container" style="display: none;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>激活码</th>
+                      <th>状态</th>
+                      <th>使用者ID</th>
+                      <th>使用时间</th>
+                    </tr>
+                  </thead>
+                  <tbody id="vip-codes-list"></tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
 

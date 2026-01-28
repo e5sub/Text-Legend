@@ -457,3 +457,13 @@ body.theme-dark .list {
 body.theme-dark thead {
   background: linear-gradient(135deg, #3a2b1f 0%, #2a1f16 100%);
 }
+
+/* VIP设置卡片中的子标题样式 */
+.block-body h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--accent);
+  font-family: var(--font-display);
+}
+
