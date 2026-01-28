@@ -2573,7 +2573,7 @@ async function renderSponsorContent() {
   const sponsorMarkdown = `
 | 支付宝 | 微信 |
 | --- | --- |
-| <img src="img/zfb.png" alt="alipay" width="260"> | <img src="img/wx.png" alt="wechat" width="260"> |
+| <img src="/img/zfb.png" alt="alipay" width="260"> | <img src="/img/wx.png" alt="wechat" width="260"> |
 
 ⚠️ **重要提示：** 赞助时请务必在备注中填写您的**游戏角色名**，以便添加到赞助名单中！
   `;
