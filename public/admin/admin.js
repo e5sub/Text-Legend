@@ -2,8 +2,6 @@
 const dashboardSection = document.getElementById('dashboard');
 const loginMsg = document.getElementById('login-msg');
 const usersList = document.getElementById('users-list');
-const charMsg = document.getElementById('char-msg');
-const mailMsg = document.getElementById('mail-msg');
 const vipCodesResult = document.getElementById('vip-codes-result');
 const vipCodesList = document.getElementById('vip-codes-list');
 const vipCodesTableContainer = document.getElementById('vip-codes-table-container');
@@ -32,10 +30,6 @@ const roomVariantStatus = document.getElementById('room-variant-status');
 const roomVariantMsg = document.getElementById('room-variant-msg');
 const roomVariantInput = document.getElementById('room-variant-count');
 const roomVariantSaveBtn = document.getElementById('room-variant-save');
-const realmCountStatus = document.getElementById('realm-count-status');
-const realmCountMsg = document.getElementById('realm-count-msg');
-const realmCountInput = document.getElementById('realm-count-input');
-const realmCountSaveBtn = document.getElementById('realm-count-save');
 const usersSearchInput = document.getElementById('users-search');
 const usersSearchBtn = document.getElementById('users-search-btn');
 const adminPwModal = document.getElementById('admin-pw-modal');
@@ -126,7 +120,6 @@ async function login() {
     await refreshStateThrottleStatus();
     await refreshConsignExpireStatus();
     await refreshRoomVariantStatus();
-    await refreshRealmCountStatus();
   } catch (err) {
     loginMsg.textContent = err.message;
   }
@@ -312,7 +305,7 @@ function getPlayerBonusConfigFromUI() {
   return configs;
 }
 
-async function createVipCodes() {
+async function loadWorldBossSettings() {
   if (!document.getElementById('wb-msg')) return;
   const msg = document.getElementById('wb-msg');
   msg.textContent = '';
@@ -369,20 +362,6 @@ async function resetUserPassword(username) {
   adminPwInput.value = '';
   adminPwModal.classList.remove('hidden');
   setTimeout(() => adminPwInput.focus(), 0);
-}
-
-async function sendMail() {
-  mailMsg.textContent = '';
-  try {
-    await api('/admin/mail/send', 'POST', {
-      username: document.getElementById('mail-username').value.trim(),
-      title: document.getElementById('mail-title').value.trim(),
-      body: document.getElementById('mail-body').value.trim()
-    });
-    mailMsg.textContent = '邮件已发送。';
-  } catch (err) {
-    mailMsg.textContent = err.message;
-  }
 }
 
 async function createVipCodes() {
@@ -577,35 +556,6 @@ async function saveRoomVariantCount() {
     await refreshRoomVariantStatus();
   } catch (err) {
     roomVariantMsg.textContent = err.message;
-  }
-}
-
-async function refreshRealmCountStatus() {
-  if (!realmCountStatus) return;
-  try {
-    const data = await api('/admin/realm-count-status', 'GET');
-    const count = Number(data.count || 1);
-    realmCountStatus.textContent = `已设置(${count})`;
-    realmCountStatus.style.color = 'green';
-    if (realmCountInput) realmCountInput.value = String(count);
-  } catch (err) {
-    realmCountStatus.textContent = '加载失败';
-  }
-}
-
-async function saveRealmCount() {
-  if (!realmCountMsg) return;
-  realmCountMsg.textContent = '';
-  try {
-    const count = realmCountInput ? Number(realmCountInput.value || 1) : 1;
-    if (!Number.isFinite(count) || count < 1) {
-      throw new Error('请输入有效数量');
-    }
-    await api('/admin/realm-count-update', 'POST', { count });
-    realmCountMsg.textContent = '新区数量已保存';
-    await refreshRealmCountStatus();
-  } catch (err) {
-    realmCountMsg.textContent = err.message;
   }
 }
 
