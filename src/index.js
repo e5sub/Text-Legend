@@ -549,6 +549,9 @@ app.post('/admin/worldboss-respawn', async (req, res) => {
         removedCount++;
       }
 
+      // 清理世界BOSS的重生时间记录，避免影响正常刷新
+      await clearMobRespawn(realm.id, 'mg_town', 'lair', 0);
+
       // 刷新新的世界BOSS
       const newMobs = spawnMobs('mg_town', 'lair', realm.id);
       const newBossCount = newMobs.filter(m => m.templateId === 'world_boss').length;
