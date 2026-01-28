@@ -4537,6 +4537,15 @@ function handleDeath(player) {
 }
 
 function processMobDeath(player, mob, online) {
+  // 防止同一个BOSS被重复处理
+  if (mob.status && mob.status.processed) {
+    return;
+  }
+  // 标记为已处理
+  if (mob.status) {
+    mob.status.processed = true;
+  }
+
   const realmId = player?.realmId || 1;
   const damageSnapshot = mob.status?.damageBy ? { ...mob.status.damageBy } : {};
   const lastHitSnapshot = mob.status?.lastHitBy || null;
