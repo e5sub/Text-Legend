@@ -1136,9 +1136,17 @@ export function expandRoomVariants(world) {
           if (typeof dest !== 'string') return;
           if (dest.includes(':')) {
             const [destZone, destRoom] = dest.split(':');
-            nextExits[newDir] = `${destZone}:${replaceSuffix(destRoom, suffix)}`;
+            const targetRoomId = replaceSuffix(destRoom, suffix);
+            // 只有当目标区域存在该变种房间时，才创建对应的出口
+            if (world[destZone]?.rooms?.[targetRoomId]) {
+              nextExits[newDir] = `${destZone}:${targetRoomId}`;
+            }
           } else {
-            nextExits[newDir] = replaceSuffix(dest, suffix);
+            const targetRoomId = replaceSuffix(dest, suffix);
+            // 只有当目标区域存在该变种房间时，才创建对应的出口
+            if (zone.rooms?.[targetRoomId]) {
+              nextExits[newDir] = targetRoomId;
+            }
           }
         });
       });
