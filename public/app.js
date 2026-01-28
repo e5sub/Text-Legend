@@ -2593,7 +2593,13 @@ async function loadSponsors() {
           sponsorCustomTitles.set(s.player_name, s.custom_title);
         }
       });
-      appendLine(`[调试] 赞助名单已加载，共 ${sponsorNames.size} 人: ${Array.from(sponsorNames).join(', ')}`);
+      const nameList = Array.from(sponsorNames);
+      appendLine(`[调试] ========== 赞助名单加载 ==========`);
+      appendLine(`[调试] 赞助人数: ${sponsorNames.size}`);
+      nameList.forEach((name, idx) => {
+        appendLine(`[调试] ${idx + 1}. ${name}`);
+      });
+      appendLine(`[调试] =================================`);
       // 赞助名单加载完成后更新按钮显示
       updateSponsorTitleButtonVisibility();
     } else {
@@ -2787,19 +2793,25 @@ async function showSponsorTitleModal() {
 function updateSponsorTitleButtonVisibility() {
   const btn = document.getElementById('chat-set-sponsor-title');
   if (!btn) {
-    appendLine('[调试] 找不到设置称号按钮元素');
+    appendLine('[调试] ========== 称号按钮检查 ==========');
+    appendLine('[调试] ❌ 找不到设置称号按钮元素');
     return;
   }
 
   const currentPlayerName = state.player?.name;
-  appendLine(`[调试] 更新称号按钮 - 当前玩家: ${currentPlayerName}, 是赞助: ${currentPlayerName ? sponsorNames.has(currentPlayerName) : false}`);
+  appendLine(`[调试] ========== 称号按钮检查 ==========`);
+  appendLine(`[调试] 当前玩家: "${currentPlayerName}"`);
+  appendLine(`[调试] 赞助名单大小: ${sponsorNames.size}`);
+  appendLine(`[调试] 是否在赞助名单中: ${currentPlayerName ? sponsorNames.has(currentPlayerName) : 'false (玩家名为空)'}`);
 
   if (currentPlayerName && sponsorNames.has(currentPlayerName)) {
     btn.classList.remove('hidden');
-    appendLine('[调试] 显示设置称号按钮');
+    appendLine('[调试] ✅ 显示设置称号按钮');
   } else {
     btn.classList.add('hidden');
+    appendLine('[调试] ❌ 隐藏设置称号按钮');
   }
+  appendLine(`[调试] =================================`);
 }
 
 const ITEM_TYPE_LABELS = {
