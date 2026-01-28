@@ -516,6 +516,51 @@ app.post('/admin/worldboss-settings/update', async (req, res) => {
   });
 });
 
+app.post('/admin/worldboss-respawn', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const { realmId: rawRealmId } = req.body || {};
+
+  let realmInfo = await resolveRealmId(rawRealmId);
+  if (realmInfo.error) {
+    const realms = await listRealms();
+    if (Array.isArray(realms) && realms.length > 0) {
+      realmInfo = { realmId: realms[0].id };
+    } else {
+      return res.status(400).json({ error: realmInfo.error });
+    }
+  }
+
+  const realmId = realmInfo.realmId;
+
+  // 删除所有区服中的世界BOSS
+  const allRealms = await listRealms();
+  let respawnedCount = 0;
+
+  for (const realm of allRealms) {
+    try {
+      const mobs = getAliveMobs('mg_town', 'lair', realm.id);
+      const worldBossMobs = mobs.filter(m => m.templateId === 'world_boss');
+
+      for (const boss of worldBossMobs) {
+        removeMob(boss.id, 'mg_town', 'lair', realm.id);
+        respawnedCount++;
+      }
+
+      // 刷新新的世界BOSS
+      spawnMobs('mg_town', 'lair', realm.id);
+    } catch (err) {
+      console.error(`刷新区服 ${realm.id} 的世界BOSS失败:`, err);
+    }
+  }
+
+  res.json({
+    ok: true,
+    message: `已刷新 ${respawnedCount} 个世界BOSS`,
+    respawnedCount
+  });
+});
+
 app.post('/admin/mail/send', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });

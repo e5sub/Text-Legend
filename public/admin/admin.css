@@ -415,6 +415,27 @@ body.theme-dark .block {
   margin-top: 12px;
 }
 
+.modal-text {
+  white-space: pre-line;
+}
+
+#prompt-input {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-input);
+  color: var(--text);
+  box-sizing: border-box;
+}
+
+#prompt-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(120, 80, 40, 0.15);
+}
+
 body.theme-dark .modal-text {
   color: #c6a57d;
 }

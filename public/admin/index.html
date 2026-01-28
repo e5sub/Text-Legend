@@ -144,8 +144,9 @@
                 </tbody>
               </table>
             </div>
-            <div style="margin-top: 8px;">
+            <div class="row" style="margin-top: 8px;">
               <button id="wb-add-bonus-btn" class="btn-small">+ 添加配置</button>
+              <button id="wb-respawn-btn" class="btn-small" style="margin-left: auto;">刷新BOSS</button>
               <button id="wb-save-btn" class="btn-small">保存</button>
             </div>
             <div id="wb-msg" class="msg"></div>
@@ -313,6 +314,42 @@
       <div class="modal-actions">
         <button id="admin-pw-cancel" class="btn-small">取消</button>
         <button id="admin-pw-submit">更新</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 通用确认对话框 -->
+  <div id="confirm-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-title" id="confirm-title">确认操作</div>
+      <div class="modal-text" id="confirm-text"></div>
+      <div class="modal-actions">
+        <button id="confirm-cancel" class="btn-small">取消</button>
+        <button id="confirm-ok" class="btn-small">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 通用提示对话框 -->
+  <div id="alert-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-title" id="alert-title">提示</div>
+      <div class="modal-text" id="alert-text"></div>
+      <div class="modal-actions">
+        <button id="alert-ok" class="btn-small">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 通用输入对话框 -->
+  <div id="prompt-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-title" id="prompt-title">输入</div>
+      <div class="modal-text" id="prompt-text"></div>
+      <input id="prompt-input" type="text">
+      <div class="modal-actions">
+        <button id="prompt-cancel" class="btn-small">取消</button>
+        <button id="prompt-ok" class="btn-small">确定</button>
       </div>
     </div>
   </div>

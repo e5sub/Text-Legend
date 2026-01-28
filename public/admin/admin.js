@@ -39,7 +39,29 @@ const adminPwInput = document.getElementById('admin-pw-input');
 const adminPwCancel = document.getElementById('admin-pw-cancel');
 const adminPwSubmit = document.getElementById('admin-pw-submit');
 
+// 自定义模态框
+const confirmModal = document.getElementById('confirm-modal');
+const confirmTitle = document.getElementById('confirm-title');
+const confirmText = document.getElementById('confirm-text');
+const confirmCancel = document.getElementById('confirm-cancel');
+const confirmOk = document.getElementById('confirm-ok');
+
+const alertModal = document.getElementById('alert-modal');
+const alertTitle = document.getElementById('alert-title');
+const alertText = document.getElementById('alert-text');
+const alertOk = document.getElementById('alert-ok');
+
+const promptModal = document.getElementById('prompt-modal');
+const promptTitle = document.getElementById('prompt-title');
+const promptText = document.getElementById('prompt-text');
+const promptInput = document.getElementById('prompt-input');
+const promptCancel = document.getElementById('prompt-cancel');
+const promptOk = document.getElementById('prompt-ok');
+
 let pendingPwUser = null;
+let confirmCallback = null;
+let alertCallback = null;
+let promptCallback = null;
 
 let adminToken = localStorage.getItem('adminToken');
 let currentUsersPage = 1;
@@ -50,6 +72,87 @@ function showDashboard() {
   loginSection.classList.add('hidden');
   dashboardSection.classList.remove('hidden');
 }
+
+// 自定义弹窗函数
+function customConfirm(title, message) {
+  return new Promise((resolve) => {
+    confirmCallback = resolve;
+    confirmTitle.textContent = title;
+    confirmText.textContent = message;
+    confirmModal.classList.remove('hidden');
+  });
+}
+
+function customAlert(title, message) {
+  return new Promise((resolve) => {
+    alertCallback = resolve;
+    alertTitle.textContent = title;
+    alertText.textContent = message;
+    alertModal.classList.remove('hidden');
+  });
+}
+
+function customPrompt(title, message, defaultValue = '') {
+  return new Promise((resolve) => {
+    promptCallback = resolve;
+    promptTitle.textContent = title;
+    promptText.textContent = message;
+    promptInput.value = defaultValue;
+    promptModal.classList.remove('hidden');
+    setTimeout(() => promptInput.focus(), 0);
+  });
+}
+
+// 模态框事件绑定
+confirmCancel.addEventListener('click', () => {
+  confirmModal.classList.add('hidden');
+  if (confirmCallback) {
+    confirmCallback(false);
+    confirmCallback = null;
+  }
+});
+
+confirmOk.addEventListener('click', () => {
+  confirmModal.classList.add('hidden');
+  if (confirmCallback) {
+    confirmCallback(true);
+    confirmCallback = null;
+  }
+});
+
+alertOk.addEventListener('click', () => {
+  alertModal.classList.add('hidden');
+  if (alertCallback) {
+    alertCallback();
+    alertCallback = null;
+  }
+});
+
+promptCancel.addEventListener('click', () => {
+  promptModal.classList.add('hidden');
+  if (promptCallback) {
+    promptCallback(null);
+    promptCallback = null;
+  }
+});
+
+promptOk.addEventListener('click', () => {
+  promptModal.classList.add('hidden');
+  if (promptCallback) {
+    promptCallback(promptInput.value);
+    promptCallback = null;
+  }
+});
+
+promptInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    promptModal.classList.add('hidden');
+    if (promptCallback) {
+      promptCallback(promptInput.value);
+      promptCallback = null;
+    }
+  }
+});
 
 function applyTheme(theme) {
   document.body.classList.toggle('theme-dark', theme === 'dark');
@@ -153,7 +256,8 @@ async function refreshUsers(page = 1) {
       tdName.addEventListener('click', async () => {
         const nextAdmin = !u.is_admin;
         const actionLabel = nextAdmin ? '设为 GM' : '取消 GM';
-        if (!confirm(`确认对用户 "${u.username}" 执行 ${actionLabel} 吗？`)) return;
+        const confirmed = await customConfirm('确认操作', `确认对用户 "${u.username}" 执行 ${actionLabel} 吗？`);
+        if (!confirmed) return;
         await quickToggleGM(u.username, nextAdmin);
       });
       tr.appendChild(tdName);
@@ -222,25 +326,27 @@ async function quickToggleGM(username, isAdmin) {
     await api('/admin/users/promote', 'POST', { username, isAdmin });
     await refreshUsers(currentUsersPage);
   } catch (err) {
-    alert(`操作失败: ${err.message}`);
+    await customAlert('操作失败', `操作失败: ${err.message}`);
   }
 }
 
 async function deleteUserAccount(userId, username) {
-  if (!confirm(`确定要删除用户 "${username}" 吗？\n\n此操作将删除该用户的所有数据（角色、邮件、行会等），且无法恢复！`)) {
+  const confirmed1 = await customConfirm('确认删除', `确定要删除用户 "${username}" 吗？\n\n此操作将删除该用户的所有数据（角色、邮件、行会等），且无法恢复！`);
+  if (!confirmed1) {
     return;
   }
-  
-  if (!confirm(`再次确认：真的要删除用户 "${username}" 吗？`)) {
+
+  const confirmed2 = await customConfirm('再次确认', `再次确认：真的要删除用户 "${username}" 吗？`);
+  if (!confirmed2) {
     return;
   }
-  
+
   try {
     await api('/admin/users/delete', 'POST', { userId });
-    alert('用户已删除');
+    await customAlert('删除成功', '用户已删除');
     await refreshUsers(currentUsersPage);
   } catch (err) {
-    alert(`删除失败: ${err.message}`);
+    await customAlert('删除失败', `删除失败: ${err.message}`);
   }
 }
 
@@ -353,6 +459,23 @@ function addPlayerBonusConfig() {
   const currentConfigs = getPlayerBonusConfigFromUI();
   currentConfigs.push({ min: 1, hp: 0, atk: 0, def: 0, mdef: 0 });
   renderPlayerBonusList(currentConfigs);
+}
+
+async function respawnWorldBoss() {
+  if (!document.getElementById('wb-msg')) return;
+  const msg = document.getElementById('wb-msg');
+  msg.textContent = '';
+  const confirmed = await customConfirm('刷新世界BOSS', '确定要立即刷新所有区服的世界BOSS吗？\n\n这会删除当前的所有世界BOSS并重新生成。');
+  if (!confirmed) return;
+
+  try {
+    const data = await api('/admin/worldboss-respawn', 'POST', {});
+    msg.textContent = data.message || '刷新成功';
+    msg.style.color = 'green';
+  } catch (err) {
+    msg.textContent = err.message;
+    msg.style.color = 'red';
+  }
 }
 
 async function resetUserPassword(username) {
@@ -628,8 +751,10 @@ async function importBackup() {
     backupMsg.textContent = '请选择备份文件。';
     return;
   }
-  if (!confirm('导入会覆盖当前全部数据，确定继续吗？')) return;
-  if (!confirm('再次确认：导入后无法恢复，是否继续？')) return;
+  const confirmed1 = await customConfirm('确认导入', '导入会覆盖当前全部数据，确定继续吗？');
+  if (!confirmed1) return;
+  const confirmed2 = await customConfirm('再次确认', '再次确认：导入后无法恢复，是否继续？');
+  if (!confirmed2) return;
   try {
     const text = await file.text();
     const payload = JSON.parse(text);
@@ -745,9 +870,10 @@ async function createRealm() {
     realmsMsg.textContent = '请输入区服名称';
     return;
   }
-  
-  if (!confirm(`确定要创建新区 "${name}" 吗？`)) return;
-  
+
+  const confirmed = await customConfirm('创建新区', `确定要创建新区 "${name}" 吗？`);
+  if (!confirmed) return;
+
   try {
     await api('/admin/realms/create', 'POST', { name });
     realmsMsg.textContent = '新区创建成功';
@@ -759,15 +885,15 @@ async function createRealm() {
 }
 
 async function editRealmName(realmId, currentName) {
-  const newName = prompt(`修改区名 (当前: ${currentName}):`, currentName);
+  const newName = await customPrompt('修改区名', `修改区名 (当前: ${currentName}):`, currentName);
   if (!newName || newName.trim() === currentName) return;
-  
+
   try {
     await api('/admin/realms/update', 'POST', { realmId, name: newName.trim() });
-    alert('区名修改成功');
+    await customAlert('修改成功', '区名修改成功');
     await refreshRealms();
   } catch (err) {
-    alert(`修改失败: ${err.message}`);
+    await customAlert('修改失败', `修改失败: ${err.message}`);
   }
 }
 
@@ -789,11 +915,13 @@ async function mergeRealms() {
   const sourceText = mergeSourceSelect.options[mergeSourceSelect.selectedIndex].text;
   const targetText = mergeTargetSelect.options[mergeTargetSelect.selectedIndex].text;
 
-  if (!confirm(`⚠️ 警告：合区操作将强制下线所有玩家！\n\n源区: ${sourceText}\n目标区: ${targetText}\n\n系统会自动创建合区前的完整备份，请稍候...`)) {
+  const confirmed1 = await customConfirm('合区警告', `⚠️ 警告：合区操作将强制下线所有玩家！\n\n源区: ${sourceText}\n目标区: ${targetText}\n\n系统会自动创建合区前的完整备份，请稍候...`);
+  if (!confirmed1) {
     return;
   }
 
-  if (!confirm(`⚠️ 最终确认：合区后源区将被删除，所有数据（角色、行会、邮件、寄售）将合并到目标区，目标区沙巴克状态将重置为无人占领！\n\n确定要执行合区吗？`)) {
+  const confirmed2 = await customConfirm('最终确认', `⚠️ 最终确认：合区后源区将被删除，所有数据（角色、行会、邮件、寄售）将合并到目标区，目标区沙巴克状态将重置为无人占领！\n\n确定要执行合区吗？`);
+  if (!confirmed2) {
     return;
   }
 
@@ -829,9 +957,8 @@ async function mergeRealms() {
 
 async function fixRealmId() {
   if (!realmsMsg) return;
-  if (!confirm('确定要修复旧数据吗？\n\n此操作将所有realm_id为null或0的记录设置为1。\n通常用于升级后修复历史数据。')) {
-    return;
-  }
+  const confirmed = await customConfirm('修复数据', '确定要修复旧数据吗？\n\n此操作将所有realm_id为null或0的记录设置为1。\n通常用于升级后修复历史数据。');
+  if (!confirmed) return;
 
   try {
     const data = await api('/admin/fix-realm-id', 'POST');
@@ -888,6 +1015,9 @@ document.getElementById('users-next-page').addEventListener('click', () => {
   }
 });
 document.getElementById('wb-save-btn').addEventListener('click', saveWorldBossSettings);
+if (document.getElementById('wb-respawn-btn')) {
+  document.getElementById('wb-respawn-btn').addEventListener('click', respawnWorldBoss);
+}
 if (document.getElementById('wb-add-bonus-btn')) {
   document.getElementById('wb-add-bonus-btn').addEventListener('click', addPlayerBonusConfig);
 }
@@ -946,7 +1076,7 @@ if (adminPwSubmit) {
     const password = adminPwInput.value.trim();
     if (!password) return;
     if (password.length < 4) {
-      alert('密码至少4位');
+      await customAlert('密码错误', '密码至少4位');
       return;
     }
     try {
@@ -954,11 +1084,11 @@ if (adminPwSubmit) {
         username: pendingPwUser,
         password
       });
-      alert('密码已更新，已清理登录状态。');
+      await customAlert('修改成功', '密码已更新，已清理登录状态。');
       pendingPwUser = null;
       adminPwModal.classList.add('hidden');
     } catch (err) {
-      alert(`修改失败: ${err.message}`);
+      await customAlert('修改失败', `修改失败: ${err.message}`);
     }
   });
 }
