@@ -334,20 +334,30 @@
             </div>
 
             <div style="border-top: 1px solid #ddd; padding-top: 20px; margin-bottom: 12px;">
-              <h3>修炼果爆率</h3>
+              <h3>修炼果配置</h3>
               <p style="color: #666; margin-bottom: 12px; font-size: 13px;">
-                控制全地图怪物掉落修炼果的概率和离线挂机获取修炼果的概率。<br>
-                默认值: 0.01（1%概率），范围: 0-1
+                控制修炼果对属性的加成效果和掉落概率。<br>
+                系数默认值: 0.5，爆率默认值: 0.01（1%概率）
               </p>
-              <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                <div class="row" style="margin-bottom: 8px; width: 45%; min-width: 180px;">
-                  <label style="min-width: 50px;">系数:</label>
-                  <input id="tf-coefficient" type="number" step="0.1" min="0" style="max-width: 80px;">
-                </div>
-                <div class="row" style="margin-bottom: 8px; width: 45%; min-width: 180px;">
-                  <label style="min-width: 50px;">爆率:</label>
-                  <input id="tf-drop-rate" type="number" step="0.001" min="0" max="1" style="max-width: 80px;">
-                </div>
+              <div class="table-container">
+                <table style="font-size: 12px;">
+                  <thead>
+                    <tr>
+                      <th style="padding: 6px 8px;">属性</th>
+                      <th style="padding: 6px 8px;">值</th>
+                      <th style="padding: 6px 8px;">属性</th>
+                      <th style="padding: 6px 8px;">值</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>系数</td>
+                      <td><input id="tf-coefficient" type="number" step="0.1" min="0" style="width: 60px;"></td>
+                      <td>爆率</td>
+                      <td><input id="tf-drop-rate" type="number" step="0.001" min="0" max="1" style="width: 60px;"></td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
             <button id="tf-save-btn" class="btn-small">保存设置</button>
@@ -367,39 +377,43 @@
                 控制修炼系统每次修炼提升的属性值。<br>
                 默认值: 生命/魔法值=1, 其他属性=0.1
               </p>
-              <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                <div class="row" style="margin-bottom: 8px; width: 45%; min-width: 180px;">
-                  <label style="min-width: 50px;">生命:</label>
-                  <input id="training-hp" type="number" step="0.1" min="0" style="max-width: 70px;">
-                </div>
-                <div class="row" style="margin-bottom: 8px; width: 45%; min-width: 180px;">
-                  <label style="min-width: 50px;">魔法值:</label>
-                  <input id="training-mp" type="number" step="0.1" min="0" style="max-width: 70px;">
-                </div>
-                <div class="row" style="margin-bottom: 8px; width: 45%; min-width: 180px;">
-                  <label style="min-width: 50px;">攻击:</label>
-                  <input id="training-atk" type="number" step="0.01" min="0" style="max-width: 70px;">
-                </div>
-                <div class="row" style="margin-bottom: 8px; width: 45%; min-width: 180px;">
-                  <label style="min-width: 50px;">防御:</label>
-                  <input id="training-def" type="number" step="0.01" min="0" style="max-width: 70px;">
-                </div>
-                <div class="row" style="margin-bottom: 8px; width: 45%; min-width: 180px;">
-                  <label style="min-width: 50px;">魔法:</label>
-                  <input id="training-mag" type="number" step="0.01" min="0" style="max-width: 70px;">
-                </div>
-                <div class="row" style="margin-bottom: 8px; width: 45%; min-width: 180px;">
-                  <label style="min-width: 50px;">魔御:</label>
-                  <input id="training-mdef" type="number" step="0.01" min="0" style="max-width: 70px;">
-                </div>
-                <div class="row" style="margin-bottom: 8px; width: 45%; min-width: 180px;">
-                  <label style="min-width: 50px;">道术:</label>
-                  <input id="training-spirit" type="number" step="0.01" min="0" style="max-width: 70px;">
-                </div>
-                <div class="row" style="margin-bottom: 12px; width: 45%; min-width: 180px;">
-                  <label style="min-width: 50px;">敏捷:</label>
-                  <input id="training-dex" type="number" step="0.01" min="0" style="max-width: 70px;">
-                </div>
+              <div class="table-container">
+                <table style="font-size: 12px;">
+                  <thead>
+                    <tr>
+                      <th style="padding: 6px 8px;">属性</th>
+                      <th style="padding: 6px 8px;">每级增加</th>
+                      <th style="padding: 6px 8px;">属性</th>
+                      <th style="padding: 6px 8px;">每级增加</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>生命</td>
+                      <td><input id="training-hp" type="number" step="0.1" min="0" style="width: 60px;"></td>
+                      <td>魔法值</td>
+                      <td><input id="training-mp" type="number" step="0.1" min="0" style="width: 60px;"></td>
+                    </tr>
+                    <tr>
+                      <td>攻击</td>
+                      <td><input id="training-atk" type="number" step="0.01" min="0" style="width: 60px;"></td>
+                      <td>防御</td>
+                      <td><input id="training-def" type="number" step="0.01" min="0" style="width: 60px;"></td>
+                    </tr>
+                    <tr>
+                      <td>魔法</td>
+                      <td><input id="training-mag" type="number" step="0.01" min="0" style="width: 60px;"></td>
+                      <td>魔御</td>
+                      <td><input id="training-mdef" type="number" step="0.01" min="0" style="width: 60px;"></td>
+                    </tr>
+                    <tr>
+                      <td>道术</td>
+                      <td><input id="training-spirit" type="number" step="0.01" min="0" style="width: 60px;"></td>
+                      <td>敏捷</td>
+                      <td><input id="training-dex" type="number" step="0.01" min="0" style="width: 60px;"></td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
               <button id="training-save-btn" class="btn-small">保存设置</button>
               <div id="training-msg" class="msg"></div>

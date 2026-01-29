@@ -755,8 +755,8 @@ app.get('/admin/training-fruit-settings', async (req, res) => {
   try {
     const admin = await requireAdmin(req);
     if (!admin) return res.status(401).json({ error: '无管理员权限。' });
-    const coefficient = await getTrainingFruitCoefficient();
-    const dropRate = await getTrainingFruitDropRate();
+    const coefficient = await getTrainingFruitCoefficientDb();
+    const dropRate = await getTrainingFruitDropRateDb();
     res.json({ ok: true, coefficient, dropRate });
   } catch (err) {
     console.error('修炼果配置加载失败:', err);
