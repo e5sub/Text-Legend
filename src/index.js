@@ -3165,7 +3165,8 @@ async function buildState(player) {
         classId: p.classId,
         level: p.level,
         guild: p.guild?.name || null,
-        guildId: p.guild?.id || null
+        guildId: p.guild?.id || null,
+        pk: p.pk || 0
       }));
   }
   const summonList = getAliveSummons(player);
@@ -3625,7 +3626,8 @@ function retaliateMobAgainstPlayer(mob, player, online) {
   const mobHitChance = calcHitChance(mob, mobTarget);
   if (Math.random() > mobHitChance) return;
   const isWorldBoss = Boolean(mobTemplate?.worldBoss);
-  if (!isWorldBoss && mobTarget && mobTarget.evadeChance && Math.random() <= mobTarget.evadeChance) {
+  const isSpecialBoss = Boolean(mobTemplate?.specialBoss);
+  if (!isWorldBoss && !isSpecialBoss && mobTarget && mobTarget.evadeChance && Math.random() <= mobTarget.evadeChance) {
     if (mobTarget.userId) {
       mobTarget.send(`你闪避了 ${mob.name} 的攻击。`);
     } else {
@@ -6071,7 +6073,8 @@ async function combatTick() {
     const mobHitChance = calcHitChance(mob, mobTarget);
     if (Math.random() <= mobHitChance) {
       const isWorldBoss = Boolean(mobTemplate?.worldBoss);
-      if (!isWorldBoss && mobTarget && mobTarget.evadeChance && Math.random() <= mobTarget.evadeChance) {
+      const isSpecialBoss = Boolean(mobTemplate?.specialBoss);
+      if (!isWorldBoss && !isSpecialBoss && mobTarget && mobTarget.evadeChance && Math.random() <= mobTarget.evadeChance) {
         if (mobTarget.userId) {
           mobTarget.send(`你闪避了 ${mob.name} 的攻击。`);
         } else {
