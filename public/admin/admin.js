@@ -349,7 +349,7 @@ promptCancel.addEventListener('click', () => {
     promptCallback(null);
     promptCallback = null;
   }
-}
+});
 
 // 修炼系统配置
 async function loadTrainingSettings() {
@@ -415,7 +415,7 @@ promptOk.addEventListener('click', () => {
     promptCallback(promptInput.value);
     promptCallback = null;
   }
-}
+});
 
 // 修炼系统配置
 async function loadTrainingSettings() {
@@ -483,7 +483,7 @@ promptInput.addEventListener('keydown', (e) => {
       promptCallback = null;
     }
   }
-}
+});
 
 // 修炼系统配置
 async function loadTrainingSettings() {
