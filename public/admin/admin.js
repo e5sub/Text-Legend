@@ -4472,7 +4472,7 @@ document.getElementById('users-prev-page').addEventListener('click', () => {
   if (currentUsersPage > 1) {
     refreshUsers(currentUsersPage - 1);
   }
-}
+});
 
 // 修炼系统配置
 async function loadTrainingSettings() {
@@ -4535,7 +4535,7 @@ document.getElementById('users-next-page').addEventListener('click', () => {
   if (currentUsersPage < totalUsersPages) {
     refreshUsers(currentUsersPage + 1);
   }
-}
+});
 
 // 修炼系统配置
 async function loadTrainingSettings() {
