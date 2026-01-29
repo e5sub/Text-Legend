@@ -232,7 +232,7 @@ export function spawnMobs(zoneId, roomId, realmId = 1) {
         dex: tpl.dex || 6,
         status: { baseStats: { atk: scaled.atk, def: scaled.def, mdef: scaled.mdef, max_hp: scaled.hp } },
         respawnAt: null,
-        justRespawned: false
+        justRespawned: Boolean(tpl.worldBoss || tpl.sabakBoss || tpl.respawnMs)
       };
       mobList.push(mob);
       return;
