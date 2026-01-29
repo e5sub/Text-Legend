@@ -603,7 +603,7 @@ function partyStatus(party) {
   return `队伍成员: ${party.members.join(', ')}`;
 }
 
-export async function handleCommand({ player, players, input, source, send, partyApi, guildApi, tradeApi, mailApi, consignApi, onMove }) {
+export async function handleCommand({ player, players, allCharacters, input, source, send, partyApi, guildApi, tradeApi, mailApi, consignApi, onMove }) {
   const [cmdRaw, ...rest] = input.trim().split(' ');
   const cmd = (cmdRaw || '').toLowerCase();
   const args = rest.join(' ').trim();
@@ -2559,16 +2559,21 @@ export async function handleCommand({ player, players, input, source, send, part
         return;
       }
 
-      // 筛选该职业的玩家并按属性排序
-      const rankedPlayers = players
+      // 获取所有该职业的玩家（包括离线）
+      const allClassPlayers = await allCharacters;
+      const rankedPlayers = allClassPlayers
         .filter(p => p.classId === classId)
-        .map(p => ({
-          name: p.name,
-          level: p.level,
-          atk: Math.floor(p.atk),
-          mag: Math.floor(p.mag),
-          spirit: Math.floor(p.spirit)
-        }))
+        .map(p => {
+          // 计算派生属性
+          computeDerived(p);
+          return {
+            name: p.name,
+            level: p.level,
+            atk: Math.floor(p.atk),
+            mag: Math.floor(p.mag),
+            spirit: Math.floor(p.spirit)
+          };
+        })
         .sort((a, b) => {
           if (classId === 'warrior') return b.atk - a.atk;
           if (classId === 'mage') return b.mag - a.mag;

@@ -9,7 +9,7 @@ import crypto from 'node:crypto';
 import config from './config.js';
 import knex from './db/index.js';
 import { createUser, verifyUser, createSession, getSession, getUserByName, setAdminFlag, verifyUserPassword, updateUserPassword, clearUserSessions, clearAllSessions } from './db/users.js';
-import { listCharacters, loadCharacter, saveCharacter, findCharacterByName, findCharacterByNameInRealm } from './db/characters.js';
+import { listCharacters, loadCharacter, saveCharacter, findCharacterByName, findCharacterByNameInRealm, listAllCharacters } from './db/characters.js';
 import { addGuildMember, createGuild, getGuildByName, getGuildByNameInRealm, getGuildMember, getSabakOwner, isGuildLeader, isGuildLeaderOrVice, setGuildMemberRole, listGuildMembers, listSabakRegistrations, registerSabak, removeGuildMember, leaveGuild, setSabakOwner, clearSabakRegistrations, transferGuildLeader, ensureSabakState, applyToGuild, listGuildApplications, removeGuildApplication, approveGuildApplication, getApplicationByUser, listAllGuilds } from './db/guilds.js';
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
 import { sendMail, listMail, listSentMail, markMailRead, markMailClaimed, deleteMail } from './db/mail.js';
@@ -4270,6 +4270,7 @@ io.on('connection', (socket) => {
     await handleCommand({
       player,
       players: listOnlinePlayers(player.realmId || 1),
+      allCharacters: listAllCharacters(player.realmId || 1),
       input: payload.text || '',
       source: payload.source || '',
       send: (msg) => sendTo(player, msg),
