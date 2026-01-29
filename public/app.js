@@ -811,18 +811,6 @@ function appendChatLine(payload) {
   const data = normalizePayload(payload);
   const staticLoc = parseStaticLocationLink(data.text);
   console.log('Parsed - loc:', loc, 'data.location:', data.location, 'staticLoc:', staticLoc);
-  if (loc && socket && !data.location) {
-    console.log('Creating goto player button for:', loc.player);
-    const btn = document.createElement('button');
-    btn.className = 'chat-link-btn';
-    btn.textContent = '前往';
-    btn.addEventListener('click', () => {
-      const cmd = `goto ${loc.player}`;
-      console.log('Sending goto command:', cmd);
-      socket.emit('cmd', { text: cmd });
-    });
-    p.appendChild(btn);
-  }
   if (data.location && socket) {
     console.log('Location data:', data.location);
     // 移除原来的位置文字
@@ -927,15 +915,6 @@ function loadChatCache(name) {
         const data = normalizePayload(entry);
         const staticLoc = parseStaticLocationLink(data.text);
         // 重新绑定位置跳转按钮事件
-        if (loc && socket) {
-          const btn = document.createElement('button');
-          btn.className = 'chat-link-btn';
-          btn.textContent = '前往';
-          btn.addEventListener('click', () => {
-            socket.emit('cmd', { text: `goto ${loc.player}` });
-          });
-          p.appendChild(btn);
-        }
         if (data.location && socket) {
           const labelBtn = document.createElement('button');
           labelBtn.className = 'chat-link-tag';
