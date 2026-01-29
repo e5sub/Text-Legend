@@ -3273,7 +3273,9 @@ body.dark .chat-name-btn.sponsor-player-name:hover {
 }
 
 .guild-member button {
-  min-width: 64px;
+  min-width: 48px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
 }
 
 .sabak-guild-list {
