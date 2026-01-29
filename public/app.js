@@ -2729,7 +2729,7 @@ async function showSponsorTitleModal() {
   }
   hideItemTooltip();
 
-  const currentPlayerName = state.player?.name;
+  const currentPlayerName = lastState?.player?.name;
   if (!currentPlayerName) {
     showToast('请先登录游戏');
     console.warn('玩家未登录,无法设置称号');
@@ -4622,7 +4622,7 @@ if (chat.setSponsorTitleBtn) {
   chat.setSponsorTitleBtn.addEventListener('click', () => {
     console.log('点击设置称号按钮');
     console.log('sponsorTitleUi.modal:', sponsorTitleUi.modal);
-    console.log('state.player?.name:', state.player?.name);
+    console.log('lastState.player?.name:', lastState?.player?.name);
     showSponsorTitleModal();
   });
 } else {
