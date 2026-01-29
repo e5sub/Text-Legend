@@ -14,7 +14,7 @@ import { addGuildMember, createGuild, getGuildByName, getGuildByNameInRealm, get
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
 import { sendMail, listMail, listSentMail, markMailRead, markMailClaimed, deleteMail } from './db/mail.js';
 import { createVipCodes, listVipCodes, useVipCode } from './db/vip.js';
-import { getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig } from './db/settings.js';
+import { getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb } from './db/settings.js';
 import { listRealms, getRealmById, updateRealmName, createRealm } from './db/realms.js';
 import { listMobRespawns, upsertMobRespawn, clearMobRespawn, saveMobState } from './db/mobs.js';
 import {
@@ -67,7 +67,8 @@ import {
   setAllClassLevelBonusConfigs,
   getTrainingFruitDropRate,
   setTrainingFruitCoefficient,
-  setTrainingFruitDropRate as setTrainingFruitDropRateConfig
+  setTrainingFruitDropRate as setTrainingFruitDropRateConfig,
+  setTrainingPerLevelConfig as setTrainingPerLevelConfigMem
 } from './game/settings.js';
 
 const app = express();
@@ -767,21 +768,54 @@ app.post('/admin/training-fruit-settings/update', async (req, res) => {
     if (isNaN(parsed) || parsed < 0) {
       return res.status(400).json({ error: '系数必须为有效数字且不小于0' });
     }
-    await setTrainingFruitCoefficient(parsed);
+    await setTrainingFruitCoefficientDb(parsed);
   }
   if (dropRate !== undefined) {
     const parsed = Number(dropRate);
     if (isNaN(parsed) || parsed < 0 || parsed > 1) {
       return res.status(400).json({ error: '爆率必须为有效数字且在0到1之间' });
     }
-    await setTrainingFruitDropRate(parsed);
+    await setTrainingFruitDropRateDb(parsed);
   }
   // 更新内存中的配置
-  const newCoefficient = await getTrainingFruitCoefficient();
-  const newDropRate = await getTrainingFruitDropRate();
+  const newCoefficient = await getTrainingFruitCoefficientDb();
+  const newDropRate = await getTrainingFruitDropRateDb();
   setTrainingFruitCoefficient(newCoefficient);
   setTrainingFruitDropRateConfig(newDropRate);
   res.json({ ok: true, coefficient: newCoefficient, dropRate: newDropRate });
+});
+
+// 修炼系统配置
+app.get('/admin/training-settings', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const config = await getTrainingPerLevelConfigDb();
+  res.json({ ok: true, config });
+});
+
+app.post('/admin/training-settings/update', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const { config } = req.body || {};
+  if (!config || typeof config !== 'object') {
+    return res.status(400).json({ error: '配置对象不能为空' });
+  }
+  const validatedConfig = {};
+  const keys = ['hp', 'mp', 'atk', 'def', 'mag', 'mdef', 'spirit', 'dex'];
+  for (const key of keys) {
+    if (config[key] !== undefined) {
+      const parsed = Number(config[key]);
+      if (isNaN(parsed) || parsed < 0) {
+        return res.status(400).json({ error: `${key} 必须为有效数字且不小于0` });
+      }
+      validatedConfig[key] = parsed;
+    }
+  }
+  await setTrainingPerLevelConfigDb(validatedConfig);
+  // 更新内存中的配置
+  const newConfig = await getTrainingPerLevelConfigDb();
+  setTrainingPerLevelConfigMem(newConfig);
+  res.json({ ok: true, config: newConfig });
 });
 
 // 特殊BOSS配置（魔龙BOSS、暗之系列BOSS、沙巴克BOSS）
@@ -6679,10 +6713,14 @@ async function start() {
   expandRoomVariants(WORLD);
 
   // 加载修炼果配置
-  const trainingFruitCoefficient = await getTrainingFruitCoefficient();
+  const trainingFruitCoefficient = await getTrainingFruitCoefficientDb();
   setTrainingFruitCoefficient(trainingFruitCoefficient);
-  const trainingFruitDropRate = await getTrainingFruitDropRate();
+  const trainingFruitDropRate = await getTrainingFruitDropRateDb();
   setTrainingFruitDropRateConfig(trainingFruitDropRate);
+
+  // 加载修炼系统配置
+  const trainingPerLevelConfig = await getTrainingPerLevelConfigDb();
+  setTrainingPerLevelConfigMem(trainingPerLevelConfig);
 
   // 加载职业升级属性配置
   const classLevelConfigs = {

@@ -48,6 +48,20 @@ const tfCoefficientInput = document.getElementById('tf-coefficient');
 const tfDropRateInput = document.getElementById('tf-drop-rate');
 const tfSaveBtn = document.getElementById('tf-save-btn');
 
+// 修炼系统配置相关
+const trainingMsg = document.getElementById('training-msg');
+const trainingInputs = {
+  hp: document.getElementById('training-hp'),
+  mp: document.getElementById('training-mp'),
+  atk: document.getElementById('training-atk'),
+  def: document.getElementById('training-def'),
+  mag: document.getElementById('training-mag'),
+  mdef: document.getElementById('training-mdef'),
+  spirit: document.getElementById('training-spirit'),
+  dex: document.getElementById('training-dex')
+};
+const trainingSaveBtn = document.getElementById('training-save-btn');
+
 // 世界BOSS相关
 const wbMsg = document.getElementById('wb-msg');
 const wbPlayerBonusList = document.getElementById('wb-player-bonus-list');
@@ -137,6 +151,64 @@ confirmCancel.addEventListener('click', () => {
     confirmCallback(false);
     confirmCallback = null;
   }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
 });
 
 confirmOk.addEventListener('click', () => {
@@ -144,6 +216,64 @@ confirmOk.addEventListener('click', () => {
   if (confirmCallback) {
     confirmCallback(true);
     confirmCallback = null;
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
   }
 });
 
@@ -153,6 +283,64 @@ alertOk.addEventListener('click', () => {
     alertCallback();
     alertCallback = null;
   }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
 });
 
 promptCancel.addEventListener('click', () => {
@@ -161,6 +349,64 @@ promptCancel.addEventListener('click', () => {
     promptCallback(null);
     promptCallback = null;
   }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
 });
 
 promptOk.addEventListener('click', () => {
@@ -168,6 +414,64 @@ promptOk.addEventListener('click', () => {
   if (promptCallback) {
     promptCallback(promptInput.value);
     promptCallback = null;
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
   }
 });
 
@@ -179,12 +483,128 @@ promptInput.addEventListener('keydown', (e) => {
       promptCallback = null;
     }
   }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
 });
 
 function applyTheme(theme) {
   document.body.classList.toggle('theme-dark', theme === 'dark');
   if (themeToggleBtn) {
     themeToggleBtn.textContent = theme === 'dark' ? '切换亮色' : '切换暗色';
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
   }
 }
 
@@ -217,6 +637,64 @@ function initCollapsibleBlocks() {
         toggle.textContent = shouldCollapse ? '展开' : '折叠';
       });
     });
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
   }
 }
 
@@ -253,6 +731,64 @@ async function login() {
     await loadWorldBossSettings();
   } catch (err) {
     loginMsg.textContent = err.message;
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
   }
 }
 
@@ -348,12 +884,128 @@ async function refreshUsers(page = 1) {
   }
 }
 
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
 async function quickToggleGM(username, isAdmin) {
   try {
     await api('/admin/users/promote', 'POST', { username, isAdmin });
     await refreshUsers(currentUsersPage);
   } catch (err) {
     await customAlert('操作失败', `操作失败: ${err.message}`);
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
   }
 }
 
@@ -374,6 +1026,64 @@ async function deleteUserAccount(userId, username) {
     await refreshUsers(currentUsersPage);
   } catch (err) {
     await customAlert('删除失败', `删除失败: ${err.message}`);
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
   }
 }
 
@@ -459,6 +1169,64 @@ async function loadWorldBossSettings() {
   }
 }
 
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
 async function saveWorldBossSettings() {
   if (!document.getElementById('wb-msg')) return;
   const msg = document.getElementById('wb-msg');
@@ -478,6 +1246,64 @@ async function saveWorldBossSettings() {
   } catch (err) {
     msg.textContent = err.message;
     msg.style.color = 'red';
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
   }
 }
 
@@ -505,6 +1331,64 @@ async function respawnWorldBoss() {
   }
 }
 
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
 async function resetUserPassword(username) {
   if (!adminPwModal || !adminPwInput) return;
   pendingPwUser = username;
@@ -524,6 +1408,64 @@ async function createVipCodes() {
     vipCodesResult.textContent = `成功生成 ${data.codes.length} 个激活码:\n\n` + data.codes.join('\n');
   } catch (err) {
     vipCodesResult.textContent = err.message;
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
   }
 }
 
@@ -584,6 +1526,64 @@ async function listVipCodes() {
   }
 }
 
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
 async function refreshVipSelfClaimStatus() {
   try {
     const data = await api('/admin/vip/self-claim-status', 'GET');
@@ -595,6 +1595,64 @@ async function refreshVipSelfClaimStatus() {
   }
 }
 
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
 async function toggleVipSelfClaim(enabled) {
   vipSelfClaimMsg.textContent = '';
   try {
@@ -603,6 +1661,64 @@ async function toggleVipSelfClaim(enabled) {
     await refreshVipSelfClaimStatus();
   } catch (err) {
     vipSelfClaimMsg.textContent = err.message;
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
   }
 }
 
@@ -618,6 +1734,64 @@ async function refreshLootLogStatus() {
   }
 }
 
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
 async function toggleLootLog(enabled) {
   if (!lootLogMsg) return;
   lootLogMsg.textContent = '';
@@ -627,6 +1801,64 @@ async function toggleLootLog(enabled) {
     await refreshLootLogStatus();
   } catch (err) {
     lootLogMsg.textContent = err.message;
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
   }
 }
 
@@ -644,6 +1876,64 @@ async function refreshStateThrottleStatus() {
     }
   } catch (err) {
     stateThrottleStatus.textContent = '加载失败';
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
   }
 }
 
@@ -665,6 +1955,64 @@ async function refreshConsignExpireStatus() {
   }
 }
 
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
 async function saveConsignExpireHours() {
   if (!consignExpireMsg) return;
   consignExpireMsg.textContent = '';
@@ -681,6 +2029,64 @@ async function saveConsignExpireHours() {
   }
 }
 
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
 async function refreshRoomVariantStatus() {
   if (!roomVariantStatus) return;
   try {
@@ -691,6 +2097,64 @@ async function refreshRoomVariantStatus() {
     if (roomVariantInput) roomVariantInput.value = String(count);
   } catch (err) {
     roomVariantStatus.textContent = '加载失败';
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
   }
 }
 
@@ -710,6 +2174,64 @@ async function saveRoomVariantCount() {
   }
 }
 
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
 async function toggleStateThrottle(enabled) {
   if (!stateThrottleMsg) return;
   stateThrottleMsg.textContent = '';
@@ -721,6 +2243,64 @@ async function toggleStateThrottle(enabled) {
     await refreshStateThrottleStatus();
   } catch (err) {
     stateThrottleMsg.textContent = err.message;
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
   }
 }
 
@@ -738,6 +2318,64 @@ async function saveStateThrottleInterval() {
     await refreshStateThrottleStatus();
   } catch (err) {
     stateThrottleMsg.textContent = err.message;
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
   }
 }
 
@@ -771,6 +2409,64 @@ async function downloadBackup() {
   }
 }
 
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
 async function importBackup() {
   backupMsg.textContent = '';
   const file = importFileInput?.files?.[0];
@@ -793,6 +2489,64 @@ async function importBackup() {
     backupMsg.textContent = summary ? `导入完成：${summary}` : '导入完成。';
   } catch (err) {
     backupMsg.textContent = err.message;
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
   }
 }
 
@@ -871,6 +2625,64 @@ async function refreshRealms() {
   }
 }
 
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
 function updateMergeSelects(realms) {
   if (!mergeSourceSelect || !mergeTargetSelect) return;
   
@@ -911,6 +2723,64 @@ async function createRealm() {
   }
 }
 
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
 async function editRealmName(realmId, currentName) {
   const newName = await customPrompt('修改区名', `修改区名 (当前: ${currentName}):`, currentName);
   if (!newName || newName.trim() === currentName) return;
@@ -921,6 +2791,64 @@ async function editRealmName(realmId, currentName) {
     await refreshRealms();
   } catch (err) {
     await customAlert('修改失败', `修改失败: ${err.message}`);
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
   }
 }
 
@@ -982,6 +2910,64 @@ async function mergeRealms() {
   }
 }
 
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
 async function fixRealmId() {
   if (!realmsMsg) return;
   const confirmed = await customConfirm('修复数据', '确定要修复旧数据吗？\n\n此操作将所有realm_id为null或0的记录设置为1。\n通常用于升级后修复历史数据。');
@@ -997,6 +2983,64 @@ async function fixRealmId() {
     await refreshRealms();
   } catch (err) {
     realmsMsg.textContent = `修复失败: ${err.message}`;
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
   }
 }
 
@@ -1093,6 +3137,64 @@ async function listSponsors() {
   }
 }
 
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
 async function addSponsor() {
   if (!sponsorMsg) return;
   const playerName = sponsorNameInput.value.trim();
@@ -1122,6 +3224,64 @@ async function addSponsor() {
   }
 }
 
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
 async function editSponsor(id, currentName, currentAmount) {
   const newName = prompt('请输入新的玩家名:', currentName);
   if (newName === null) return;
@@ -1143,6 +3303,64 @@ async function editSponsor(id, currentName, currentAmount) {
   }
 }
 
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
 async function deleteSponsor(id, playerName) {
   const confirmed = confirm(`确定要删除玩家 "${playerName}" 的赞助记录吗？`);
   if (!confirmed) return;
@@ -1153,6 +3371,64 @@ async function deleteSponsor(id, playerName) {
     await listSponsors();
   } catch (err) {
     alert(`删除失败: ${err.message}`);
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
   }
 }
 
@@ -1215,6 +3491,64 @@ async function loadClassBonusConfig() {
   }
 }
 
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
 async function saveClassBonusConfig() {
   const classSelect = document.getElementById('class-select');
   const classId = classSelect?.value;
@@ -1239,6 +3573,64 @@ async function saveClassBonusConfig() {
     }, 3000);
   } catch (err) {
     if (classBonusMsg) classBonusMsg.textContent = `保存失败: ${err.message}`;
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
   }
 }
 
@@ -1271,6 +3663,64 @@ async function resetClassBonusConfig() {
   }
 }
 
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
 // 修炼果配置
 async function loadTrainingFruitSettings() {
   if (!tfCoefficientInput || !tfDropRateInput || !tfMsg) return;
@@ -1287,6 +3737,64 @@ async function loadTrainingFruitSettings() {
   } catch (err) {
     tfMsg.textContent = `加载失败: ${err.message}`;
     tfMsg.style.color = 'red';
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
   }
 }
 
@@ -1320,6 +3828,122 @@ async function saveTrainingFruitSettings() {
   }
 }
 
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
 // 世界BOSS配置
 let worldBossPlayerBonusConfig = [];
 
@@ -1335,6 +3959,64 @@ async function loadWorldBossSettings() {
     renderWorldBossPlayerBonusList();
   } catch (err) {
     if (wbMsg) wbMsg.textContent = `加载失败: ${err.message}`;
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
   }
 }
 
@@ -1413,6 +4095,64 @@ async function saveWorldBossSettings() {
   }
 }
 
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
 async function respawnWorldBoss() {
   const confirmed = confirm('确定要刷新世界BOSS吗？');
   if (!confirmed) return;
@@ -1422,6 +4162,64 @@ async function respawnWorldBoss() {
     alert('世界BOSS已刷新');
   } catch (err) {
     alert(`刷新失败: ${err.message}`);
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
   }
 }
 
@@ -1440,6 +4238,64 @@ async function loadSpecialBossSettings() {
     renderSpecialBossPlayerBonusList();
   } catch (err) {
     if (sbMsg) sbMsg.textContent = `加载失败: ${err.message}`;
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
   }
 }
 
@@ -1518,6 +4374,64 @@ async function saveSpecialBossSettings() {
   }
 }
 
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
 if (adminToken) {
   showDashboard();
   refreshUsers();
@@ -1532,6 +4446,7 @@ if (adminToken) {
   loadSpecialBossSettings();
   loadClassBonusConfig();
   loadTrainingFruitSettings();
+  loadTrainingSettings();
 }
 
 applyTheme(localStorage.getItem('adminTheme') || 'light');
@@ -1557,10 +4472,126 @@ document.getElementById('users-prev-page').addEventListener('click', () => {
   if (currentUsersPage > 1) {
     refreshUsers(currentUsersPage - 1);
   }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
 });
 document.getElementById('users-next-page').addEventListener('click', () => {
   if (currentUsersPage < totalUsersPages) {
     refreshUsers(currentUsersPage + 1);
+  }
+}
+
+// 修炼系统配置
+async function loadTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const data = await api('/admin/training-settings', 'GET');
+    const config = data.config || {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        trainingInputs[key].value = config[key] !== undefined ? config[key] : '';
+      }
+    });
+    trainingMsg.textContent = '加载成功';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `加载失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
+  }
+}
+
+async function saveTrainingSettings() {
+  if (!trainingMsg) return;
+  trainingMsg.textContent = '';
+  try {
+    const config = {};
+    Object.keys(trainingInputs).forEach(key => {
+      if (trainingInputs[key]) {
+        const value = trainingInputs[key].value ? Number(trainingInputs[key].value) : undefined;
+        if (value !== undefined) {
+          if (isNaN(value) || value < 0) {
+            trainingMsg.textContent = `${key} 必须为有效数字且不小于0`;
+            trainingMsg.style.color = 'red';
+            return;
+          }
+          config[key] = value;
+        }
+      }
+    });
+    if (Object.keys(config).length === 0) {
+      trainingMsg.textContent = '请至少配置一个属性';
+      trainingMsg.style.color = 'red';
+      return;
+    }
+    await api('/admin/training-settings/update', 'POST', { config });
+    trainingMsg.textContent = '保存成功，立即生效';
+    trainingMsg.style.color = 'green';
+    setTimeout(() => {
+      trainingMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    trainingMsg.textContent = `保存失败: ${err.message}`;
+    trainingMsg.style.color = 'red';
   }
 });
 document.getElementById('wb-save-btn').addEventListener('click', saveWorldBossSettings);
@@ -1656,6 +4687,11 @@ if (document.getElementById('sb-save-btn')) {
 // 修炼果配置事件
 if (tfSaveBtn) {
   tfSaveBtn.addEventListener('click', saveTrainingFruitSettings);
+}
+
+// 修炼系统配置事件
+if (trainingSaveBtn) {
+  trainingSaveBtn.addEventListener('click', saveTrainingSettings);
 }
 
 if (adminPwCancel) {

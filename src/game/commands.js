@@ -16,6 +16,7 @@ import { CLASSES, expForLevel, getStartPosition, ROOM_VARIANT_COUNT } from './co
 import { getRoom, getAliveMobs, spawnMobs } from './state.js';
 import { clamp } from './utils.js';
 import { applyDamage } from './combat.js';
+import { getTrainingPerLevelConfig } from './settings.js';
 
 function getSummons(player) {
   if (!player) return [];
@@ -1791,7 +1792,8 @@ export async function handleCommand({ player, players, allCharacters, input, sou
           const info = TRAINING_OPTIONS[key];
           const cost = trainingCost(player, key);
           const currentLevel = player.flags.training[key] || 0;
-          const totalBonus = currentLevel * info.perLevel;
+          const perLevel = getTrainingPerLevelConfig()[key];
+          const totalBonus = currentLevel * perLevel;
           send(`${info.label}: Lv${currentLevel} (属性+${totalBonus.toFixed(2)}), 消耗 ${cost} 金币, 升至 Lv${currentLevel + 1}`);
         });
         return;
@@ -1843,7 +1845,8 @@ export async function handleCommand({ player, players, allCharacters, input, sou
         player.gold -= cost;
         player.flags.training[key] = (player.flags.training[key] || 0) + TRAINING_OPTIONS[key].inc;
         const newLevel = player.flags.training[key];
-        const totalBonus = newLevel * TRAINING_OPTIONS[key].perLevel;
+        const perLevel = getTrainingPerLevelConfig()[key];
+        const totalBonus = newLevel * perLevel;
         computeDerived(player);
         player.forceStateRefresh = true;
         send(`修炼成功: ${TRAINING_OPTIONS[key].label} 升至 Lv${newLevel} (属性+${totalBonus.toFixed(2)})。`);
@@ -1871,7 +1874,8 @@ export async function handleCommand({ player, players, allCharacters, input, sou
       // 检查金币是否足够
       if (player.gold < totalCost) {
         send(`金币不足。需要 ${totalCost} 金币进行 ${trainCount} 次修炼，当前只有 ${player.gold} 金币。`);
-        send(`预计修炼至 Lv${currentLevel + trainCount} (属性+${((currentLevel + trainCount) * TRAINING_OPTIONS[key].perLevel).toFixed(2)})`);
+        const perLevel = getTrainingPerLevelConfig()[key];
+        send(`预计修炼至 Lv${currentLevel + trainCount} (属性+${((currentLevel + trainCount) * perLevel).toFixed(2)})`);
         return;
       }
 
@@ -1879,7 +1883,8 @@ export async function handleCommand({ player, players, allCharacters, input, sou
       player.gold -= totalCost;
       const newLevel = currentLevel + trainCount;
       player.flags.training[key] = newLevel;
-      const totalBonus = newLevel * TRAINING_OPTIONS[key].perLevel;
+      const perLevel = getTrainingPerLevelConfig()[key];
+      const totalBonus = newLevel * perLevel;
       computeDerived(player);
       player.forceStateRefresh = true;
 

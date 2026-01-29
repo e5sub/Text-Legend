@@ -359,6 +359,31 @@ export async function setClassLevelBonusConfig(classId, config) {
   await setSetting(`class_level_bonus_${classId}`, normalized);
 }
 
+// 修炼系统每级效果配置
+export async function getTrainingPerLevelConfig() {
+  const value = await getSetting('training_per_level', '{"hp":1,"mp":1,"atk":0.1,"def":0.1,"mag":0.1,"mdef":0.1,"spirit":0.1,"dex":0.1}');
+  try {
+    const parsed = JSON.parse(value);
+    return {
+      hp: typeof parsed.hp === 'number' ? parsed.hp : 1,
+      mp: typeof parsed.mp === 'number' ? parsed.mp : 1,
+      atk: typeof parsed.atk === 'number' ? parsed.atk : 0.1,
+      def: typeof parsed.def === 'number' ? parsed.def : 0.1,
+      mag: typeof parsed.mag === 'number' ? parsed.mag : 0.1,
+      mdef: typeof parsed.mdef === 'number' ? parsed.mdef : 0.1,
+      spirit: typeof parsed.spirit === 'number' ? parsed.spirit : 0.1,
+      dex: typeof parsed.dex === 'number' ? parsed.dex : 0.1
+    };
+  } catch (e) {
+    return { hp: 1, mp: 1, atk: 0.1, def: 0.1, mag: 0.1, mdef: 0.1, spirit: 0.1, dex: 0.1 };
+  }
+}
+
+export async function setTrainingPerLevelConfig(config) {
+  const normalized = JSON.stringify(config || {});
+  await setSetting('training_per_level', normalized);
+}
+
 // 修炼果系数配置
 export async function getTrainingFruitCoefficient() {
   const value = await getSetting('training_fruit_coefficient', '0.5');

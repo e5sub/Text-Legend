@@ -16,6 +16,18 @@ let trainingFruitCoefficient = 0.5;
 // 修炼果爆率配置（可由后台动态配置，0.01 = 1%）
 let trainingFruitDropRate = 0.01;
 
+// 修炼系统每级效果配置（可由后台动态配置）
+let trainingPerLevelConfig = {
+  hp: 1,
+  mp: 1,
+  atk: 0.1,
+  def: 0.1,
+  mag: 0.1,
+  mdef: 0.1,
+  spirit: 0.1,
+  dex: 0.1
+};
+
 /**
  * 设置职业升级属性配置
  * @param {string} classId - 职业ID (warrior, mage, taoist)
@@ -103,4 +115,45 @@ export function setTrainingFruitDropRate(rate) {
  */
 export function getTrainingFruitDropRate() {
   return trainingFruitDropRate;
+}
+
+/**
+ * 设置修炼系统每级效果配置
+ * @param {object} config - 配置对象 { hp: 1, mp: 1, atk: 0.1, def: 0.1, mag: 0.1, mdef: 0.1, spirit: 0.1, dex: 0.1 }
+ */
+export function setTrainingPerLevelConfig(config) {
+  if (config && typeof config === 'object') {
+    if (typeof config.hp === 'number') trainingPerLevelConfig.hp = config.hp;
+    if (typeof config.mp === 'number') trainingPerLevelConfig.mp = config.mp;
+    if (typeof config.atk === 'number') trainingPerLevelConfig.atk = config.atk;
+    if (typeof config.def === 'number') trainingPerLevelConfig.def = config.def;
+    if (typeof config.mag === 'number') trainingPerLevelConfig.mag = config.mag;
+    if (typeof config.mdef === 'number') trainingPerLevelConfig.mdef = config.mdef;
+    if (typeof config.spirit === 'number') trainingPerLevelConfig.spirit = config.spirit;
+    if (typeof config.dex === 'number') trainingPerLevelConfig.dex = config.dex;
+  }
+}
+
+/**
+ * 获取修炼系统每级效果配置
+ * @returns {object} 配置对象
+ */
+export function getTrainingPerLevelConfig() {
+  return trainingPerLevelConfig;
+}
+
+/**
+ * 重置修炼系统每级效果配置为默认值
+ */
+export function resetTrainingPerLevelConfig() {
+  trainingPerLevelConfig = {
+    hp: 1,
+    mp: 1,
+    atk: 0.1,
+    def: 0.1,
+    mag: 0.1,
+    mdef: 0.1,
+    spirit: 0.1,
+    dex: 0.1
+  };
 }

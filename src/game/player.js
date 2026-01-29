@@ -156,7 +156,7 @@ export function newCharacter(name, classId) {
   };
 }
 
-import { getTrainingFruitCoefficient } from './settings.js';
+import { getTrainingFruitCoefficient, getTrainingPerLevelConfig } from './settings.js';
 
 export function computeDerived(player) {
   if (!player.flags) player.flags = {};
@@ -360,16 +360,22 @@ export function computeDerived(player) {
   const training = player.flags.training;
   const trainingFruit = player.flags.trainingFruit;
 
+  // 修炼果系数：从后台配置读取
+  const TRAINING_FRUIT_COEFFICIENT = getTrainingFruitCoefficient();
+
+  // 修炼系统每级效果：从后台配置读取
+  const TRAINING_PER_LEVEL = getTrainingPerLevelConfig();
+
   // 修炼加成：等级 * 每级增长率
   const trainingBonus = {
-    hp: (training.hp || 0) * 1,
-    mp: (training.mp || 0) * 1,
-    atk: (training.atk || 0) * 0.1,
-    def: (training.def || 0) * 0.1,
-    mag: (training.mag || 0) * 0.1,
-    mdef: (training.mdef || 0) * 0.1,
-    spirit: (training.spirit || 0) * 0.1,
-    dex: (training.dex || 0) * 0.1
+    hp: (training.hp || 0) * TRAINING_PER_LEVEL.hp,
+    mp: (training.mp || 0) * TRAINING_PER_LEVEL.mp,
+    atk: (training.atk || 0) * TRAINING_PER_LEVEL.atk,
+    def: (training.def || 0) * TRAINING_PER_LEVEL.def,
+    mag: (training.mag || 0) * TRAINING_PER_LEVEL.mag,
+    mdef: (training.mdef || 0) * TRAINING_PER_LEVEL.mdef,
+    spirit: (training.spirit || 0) * TRAINING_PER_LEVEL.spirit,
+    dex: (training.dex || 0) * TRAINING_PER_LEVEL.dex
   };
 
   // 修炼果加成：修炼果数量 × 系数
