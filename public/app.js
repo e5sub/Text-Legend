@@ -799,16 +799,21 @@ function updateServerTimeDisplay() {
 
 function appendChatLine(payload) {
   if (!chat.log) return;
+  console.log('appendChatLine called with payload:', payload);
   const p = buildLine(payload);
   const loc = parseLocationMessage(normalizePayload(payload).text);
   const data = normalizePayload(payload);
   const staticLoc = parseStaticLocationLink(data.text);
+  console.log('Parsed - loc:', loc, 'data.location:', data.location, 'staticLoc:', staticLoc);
   if (loc && socket) {
+    console.log('Creating goto player button for:', loc.player);
     const btn = document.createElement('button');
     btn.className = 'chat-link-btn';
     btn.textContent = '前往';
     btn.addEventListener('click', () => {
-      socket.emit('cmd', { text: `goto ${loc.player}` });
+      const cmd = `goto ${loc.player}`;
+      console.log('Sending goto command:', cmd);
+      socket.emit('cmd', { text: cmd });
     });
     p.appendChild(btn);
   }
