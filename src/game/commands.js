@@ -734,10 +734,28 @@ export async function handleCommand({ player, players, input, source, send, part
         zoneId = parts[0];
         roomId = parts[1];
       }
-      if (!zoneId || !roomId || !WORLD[zoneId] || !WORLD[zoneId].rooms[roomId]) {
-        return send('目标地点无效。');
+      if (!zoneId || !roomId || !WORLD[zoneId]) return send('目标地点无效。');
+
+      // 检查房间是否存在，如果不存在则查找变种房间
+      let targetRoomId = roomId;
+      if (!WORLD[zoneId].rooms[roomId]) {
+        // 检查是否是变种房间（带数字后缀）
+        const match = roomId.match(/^(.*?)(\d+)$/);
+        if (match) {
+          const baseId = match[1];
+          const suffix = match[2];
+          // 检查基础房间是否存在
+          if (WORLD[zoneId].rooms[baseId]) {
+            targetRoomId = baseId;
+          } else {
+            return send('目标地点无效。');
+          }
+        } else {
+          return send('目标地点无效。');
+        }
       }
-      if (isSabakBossRoom(zoneId, roomId)) {
+
+      if (isSabakBossRoom(zoneId, targetRoomId)) {
         // 检查是否是沙巴克行会成员
         const sabakOwner = guildApi.sabakState.ownerGuildId;
         const playerGuild = player.guild?.id;
@@ -745,14 +763,30 @@ export async function handleCommand({ player, players, input, source, send, part
           return send('只有沙巴克行会成员才能前往沙巴克BOSS房间。');
         }
       }
-      if (!isBossRoom(zoneId, roomId)) {
+      if (!isBossRoom(zoneId, targetRoomId)) {
         return send('该地点无法直接前往。');
       }
+
+      // 如果是变种房间请求，尝试选择玩家最少的变种房间
+      if (roomId !== targetRoomId) {
+        // 获取所有变种房间
+        const variantRooms = Object.keys(WORLD[zoneId].rooms).filter(r => r.startsWith(targetRoomId) && r !== targetRoomId);
+        if (variantRooms.length > 0) {
+          // 选择玩家最少的变种房间
+          const roomPlayerCounts = variantRooms.map(r => ({
+            roomId: r,
+            count: players.filter(p => p.position.zone === zoneId && p.position.room === r).length
+          }));
+          roomPlayerCounts.sort((a, b) => a.count - b.count);
+          targetRoomId = roomPlayerCounts[0].roomId;
+        }
+      }
+
       player.position.zone = zoneId;
-      player.position.room = roomId;
+      player.position.room = targetRoomId;
 
       // 根据不同的房间类型发送不同的消息
-      const room = WORLD[zoneId].rooms[roomId];
+      const room = WORLD[zoneId].rooms[targetRoomId];
       const bossName = room.spawns?.map(id => MOB_TEMPLATES[id]?.name).filter(Boolean).join('、') || 'BOSS';
       send(`你已前往 ${bossName} 的房间。`);
       sendRoomDescription(player, send);
@@ -1999,8 +2033,8 @@ export async function handleCommand({ player, players, input, source, send, part
         const target = players.find((p) => p.name === nameArg);
         if (!target) return send('玩家不在线。');
         if (target.guild) return send('对方已有行会，请先退出行会再邀请。');
-        const isLeader = await guildApi.isGuildLeader(player.guild.id, player.userId, player.name);
-        if (!isLeader) return send('只有会长可以邀请。');
+        const isLeaderOrVice = await guildApi.isGuildLeaderOrVice(player.guild.id, player.userId, player.name);
+        if (!isLeaderOrVice) return send('只有会长或副会长可以邀请。');
         await guildApi.listGuildMembers(player.guild.id, player.realmId || 1);
         await guildApi.addGuildMember(player.guild.id, target.userId, target.name);
         target.guild = { id: player.guild.id, name: player.guild.name, role: 'member' };
@@ -2013,8 +2047,8 @@ export async function handleCommand({ player, players, input, source, send, part
         if (!player.guild) return send('你不在行会中。');
         if (!nameArg) return send('要踢出谁？');
 
-        const isLeader = await guildApi.isGuildLeader(player.guild.id, player.userId, player.name);
-        if (!isLeader) return send('只有会长可以踢人。');
+        const isLeaderOrVice = await guildApi.isGuildLeaderOrVice(player.guild.id, player.userId, player.name);
+        if (!isLeaderOrVice) return send('只有会长或副会长可以踢人。');
 
         // 从数据库中获取行会成员列表
         const members = await guildApi.listGuildMembers(player.guild.id, player.realmId || 1);
@@ -2022,6 +2056,10 @@ export async function handleCommand({ player, players, input, source, send, part
 
         if (!targetMember) return send('该玩家不在你的行会中。');
         if (targetMember.role === 'leader') return send('不能踢出会长。');
+
+        // 如果操作者是副会长，则不能踢其他副会长
+        const isLeader = await guildApi.isGuildLeader(player.guild.id, player.userId, player.name);
+        if (!isLeader && targetMember.role === 'vice_leader') return send('副会长不能踢其他副会长。');
 
         // 从数据库中移除行会成员
         await guildApi.removeGuildMember(player.guild.id, targetMember.user_id, nameArg);
@@ -2059,6 +2097,114 @@ export async function handleCommand({ player, players, input, source, send, part
           target.send(`${player.name} 已将会长职位转让给你。`);
         } catch (err) {
           send(`转让会长失败: ${err.message}`);
+        }
+        return;
+      }
+
+      if (sub === 'vice') {
+        if (!player.guild) return send('你不在行会中。');
+        const isLeader = await guildApi.isGuildLeader(player.guild.id, player.userId, player.name);
+        if (!isLeader) return send('只有会长可以任命副会长。');
+        const members = await guildApi.listGuildMembers(player.guild.id, player.realmId || 1);
+        const targetMember = members.find((m) => m.char_name === nameArg);
+        if (!targetMember) return send('该玩家不在你的行会中。');
+        if (targetMember.role === 'leader') return send('不能任命会长为副会长。');
+        const newRole = targetMember.role === 'vice_leader' ? 'member' : 'vice_leader';
+        try {
+          await guildApi.setGuildMemberRole(player.guild.id, targetMember.user_id, nameArg, newRole);
+          const action = newRole === 'vice_leader' ? '任命为副会长' : '取消副会长';
+          send(`已将 ${nameArg} ${action}。`);
+          const onlineTarget = players.find((p) => p.name === nameArg);
+          if (onlineTarget) {
+            onlineTarget.guild.role = newRole;
+            onlineTarget.send(`${player.name} ${action === '任命为副会长' ? '任命你为' : '取消了你的'}副会长职位。`);
+          }
+        } catch (err) {
+          send(`操作失败: ${err.message}`);
+        }
+        return;
+      }
+
+      if (sub === 'apply') {
+        if (player.guild) return send('你已经有行会了，请先退出行会。');
+        const [subCmd2, ...restArgs] = args.split(' ').filter(Boolean);
+        if (!subCmd2) return send('用法: guild apply <行会名>');
+        const guildName = restArgs.join(' ');
+        if (!guildName) return send('请输入行会名。');
+        const guild = await guildApi.getGuildByNameInRealm(guildName);
+        if (!guild) return send('行会不存在。');
+        // 检查是否已有申请
+        const existingApp = await guildApi.getApplicationByUser();
+        if (existingApp) return send('你已经申请了行会，请等待处理。');
+        await guildApi.applyToGuild(guild.id);
+        send(`已申请加入行会 ${guildName}，请等待会长或副会长批准。`);
+        // 通知在线的会长和副会长
+        const members = await guildApi.listGuildMembers(guild.id, player.realmId || 1);
+        members.forEach((m) => {
+          if (m.role === 'leader' || m.role === 'vice_leader') {
+            const onlineMember = players.find((p) => p.name === m.char_name);
+            if (onlineMember) {
+              onlineMember.send(`${player.name} 申请加入行会，请在行会管理中查看申请。`);
+            }
+          }
+        });
+        return;
+      }
+
+      if (sub === 'list') {
+        const guilds = await guildApi.listAllGuilds();
+        if (guilds.length === 0) return send('当前没有行会。');
+        send('行会列表:');
+        guilds.forEach((g) => {
+          send(`  ${g.name} (会长: ${g.leader_char_name})`);
+        });
+        return;
+      }
+
+      if (sub === 'applications') {
+        if (!player.guild) return send('你不在行会中。');
+        const isLeaderOrVice = await guildApi.isGuildLeaderOrVice(player.guild.id, player.userId, player.name);
+        if (!isLeaderOrVice) return send('只有会长或副会长可以查看申请。');
+        const applications = await guildApi.listGuildApplications(player.guild.id);
+        if (applications.length === 0) return send('当前没有待处理的申请。');
+        send('待处理申请:');
+        applications.forEach((app) => {
+          const time = new Date(app.applied_at).toLocaleString('zh-CN', { hour12: false });
+          send(`  ${app.char_name} (${time})`);
+        });
+        return;
+      }
+
+      if (sub === 'approve') {
+        if (!player.guild) return send('你不在行会中。');
+        const isLeaderOrVice = await guildApi.isGuildLeaderOrVice(player.guild.id, player.userId, player.name);
+        if (!isLeaderOrVice) return send('只有会长或副会长可以批准申请。');
+        const members = await guildApi.listGuildMembers(player.guild.id, player.realmId || 1);
+        const applications = await guildApi.listGuildApplications(player.guild.id);
+        const targetApp = applications.find((a) => a.char_name === nameArg);
+        if (!targetApp) return send('该玩家没有申请加入你的行会。');
+        await guildApi.approveGuildApplication(player.guild.id, targetApp.user_id, nameArg);
+        send(`已批准 ${nameArg} 加入行会。`);
+        const onlineTarget = players.find((p) => p.name === nameArg);
+        if (onlineTarget) {
+          onlineTarget.guild = { id: player.guild.id, name: player.guild.name, role: 'member' };
+          onlineTarget.send(`你的申请已被批准，已加入行会 ${player.guild.name}。`);
+        }
+        return;
+      }
+
+      if (sub === 'reject') {
+        if (!player.guild) return send('你不在行会中。');
+        const isLeaderOrVice = await guildApi.isGuildLeaderOrVice(player.guild.id, player.userId, player.name);
+        if (!isLeaderOrVice) return send('只有会长或副会长可以拒绝申请。');
+        const applications = await guildApi.listGuildApplications(player.guild.id);
+        const targetApp = applications.find((a) => a.char_name === nameArg);
+        if (!targetApp) return send('该玩家没有申请加入你的行会。');
+        await guildApi.removeGuildApplication(player.guild.id, targetApp.user_id);
+        send(`已拒绝 ${nameArg} 的申请。`);
+        const onlineTarget = players.find((p) => p.name === nameArg);
+        if (onlineTarget) {
+          onlineTarget.send(`你的加入行会申请已被拒绝。`);
         }
         return;
       }

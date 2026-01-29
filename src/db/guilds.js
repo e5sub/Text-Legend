@@ -67,6 +67,20 @@ export async function isGuildLeader(guildId, userId, charName, realmId = 1) {
   return row && row.role === 'leader';
 }
 
+export async function isGuildLeaderOrVice(guildId, userId, charName, realmId = 1) {
+  const row = await knex('guild_members').where({ guild_id: guildId, user_id: userId, char_name: charName, realm_id: realmId }).first();
+  return row && (row.role === 'leader' || row.role === 'vice_leader');
+}
+
+export async function setGuildMemberRole(guildId, userId, charName, role, realmId = 1) {
+  const updated = await knex('guild_members')
+    .where({ guild_id: guildId, user_id: userId, char_name: charName, realm_id: realmId })
+    .update({ role });
+  if (updated === 0) {
+    throw new Error('成员记录不存在');
+  }
+}
+
 export async function transferGuildLeader(guildId, oldLeaderUserId, oldLeaderCharName, newLeaderUserId, newLeaderCharName, realmId = 1) {
   await knex.transaction(async (trx) => {
     const oldLeaderRows = await trx('guild_members')
@@ -133,4 +147,46 @@ export async function hasSabakRegistrationToday(guildId, realmId = 1) {
 
 export async function clearSabakRegistrations(realmId = 1) {
   await knex('sabak_registrations').where({ realm_id: realmId }).del();
+}
+
+// 行会申请相关
+export async function applyToGuild(guildId, userId, charName, realmId = 1) {
+  await knex('guild_applications')
+    .insert({ guild_id: guildId, user_id: userId, char_name: charName, realm_id: realmId })
+    .onConflict(['user_id', 'realm_id'])
+    .merge({ guild_id: guildId, char_name: charName, applied_at: knex.fn.now() });
+}
+
+export async function listGuildApplications(guildId, realmId = 1) {
+  return knex('guild_applications')
+    .where({ guild_id: guildId, realm_id: realmId })
+    .select('id', 'user_id', 'char_name', 'applied_at')
+    .orderBy('applied_at', 'desc');
+}
+
+export async function removeGuildApplication(guildId, userId, realmId = 1) {
+  await knex('guild_applications').where({ guild_id: guildId, user_id: userId, realm_id: realmId }).del();
+}
+
+export async function approveGuildApplication(guildId, userId, charName, realmId = 1) {
+  await knex.transaction(async (trx) => {
+    // 删除申请记录
+    await trx('guild_applications').where({ guild_id: guildId, user_id: userId, realm_id: realmId }).del();
+    // 添加为行会成员
+    await trx('guild_members').insert({
+      guild_id: guildId,
+      user_id: userId,
+      char_name: charName,
+      role: 'member',
+      realm_id: realmId
+    });
+  });
+}
+
+export async function getApplicationByUser(userId, realmId = 1) {
+  return knex('guild_applications').where({ user_id: userId, realm_id: realmId }).first();
+}
+
+export async function listAllGuilds(realmId = 1) {
+  return knex('guilds').where({ realm_id: realmId }).select('id', 'name', 'leader_char_name').orderBy('name');
 }

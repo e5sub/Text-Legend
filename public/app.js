@@ -145,6 +145,7 @@ const chat = {
   partyInviteBtn: document.getElementById('chat-party-invite'),
   guildInviteBtn: document.getElementById('chat-guild-invite'),
   guildCreateBtn: document.getElementById('chat-guild-create'),
+  guildListBtn: document.getElementById('chat-guild-list'),
   partyToggleBtn: document.getElementById('chat-party-toggle'),
   sabakRegisterBtn: document.getElementById('chat-sabak-register'),
   locationBtn: document.getElementById('chat-send-location'),
@@ -182,8 +183,19 @@ const guildUi = {
   prev: document.getElementById('guild-prev'),
   next: document.getElementById('guild-next'),
   invite: document.getElementById('guild-invite'),
+  applications: document.getElementById('guild-applications'),
   leave: document.getElementById('guild-leave'),
   close: document.getElementById('guild-close')
+};
+const guildListUi = {
+  modal: document.getElementById('guild-list-modal'),
+  list: document.getElementById('guild-list-content'),
+  close: document.getElementById('guild-list-close')
+};
+const guildApplicationsUi = {
+  modal: document.getElementById('guild-applications-modal'),
+  list: document.getElementById('guild-applications-list'),
+  close: document.getElementById('guild-applications-close')
 };
 const sabakUi = {
   modal: document.getElementById('sabak-modal'),
@@ -720,7 +732,10 @@ const LOCATION_LOOKUP = {
   '祖玛寺庙 - 祖玛大厅': { zoneId: 'zm', roomId: 'hall' },
   '赤月峡谷 - 赤月入口': { zoneId: 'cr', roomId: 'valley' },
   '世界BOSS领域 - 炎龙巢穴': { zoneId: 'wb', roomId: 'lair' },
-  '魔龙城 - 魔龙深处': { zoneId: 'molong', roomId: 'deep' }
+  '魔龙城 - 魔龙深处': { zoneId: 'molong', roomId: 'deep' },
+  '沙巴克宫殿 - 皇宫大门': { zoneId: 'sabak', roomId: 'palace' },
+  '沙巴克宫殿 - 皇宫大厅': { zoneId: 'sabak', roomId: 'hall' },
+  '沙巴克宫殿 - 皇宫内殿': { zoneId: 'sabak', roomId: 'throne' }
 };
 
 function parseLocationMessage(text) {
@@ -3101,14 +3116,18 @@ function formatItemTooltip(item) {
 function renderGuildModal() {
   if (!guildUi.modal || !guildUi.list) return;
   guildUi.list.innerHTML = '';
-  const roleLabel = lastState?.guild_role === 'leader' ? '会长' : '成员';
+  const roleLabel = lastState?.guild_role === 'leader' ? '会长' : (lastState?.guild_role === 'vice_leader' ? '副会长' : '成员');
   if (guildUi.title) {
     const guildName = lastState?.guild || '无';
     guildUi.title.textContent = `行会: ${guildName} (${roleLabel})`;
   }
   if (guildUi.invite) {
-    const isLeader = lastState?.guild_role === 'leader';
-    guildUi.invite.classList.toggle('hidden', !isLeader);
+    const isLeaderOrVice = lastState?.guild_role === 'leader' || lastState?.guild_role === 'vice_leader';
+    guildUi.invite.classList.toggle('hidden', !isLeaderOrVice);
+  }
+  if (guildUi.applications) {
+    const isLeaderOrVice = lastState?.guild_role === 'leader' || lastState?.guild_role === 'vice_leader';
+    guildUi.applications.classList.toggle('hidden', !isLeaderOrVice);
   }
   if (guildUi.leave) {
     guildUi.leave.classList.remove('hidden');
@@ -3129,27 +3148,37 @@ function renderGuildModal() {
       const row = document.createElement('div');
       row.className = 'guild-member';
       const name = document.createElement('div');
-      const role = member.role === 'leader' ? '会长' : '成员';
+      const roleLabel = member.role === 'leader' ? '会长' : (member.role === 'vice_leader' ? '副会长' : '成员');
       const online = member.online ? '在线' : '离线';
-      name.textContent = `${member.name} (${role}/${online})`;
+      name.textContent = `${member.name} (${roleLabel}/${online})`;
       row.appendChild(name);
       const tag = document.createElement('span');
       tag.className = 'tag';
-      tag.textContent = member.role === 'leader' ? '会长' : '成员';
+      tag.textContent = roleLabel;
       row.appendChild(tag);
-      if (lastState?.guild_role === 'leader' && member.role !== 'leader') {
-        const transferBtn = document.createElement('button');
-        transferBtn.textContent = '转移会长';
-        transferBtn.addEventListener('click', () => {
-          if (socket) socket.emit('cmd', { text: `guild transfer ${member.name}` });
-        });
-        row.appendChild(transferBtn);
-        const kickBtn = document.createElement('button');
-        kickBtn.textContent = '踢出';
-        kickBtn.addEventListener('click', () => {
-          if (socket) socket.emit('cmd', { text: `guild kick ${member.name}` });
-        });
-        row.appendChild(kickBtn);
+      if (lastState?.guild_role === 'leader') {
+        if (member.role !== 'leader') {
+          const viceBtn = document.createElement('button');
+          viceBtn.textContent = member.role === 'vice_leader' ? '取消副会长' : '设为副会长';
+          viceBtn.addEventListener('click', () => {
+            if (socket) socket.emit('cmd', { text: `guild vice ${member.name}` });
+          });
+          row.appendChild(viceBtn);
+        }
+        if (member.role !== 'leader' && member.role !== 'vice_leader') {
+          const transferBtn = document.createElement('button');
+          transferBtn.textContent = '转移会长';
+          transferBtn.addEventListener('click', () => {
+            if (socket) socket.emit('cmd', { text: `guild transfer ${member.name}` });
+          });
+          row.appendChild(transferBtn);
+          const kickBtn = document.createElement('button');
+          kickBtn.textContent = '踢出';
+          kickBtn.addEventListener('click', () => {
+            if (socket) socket.emit('cmd', { text: `guild kick ${member.name}` });
+          });
+          row.appendChild(kickBtn);
+        }
       }
       guildUi.list.appendChild(row);
     });
@@ -3161,6 +3190,70 @@ function renderGuildModal() {
   if (guildUi.next) guildUi.next.disabled = guildPage >= totalPages - 1;
 
   guildUi.modal.classList.remove('hidden');
+}
+
+function renderGuildListModal(guilds) {
+  if (!guildListUi.modal || !guildListUi.list) return;
+  guildListUi.list.innerHTML = '';
+
+  if (!guilds || guilds.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'sabak-empty';
+    empty.textContent = '暂无行会';
+    guildListUi.list.appendChild(empty);
+  } else {
+    guilds.forEach((guild) => {
+      const row = document.createElement('div');
+      row.className = 'guild-member';
+      row.innerHTML = `<div class="guild-info">${guild.name} (会长: ${guild.leader_char_name})</div>`;
+      const applyBtn = document.createElement('button');
+      applyBtn.textContent = '申请加入';
+      applyBtn.addEventListener('click', () => {
+        if (socket) socket.emit('guild_apply', { guildId: guild.id });
+      });
+      row.appendChild(applyBtn);
+      guildListUi.list.appendChild(row);
+    });
+  }
+
+  guildListUi.modal.classList.remove('hidden');
+}
+
+function renderGuildApplicationsModal(applications) {
+  if (!guildApplicationsUi.modal || !guildApplicationsUi.list) return;
+  guildApplicationsUi.list.innerHTML = '';
+
+  if (!applications || applications.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'sabak-empty';
+    empty.textContent = '暂无待处理申请';
+    guildApplicationsUi.list.appendChild(empty);
+  } else {
+    applications.forEach((app) => {
+      const row = document.createElement('div');
+      row.className = 'guild-member';
+      const time = new Date(app.applied_at).toLocaleString('zh-CN', { hour12: false });
+      row.innerHTML = `<div class="app-info">${app.char_name} (${time})</div>`;
+
+      const approveBtn = document.createElement('button');
+      approveBtn.textContent = '批准';
+      approveBtn.addEventListener('click', () => {
+        if (socket) socket.emit('guild_approve', { charName: app.char_name });
+      });
+      row.appendChild(approveBtn);
+
+      const rejectBtn = document.createElement('button');
+      rejectBtn.textContent = '拒绝';
+      rejectBtn.addEventListener('click', () => {
+        if (socket) socket.emit('guild_reject', { charName: app.char_name });
+      });
+      row.appendChild(rejectBtn);
+
+      guildApplicationsUi.list.appendChild(row);
+    });
+  }
+
+  guildApplicationsUi.modal.classList.remove('hidden');
 }
 
 function renderSabakModal(payload) {
@@ -3675,6 +3768,15 @@ function renderState(state) {
     if (chat.guildCreateBtn) {
       const hasGuild = Boolean(state.guild);
       chat.guildCreateBtn.classList.toggle('hidden', hasGuild);
+    }
+    if (chat.guildInviteBtn) {
+      const hasGuild = Boolean(state.guild);
+      const isLeaderOrVice = state.guild_role === 'leader' || state.guild_role === 'vice_leader';
+      chat.guildInviteBtn.classList.toggle('hidden', !hasGuild || !isLeaderOrVice);
+    }
+    if (chat.guildListBtn) {
+      const hasGuild = Boolean(state.guild);
+      chat.guildListBtn.classList.toggle('hidden', hasGuild);
     }
   }
   if (state.stats) {
@@ -4602,6 +4704,46 @@ function enterGame(name) {
       renderGuildModal();
     }
   });
+  socket.on('guild_list', (payload) => {
+    if (!payload || !payload.ok) {
+      if (payload && payload.error) appendLine(payload.error);
+      return;
+    }
+    renderGuildListModal(payload.guilds);
+  });
+  socket.on('guild_applications', (payload) => {
+    if (!payload || !payload.ok) {
+      if (payload && payload.error) appendLine(payload.error);
+      return;
+    }
+    renderGuildApplicationsModal(payload.applications);
+  });
+  socket.on('guild_apply_result', (payload) => {
+    if (!payload) return;
+    if (payload.ok) {
+      appendLine(payload.msg);
+    } else {
+      appendLine(payload.msg || '申请失败');
+    }
+  });
+  socket.on('guild_approve_result', (payload) => {
+    if (!payload) return;
+    if (payload.ok) {
+      appendLine(payload.msg);
+      if (socket) socket.emit('guild_applications');
+    } else {
+      appendLine(payload.msg || '批准失败');
+    }
+  });
+  socket.on('guild_reject_result', (payload) => {
+    if (!payload) return;
+    if (payload.ok) {
+      appendLine(payload.msg);
+      if (socket) socket.emit('guild_applications');
+    } else {
+      appendLine(payload.msg || '拒绝失败');
+    }
+  });
   socket.on('sabak_info', (payload) => {
     if (!payload) return;
     renderSabakModal(payload);
@@ -4882,6 +5024,12 @@ if (chat.guildCreateBtn) {
     });
     if (!name || !socket) return;
     socket.emit('cmd', { text: `guild create ${name.trim()}` });
+  });
+}
+if (chat.guildListBtn) {
+  chat.guildListBtn.addEventListener('click', () => {
+    if (!socket) return;
+    socket.emit('guild_list');
   });
 }
 if (chat.partyToggleBtn) {
@@ -5292,6 +5440,22 @@ if (guildUi.leave) {
 if (guildUi.close) {
   guildUi.close.addEventListener('click', () => {
     if (guildUi.modal) guildUi.modal.classList.add('hidden');
+  });
+}
+if (guildUi.applications) {
+  guildUi.applications.addEventListener('click', () => {
+    if (!socket) return;
+    socket.emit('guild_applications');
+  });
+}
+if (guildListUi.close) {
+  guildListUi.close.addEventListener('click', () => {
+    if (guildListUi.modal) guildListUi.modal.classList.add('hidden');
+  });
+}
+if (guildApplicationsUi.close) {
+  guildApplicationsUi.close.addEventListener('click', () => {
+    if (guildApplicationsUi.modal) guildApplicationsUi.modal.classList.add('hidden');
   });
 }
 if (guildUi.modal) {

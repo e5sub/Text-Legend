@@ -10,7 +10,7 @@ import config from './config.js';
 import knex from './db/index.js';
 import { createUser, verifyUser, createSession, getSession, getUserByName, setAdminFlag, verifyUserPassword, updateUserPassword, clearUserSessions, clearAllSessions } from './db/users.js';
 import { listCharacters, loadCharacter, saveCharacter, findCharacterByName, findCharacterByNameInRealm } from './db/characters.js';
-import { addGuildMember, createGuild, getGuildByName, getGuildByNameInRealm, getGuildMember, getSabakOwner, isGuildLeader, listGuildMembers, listSabakRegistrations, registerSabak, removeGuildMember, leaveGuild, setSabakOwner, clearSabakRegistrations, transferGuildLeader, ensureSabakState } from './db/guilds.js';
+import { addGuildMember, createGuild, getGuildByName, getGuildByNameInRealm, getGuildMember, getSabakOwner, isGuildLeader, isGuildLeaderOrVice, setGuildMemberRole, listGuildMembers, listSabakRegistrations, registerSabak, removeGuildMember, leaveGuild, setSabakOwner, clearSabakRegistrations, transferGuildLeader, ensureSabakState, applyToGuild, listGuildApplications, removeGuildApplication, approveGuildApplication, getApplicationByUser, listAllGuilds } from './db/guilds.js';
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
 import { sendMail, listMail, markMailRead, markMailClaimed } from './db/mail.js';
 import { createVipCodes, listVipCodes, useVipCode } from './db/vip.js';
@@ -4304,9 +4304,19 @@ io.on('connection', (socket) => {
         listGuildMembers,
         isGuildLeader: (guildId, userId, charName) =>
           isGuildLeader(guildId, userId, charName, player.realmId || 1),
+        isGuildLeaderOrVice: (guildId, userId, charName) =>
+          isGuildLeaderOrVice(guildId, userId, charName, player.realmId || 1),
+        setGuildMemberRole: (guildId, userId, charName, role) =>
+          setGuildMemberRole(guildId, userId, charName, role, player.realmId || 1),
         transferGuildLeader: (guildId, oldLeaderUserId, oldLeaderCharName, newLeaderUserId, newLeaderCharName) =>
           transferGuildLeader(guildId, oldLeaderUserId, oldLeaderCharName, newLeaderUserId, newLeaderCharName, player.realmId || 1),
         registerSabak: (guildId) => registerSabak(guildId, player.realmId || 1),
+        applyToGuild: (guildId) => applyToGuild(guildId, player.userId, player.name, player.realmId || 1),
+        listGuildApplications: (guildId) => listGuildApplications(guildId, player.realmId || 1),
+        removeGuildApplication: (guildId, userId) => removeGuildApplication(guildId, userId, player.realmId || 1),
+        approveGuildApplication: (guildId, userId, charName) => approveGuildApplication(guildId, userId, charName, player.realmId || 1),
+        getApplicationByUser: () => getApplicationByUser(player.userId, player.realmId || 1),
+        listAllGuilds: () => listAllGuilds(player.realmId || 1),
         listSabakRegistrations: () => listSabakRegistrations(player.realmId || 1),
         hasSabakRegistrationToday: (guildId) => hasSabakRegistrationToday(guildId, player.realmId || 1),
         sabakState: getSabakState(player.realmId || 1),
@@ -4485,6 +4495,114 @@ io.on('connection', (socket) => {
       role: player.guild.role || 'member',
       members: memberList
     });
+  });
+
+  socket.on('guild_list', async () => {
+    const player = players.get(socket.id);
+    if (!player) return;
+    const guilds = await listAllGuilds(player.realmId || 1);
+    socket.emit('guild_list', { ok: true, guilds });
+  });
+
+  socket.on('guild_apply', async (payload) => {
+    const player = players.get(socket.id);
+    if (!player) return;
+    if (!payload || !payload.guildId) return socket.emit('guild_apply_result', { ok: false, msg: '参数错误' });
+
+    if (player.guild) {
+      return socket.emit('guild_apply_result', { ok: false, msg: '你已经有行会了' });
+    }
+
+    // 检查是否已有申请
+    const existingApp = await getApplicationByUser(player.userId, player.realmId || 1);
+    if (existingApp) {
+      return socket.emit('guild_apply_result', { ok: false, msg: '你已经申请了行会，请等待处理' });
+    }
+
+    const guild = await getGuildById(payload.guildId);
+    if (!guild || String(guild.realm_id) !== String(player.realmId || 1)) {
+      return socket.emit('guild_apply_result', { ok: false, msg: '行会不存在' });
+    }
+
+    await applyToGuild(payload.guildId, player.userId, player.name, player.realmId || 1);
+    socket.emit('guild_apply_result', { ok: true, msg: `已申请加入行会 ${guild.name}` });
+
+    // 通知在线的会长和副会长
+    const members = await listGuildMembers(payload.guildId, player.realmId || 1);
+    members.forEach((m) => {
+      if (m.role === 'leader' || m.role === 'vice_leader') {
+        const onlineMember = players.get(socketIds.get(m.char_name));
+        if (onlineMember) {
+          onlineMember.send(`${player.name} 申请加入行会`);
+        }
+      }
+    });
+  });
+
+  socket.on('guild_applications', async () => {
+    const player = players.get(socket.id);
+    if (!player || !player.guild) {
+      return socket.emit('guild_applications', { ok: false, error: '你不在行会中' });
+    }
+
+    const isLeaderOrVice = await isGuildLeaderOrVice(player.guild.id, player.userId, player.name);
+    if (!isLeaderOrVice) {
+      return socket.emit('guild_applications', { ok: false, error: '只有会长或副会长可以查看申请' });
+    }
+
+    const applications = await listGuildApplications(player.guild.id, player.realmId || 1);
+    socket.emit('guild_applications', { ok: true, applications });
+  });
+
+  socket.on('guild_approve', async (payload) => {
+    const player = players.get(socket.id);
+    if (!player || !player.guild) return;
+    if (!payload || !payload.charName) return socket.emit('guild_approve_result', { ok: false, msg: '参数错误' });
+
+    const isLeaderOrVice = await isGuildLeaderOrVice(player.guild.id, player.userId, player.name);
+    if (!isLeaderOrVice) {
+      return socket.emit('guild_approve_result', { ok: false, msg: '只有会长或副会长可以批准申请' });
+    }
+
+    const applications = await listGuildApplications(player.guild.id, player.realmId || 1);
+    const targetApp = applications.find((a) => a.char_name === payload.charName);
+    if (!targetApp) {
+      return socket.emit('guild_approve_result', { ok: false, msg: '该玩家没有申请加入你的行会' });
+    }
+
+    await approveGuildApplication(player.guild.id, targetApp.user_id, payload.charName, player.realmId || 1);
+    socket.emit('guild_approve_result', { ok: true, msg: `已批准 ${payload.charName} 加入行会` });
+
+    const onlineTarget = players.get(socketIds.get(payload.charName));
+    if (onlineTarget) {
+      onlineTarget.guild = { id: player.guild.id, name: player.guild.name, role: 'member' };
+      onlineTarget.send(`你的申请已被批准，已加入行会 ${player.guild.name}`);
+    }
+  });
+
+  socket.on('guild_reject', async (payload) => {
+    const player = players.get(socket.id);
+    if (!player || !player.guild) return;
+    if (!payload || !payload.charName) return socket.emit('guild_reject_result', { ok: false, msg: '参数错误' });
+
+    const isLeaderOrVice = await isGuildLeaderOrVice(player.guild.id, player.userId, player.name);
+    if (!isLeaderOrVice) {
+      return socket.emit('guild_reject_result', { ok: false, msg: '只有会长或副会长可以拒绝申请' });
+    }
+
+    const applications = await listGuildApplications(player.guild.id, player.realmId || 1);
+    const targetApp = applications.find((a) => a.char_name === payload.charName);
+    if (!targetApp) {
+      return socket.emit('guild_reject_result', { ok: false, msg: '该玩家没有申请加入你的行会' });
+    }
+
+    await removeGuildApplication(player.guild.id, targetApp.user_id, player.realmId || 1);
+    socket.emit('guild_reject_result', { ok: true, msg: `已拒绝 ${payload.charName} 的申请` });
+
+    const onlineTarget = players.get(socketIds.get(payload.charName));
+    if (onlineTarget) {
+      onlineTarget.send('你的加入行会申请已被拒绝');
+    }
   });
 
   socket.on('sabak_info', async () => {
