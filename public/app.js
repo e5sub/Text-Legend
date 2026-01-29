@@ -4376,9 +4376,6 @@ function enterGame(name) {
   lastSavedLevel = null;
   show(gameSection);
   log.innerHTML = '';
-  if (chat.log) {
-    loadChatCache(name);
-  }
   setTradeStatus('\u672a\u5728\u4ea4\u6613\u4e2d');
   if (shopUi.modal) shopUi.modal.classList.add('hidden');
   appendLine('正在连接...');
@@ -4406,6 +4403,10 @@ function enterGame(name) {
     socket.emit('cmd', { text: 'stats' });
     if (stateThrottleOverrideServerAllowed) {
       socket.emit('state_throttle_override', { enabled: stateThrottleOverride });
+    }
+    // 加载聊天缓存（socket已连接，按钮可以正常绑定）
+    if (chat.log) {
+      loadChatCache(name);
     }
     // 加载赞助者列表
     await loadSponsors();
