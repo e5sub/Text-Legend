@@ -1816,6 +1816,12 @@ function executeBatchTraining() {
     return;
   }
 
+  // 检查按钮是否被禁用
+  if (trainingBatchUi.confirm.disabled) {
+    alert('金币不足，无法修炼');
+    return;
+  }
+
   // 发送批量修炼命令
   socket.emit('cmd', { text: `train ${selectedTrainingType} ${count}` });
 

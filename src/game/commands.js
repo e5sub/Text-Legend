@@ -349,7 +349,7 @@ function formatStats(player, partyApi) {
   return [
     `职业: ${className}`,
     `等级: ${player.level} (${player.exp}/${expForLevel(player.level)} EXP)`,
-    `生命: ${player.hp}/${player.max_hp}`,
+    `生命: ${Math.floor(player.hp)}/${Math.floor(player.max_hp)}`,
     `魔法: ${Math.floor(player.mp)}/${Math.floor(player.max_mp)}`,
     `攻击: ${Math.floor(player.atk)} 防御: ${Math.floor(player.def)} 魔法: ${Math.floor(player.mag)}`,
     `金币: ${player.gold}`,
