@@ -209,7 +209,7 @@ async function saveTrainingSettings() {
     trainingMsg.textContent = `保存失败: ${err.message}`;
     trainingMsg.style.color = 'red';
   }
-});
+}
 
 confirmOk.addEventListener('click', () => {
   confirmModal.classList.add('hidden');
@@ -217,7 +217,7 @@ confirmOk.addEventListener('click', () => {
     confirmCallback(true);
     confirmCallback = null;
   }
-}
+});
 
 // 修炼系统配置
 async function loadTrainingSettings() {
@@ -275,7 +275,7 @@ async function saveTrainingSettings() {
     trainingMsg.textContent = `保存失败: ${err.message}`;
     trainingMsg.style.color = 'red';
   }
-});
+}
 
 alertOk.addEventListener('click', () => {
   alertModal.classList.add('hidden');
@@ -283,7 +283,7 @@ alertOk.addEventListener('click', () => {
     alertCallback();
     alertCallback = null;
   }
-}
+});
 
 // 修炼系统配置
 async function loadTrainingSettings() {
@@ -341,7 +341,7 @@ async function saveTrainingSettings() {
     trainingMsg.textContent = `保存失败: ${err.message}`;
     trainingMsg.style.color = 'red';
   }
-});
+}
 
 promptCancel.addEventListener('click', () => {
   promptModal.classList.add('hidden');
@@ -407,7 +407,7 @@ async function saveTrainingSettings() {
     trainingMsg.textContent = `保存失败: ${err.message}`;
     trainingMsg.style.color = 'red';
   }
-});
+}
 
 promptOk.addEventListener('click', () => {
   promptModal.classList.add('hidden');
@@ -473,7 +473,7 @@ async function saveTrainingSettings() {
     trainingMsg.textContent = `保存失败: ${err.message}`;
     trainingMsg.style.color = 'red';
   }
-});
+}
 
 promptInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
@@ -541,7 +541,7 @@ async function saveTrainingSettings() {
     trainingMsg.textContent = `保存失败: ${err.message}`;
     trainingMsg.style.color = 'red';
   }
-});
+}
 
 function applyTheme(theme) {
   document.body.classList.toggle('theme-dark', theme === 'dark');
@@ -4530,7 +4530,7 @@ async function saveTrainingSettings() {
     trainingMsg.textContent = `保存失败: ${err.message}`;
     trainingMsg.style.color = 'red';
   }
-});
+}
 document.getElementById('users-next-page').addEventListener('click', () => {
   if (currentUsersPage < totalUsersPages) {
     refreshUsers(currentUsersPage + 1);
@@ -4593,7 +4593,7 @@ async function saveTrainingSettings() {
     trainingMsg.textContent = `保存失败: ${err.message}`;
     trainingMsg.style.color = 'red';
   }
-});
+}
 document.getElementById('wb-save-btn').addEventListener('click', saveWorldBossSettings);
 if (document.getElementById('wb-respawn-btn')) {
   document.getElementById('wb-respawn-btn').addEventListener('click', respawnWorldBoss);
