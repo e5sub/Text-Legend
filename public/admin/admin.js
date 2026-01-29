@@ -707,7 +707,11 @@ async function api(path, method, body) {
     },
     body: body ? JSON.stringify(body) : undefined
   });
-  const data = await res.json();
+  const text = await res.text();
+  if (!text) {
+    throw new Error('服务器返回空响应');
+  }
+  const data = JSON.parse(text);
   if (!res.ok) throw new Error(data.error || '请求失败');
   return data;
 }
