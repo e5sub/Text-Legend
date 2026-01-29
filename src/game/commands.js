@@ -2183,12 +2183,21 @@ export async function handleCommand({ player, players, input, source, send, part
         const applications = await guildApi.listGuildApplications(player.guild.id);
         const targetApp = applications.find((a) => a.char_name === nameArg);
         if (!targetApp) return send('该玩家没有申请加入你的行会。');
-        await guildApi.approveGuildApplication(player.guild.id, targetApp.user_id, nameArg);
-        send(`已批准 ${nameArg} 加入行会。`);
-        const onlineTarget = players.find((p) => p.name === nameArg);
-        if (onlineTarget) {
-          onlineTarget.guild = { id: player.guild.id, name: player.guild.name, role: 'member' };
-          onlineTarget.send(`你的申请已被批准，已加入行会 ${player.guild.name}。`);
+        try {
+          await guildApi.approveGuildApplication(player.guild.id, targetApp.user_id, nameArg);
+          send(`已批准 ${nameArg} 加入行会。`);
+          const onlineTarget = players.find((p) => p.name === nameArg);
+          if (onlineTarget) {
+            onlineTarget.guild = { id: player.guild.id, name: player.guild.name, role: 'member' };
+            onlineTarget.send(`你的申请已被批准，已加入行会 ${player.guild.name}。`);
+          }
+        } catch (err) {
+          if (err.message.includes('已经在行会')) {
+            send(err.message);
+          } else {
+            console.error('[guild approve] Error:', err);
+            send('批准申请失败。');
+          }
         }
         return;
       }

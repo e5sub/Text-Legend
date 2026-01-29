@@ -4570,13 +4570,22 @@ io.on('connection', (socket) => {
       return socket.emit('guild_approve_result', { ok: false, msg: '该玩家没有申请加入你的行会' });
     }
 
-    await approveGuildApplication(player.guild.id, targetApp.user_id, payload.charName, player.realmId || 1);
-    socket.emit('guild_approve_result', { ok: true, msg: `已批准 ${payload.charName} 加入行会` });
+    try {
+      await approveGuildApplication(player.guild.id, targetApp.user_id, payload.charName, player.realmId || 1);
+      socket.emit('guild_approve_result', { ok: true, msg: `已批准 ${payload.charName} 加入行会` });
 
-    const onlineTarget = players.get(socketIds.get(payload.charName));
-    if (onlineTarget) {
-      onlineTarget.guild = { id: player.guild.id, name: player.guild.name, role: 'member' };
-      onlineTarget.send(`你的申请已被批准，已加入行会 ${player.guild.name}`);
+      const onlineTarget = players.get(socketIds.get(payload.charName));
+      if (onlineTarget) {
+        onlineTarget.guild = { id: player.guild.id, name: player.guild.name, role: 'member' };
+        onlineTarget.send(`你的申请已被批准，已加入行会 ${player.guild.name}`);
+      }
+    } catch (err) {
+      if (err.message.includes('已经在行会')) {
+        socket.emit('guild_approve_result', { ok: false, msg: err.message });
+      } else {
+        console.error('[guild_approve] Error:', err);
+        socket.emit('guild_approve_result', { ok: false, msg: '批准申请失败' });
+      }
     }
   });
 

@@ -170,6 +170,15 @@ export async function removeGuildApplication(guildId, userId, realmId = 1) {
 
 export async function approveGuildApplication(guildId, userId, charName, realmId = 1) {
   await knex.transaction(async (trx) => {
+    // 检查玩家是否已经在其他行会中
+    const existingMember = await trx('guild_members')
+      .where({ user_id: userId, realm_id: realmId })
+      .first();
+    if (existingMember) {
+      const existingGuild = await trx('guilds').where({ id: existingMember.guild_id }).first();
+      throw new Error(`该玩家已经在行会「${existingGuild.name}」中`);
+    }
+
     // 删除申请记录
     await trx('guild_applications').where({ guild_id: guildId, user_id: userId, realm_id: realmId }).del();
     // 添加为行会成员
