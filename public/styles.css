@@ -2139,6 +2139,21 @@ body.dark .chat-name-btn.sponsor-player-name:hover {
   border-color: rgba(120, 64, 20, 0.6);
 }
 
+body.dark .mail-tab {
+  background: rgba(232, 160, 88, 0.08);
+  border-color: rgba(232, 160, 88, 0.35);
+  color: var(--ink);
+}
+
+body.dark .mail-tab:hover {
+  background: rgba(232, 160, 88, 0.12);
+}
+
+body.dark .mail-tab.active {
+  background: rgba(232, 160, 88, 0.2);
+  border-color: rgba(232, 160, 88, 0.6);
+}
+
 .mail-btn-small {
   padding: 6px 12px;
   font-size: 0.85rem;

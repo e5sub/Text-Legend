@@ -3232,7 +3232,12 @@ function renderGuildModal() {
       tag.className = 'tag';
       tag.textContent = roleLabel;
       row.appendChild(tag);
-      if (lastState?.guild_role === 'leader') {
+      // 会长和副会长的权限控制
+      const isLeader = lastState?.guild_role === 'leader';
+      const isVice = lastState?.guild_role === 'vice_leader';
+      const isLeaderOrVice = isLeader || isVice;
+
+      if (isLeader) {
         if (member.role !== 'leader') {
           const viceBtn = document.createElement('button');
           viceBtn.textContent = member.role === 'vice_leader' ? '取消副会长' : '设为副会长';
@@ -3248,13 +3253,17 @@ function renderGuildModal() {
             if (socket) socket.emit('cmd', { text: `guild transfer ${member.name}` });
           });
           row.appendChild(transferBtn);
-          const kickBtn = document.createElement('button');
-          kickBtn.textContent = '踢出';
-          kickBtn.addEventListener('click', () => {
-            if (socket) socket.emit('cmd', { text: `guild kick ${member.name}` });
-          });
-          row.appendChild(kickBtn);
         }
+      }
+
+      // 会长和副会长都可以踢出普通成员
+      if (isLeaderOrVice && member.role === 'member') {
+        const kickBtn = document.createElement('button');
+        kickBtn.textContent = '踢出';
+        kickBtn.addEventListener('click', () => {
+          if (socket) socket.emit('cmd', { text: `guild kick ${member.name}` });
+        });
+        row.appendChild(kickBtn);
       }
       guildUi.list.appendChild(row);
     });
@@ -5248,9 +5257,13 @@ if (mailUi.refresh) {
     });
   }
   if (mailUi.delete) {
-    mailUi.delete.addEventListener('click', () => {
+    mailUi.delete.addEventListener('click', async () => {
       if (!socket || !selectedMailId) return;
-      if (confirm('确定要删除这封邮件吗？')) {
+      const confirmed = await confirmModal({
+        title: '删除邮件',
+        text: '确定要删除这封邮件吗？'
+      });
+      if (confirmed) {
         socket.emit('mail_delete', { mailId: selectedMailId, folder: currentMailFolder });
       }
     });
@@ -5570,6 +5583,8 @@ if (guildUi.close) {
 if (guildUi.applications) {
   guildUi.applications.addEventListener('click', () => {
     if (!socket) return;
+    // 显示加载提示
+    appendLine('正在加载申请列表...');
     socket.emit('guild_applications');
   });
 }
