@@ -4840,6 +4840,7 @@ function enterGame(name) {
     }
   });
   socket.on('state', (payload) => {
+    console.log('Received state payload:', payload);
     handleIncomingState(payload);
   });
   
