@@ -340,6 +340,7 @@ const playerUi = {
   trade: document.getElementById('player-trade'),
   party: document.getElementById('player-party'),
   guild: document.getElementById('player-guild'),
+  mail: document.getElementById('player-mail'),
   close: document.getElementById('player-close')
 };
 const observeUi = {
@@ -4901,28 +4902,28 @@ function enterGame(name) {
 
 function showObserveModal(data) {
   if (!observeUi || !observeUi.modal || !observeUi.content) return;
-  
+
   observeUi.title.textContent = `${data.name} 的信息`;
-  
+
   let html = '';
-  
+
   // 基础信息
   html += '<div class="observe-section">';
   html += '<div class="observe-section-title">基础属性</div>';
   html += '<div class="observe-stats">';
   html += `<div class="observe-stat-row"><span class="observe-stat-label">等级</span><span class="observe-stat-value">${data.level}</span></div>`;
   html += `<div class="observe-stat-row"><span class="observe-stat-label">职业</span><span class="observe-stat-value">${data.class}</span></div>`;
-  html += `<div class="observe-stat-row"><span class="observe-stat-label">生命</span><span class="observe-stat-value">${data.hp}/${data.maxHp}</span></div>`;
-  html += `<div class="observe-stat-row"><span class="observe-stat-label">魔法</span><span class="observe-stat-value">${data.mp}/${data.maxMp}</span></div>`;
-  html += `<div class="observe-stat-row"><span class="observe-stat-label">攻击</span><span class="observe-stat-value">${data.atk}</span></div>`;
-  html += `<div class="observe-stat-row"><span class="observe-stat-label">防御</span><span class="observe-stat-value">${data.def}</span></div>`;
-  html += `<div class="observe-stat-row"><span class="observe-stat-label">魔法</span><span class="observe-stat-value">${data.matk}</span></div>`;
-  html += `<div class="observe-stat-row"><span class="observe-stat-label">魔防</span><span class="observe-stat-value">${data.mdef}</span></div>`;
-  html += `<div class="observe-stat-row"><span class="observe-stat-label">道术</span><span class="observe-stat-value">${data.spirit}</span></div>`;
-  html += `<div class="observe-stat-row"><span class="observe-stat-label">闪避</span><span class="observe-stat-value">${data.evade}%</span></div>`;
+  html += `<div class="observe-stat-row"><span class="observe-stat-label">生命</span><span class="observe-stat-value">${Math.floor(data.hp)}/${Math.floor(data.maxHp)}</span></div>`;
+  html += `<div class="observe-stat-row"><span class="observe-stat-label">魔法</span><span class="observe-stat-value">${Math.floor(data.mp)}/${Math.floor(data.maxMp)}</span></div>`;
+  html += `<div class="observe-stat-row"><span class="observe-stat-label">攻击</span><span class="observe-stat-value">${Math.floor(data.atk)}</span></div>`;
+  html += `<div class="observe-stat-row"><span class="observe-stat-label">防御</span><span class="observe-stat-value">${Math.floor(data.def)}</span></div>`;
+  html += `<div class="observe-stat-row"><span class="observe-stat-label">魔法</span><span class="observe-stat-value">${Math.floor(data.matk)}</span></div>`;
+  html += `<div class="observe-stat-row"><span class="observe-stat-label">魔防</span><span class="observe-stat-value">${Math.floor(data.mdef)}</span></div>`;
+  html += `<div class="observe-stat-row"><span class="observe-stat-label">道术</span><span class="observe-stat-value">${Math.floor(data.spirit)}</span></div>`;
+  html += `<div class="observe-stat-row"><span class="observe-stat-label">闪避</span><span class="observe-stat-value">${Math.floor(data.evade)}%</span></div>`;
   html += '</div>';
   html += '</div>';
-  
+
   // 装备信息
   if (data.equipment && data.equipment.length > 0) {
     html += '<div class="observe-section">';
@@ -4932,7 +4933,7 @@ function showObserveModal(data) {
       html += '<div class="observe-equipment-item">';
       html += `<span class="observe-equipment-name">${eq.slot}: ${eq.name}</span>`;
       if (eq.durability != null) {
-        html += `<span class="observe-equipment-durability">[${eq.durability}/${eq.maxDurability}]</span>`;
+        html += `<span class="observe-equipment-durability">[${Math.floor(eq.durability)}/${Math.floor(eq.maxDurability)}]</span>`;
       }
       html += '</div>';
     });
@@ -4944,7 +4945,7 @@ function showObserveModal(data) {
     html += '<div style="color: var(--ink); opacity: 0.6; padding: 8px;">无装备</div>';
     html += '</div>';
   }
-  
+
   // 召唤物信息
   if (data.summons && data.summons.length > 0) {
     html += '<div class="observe-section">';
@@ -4953,13 +4954,13 @@ function showObserveModal(data) {
     data.summons.forEach(summon => {
       html += '<div class="observe-summon-item">';
       html += `<span class="observe-summon-name">${summon.name} (Lv ${summon.level})</span>`;
-      html += `<span class="observe-summon-stats">HP: ${summon.hp}/${summon.maxHp} | 攻击: ${summon.atk || 0} | 防御: ${summon.def || 0} | 魔御: ${summon.mdef || 0}</span>`;
+      html += `<span class="observe-summon-stats">HP: ${Math.floor(summon.hp)}/${Math.floor(summon.maxHp)} | 攻击: ${Math.floor(summon.atk || 0)} | 防御: ${Math.floor(summon.def || 0)} | 魔御: ${Math.floor(summon.mdef || 0)}</span>`;
       html += '</div>';
     });
     html += '</div>';
     html += '</div>';
   }
-  
+
   observeUi.content.innerHTML = html;
   observeUi.modal.classList.remove('hidden');
 }
@@ -5673,6 +5674,26 @@ if (playerUi.guild) {
     if (!socket || !playerUi.selected) return;
     socket.emit('cmd', { text: `guild invite ${playerUi.selected.name}` });
     if (playerUi.modal) playerUi.modal.classList.add('hidden');
+  });
+}
+if (playerUi.mail) {
+  playerUi.mail.addEventListener('click', () => {
+    if (!socket || !playerUi.selected) return;
+    // 打开邮件面板，并自动填充收件人
+    currentMailFolder = 'inbox';
+    updateMailTabs();
+    mailAttachments = [];
+    renderMailAttachmentList();
+    if (mailUi.to) mailUi.to.value = playerUi.selected.name;
+    if (mailUi.subject) mailUi.subject.value = '';
+    if (mailUi.body) mailUi.body.value = '';
+    if (mailUi.item) mailUi.item.value = '';
+    if (mailUi.qty) mailUi.qty.value = '';
+    if (mailUi.gold) mailUi.gold.value = '';
+    refreshMailItemOptions();
+    mailUi.modal.classList.remove('hidden');
+    if (playerUi.modal) playerUi.modal.classList.add('hidden');
+    if (socket) socket.emit('mail_list');
   });
 }
 if (ui.party) {
