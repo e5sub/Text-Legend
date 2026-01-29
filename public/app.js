@@ -246,6 +246,7 @@ const mailUi = {
   detailBody: document.getElementById('mail-detail-body'),
   detailItems: document.getElementById('mail-detail-items'),
   claim: document.getElementById('mail-claim'),
+  delete: document.getElementById('mail-delete'),
   refresh: document.getElementById('mail-refresh'),
   close: document.getElementById('mail-close'),
   to: document.getElementById('mail-to'),
@@ -1999,6 +2000,7 @@ function renderMailDetail(mail) {
     mailUi.detailBody.textContent = '';
     mailUi.detailItems.textContent = '';
     if (mailUi.claim) mailUi.claim.classList.add('hidden');
+    if (mailUi.delete) mailUi.delete.classList.add('hidden');
     return;
   }
   renderTextWithItemHighlights(mailUi.detailTitle, mail.title || '\u65E0\u6807\u9898', mail.items || []);
@@ -2035,6 +2037,9 @@ function renderMailDetail(mail) {
     } else {
       mailUi.claim.classList.add('hidden');
     }
+  }
+  if (mailUi.delete) {
+    mailUi.delete.classList.remove('hidden');
   }
 }
 
@@ -4826,6 +4831,14 @@ function enterGame(name) {
     showToast(payload.msg || '领取完成');
     if (payload.ok && socket) socket.emit('mail_list');
   });
+  socket.on('mail_delete_result', (payload) => {
+    if (!payload) return;
+    showToast(payload.msg || '删除完成');
+    if (payload.ok) {
+      selectedMailId = null;
+      if (socket) socket.emit('mail_list');
+    }
+  });
   socket.on('state', (payload) => {
     handleIncomingState(payload);
   });
@@ -5194,7 +5207,15 @@ if (mailUi.refresh) {
       if (!socket || !selectedMailId) return;
       socket.emit('mail_claim', { mailId: selectedMailId });
     });
-}
+  }
+  if (mailUi.delete) {
+    mailUi.delete.addEventListener('click', () => {
+      if (!socket || !selectedMailId) return;
+      if (confirm('确定要删除这封邮件吗？')) {
+        socket.emit('mail_delete', { mailId: selectedMailId });
+      }
+    });
+  }
   if (mailUi.addItem) {
     mailUi.addItem.addEventListener('click', () => {
       if (!mailUi.item) return;

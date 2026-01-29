@@ -25,3 +25,7 @@ export async function markMailRead(userId, mailId, realmId = 1) {
 export async function markMailClaimed(userId, mailId, realmId = 1) {
   await knex('mails').where({ id: mailId, to_user_id: userId, realm_id: realmId }).update({ claimed_at: knex.fn.now() });
 }
+
+export async function deleteMail(userId, mailId, realmId = 1) {
+  await knex('mails').where({ id: mailId, to_user_id: userId, realm_id: realmId }).del();
+}

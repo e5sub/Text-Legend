@@ -12,7 +12,7 @@ import { createUser, verifyUser, createSession, getSession, getUserByName, setAd
 import { listCharacters, loadCharacter, saveCharacter, findCharacterByName, findCharacterByNameInRealm } from './db/characters.js';
 import { addGuildMember, createGuild, getGuildByName, getGuildByNameInRealm, getGuildMember, getSabakOwner, isGuildLeader, isGuildLeaderOrVice, setGuildMemberRole, listGuildMembers, listSabakRegistrations, registerSabak, removeGuildMember, leaveGuild, setSabakOwner, clearSabakRegistrations, transferGuildLeader, ensureSabakState, applyToGuild, listGuildApplications, removeGuildApplication, approveGuildApplication, getApplicationByUser, listAllGuilds } from './db/guilds.js';
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
-import { sendMail, listMail, markMailRead, markMailClaimed } from './db/mail.js';
+import { sendMail, listMail, markMailRead, markMailClaimed, deleteMail } from './db/mail.js';
 import { createVipCodes, listVipCodes, useVipCode } from './db/vip.js';
 import { getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig } from './db/settings.js';
 import { listRealms, getRealmById, updateRealmName, createRealm } from './db/realms.js';
@@ -4472,6 +4472,17 @@ io.on('connection', (socket) => {
     const mailId = Number(payload?.mailId || 0);
     if (!mailId) return;
     await markMailRead(player.userId, mailId, player.realmId || 1);
+    const mails = await listMail(player.userId, player.realmId || 1);
+    socket.emit('mail_list', { ok: true, mails: mails.map(buildMailPayload) });
+  });
+
+  socket.on('mail_delete', async (payload) => {
+    const player = players.get(socket.id);
+    if (!player) return;
+    const mailId = Number(payload?.mailId || 0);
+    if (!mailId) return socket.emit('mail_delete_result', { ok: false, msg: '邮件ID无效。' });
+    await deleteMail(player.userId, mailId, player.realmId || 1);
+    socket.emit('mail_delete_result', { ok: true, msg: '邮件已删除。' });
     const mails = await listMail(player.userId, player.realmId || 1);
     socket.emit('mail_list', { ok: true, mails: mails.map(buildMailPayload) });
   });
