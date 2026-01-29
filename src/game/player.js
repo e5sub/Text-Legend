@@ -162,8 +162,11 @@ export function computeDerived(player) {
     player.flags.training = { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 };
   }
   if (!player.flags.trainingFruit) {
+    // 修炼果记录：存储的是修炼果数量，每次计算时乘以系数
     player.flags.trainingFruit = { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 };
   }
+  // 修炼果系数：可以通过调整此系数来修改修炼果的效果，不影响已使用的修炼果数量
+  const TRAINING_FRUIT_COEFFICIENT = 0.5;
   const SET_BONUS_RATE = 1.2;
   const SET_DEFS = [
     {
@@ -367,16 +370,16 @@ export function computeDerived(player) {
     dex: (training.dex || 0) * 0.1
   };
 
-  // 修炼果加成：直接加成（不乘以系数）
+  // 修炼果加成：修炼果数量 × 系数
   const trainingFruitBonus = {
-    hp: (trainingFruit.hp || 0),
-    mp: (trainingFruit.mp || 0),
-    atk: (trainingFruit.atk || 0),
-    def: (trainingFruit.def || 0),
-    mag: (trainingFruit.mag || 0),
-    mdef: (trainingFruit.mdef || 0),
-    spirit: (trainingFruit.spirit || 0),
-    dex: (trainingFruit.dex || 0)
+    hp: (trainingFruit.hp || 0) * TRAINING_FRUIT_COEFFICIENT,
+    mp: (trainingFruit.mp || 0) * TRAINING_FRUIT_COEFFICIENT,
+    atk: (trainingFruit.atk || 0) * TRAINING_FRUIT_COEFFICIENT,
+    def: (trainingFruit.def || 0) * TRAINING_FRUIT_COEFFICIENT,
+    mag: (trainingFruit.mag || 0) * TRAINING_FRUIT_COEFFICIENT,
+    mdef: (trainingFruit.mdef || 0) * TRAINING_FRUIT_COEFFICIENT,
+    spirit: (trainingFruit.spirit || 0) * TRAINING_FRUIT_COEFFICIENT,
+    dex: (trainingFruit.dex || 0) * TRAINING_FRUIT_COEFFICIENT
   };
 
   stats.spirit += trainingBonus.spirit + trainingFruitBonus.spirit;

@@ -1018,14 +1018,14 @@ export async function handleCommand({ player, players, allCharacters, input, sou
         }
 
         const attrOptions = [
-          { name: '攻击', attr: 'atk', value: 0.5 },
-          { name: '魔法', attr: 'matk', value: 0.5 },
-          { name: '道术', attr: 'dmg', value: 0.5 },
-          { name: '防御', attr: 'def', value: 0.5 },
-          { name: '魔御', attr: 'mdef', value: 0.5 },
-          { name: '敏捷', attr: 'agi', value: 0.5 },
-          { name: '生命上限', attr: 'max_hp', value: 0.5 },
-          { name: '魔法上限', attr: 'max_mp', value: 0.5 }
+          { name: '攻击', attr: 'atk' },
+          { name: '魔法', attr: 'mag' },
+          { name: '道术', attr: 'spirit' },
+          { name: '防御', attr: 'def' },
+          { name: '魔御', attr: 'mdef' },
+          { name: '敏捷', attr: 'dex' },
+          { name: '生命上限', attr: 'hp' },
+          { name: '魔法上限', attr: 'mp' }
         ];
 
         // 统计每个属性的提升次数，并累加到player.flags.trainingFruit
@@ -1036,29 +1036,13 @@ export async function handleCommand({ player, players, allCharacters, input, sou
 
         for (let i = 0; i < useCount; i++) {
           const selected = attrOptions[Math.floor(Math.random() * attrOptions.length)];
-          // 累加到trainingFruit对象中
-          if (selected.attr === 'atk') {
-            player.flags.trainingFruit.atk += selected.value;
-          } else if (selected.attr === 'def') {
-            player.flags.trainingFruit.def += selected.value;
-          } else if (selected.attr === 'mdef') {
-            player.flags.trainingFruit.mdef += selected.value;
-          } else if (selected.attr === 'matk') {
-            player.flags.trainingFruit.mag += selected.value;
-          } else if (selected.attr === 'dmg') {
-            player.flags.trainingFruit.spirit += selected.value;
-          } else if (selected.attr === 'agi') {
-            player.flags.trainingFruit.dex += selected.value;
-          } else if (selected.attr === 'max_hp') {
-            player.flags.trainingFruit.hp += selected.value;
-          } else if (selected.attr === 'max_mp') {
-            player.flags.trainingFruit.mp += selected.value;
-          }
+          // 记录修炼果数量，不乘以系数（系数在computeDerived中统一应用）
+          player.flags.trainingFruit[selected.attr] += 1;
 
           if (!attrStats[selected.name]) {
             attrStats[selected.name] = 0;
           }
-          attrStats[selected.name] += selected.value;
+          attrStats[selected.name] += 1;
         }
 
         // 扣除物品
@@ -1067,7 +1051,7 @@ export async function handleCommand({ player, players, allCharacters, input, sou
         }
 
         // 构建结果消息
-        const resultParts = Object.entries(attrStats).map(([name, value]) => `${name}+${value.toFixed(1)}`);
+        const resultParts = Object.entries(attrStats).map(([name, count]) => `${name}+${count}次`);
         if (useCount === 1) {
           send(`使用了修炼果，${resultParts[0]}。`);
         } else {
