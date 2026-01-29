@@ -804,13 +804,17 @@ export async function handleCommand({ player, players, input, source, send, part
     }
     case 'goto': {
       if (!args) return send('要前往哪个玩家？');
+      console.log('goto command received, args:', args);
+      console.log('Players online:', players.map(p => p.name));
       const fromRoom = { zone: player.position.zone, room: player.position.room };
       const target = players.find((p) => p.name === args);
+      console.log('Target player found:', target ? target.name : 'null');
       if (!target) return send('玩家不在线。');
       player.position.zone = target.position.zone;
       player.position.room = target.position.room;
       send(`你前往 ${target.name} 的位置。`);
       sendRoomDescription(player, send);
+      console.log('Player moved to:', player.position);
       if (onMove) {
         const toRoom = { zone: player.position.zone, room: player.position.room };
         onMove({ from: fromRoom, to: toRoom });
