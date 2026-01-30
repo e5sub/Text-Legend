@@ -16,7 +16,7 @@ import { addGuildMember, createGuild, getGuildByName, getGuildByNameInRealm, get
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
 import { sendMail, listMail, listSentMail, markMailRead, markMailClaimed, deleteMail } from './db/mail.js';
 import { createVipCodes, listVipCodes, useVipCode } from './db/vip.js';
-import { getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb } from './db/settings.js';
+import { getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb } from './db/settings.js';
 import { listRealms, getRealmById, updateRealmName, createRealm } from './db/realms.js';
 import { listMobRespawns, upsertMobRespawn, clearMobRespawn, saveMobState } from './db/mobs.js';
 import {
@@ -40,7 +40,15 @@ import {
   getRefineMaterialCount,
   setRefineBonusPerLevel,
   setEffectResetSuccessRate,
-  setEffectResetDoubleRate
+  getEffectResetSuccessRate,
+  setEffectResetDoubleRate,
+  getEffectResetDoubleRate,
+  setEffectResetTripleRate,
+  getEffectResetTripleRate,
+  setEffectResetQuadrupleRate,
+  getEffectResetQuadrupleRate,
+  setEffectResetQuintupleRate,
+  getEffectResetQuintupleRate
 } from './game/settings.js';
 import {
   listItems,
@@ -930,7 +938,10 @@ app.get('/admin/effect-reset-settings', async (req, res) => {
     if (!admin) return res.status(401).json({ error: '无管理员权限。' });
     const successRate = await getEffectResetSuccessRateDb();
     const doubleRate = await getEffectResetDoubleRateDb();
-    res.json({ ok: true, successRate, doubleRate });
+    const tripleRate = await getEffectResetTripleRateDb();
+    const quadrupleRate = await getEffectResetQuadrupleRateDb();
+    const quintupleRate = await getEffectResetQuintupleRateDb();
+    res.json({ ok: true, successRate, doubleRate, tripleRate, quadrupleRate, quintupleRate });
   } catch (err) {
     console.error('特效重置配置加载失败:', err);
     res.status(500).json({ error: err.message || '加载失败' });
@@ -940,7 +951,7 @@ app.get('/admin/effect-reset-settings', async (req, res) => {
 app.post('/admin/effect-reset-settings/update', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
-  const { successRate, doubleRate } = req.body || {};
+  const { successRate, doubleRate, tripleRate, quadrupleRate, quintupleRate } = req.body || {};
 
   if (successRate !== undefined) {
     const parsed = Number(successRate);
@@ -958,12 +969,42 @@ app.post('/admin/effect-reset-settings/update', async (req, res) => {
     await setEffectResetDoubleRateDb(parsed);
   }
 
+  if (tripleRate !== undefined) {
+    const parsed = Number(tripleRate);
+    if (isNaN(parsed) || parsed < 0 || parsed > 100) {
+      return res.status(400).json({ error: '3特效概率必须在0-100之间' });
+    }
+    await setEffectResetTripleRateDb(parsed);
+  }
+
+  if (quadrupleRate !== undefined) {
+    const parsed = Number(quadrupleRate);
+    if (isNaN(parsed) || parsed < 0 || parsed > 100) {
+      return res.status(400).json({ error: '4特效概率必须在0-100之间' });
+    }
+    await setEffectResetQuadrupleRateDb(parsed);
+  }
+
+  if (quintupleRate !== undefined) {
+    const parsed = Number(quintupleRate);
+    if (isNaN(parsed) || parsed < 0 || parsed > 100) {
+      return res.status(400).json({ error: '5特效概率必须在0-100之间' });
+    }
+    await setEffectResetQuintupleRateDb(parsed);
+  }
+
   // 更新内存中的配置
   const newSuccessRate = await getEffectResetSuccessRateDb();
   const newDoubleRate = await getEffectResetDoubleRateDb();
+  const newTripleRate = await getEffectResetTripleRateDb();
+  const newQuadrupleRate = await getEffectResetQuadrupleRateDb();
+  const newQuintupleRate = await getEffectResetQuintupleRateDb();
   setEffectResetSuccessRate(newSuccessRate);
   setEffectResetDoubleRate(newDoubleRate);
-  res.json({ ok: true, successRate: newSuccessRate, doubleRate: newDoubleRate });
+  setEffectResetTripleRate(newTripleRate);
+  setEffectResetQuadrupleRate(newQuadrupleRate);
+  setEffectResetQuintupleRate(newQuintupleRate);
+  res.json({ ok: true, successRate: newSuccessRate, doubleRate: newDoubleRate, tripleRate: newTripleRate, quadrupleRate: newQuadrupleRate, quintupleRate: newQuintupleRate });
 });
 
 // 修炼配置（普通玩家）
@@ -3914,6 +3955,13 @@ async function buildState(player) {
   // 获取锻造材料数量配置
   const refineMaterialCount = getRefineMaterialCount();
 
+  // 获取特效重置配置
+  const effectResetSuccessRate = getEffectResetSuccessRate();
+  const effectResetDoubleRate = getEffectResetDoubleRate();
+  const effectResetTripleRate = getEffectResetTripleRate();
+  const effectResetQuadrupleRate = getEffectResetQuadrupleRate();
+  const effectResetQuintupleRate = getEffectResetQuintupleRate();
+
   return {
     player: {
       name: player.name,
@@ -3992,7 +4040,14 @@ async function buildState(player) {
     state_throttle_enabled: stateThrottleEnabled,
     state_throttle_interval_sec: stateThrottleIntervalSec,
     state_throttle_override_server_allowed: overrideServerAllowed,
-    refine_material_count: refineMaterialCount
+    refine_material_count: refineMaterialCount,
+    effect_reset_config: {
+      success_rate: effectResetSuccessRate,
+      double_rate: effectResetDoubleRate,
+      triple_rate: effectResetTripleRate,
+      quadruple_rate: effectResetQuadrupleRate,
+      quintuple_rate: effectResetQuintupleRate
+    }
   };
 }
 
@@ -7356,6 +7411,12 @@ async function start() {
   setEffectResetSuccessRate(effectResetSuccessRate);
   const effectResetDoubleRate = await getEffectResetDoubleRateDb();
   setEffectResetDoubleRate(effectResetDoubleRate);
+  const effectResetTripleRate = await getEffectResetTripleRateDb();
+  setEffectResetTripleRate(effectResetTripleRate);
+  const effectResetQuadrupleRate = await getEffectResetQuadrupleRateDb();
+  setEffectResetQuadrupleRate(effectResetQuadrupleRate);
+  const effectResetQuintupleRate = await getEffectResetQuintupleRateDb();
+  setEffectResetQuintupleRate(effectResetQuintupleRate);
   for (const realm of realmCache) {
     checkMobRespawn(realm.id);
   }

@@ -322,6 +322,9 @@ const effectUi = {
   secondary: document.getElementById('effect-secondary-selected'),
   successRate: document.getElementById('effect-success-rate'),
   doubleRate: document.getElementById('effect-double-rate'),
+  tripleRate: document.getElementById('effect-triple-rate'),
+  quadrupleRate: document.getElementById('effect-quadruple-rate'),
+  quintupleRate: document.getElementById('effect-quintuple-rate'),
   confirm: document.getElementById('effect-confirm'),
   close: document.getElementById('effect-close')
 };
@@ -1992,6 +1995,20 @@ function showRefineModal() {
 
 function renderEffectModal() {
   if (!effectUi.list) return;
+
+  // 从后台读取并显示特效重置概率
+  const config = lastState?.effect_reset_config || {};
+  const successRate = config.success_rate ?? 0.1;
+  const doubleRate = config.double_rate ?? 0.01;
+  const tripleRate = config.triple_rate ?? 0.001;
+  const quadrupleRate = config.quadruple_rate ?? 0.0001;
+  const quintupleRate = config.quintuple_rate ?? 0.00001;
+
+  effectUi.successRate.textContent = `成功率：${successRate}% （失败副件消耗）`;
+  effectUi.doubleRate.textContent = `双特效概率：${doubleRate}%`;
+  effectUi.tripleRate.textContent = `3特效概率：${tripleRate}%`;
+  effectUi.quadrupleRate.textContent = `4特效概率：${quadrupleRate}%`;
+  effectUi.quintupleRate.textContent = `5特效概率：${quintupleRate}%`;
 
   // 主件列表：只显示已穿戴的装备（必须有特效）
   const equippedWithEffect = (lastState?.equipment || []).filter(entry => {

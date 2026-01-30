@@ -452,6 +452,42 @@ export async function setEffectResetDoubleRate(rate) {
   await setSetting('effect_reset_double_rate', String(normalized));
 }
 
+// 特效重置3特效概率(%)
+export async function getEffectResetTripleRate() {
+  const value = await getSetting('effect_reset_triple_rate', '0.001');
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 0.001;
+}
+
+export async function setEffectResetTripleRate(rate) {
+  const normalized = Math.max(0, Math.min(100, Number(rate) || 0.001));
+  await setSetting('effect_reset_triple_rate', String(normalized));
+}
+
+// 特效重置4特效概率(%)
+export async function getEffectResetQuadrupleRate() {
+  const value = await getSetting('effect_reset_quadruple_rate', '0.0001');
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 0.0001;
+}
+
+export async function setEffectResetQuadrupleRate(rate) {
+  const normalized = Math.max(0, Math.min(100, Number(rate) || 0.0001));
+  await setSetting('effect_reset_quadruple_rate', String(normalized));
+}
+
+// 特效重置5特效概率(%)
+export async function getEffectResetQuintupleRate() {
+  const value = await getSetting('effect_reset_quintuple_rate', '0.00001');
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 0.00001;
+}
+
+export async function setEffectResetQuintupleRate(rate) {
+  const normalized = Math.max(0, Math.min(100, Number(rate) || 0.00001));
+  await setSetting('effect_reset_quintuple_rate', String(normalized));
+}
+
 // 锻造每级加成值
 export async function getRefineBonusPerLevel() {
   const value = await getSetting('refine_bonus_per_level', '1');

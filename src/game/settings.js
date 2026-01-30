@@ -167,6 +167,9 @@ let refineBonusPerLevel = 1; // 每级锻造加成值
 // 特效重置配置（可由后台动态配置）
 let effectResetSuccessRate = 0.1; // 成功率(%)
 let effectResetDoubleRate = 0.01; // 双特效概率(%)
+let effectResetTripleRate = 0.001; // 3特效概率(%)
+let effectResetQuadrupleRate = 0.0001; // 4特效概率(%)
+let effectResetQuintupleRate = 0.00001; // 5特效概率(%)
 
 /**
  * 设置锻造基础成功率
@@ -275,3 +278,58 @@ export function setEffectResetDoubleRate(rate) {
 export function getEffectResetDoubleRate() {
   return effectResetDoubleRate;
 }
+
+/**
+ * 设置特效重置3特效概率
+ * @param {number} rate - 3特效概率(%)
+ */
+export function setEffectResetTripleRate(rate) {
+  if (typeof rate === 'number' && rate >= 0 && rate <= 100) {
+    effectResetTripleRate = rate;
+  }
+}
+
+/**
+ * 获取特效重置3特效概率
+ * @returns {number} 3特效概率(%)
+ */
+export function getEffectResetTripleRate() {
+  return effectResetTripleRate;
+}
+
+/**
+ * 设置特效重置4特效概率
+ * @param {number} rate - 4特效概率(%)
+ */
+export function setEffectResetQuadrupleRate(rate) {
+  if (typeof rate === 'number' && rate >= 0 && rate <= 100) {
+    effectResetQuadrupleRate = rate;
+  }
+}
+
+/**
+ * 获取特效重置4特效概率
+ * @returns {number} 4特效概率(%)
+ */
+export function getEffectResetQuadrupleRate() {
+  return effectResetQuadrupleRate;
+}
+
+/**
+ * 设置特效重置5特效概率
+ * @param {number} rate - 5特效概率(%)
+ */
+export function setEffectResetQuintupleRate(rate) {
+  if (typeof rate === 'number' && rate >= 0 && rate <= 100) {
+    effectResetQuintupleRate = rate;
+  }
+}
+
+/**
+ * 获取特效重置5特效概率
+ * @returns {number} 5特效概率(%)
+ */
+export function getEffectResetQuintupleRate() {
+  return effectResetQuintupleRate;
+}
+

@@ -23,7 +23,10 @@ import {
   getRefineDecayRate,
   getRefineMaterialCount,
   getEffectResetSuccessRate,
-  getEffectResetDoubleRate
+  getEffectResetDoubleRate,
+  getEffectResetTripleRate,
+  getEffectResetQuadrupleRate,
+  getEffectResetQuintupleRate
 } from './settings.js';
 
 // 特效重置：生成随机特效
@@ -1954,9 +1957,29 @@ export async function handleCommand({ player, players, allCharacters, input, sou
       }
       player.inventory = player.inventory.filter((slot) => !slot.qty || slot.qty > 0);
 
-      // 执行特效重置：从配置读取成功率
+      // 执行特效重置：从配置读取成功率和多特效概率
       const success = Math.random() * 100 < getEffectResetSuccessRate();
-      const doubleEffect = Math.random() * 100 < getEffectResetDoubleRate();
+
+      // 判断获得几条特效（从高到低依次判断，避免重复触发）
+      let effectCount = 0;
+      if (success) {
+        const quintupleEffect = Math.random() * 100 < getEffectResetQuintupleRate();
+        const quadrupleEffect = Math.random() * 100 < getEffectResetQuadrupleRate();
+        const tripleEffect = Math.random() * 100 < getEffectResetTripleRate();
+        const doubleEffect = Math.random() * 100 < getEffectResetDoubleRate();
+
+        if (quintupleEffect) {
+          effectCount = 5;
+        } else if (quadrupleEffect) {
+          effectCount = 4;
+        } else if (tripleEffect) {
+          effectCount = 3;
+        } else if (doubleEffect) {
+          effectCount = 2;
+        } else {
+          effectCount = 1;
+        }
+      }
 
       // 保存主件原有特效（失败时保留）
       const originalEffects = mainResolved.slot.effects;
@@ -1964,14 +1987,20 @@ export async function handleCommand({ player, players, allCharacters, input, sou
       let newEffects = null;
 
       if (success) {
-        if (doubleEffect) {
-          // 0.01%刷出2条特效
-          newEffects = generateRandomEffects(2);
+        newEffects = generateRandomEffects(effectCount);
+        if (effectCount === 5) {
+          send(`特效重置成功！${mainItem.name} 获得5条新特效！`);
+          emitAnnouncement(`恭喜玩家 ${player.name} 的 ${mainItem.name} 特效重置成功，获得5条新特效！`, 'announce', null);
+        } else if (effectCount === 4) {
+          send(`特效重置成功！${mainItem.name} 获得4条新特效！`);
+          emitAnnouncement(`恭喜玩家 ${player.name} 的 ${mainItem.name} 特效重置成功，获得4条新特效！`, 'announce', null);
+        } else if (effectCount === 3) {
+          send(`特效重置成功！${mainItem.name} 获得3条新特效！`);
+          emitAnnouncement(`恭喜玩家 ${player.name} 的 ${mainItem.name} 特效重置成功，获得3条新特效！`, 'announce', null);
+        } else if (effectCount === 2) {
           send(`特效重置成功！${mainItem.name} 获得2条新特效！`);
           emitAnnouncement(`恭喜玩家 ${player.name} 的 ${mainItem.name} 特效重置成功，获得2条新特效！`, 'announce', null);
         } else {
-          // 0.1%刷出1条特效
-          newEffects = generateRandomEffects(1);
           send(`特效重置成功！${mainItem.name} 获得1条新特效。`);
           emitAnnouncement(`恭喜玩家 ${player.name} 的 ${mainItem.name} 特效重置成功，获得1条新特效！`, 'announce', null);
         }
@@ -1993,7 +2022,7 @@ export async function handleCommand({ player, players, allCharacters, input, sou
       // 系统日志
       if (logLoot) {
         if (success) {
-          logLoot(`[effect] ${player.name} 特效重置成功 ${mainItem.name} ${doubleEffect ? '2条' : '1条'}`);
+          logLoot(`[effect] ${player.name} 特效重置成功 ${mainItem.name} ${effectCount}条`);
         } else {
           logLoot(`[effect] ${player.name} 特效重置失败 ${mainItem.name}`);
         }

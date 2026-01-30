@@ -481,8 +481,8 @@
             <div style="margin-bottom: 20px;">
               <h3>特效重置设置</h3>
               <p style="color: #666; margin-bottom: 12px; font-size: 13px;">
-                控制装备特效重置的成功率。<br>
-                默认值: 成功率0.1%, 双特效概率0.01%
+                控制装备特效重置的成功率和多特效概率。<br>
+                默认值: 成功率0.1%, 双特效概率0.01%, 3特效概率0.001%, 4特效概率0.0001%, 5特效概率0.00001%
               </p>
               <div class="table-container">
                 <table style="font-size: 12px;">
@@ -503,6 +503,21 @@
                       <td>双特效概率(%)</td>
                       <td><input id="effect-reset-double-rate" type="number" step="0.001" min="0" max="100" style="width: 80px;"></td>
                       <td>同时获得2条特效的概率</td>
+                    </tr>
+                    <tr>
+                      <td>3特效概率(%)</td>
+                      <td><input id="effect-reset-triple-rate" type="number" step="0.001" min="0" max="100" style="width: 80px;"></td>
+                      <td>同时获得3条特效的概率</td>
+                    </tr>
+                    <tr>
+                      <td>4特效概率(%)</td>
+                      <td><input id="effect-reset-quadruple-rate" type="number" step="0.001" min="0" max="100" style="width: 80px;"></td>
+                      <td>同时获得4条特效的概率</td>
+                    </tr>
+                    <tr>
+                      <td>5特效概率(%)</td>
+                      <td><input id="effect-reset-quintuple-rate" type="number" step="0.001" min="0" max="100" style="width: 80px;"></td>
+                      <td>同时获得5条特效的概率</td>
                     </tr>
                   </tbody>
                 </table>
