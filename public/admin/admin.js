@@ -4993,6 +4993,11 @@ async function importSelectedItems() {
 }
 
 function openItemEditModal(item = null) {
+  // 确保怪物列表已加载
+  if (mobsList.length === 0) {
+    loadMobs();
+  }
+
   if (item) {
     itemEditTitle.textContent = '编辑装备';
     document.getElementById('item-edit-id').value = item.id;
