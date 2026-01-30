@@ -631,7 +631,7 @@ function partyStatus(party) {
   return `队伍成员: ${party.members.join(', ')}`;
 }
 
-export async function handleCommand({ player, players, allCharacters, input, source, send, partyApi, guildApi, tradeApi, mailApi, consignApi, onMove, logLoot }) {
+export async function handleCommand({ player, players, allCharacters, input, source, send, partyApi, guildApi, tradeApi, mailApi, consignApi, onMove, logLoot, realmId, emitAnnouncement }) {
   const [cmdRaw, ...rest] = input.trim().split(' ');
   const cmd = (cmdRaw || '').toLowerCase();
   const args = rest.join(' ').trim();
@@ -1880,6 +1880,10 @@ export async function handleCommand({ player, players, allCharacters, input, sou
       if (success) {
         const bonus = newRefineLevel;
         send(`锻造成功！${item.name} 提升到锻造+${newRefineLevel}，所有属性+${bonus}。`);
+        // 每20级全服通知
+        if (newRefineLevel > 0 && newRefineLevel % 20 === 0) {
+          emitAnnouncement(`恭喜玩家 ${player.name} 将 ${item.name} 锻造至+${newRefineLevel}！`, 'announce', null);
+        }
         // 系统日志
         if (logLoot) {
           logLoot(`[refine] ${player.name} 锻造成功 ${item.name} +${newRefineLevel}`);
@@ -1963,10 +1967,12 @@ export async function handleCommand({ player, players, allCharacters, input, sou
           // 0.01%刷出2条特效
           newEffects = generateRandomEffects(2);
           send(`特效重置成功！${mainItem.name} 获得2条新特效！`);
+          emitAnnouncement(`恭喜玩家 ${player.name} 的 ${mainItem.name} 特效重置成功，获得2条新特效！`, 'announce', null);
         } else {
           // 0.1%刷出1条特效
           newEffects = generateRandomEffects(1);
           send(`特效重置成功！${mainItem.name} 获得1条新特效。`);
+          emitAnnouncement(`恭喜玩家 ${player.name} 的 ${mainItem.name} 特效重置成功，获得1条新特效！`, 'announce', null);
         }
       } else {
         send(`特效重置失败，副件装备已消耗，但主件特效保留。`);

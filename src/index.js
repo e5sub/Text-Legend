@@ -4929,6 +4929,8 @@ io.on('connection', (socket) => {
       input: payload.text || '',
       source: payload.source || '',
       send: (msg) => sendTo(player, msg),
+      realmId: player.realmId || 1,
+      emitAnnouncement: (text, color, location) => emitAnnouncement(text, color, location, player.realmId || 1),
       onMove: ({ from, to }) => {
         if (from && from.zone && from.room) {
           sendRoomState(from.zone, from.room, player.realmId || 1);
