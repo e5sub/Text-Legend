@@ -2087,12 +2087,14 @@ const SABAK_TAX_RATE = 0.2;
 
 function buildItemView(itemId, effects = null, durability = null, max_durability = null, refine_level = 0) {
   const item = ITEM_TEMPLATES[itemId] || { id: itemId, name: itemId, type: 'unknown' };
+  // 优先使用装备模板中手动设置的 rarity，如果没有才使用价格计算
+  const rarity = item.rarity || rarityByPrice(item);
   return {
     id: itemId,
     name: item.name,
     type: item.type,
     slot: item.slot || null,
-    rarity: rarityByPrice(item),
+    rarity,
     is_set: isSetItem(itemId),
     price: item.price || 0,
     hp: item.hp || 0,
@@ -3846,6 +3848,8 @@ async function buildState(player) {
     const effects = i.effects || null;
     // 检查是否为商店装备
     const isShopItem = Object.values(SHOP_STOCKS).some(stockList => stockList.includes(i.id));
+    // 优先使用装备模板中手动设置的 rarity，如果没有才使用价格计算
+    const rarity = item.rarity || rarityByPrice(item);
     return {
       id: i.id,
       key: getItemKey(i),
@@ -3853,7 +3857,7 @@ async function buildState(player) {
       qty: i.qty,
       type: item.type,
       slot: item.slot || null,
-      rarity: rarityByPrice(item),
+      rarity,
       is_set: isSetItem(item.id),
       price: item.price || 0,
       hp: item.hp || 0,
@@ -3905,6 +3909,10 @@ async function buildState(player) {
 
   const { enabled: stateThrottleEnabled, intervalSec: stateThrottleIntervalSec, overrideServerAllowed } =
     await getStateThrottleSettingsCached();
+
+  // 获取锻造材料数量配置
+  const refineMaterialCount = getRefineMaterialCount();
+
   return {
     player: {
       name: player.name,
@@ -3982,7 +3990,8 @@ async function buildState(player) {
     vip_self_claim_enabled: vipSelfClaimEnabled,
     state_throttle_enabled: stateThrottleEnabled,
     state_throttle_interval_sec: stateThrottleIntervalSec,
-    state_throttle_override_server_allowed: overrideServerAllowed
+    state_throttle_override_server_allowed: overrideServerAllowed,
+    refine_material_count: refineMaterialCount
   };
 }
 
