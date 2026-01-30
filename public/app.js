@@ -1767,7 +1767,6 @@ function formatForgeMeta(item) {
 function hasSpecialEffects(effects) {
   return effects && Object.keys(effects).length > 0;
 }
-}
 
 function renderForgeModal() {
   if (!forgeUi.list || !forgeUi.secondaryList || !forgeUi.main || !forgeUi.secondary || !forgeUi.confirm) return;
