@@ -8,6 +8,8 @@ import { MOB_TEMPLATES } from '../game/mobs.js';
 export async function listItems(page = 1, limit = 20) {
   const offset = (page - 1) * limit;
   const items = await knex('items')
+    .orderBy('type')
+    .orderByRaw("FIELD(rarity, 'common', 'uncommon', 'rare', 'epic', 'legendary', 'supreme')")
     .orderBy('item_id')
     .limit(limit)
     .offset(offset);
@@ -177,15 +179,21 @@ export async function setItemDrops(itemId, drops) {
 export async function searchItems(keyword, page = 1, limit = 20) {
   const offset = (page - 1) * limit;
   const items = await knex('items')
-    .where('name', 'like', `%${keyword}%`)
-    .orWhere('item_id', 'like', `%${keyword}%`)
+    .where(function() {
+      this.where('name', 'like', `%${keyword}%`)
+          .orWhere('item_id', 'like', `%${keyword}%`);
+    })
+    .orderBy('type')
+    .orderByRaw("FIELD(rarity, 'common', 'uncommon', 'rare', 'epic', 'legendary', 'supreme')")
     .orderBy('item_id')
     .limit(limit)
     .offset(offset);
 
   const [{ count }] = await knex('items')
-    .where('name', 'like', `%${keyword}%`)
-    .orWhere('item_id', 'like', `%${keyword}%`)
+    .where(function() {
+      this.where('name', 'like', `%${keyword}%`)
+          .orWhere('item_id', 'like', `%${keyword}%`);
+    })
     .count('* as count');
 
   return { items, total: parseInt(count), page, limit };
@@ -283,16 +291,18 @@ export async function importItems(itemIds) {
       });
 
       // 自动导入掉落配置（从MOB_TEMPLATES中查找）
+      let dropsCount = 0;
       for (const [mobId, mob] of Object.entries(MOB_TEMPLATES)) {
         if (mob.drops) {
           const drop = mob.drops.find(d => d.id === itemId);
           if (drop) {
             await addItemDrop(result.id, mobId, drop.chance);
+            dropsCount++;
           }
         }
       }
 
-      results.success.push({ itemId, id: result.id, name: result.name });
+      results.success.push({ itemId, id: result.id, name: result.name, dropsCount });
     } catch (err) {
       results.failed.push({ itemId, reason: err.message });
     }

@@ -562,13 +562,13 @@
                     <th>ID</th>
                     <th>名称</th>
                     <th>类型</th>
-                    <th>槽位</th>
                     <th>稀有度</th>
                     <th>攻击</th>
                     <th>魔法</th>
                     <th>道术</th>
                     <th>防御</th>
                     <th>魔御</th>
+                    <th>敏捷</th>
                     <th>操作</th>
                   </tr>
                 </thead>
@@ -581,8 +581,11 @@
             </div>
             <div class="row" style="margin-top: 12px;">
               <div id="items-pagination-info" style="color: #666;"></div>
-              <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
                 <button id="items-prev-page" class="btn-small">上一页</button>
+                <span style="color: #666;">跳转到</span>
+                <input id="items-page-input" type="number" min="1" style="width: 60px; padding: 4px 6px;">
+                <button id="items-go-page" class="btn-small">前往</button>
                 <button id="items-next-page" class="btn-small">下一页</button>
               </div>
             </div>
@@ -691,16 +694,15 @@
                 <td><strong>装备槽位:</strong></td>
                 <td>
                   <select id="item-edit-slot" class="input-compact">
+                    <option value="">无</option>
                     <option value="weapon">武器</option>
                     <option value="chest">胸甲</option>
                     <option value="head">头盔</option>
                     <option value="feet">鞋子</option>
                     <option value="waist">腰带</option>
                     <option value="neck">项链</option>
-                    <option value="ring_left">左戒指</option>
-                    <option value="ring_right">右戒指</option>
-                    <option value="bracelet_left">左手镯</option>
-                    <option value="bracelet_right">右手镯</option>
+                    <option value="ring">戒指</option>
+                    <option value="bracelet">手镯</option>
                   </select>
                 </td>
               </tr>
@@ -806,9 +808,9 @@
 
   <!-- 导入装备对话框 -->
   <div id="items-import-modal" class="modal hidden">
-    <div class="modal-card" style="max-width: 900px;">
+    <div class="modal-card" style="max-width: 900px; max-height: 85vh; display: flex; flex-direction: column;">
       <div class="modal-title">从游戏导入装备</div>
-      <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+      <div class="modal-body" style="flex: 1; overflow-y: auto; max-height: none;">
         <p class="modal-body-text" style="margin-bottom: 12px; font-size: 13px;">
           选择要从游戏代码（ITEM_TEMPLATES）中导入的装备。
           已导入的装备会显示为灰色。
@@ -838,7 +840,7 @@
           <div id="import-items-info" style="color: #666;"></div>
         </div>
       </div>
-      <div class="modal-actions">
+      <div class="modal-actions" style="flex-shrink: 0;">
         <button id="import-items-cancel" class="btn-small">取消</button>
         <button id="import-items-confirm" class="btn-small" style="background: #4CAF50;">导入选中装备</button>
       </div>

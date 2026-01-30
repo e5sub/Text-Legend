@@ -112,6 +112,10 @@ let allSponsorsData = [];
 function showDashboard() {
   loginSection.classList.add('hidden');
   dashboardSection.classList.remove('hidden');
+  // 自动加载装备列表
+  if (itemsList.children.length <= 1 || itemsList.children[0]?.textContent === '加载中...') {
+    loadItems(1, '');
+  }
 }
 
 // 自定义弹窗函数
@@ -4742,6 +4746,8 @@ const itemsRefreshBtn = document.getElementById('items-refresh-btn');
 const itemsCreateBtn = document.getElementById('items-create-btn');
 const itemsPrevPageBtn = document.getElementById('items-prev-page');
 const itemsNextPageBtn = document.getElementById('items-next-page');
+const itemsPageInput = document.getElementById('items-page-input');
+const itemsGoPageBtn = document.getElementById('items-go-page');
 const itemsImportBtn = document.getElementById('items-import-btn');
 
 const itemsImportModal = document.getElementById('items-import-modal');
@@ -4787,13 +4793,13 @@ async function loadItems(page = 1, keyword = '') {
       <td style="font-size: 12px;">${item.id}</td>
       <td style="font-size: 13px;">${item.name}</td>
       <td style="font-size: 12px;">${getTypeName(item.type)}</td>
-      <td style="font-size: 12px;">${item.slot || '-'}</td>
       <td style="font-size: 12px;">${getRarityName(item.rarity)}</td>
       <td style="font-size: 12px;">${item.atk}</td>
       <td style="font-size: 12px;">${item.mag}</td>
       <td style="font-size: 12px;">${item.spirit}</td>
       <td style="font-size: 12px;">${item.def}</td>
       <td style="font-size: 12px;">${item.mdef}</td>
+      <td style="font-size: 12px;">${item.dex}</td>
       <td>
         <button class="btn-small" onclick="editItem(${item.id})">编辑</button>
         <button class="btn-small" style="background: #c00;" onclick="deleteItem(${item.id})">删除</button>
@@ -4802,7 +4808,10 @@ async function loadItems(page = 1, keyword = '') {
     itemsList.appendChild(tr);
   });
 
-  itemsPaginationInfo.textContent = `第 ${page} 页，共 ${Math.ceil(res.total / res.limit)} 页，总计 ${res.total} 条`;
+  const totalPages = Math.ceil(res.total / res.limit);
+  itemsPaginationInfo.textContent = `第 ${page} 页，共 ${totalPages} 页，总计 ${res.total} 条`;
+  itemsPageInput.value = page;
+  itemsPageInput.max = totalPages;
 }
 
 async function loadMobs() {
@@ -4958,10 +4967,16 @@ async function importSelectedItems() {
   }
 
   const { results } = res;
-  await customAlert(
-    '导入完成',
-    `成功: ${results.success.length} 个\n跳过: ${results.skipped.length} 个\n失败: ${results.failed.length} 个`
-  );
+
+  // 计算总掉落数
+  const totalDrops = results.success.reduce((sum, item) => sum + (item.dropsCount || 0), 0);
+
+  let message = `成功: ${results.success.length} 个\n跳过: ${results.skipped.length} 个\n失败: ${results.failed.length} 个`;
+  if (totalDrops > 0) {
+    message += `\n\n共导入 ${totalDrops} 条掉落配置`;
+  }
+
+  await customAlert('导入完成', message);
 
   // 更新已导入的装备ID集合
   results.success.forEach(item => {
@@ -4979,7 +4994,7 @@ function openItemEditModal(item = null) {
     document.getElementById('item-edit-item-id').value = item.item_id;
     document.getElementById('item-edit-name').value = item.name;
     document.getElementById('item-edit-type').value = item.type;
-    document.getElementById('item-edit-slot').value = item.slot || 'weapon';
+    document.getElementById('item-edit-slot').value = item.slot || '';
     document.getElementById('item-edit-rarity').value = item.rarity;
     document.getElementById('item-edit-price').value = item.price;
     document.getElementById('item-edit-atk').value = item.atk;
@@ -5123,6 +5138,9 @@ async function saveItem() {
   const newItem = res.item;
   itemsCurrentItemId = newItem.id;
 
+  // 先关闭装备编辑模态框
+  itemEditModal.classList.add('hidden');
+  // 再显示成功提示
   await customAlert('保存成功', '装备已保存');
   loadItems(itemsCurrentPage, itemsCurrentKeyword);
 }
@@ -5191,6 +5209,26 @@ if (itemsNextPageBtn) {
   });
 }
 
+if (itemsPageInput) {
+  itemsPageInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      const page = parseInt(itemsPageInput.value);
+      if (page >= 1) {
+        loadItems(page, itemsCurrentKeyword);
+      }
+    }
+  });
+}
+
+if (itemsGoPageBtn) {
+  itemsGoPageBtn.addEventListener('click', () => {
+    const page = parseInt(itemsPageInput.value);
+    if (page >= 1) {
+      loadItems(page, itemsCurrentKeyword);
+    }
+  });
+}
+
 if (itemEditCancelBtn) {
   itemEditCancelBtn.addEventListener('click', () => {
     itemEditModal.classList.add('hidden');
@@ -5203,6 +5241,18 @@ if (itemEditSaveBtn) {
 
 if (itemDropAddBtn) {
   itemDropAddBtn.addEventListener('click', addItemDrop);
+}
+
+// 装备类型变化时自动清空槽位（技能书、消耗品、材料）
+const itemTypeSelect = document.getElementById('item-edit-type');
+if (itemTypeSelect) {
+  itemTypeSelect.addEventListener('change', () => {
+    const slotSelect = document.getElementById('item-edit-slot');
+    const type = itemTypeSelect.value;
+    if (type === 'book' || type === 'consumable' || type === 'material') {
+      slotSelect.value = '';
+    }
+  });
 }
 
 // 导入装备事件
