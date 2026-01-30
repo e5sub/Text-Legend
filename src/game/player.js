@@ -2,7 +2,7 @@ import { CLASSES, getStartPosition, expForLevel, maxBagSlots } from './constants
 import { ITEM_TEMPLATES } from './items.js';
 import { DEFAULT_SKILLS } from './skills.js';
 import { clamp } from './utils.js';
-import { getClassLevelBonusConfig as getClassLevelBonusFromConfig } from './settings.js';
+import { getClassLevelBonusConfig as getClassLevelBonusFromConfig, getRefineBonusPerLevel } from './settings.js';
 
 function rarityByPrice(item) {
   if (!item) return 'common';
@@ -320,16 +320,16 @@ export function computeDerived(player) {
     let mdef = Math.floor((item.mdef || 0) * setBonus);
     const dex = Math.floor((item.dex || 0) * setBonus);
 
-    // 锻造等级加成：每1级锻造提升所有属性1点（生命、魔法、攻击、魔法、道术、魔御、防御、敏捷）
-    const refineBonus = entry.refine_level || 0;
+    // 锻造等级加成：每1级锻造提升所有属性（可配置，默认1点）
+    const refineBonus = (entry.refine_level || 0) * getRefineBonusPerLevel();
     atk += refineBonus;
     mag += refineBonus;
     spirit += refineBonus;
     def += refineBonus;
     mdef += refineBonus;
-    if (item.hp) stats.hp += refineBonus;
-    if (item.mp) stats.mp += refineBonus;
-    if (item.dex) stats.dex += refineBonus;
+    stats.hp += refineBonus;
+    stats.mp += refineBonus;
+    stats.dex += refineBonus;
     if (entry.effects?.fury) {
       atk = Math.floor(atk * 1.25);
       mag = Math.floor(mag * 1.25);

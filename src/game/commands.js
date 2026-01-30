@@ -16,7 +16,15 @@ import { CLASSES, expForLevel, getStartPosition, ROOM_VARIANT_COUNT } from './co
 import { getRoom, getAliveMobs, spawnMobs } from './state.js';
 import { clamp, randInt } from './utils.js';
 import { applyDamage } from './combat.js';
-import { getTrainingPerLevelConfig, getTrainingFruitCoefficient } from './settings.js';
+import {
+  getTrainingPerLevelConfig,
+  getTrainingFruitCoefficient,
+  getRefineBaseSuccessRate,
+  getRefineDecayRate,
+  getRefineMaterialCount,
+  getEffectResetSuccessRate,
+  getEffectResetDoubleRate
+} from './settings.js';
 
 // 特效重置：生成随机特效
 const ALLOWED_EFFECTS = ['combo', 'fury', 'unbreakable', 'defense', 'dodge', 'poison', 'healblock', 'elementAtk'];
@@ -1799,9 +1807,9 @@ export async function handleCommand({ player, players, allCharacters, input, sou
       const currentRefineLevel = mainResolved.slot.refine_level || 0;
       const nextRefineLevel = currentRefineLevel + 1;
 
-      // 计算成功率：第2级50%，每10级降低3%，最低1%
+      // 计算成功率：从配置读取
       const tier = Math.floor((nextRefineLevel - 2) / 10);
-      const baseSuccessRate = Math.max(1, 50 - tier * 3);
+      const baseSuccessRate = Math.max(1, getRefineBaseSuccessRate() - tier * getRefineDecayRate());
       const successRate = nextRefineLevel === 1 ? 100 : baseSuccessRate;
 
       // 保段检查：每10级保段
@@ -1813,7 +1821,8 @@ export async function handleCommand({ player, players, allCharacters, input, sou
         stockList.forEach(itemId => allShopItems.add(itemId));
       });
 
-      // 收集并消耗20件史诗（不含）以下装备
+      // 收集并消耗材料（从配置读取数量）
+      const materialCount = getRefineMaterialCount();
       const materials = [];
       const inventory = Array.isArray(player.inventory) ? player.inventory.slice() : [];
       for (const slot of inventory) {
@@ -1828,16 +1837,16 @@ export async function handleCommand({ player, players, allCharacters, input, sou
         const qty = Math.max(0, Number(slot.qty || 0));
         if (qty <= 0) continue;
 
-        const takeQty = Math.min(qty, 20 - materials.length);
+        const takeQty = Math.min(qty, materialCount - materials.length);
         for (let i = 0; i < takeQty; i++) {
           materials.push({ slot, item: matItem });
         }
 
-        if (materials.length >= 20) break;
+        if (materials.length >= materialCount) break;
       }
 
-      if (materials.length < 20) {
-        return send(`需要20件史诗（不含）以下的无特效装备才能锻造，当前只有${materials.length}件。`);
+      if (materials.length < materialCount) {
+        return send(`需要${materialCount}件史诗（不含）以下的无特效装备才能锻造，当前只有${materials.length}件。`);
       }
 
       // 消耗材料
@@ -1940,9 +1949,9 @@ export async function handleCommand({ player, players, allCharacters, input, sou
       }
       player.inventory = player.inventory.filter((slot) => !slot.qty || slot.qty > 0);
 
-      // 执行特效重置：成功率0.1%，0.01%刷出2条特效
-      const success = Math.random() < 0.001;
-      const doubleEffect = Math.random() < 0.0001;
+      // 执行特效重置：从配置读取成功率
+      const success = Math.random() * 100 < getEffectResetSuccessRate();
+      const doubleEffect = Math.random() * 100 < getEffectResetDoubleRate();
 
       let newEffects = null;
 

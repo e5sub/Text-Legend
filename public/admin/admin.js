@@ -62,6 +62,20 @@ const trainingInputs = {
 };
 const trainingSaveBtn = document.getElementById('training-save-btn');
 
+// 锻造系统配置相关
+const refineMsg = document.getElementById('refine-msg');
+const refineBaseSuccessRateInput = document.getElementById('refine-base-success-rate');
+const refineDecayRateInput = document.getElementById('refine-decay-rate');
+const refineMaterialCountInput = document.getElementById('refine-material-count');
+const refineBonusPerLevelInput = document.getElementById('refine-bonus-per-level');
+const refineSaveBtn = document.getElementById('refine-save-btn');
+
+// 特效重置配置相关
+const effectResetMsg = document.getElementById('effect-reset-msg');
+const effectResetSuccessRateInput = document.getElementById('effect-reset-success-rate');
+const effectResetDoubleRateInput = document.getElementById('effect-reset-double-rate');
+const effectResetSaveBtn = document.getElementById('effect-reset-save-btn');
+
 // 世界BOSS相关
 const wbMsg = document.getElementById('wb-msg');
 const wbPlayerBonusList = document.getElementById('wb-player-bonus-list');
@@ -208,6 +222,130 @@ async function saveTrainingSettings() {
   } catch (err) {
     trainingMsg.textContent = `保存失败: ${err.message}`;
     trainingMsg.style.color = 'red';
+  }
+}
+
+// 锻造系统配置
+async function loadRefineSettings() {
+  if (!refineMsg) return;
+  refineMsg.textContent = '';
+  try {
+    const data = await api('/admin/refine-settings', 'GET');
+    if (data.baseSuccessRate !== undefined && refineBaseSuccessRateInput) {
+      refineBaseSuccessRateInput.value = data.baseSuccessRate;
+    }
+    if (data.decayRate !== undefined && refineDecayRateInput) {
+      refineDecayRateInput.value = data.decayRate;
+    }
+    if (data.materialCount !== undefined && refineMaterialCountInput) {
+      refineMaterialCountInput.value = data.materialCount;
+    }
+    if (data.bonusPerLevel !== undefined && refineBonusPerLevelInput) {
+      refineBonusPerLevelInput.value = data.bonusPerLevel;
+    }
+    refineMsg.textContent = '加载成功';
+    refineMsg.style.color = 'green';
+    setTimeout(() => {
+      refineMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    refineMsg.textContent = `加载失败: ${err.message}`;
+    refineMsg.style.color = 'red';
+  }
+}
+
+async function saveRefineSettings() {
+  if (!refineMsg) return;
+  refineMsg.textContent = '';
+  try {
+    const baseSuccessRate = refineBaseSuccessRateInput ? Number(refineBaseSuccessRateInput.value) : undefined;
+    const decayRate = refineDecayRateInput ? Number(refineDecayRateInput.value) : undefined;
+    const materialCount = refineMaterialCountInput ? Number(refineMaterialCountInput.value) : undefined;
+    const bonusPerLevel = refineBonusPerLevelInput ? Number(refineBonusPerLevelInput.value) : undefined;
+
+    if (baseSuccessRate !== undefined && (isNaN(baseSuccessRate) || baseSuccessRate < 1 || baseSuccessRate > 100)) {
+      refineMsg.textContent = '基础成功率必须在1-100之间';
+      refineMsg.style.color = 'red';
+      return;
+    }
+    if (decayRate !== undefined && (isNaN(decayRate) || decayRate < 0)) {
+      refineMsg.textContent = '衰减率必须为有效数字且不小于0';
+      refineMsg.style.color = 'red';
+      return;
+    }
+    if (materialCount !== undefined && (isNaN(materialCount) || materialCount < 1)) {
+      refineMsg.textContent = '材料数量必须为正整数';
+      refineMsg.style.color = 'red';
+      return;
+    }
+    if (bonusPerLevel !== undefined && (isNaN(bonusPerLevel) || bonusPerLevel < 0)) {
+      refineMsg.textContent = '每级加成值必须为有效数字且不小于0';
+      refineMsg.style.color = 'red';
+      return;
+    }
+
+    await api('/admin/refine-settings/update', 'POST', { baseSuccessRate, decayRate, materialCount, bonusPerLevel });
+    refineMsg.textContent = '保存成功，立即生效';
+    refineMsg.style.color = 'green';
+    setTimeout(() => {
+      refineMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    refineMsg.textContent = `保存失败: ${err.message}`;
+    refineMsg.style.color = 'red';
+  }
+}
+
+// 特效重置配置
+async function loadEffectResetSettings() {
+  if (!effectResetMsg) return;
+  effectResetMsg.textContent = '';
+  try {
+    const data = await api('/admin/effect-reset-settings', 'GET');
+    if (data.successRate !== undefined && effectResetSuccessRateInput) {
+      effectResetSuccessRateInput.value = data.successRate;
+    }
+    if (data.doubleRate !== undefined && effectResetDoubleRateInput) {
+      effectResetDoubleRateInput.value = data.doubleRate;
+    }
+    effectResetMsg.textContent = '加载成功';
+    effectResetMsg.style.color = 'green';
+    setTimeout(() => {
+      effectResetMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    effectResetMsg.textContent = `加载失败: ${err.message}`;
+    effectResetMsg.style.color = 'red';
+  }
+}
+
+async function saveEffectResetSettings() {
+  if (!effectResetMsg) return;
+  effectResetMsg.textContent = '';
+  try {
+    const successRate = effectResetSuccessRateInput ? Number(effectResetSuccessRateInput.value) : undefined;
+    const doubleRate = effectResetDoubleRateInput ? Number(effectResetDoubleRateInput.value) : undefined;
+
+    if (successRate !== undefined && (isNaN(successRate) || successRate < 0 || successRate > 100)) {
+      effectResetMsg.textContent = '成功率必须在0-100之间';
+      effectResetMsg.style.color = 'red';
+      return;
+    }
+    if (doubleRate !== undefined && (isNaN(doubleRate) || doubleRate < 0 || doubleRate > 100)) {
+      effectResetMsg.textContent = '双特效概率必须在0-100之间';
+      effectResetMsg.style.color = 'red';
+      return;
+    }
+
+    await api('/admin/effect-reset-settings/update', 'POST', { successRate, doubleRate });
+    effectResetMsg.textContent = '保存成功，立即生效';
+    effectResetMsg.style.color = 'green';
+    setTimeout(() => {
+      effectResetMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    effectResetMsg.textContent = `保存失败: ${err.message}`;
+    effectResetMsg.style.color = 'red';
   }
 }
 
@@ -4456,6 +4594,8 @@ if (adminToken) {
   loadClassBonusConfig();
   loadTrainingFruitSettings();
   loadTrainingSettings();
+  loadRefineSettings();
+  loadEffectResetSettings();
 }
 
 applyTheme(localStorage.getItem('adminTheme') || 'light');
@@ -4701,6 +4841,16 @@ if (tfSaveBtn) {
 // 修炼系统配置事件
 if (trainingSaveBtn) {
   trainingSaveBtn.addEventListener('click', saveTrainingSettings);
+}
+
+// 锻造系统配置事件
+if (refineSaveBtn) {
+  refineSaveBtn.addEventListener('click', saveRefineSettings);
+}
+
+// 特效重置配置事件
+if (effectResetSaveBtn) {
+  effectResetSaveBtn.addEventListener('click', saveEffectResetSettings);
 }
 
 if (adminPwCancel) {

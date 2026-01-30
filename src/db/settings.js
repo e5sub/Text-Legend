@@ -391,6 +391,79 @@ export async function getTrainingFruitCoefficient() {
   return Number.isFinite(parsed) ? Math.max(0, parsed) : 0.5;
 }
 
+// 锻造系统配置
+// 锻造成功率：基础成功率(%)，第2级开始使用
+export async function getRefineBaseSuccessRate() {
+  const value = await getSetting('refine_base_success_rate', '50');
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? Math.max(1, Math.min(100, parsed)) : 50;
+}
+
+export async function setRefineBaseSuccessRate(rate) {
+  const normalized = Math.max(1, Math.min(100, Number(rate) || 50));
+  await setSetting('refine_base_success_rate', String(normalized));
+}
+
+// 锻造成功率衰减：每10级降低的百分比
+export async function getRefineDecayRate() {
+  const value = await getSetting('refine_decay_rate', '3');
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 3;
+}
+
+export async function setRefineDecayRate(rate) {
+  const normalized = Math.max(0, Number(rate) || 3);
+  await setSetting('refine_decay_rate', String(normalized));
+}
+
+// 锻造所需材料数量
+export async function getRefineMaterialCount() {
+  const value = await getSetting('refine_material_count', '20');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 20;
+}
+
+export async function setRefineMaterialCount(count) {
+  const normalized = Math.max(1, Math.floor(Number(count) || 20));
+  await setSetting('refine_material_count', String(normalized));
+}
+
+// 特效重置成功率(%)
+export async function getEffectResetSuccessRate() {
+  const value = await getSetting('effect_reset_success_rate', '0.1');
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 0.1;
+}
+
+export async function setEffectResetSuccessRate(rate) {
+  const normalized = Math.max(0, Math.min(100, Number(rate) || 0.1));
+  await setSetting('effect_reset_success_rate', String(normalized));
+}
+
+// 特效重置双特效概率(%)
+export async function getEffectResetDoubleRate() {
+  const value = await getSetting('effect_reset_double_rate', '0.01');
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 0.01;
+}
+
+export async function setEffectResetDoubleRate(rate) {
+  const normalized = Math.max(0, Math.min(100, Number(rate) || 0.01));
+  await setSetting('effect_reset_double_rate', String(normalized));
+}
+
+// 锻造每级加成值
+export async function getRefineBonusPerLevel() {
+  const value = await getSetting('refine_bonus_per_level', '1');
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 1;
+}
+
+export async function setRefineBonusPerLevel(bonus) {
+  const normalized = Math.max(0, Number(bonus) || 1);
+  await setSetting('refine_bonus_per_level', String(normalized));
+}
+
 export async function setTrainingFruitCoefficient(coefficient) {
   const normalized = Math.max(0, Number(coefficient) || 0.5);
   await setSetting('training_fruit_coefficient', String(normalized));

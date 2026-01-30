@@ -157,3 +157,121 @@ export function resetTrainingPerLevelConfig() {
     dex: 0.1
   };
 }
+
+// 锻造系统配置（可由后台动态配置）
+let refineBaseSuccessRate = 50; // 基础成功率(%)
+let refineDecayRate = 3; // 每10级降低的百分比
+let refineMaterialCount = 20; // 所需材料数量
+let refineBonusPerLevel = 1; // 每级锻造加成值
+
+// 特效重置配置（可由后台动态配置）
+let effectResetSuccessRate = 0.1; // 成功率(%)
+let effectResetDoubleRate = 0.01; // 双特效概率(%)
+
+/**
+ * 设置锻造基础成功率
+ * @param {number} rate - 成功率(%)
+ */
+export function setRefineBaseSuccessRate(rate) {
+  if (typeof rate === 'number' && rate >= 1 && rate <= 100) {
+    refineBaseSuccessRate = rate;
+  }
+}
+
+/**
+ * 获取锻造基础成功率
+ * @returns {number} 成功率(%)
+ */
+export function getRefineBaseSuccessRate() {
+  return refineBaseSuccessRate;
+}
+
+/**
+ * 设置锻造成功率衰减率
+ * @param {number} rate - 衰减率(%)
+ */
+export function setRefineDecayRate(rate) {
+  if (typeof rate === 'number' && rate >= 0) {
+    refineDecayRate = rate;
+  }
+}
+
+/**
+ * 获取锻造成功率衰减率
+ * @returns {number} 衰减率(%)
+ */
+export function getRefineDecayRate() {
+  return refineDecayRate;
+}
+
+/**
+ * 设置锻造所需材料数量
+ * @param {number} count - 材料数量
+ */
+export function setRefineMaterialCount(count) {
+  if (typeof count === 'number' && count >= 1) {
+    refineMaterialCount = count;
+  }
+}
+
+/**
+ * 获取锻造所需材料数量
+ * @returns {number} 材料数量
+ */
+export function getRefineMaterialCount() {
+  return refineMaterialCount;
+}
+
+/**
+ * 设置锻造每级加成值
+ * @param {number} bonus - 加成值
+ */
+export function setRefineBonusPerLevel(bonus) {
+  if (typeof bonus === 'number' && bonus >= 0) {
+    refineBonusPerLevel = bonus;
+  }
+}
+
+/**
+ * 获取锻造每级加成值
+ * @returns {number} 加成值
+ */
+export function getRefineBonusPerLevel() {
+  return refineBonusPerLevel;
+}
+
+/**
+ * 设置特效重置成功率
+ * @param {number} rate - 成功率(%)
+ */
+export function setEffectResetSuccessRate(rate) {
+  if (typeof rate === 'number' && rate >= 0 && rate <= 100) {
+    effectResetSuccessRate = rate;
+  }
+}
+
+/**
+ * 获取特效重置成功率
+ * @returns {number} 成功率(%)
+ */
+export function getEffectResetSuccessRate() {
+  return effectResetSuccessRate;
+}
+
+/**
+ * 设置特效重置双特效概率
+ * @param {number} rate - 双特效概率(%)
+ */
+export function setEffectResetDoubleRate(rate) {
+  if (typeof rate === 'number' && rate >= 0 && rate <= 100) {
+    effectResetDoubleRate = rate;
+  }
+}
+
+/**
+ * 获取特效重置双特效概率
+ * @returns {number} 双特效概率(%)
+ */
+export function getEffectResetDoubleRate() {
+  return effectResetDoubleRate;
+}

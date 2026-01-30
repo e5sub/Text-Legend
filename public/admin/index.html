@@ -423,6 +423,98 @@
 
         <div class="block" data-collapsible>
           <div class="block-title">
+            <h2>锻造系统配置</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <div style="margin-bottom: 20px;">
+              <h3>锻造系统设置</h3>
+              <p style="color: #666; margin-bottom: 12px; font-size: 13px;">
+                控制锻造装备的成功率、所需材料数量和属性加成等。<br>
+                默认值: 基础成功率50%, 衰减率3%, 材料数量20件, 每级加成1点
+              </p>
+              <div class="table-container">
+                <table style="font-size: 12px;">
+                  <thead>
+                    <tr>
+                      <th style="padding: 6px 8px;">属性</th>
+                      <th style="padding: 6px 8px;">值</th>
+                      <th style="padding: 6px 8px;">说明</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>基础成功率(%)</td>
+                      <td><input id="refine-base-success-rate" type="number" step="0.1" min="1" max="100" style="width: 80px;"></td>
+                      <td>第2级开始使用，最低1%</td>
+                    </tr>
+                    <tr>
+                      <td>衰减率(%)</td>
+                      <td><input id="refine-decay-rate" type="number" step="0.1" min="0" style="width: 80px;"></td>
+                      <td>每10级降低的百分比</td>
+                    </tr>
+                    <tr>
+                      <td>材料数量(件)</td>
+                      <td><input id="refine-material-count" type="number" step="1" min="1" style="width: 80px;"></td>
+                      <td>每次锻造需要的装备数量</td>
+                    </tr>
+                    <tr>
+                      <td>每级加成值</td>
+                      <td><input id="refine-bonus-per-level" type="number" step="0.1" min="0" style="width: 80px;"></td>
+                      <td>每级锻造给所有属性加成的点数</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <button id="refine-save-btn" class="btn-small">保存设置</button>
+            <div id="refine-msg" class="msg"></div>
+          </div>
+        </div>
+
+        <div class="block" data-collapsible>
+          <div class="block-title">
+            <h2>特效重置配置</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <div style="margin-bottom: 20px;">
+              <h3>特效重置设置</h3>
+              <p style="color: #666; margin-bottom: 12px; font-size: 13px;">
+                控制装备特效重置的成功率。<br>
+                默认值: 成功率0.1%, 双特效概率0.01%
+              </p>
+              <div class="table-container">
+                <table style="font-size: 12px;">
+                  <thead>
+                    <tr>
+                      <th style="padding: 6px 8px;">属性</th>
+                      <th style="padding: 6px 8px;">值</th>
+                      <th style="padding: 6px 8px;">说明</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>成功率(%)</td>
+                      <td><input id="effect-reset-success-rate" type="number" step="0.001" min="0" max="100" style="width: 80px;"></td>
+                      <td>重置特效的成功概率</td>
+                    </tr>
+                    <tr>
+                      <td>双特效概率(%)</td>
+                      <td><input id="effect-reset-double-rate" type="number" step="0.001" min="0" max="100" style="width: 80px;"></td>
+                      <td>同时获得2条特效的概率</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <button id="effect-reset-save-btn" class="btn-small">保存设置</button>
+            <div id="effect-reset-msg" class="msg"></div>
+          </div>
+        </div>
+
+        <div class="block" data-collapsible>
+          <div class="block-title">
             <h2>职业升级属性配置</h2>
             <button class="btn-small block-toggle">折叠</button>
           </div>
