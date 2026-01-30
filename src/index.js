@@ -3766,6 +3766,22 @@ function buildRoomExits(zoneId, roomId) {
     }
   });
 
+  // 额外处理：确保每个暗之BOSS房间只显示一个入口
+  const darkBossExits = filteredExits.filter(exit => exit.label.includes('暗之BOSS领域'));
+  const uniqueDarkBossExits = [];
+  const seenLabels = new Set();
+  
+  darkBossExits.forEach(exit => {
+    if (!seenLabels.has(exit.label)) {
+      seenLabels.add(exit.label);
+      uniqueDarkBossExits.push(exit);
+    }
+  });
+
+  // 替换原有的暗之BOSS出口
+  const nonDarkBossExits = filteredExits.filter(exit => !exit.label.includes('暗之BOSS领域'));
+  filteredExits.splice(0, filteredExits.length, ...nonDarkBossExits, ...uniqueDarkBossExits);
+
   // 移除标签中的数字后缀（如 "平原1" -> "平原"）（暗之BOSS房间除外）
   return filteredExits.map((exit) => ({
     dir: exit.dir,
