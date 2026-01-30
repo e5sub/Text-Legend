@@ -157,6 +157,11 @@ export async function getItemDrops(itemId) {
 export async function addItemDrop(itemId, mobId, dropChance) {
   console.log(`addItemDrop called: itemId=${itemId}, mobId=${mobId}, dropChance=${dropChance}`);
 
+  if (dropChance === undefined || dropChance === null || isNaN(dropChance)) {
+    console.error(`Invalid dropChance for itemId=${itemId}, mobId=${mobId}: ${dropChance}`);
+    throw new Error('drop_chance is not defined or invalid');
+  }
+
   try {
     await knex('item_drops')
       .insert({
@@ -167,7 +172,7 @@ export async function addItemDrop(itemId, mobId, dropChance) {
         updated_at: knex.fn.now()
       })
       .onConflict(['item_id', 'mob_id'])
-      .merge({ drop_chance: drop_chance, updated_at: knex.fn.now() });
+      .merge({ drop_chance: dropChance, updated_at: knex.fn.now() });
 
     const drop = await knex('item_drops')
       .where({ item_id: itemId, mob_id: mobId })
@@ -400,6 +405,10 @@ export async function importItems(itemIds) {
         if (mob.drops) {
           const drop = mob.drops.find(d => d.id === itemId);
           if (drop) {
+            if (drop.chance === undefined || drop.chance === null || isNaN(drop.chance)) {
+              console.warn(`Skipping invalid drop for item ${itemId} from mob ${mobId}: chance=${drop.chance}`);
+              continue;
+            }
             console.log(`Adding drop: item_id=${result.id}, mob_id=${mobId}, chance=${drop.chance}`);
             await addItemDrop(result.id, mobId, drop.chance);
             dropsCount++;
