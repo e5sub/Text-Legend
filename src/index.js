@@ -3,8 +3,10 @@ import http from 'http';
 import { Server } from 'socket.io';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, copyFile, unlink, stat } from 'node:fs/promises';
+import { existsSync, readdirSync } from 'node:fs';
 import crypto from 'node:crypto';
+import cron from 'node-cron';
 
 import config from './config.js';
 import knex from './db/index.js';
@@ -1244,6 +1246,126 @@ app.post('/admin/realms/merge', async (req, res) => {
     backupAvailable: true
   });
 });
+
+// 自动备份功能
+const BACKUP_DIR = path.join(__dirname, '../data/backup');
+const BACKUP_RETENTION_DAYS = 30;
+
+async function performAutoBackup() {
+  try {
+    console.log('[AutoBackup] 开始执行自动备份...');
+
+    // 确保备份目录存在
+    if (!existsSync(BACKUP_DIR)) {
+      await mkdir(BACKUP_DIR, { recursive: true });
+      console.log(`[AutoBackup] 创建备份目录: ${BACKUP_DIR}`);
+    }
+
+    // 获取所有表的数据
+    const tables = {};
+    for (const name of BACKUP_TABLES) {
+      if (await knex.schema.hasTable(name)) {
+        tables[name] = await knex(name).select('*');
+      }
+    }
+
+    // 生成备份文件名（按日期）
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+    const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-'); // HH-MM-SS
+    const backupFileName = `text-legend-backup-${dateStr}-${timeStr}.json`;
+    const backupFilePath = path.join(BACKUP_DIR, backupFileName);
+
+    // 准备备份内容
+    const payload = {
+      meta: {
+        version: 1,
+        db_client: config.db.client,
+        exported_at: now.toISOString(),
+        auto_backup: true
+      },
+      tables
+    };
+
+    // 写入备份文件
+    await import('node:fs/promises').then(fs => fs.writeFile(backupFilePath, JSON.stringify(payload, null, 2)));
+    console.log(`[AutoBackup] 备份完成: ${backupFileName}`);
+
+    // 清理超过30天的旧备份
+    await cleanupOldBackups();
+
+    // 清理当天的旧备份（保留最新的）
+    await cleanupSameDayBackups(dateStr, backupFileName);
+
+    console.log('[AutoBackup] 自动备份执行成功');
+  } catch (err) {
+    console.error('[AutoBackup] 自动备份失败:', err);
+  }
+}
+
+async function cleanupOldBackups() {
+  try {
+    const now = Date.now();
+    const files = readdirSync(BACKUP_DIR);
+    let deletedCount = 0;
+
+    for (const file of files) {
+      if (!file.endsWith('.json')) continue;
+
+      const filePath = path.join(BACKUP_DIR, file);
+      const stats = await stat(filePath);
+      const fileAge = now - stats.mtimeMs;
+      const retentionMs = BACKUP_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+
+      if (fileAge > retentionMs) {
+        await unlink(filePath);
+        console.log(`[AutoBackup] 删除超过${BACKUP_RETENTION_DAYS}天的备份: ${file}`);
+        deletedCount++;
+      }
+    }
+
+    if (deletedCount > 0) {
+      console.log(`[AutoBackup] 清理完成，删除了 ${deletedCount} 个旧备份文件`);
+    }
+  } catch (err) {
+    console.error('[AutoBackup] 清理旧备份失败:', err);
+  }
+}
+
+async function cleanupSameDayBackups(dateStr, currentFileName) {
+  try {
+    const files = readdirSync(BACKUP_DIR);
+    let deletedCount = 0;
+
+    for (const file of files) {
+      if (!file.endsWith('.json')) continue;
+      if (file === currentFileName) continue; // 跳过当前文件
+
+      // 删除同日期的其他备份文件（保留最新的）
+      if (file.includes(dateStr)) {
+        const filePath = path.join(BACKUP_DIR, file);
+        await unlink(filePath);
+        console.log(`[AutoBackup] 删除同日旧备份: ${file}`);
+        deletedCount++;
+      }
+    }
+
+    if (deletedCount > 0) {
+      console.log(`[AutoBackup] 清理同日备份完成，删除了 ${deletedCount} 个旧备份`);
+    }
+  } catch (err) {
+    console.error('[AutoBackup] 清理同日备份失败:', err);
+  }
+}
+
+function scheduleAutoBackup() {
+  // 每天凌晨0点执行
+  cron.schedule('0 0 * * *', async () => {
+    await performAutoBackup();
+  });
+
+  console.log('[AutoBackup] 已设置每日0点自动备份，备份目录: data/backup，保留30天');
+}
 
 app.get('/admin/backup', async (req, res) => {
   const admin = await requireAdmin(req);
@@ -6978,6 +7100,9 @@ async function start() {
   console.log('Syncing mob drops from database...');
   const syncedDrops = await syncMobDropsToTemplates();
   console.log(`Synced ${syncedDrops} mob drops from database.`);
+
+  // 启动自动备份定时任务
+  scheduleAutoBackup();
 
   setRespawnStore({
     set: (realmId, zoneId, roomId, slotIndex, templateId, respawnAt) =>
