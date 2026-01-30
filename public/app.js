@@ -1744,7 +1744,10 @@ function renderForgeSecondaryList(itemId) {
     const btn = document.createElement('div');
     btn.className = 'forge-item';
     applyRarityClass(btn, item);
-    btn.textContent = `${formatItemName(item)} x${item.qty || 1}`;
+    btn.innerHTML = `
+      <div>${formatItemName(item)}</div>
+      <div class="item-detail">数量: x${item.qty || 1}</div>
+    `;
     btn.addEventListener('click', () => {
       Array.from(forgeUi.secondaryList.querySelectorAll('.forge-item')).forEach((node) =>
         node.classList.remove('selected')
@@ -1816,7 +1819,9 @@ function renderForgeModal() {
     const btn = document.createElement('div');
     btn.className = 'forge-item';
     applyRarityClass(btn, item);
-    btn.textContent = formatItemName(item);
+    btn.innerHTML = `
+      <div>${formatItemName(item)}</div>
+    `;
     btn.addEventListener('click', () => {
       Array.from(forgeUi.list.querySelectorAll('.forge-item')).forEach((node) =>
         node.classList.remove('selected')
@@ -1846,19 +1851,11 @@ function renderRefineModal() {
   if (!refineUi.list || !refineUi.main || !refineUi.level || !refineUi.successRate) return;
 
   const allEquipment = [];
-  // 获取已装备的装备
+  // 只获取已装备的装备
   if (lastState?.equipment) {
     Object.entries(lastState.equipment).forEach(([slot, equipped]) => {
       if (equipped && equipped.item && ['weapon', 'armor', 'accessory'].includes(equipped.item.type)) {
         allEquipment.push({ ...equipped, slotName: slot, fromEquip: true });
-      }
-    });
-  }
-  // 获取背包中的装备
-  if (lastState?.items) {
-    lastState.items.forEach((slot) => {
-      if (slot && ['weapon', 'armor', 'accessory'].includes(slot.type)) {
-        allEquipment.push({ ...slot, item: slot, fromEquip: false });
       }
     });
   }
@@ -1871,7 +1868,7 @@ function renderRefineModal() {
 
   if (!allEquipment.length) {
     const empty = document.createElement('div');
-    empty.textContent = '背包和身上暂无装备';
+    empty.textContent = '身上暂无装备';
     refineUi.list.appendChild(empty);
     refineUi.confirm.disabled = true;
     return;
@@ -1883,9 +1880,9 @@ function renderRefineModal() {
     btn.className = 'forge-item';
     applyRarityClass(btn, item);
     const refineLevel = entry.refine_level || 0;
-    const refineText = refineLevel > 0 ? ` +${refineLevel}` : '';
     btn.innerHTML = `
-      <div>${formatItemName(item)}${refineText}</div>
+      <div>${formatItemName(item)}</div>
+      <div class="item-detail">锻造等级: +${refineLevel}</div>
     `;
     btn.addEventListener('click', () => {
       refineSelection = { slot: entry.slotName || entry.key, item, refineLevel, fromEquip: entry.fromEquip };
@@ -1948,7 +1945,9 @@ function renderEffectModal() {
     const btn = document.createElement('div');
     btn.className = 'forge-item';
     applyRarityClass(btn, e.item);
-    btn.textContent = formatItemName(e.item);
+    btn.innerHTML = `
+      <div>${formatItemName(e.item)}</div>
+    `;
     btn.addEventListener('click', () => {
       effectSelection = { ...e, equipped: true, raw: { id: e.item.id, slot: e.slot } };
       updateEffectSelection(effectSelection);
