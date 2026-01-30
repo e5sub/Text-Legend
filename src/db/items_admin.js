@@ -139,6 +139,11 @@ export async function getItemDrops(itemId) {
     .where({ item_id: itemId })
     .orderBy('drop_chance', 'desc');
 
+  console.log(`getItemDrops called with itemId=${itemId}, found ${drops.length} drops`);
+  drops.forEach(d => {
+    console.log(`  - Drop ID: ${d.id}, mob_id: ${d.mob_id}, chance: ${d.drop_chance}`);
+  });
+
   return drops.map(d => ({
     id: d.id,
     mob_id: d.mob_id,
@@ -150,25 +155,34 @@ export async function getItemDrops(itemId) {
  * 为装备添加掉落配置
  */
 export async function addItemDrop(itemId, mobId, dropChance) {
-  await knex('item_drops')
-    .insert({
-      item_id: itemId,
-      mob_id: mobId,
-      drop_chance: dropChance,
-      created_at: knex.fn.now(),
-      updated_at: knex.fn.now()
-    })
-    .onConflict(['item_id', 'mob_id'])
-    .merge({ drop_chance: drop_chance, updated_at: knex.fn.now() });
+  console.log(`addItemDrop called: itemId=${itemId}, mobId=${mobId}, dropChance=${dropChance}`);
 
-  const drop = await knex('item_drops')
-    .where({ item_id: itemId, mob_id: mobId })
-    .first();
+  try {
+    await knex('item_drops')
+      .insert({
+        item_id: itemId,
+        mob_id: mobId,
+        drop_chance: dropChance,
+        created_at: knex.fn.now(),
+        updated_at: knex.fn.now()
+      })
+      .onConflict(['item_id', 'mob_id'])
+      .merge({ drop_chance: drop_chance, updated_at: knex.fn.now() });
 
-  // 同步掉落到 MOB_TEMPLATES
-  await syncMobDropFromDb(drop);
+    const drop = await knex('item_drops')
+      .where({ item_id: itemId, mob_id: mobId })
+      .first();
 
-  return drop;
+    console.log(`Inserted/updated drop:`, drop);
+
+    // 同步掉落到 MOB_TEMPLATES
+    await syncMobDropFromDb(drop);
+
+    return drop;
+  } catch (err) {
+    console.error(`Error adding drop for itemId=${itemId}, mobId=${mobId}:`, err);
+    throw err;
+  }
 }
 
 /**
@@ -321,6 +335,7 @@ export async function importItems(itemIds) {
 
       // 检查是否已存在
       const existing = await getItemByItemId(itemId);
+      console.log(`Importing item ${itemId}, existing:`, existing ? `id=${existing.id}` : 'none');
       let result;
 
       if (existing) {
@@ -345,9 +360,11 @@ export async function importItems(itemIds) {
           world_boss_only: template.worldBossOnly || false
         });
         result = await getItemByItemId(itemId);
+        console.log(`Updated item, result.id=${result.id}`);
 
         // 清除旧的掉落配置（重新导入时）
         const oldDrops = await knex('item_drops').where({ item_id: existing.id }).select('mob_id');
+        console.log(`Found ${oldDrops.length} old drops to clear`);
         for (const oldDrop of oldDrops) {
           await removeMobDropFromDb(existing.id, oldDrop.mob_id);
         }
@@ -374,6 +391,7 @@ export async function importItems(itemIds) {
           boss_only: template.bossOnly || false,
           world_boss_only: template.worldBossOnly || false
         });
+        console.log(`Created new item, result.id=${result.id}`);
       }
 
       // 自动导入/更新掉落配置（从MOB_TEMPLATES中查找）
@@ -382,11 +400,13 @@ export async function importItems(itemIds) {
         if (mob.drops) {
           const drop = mob.drops.find(d => d.id === itemId);
           if (drop) {
+            console.log(`Adding drop: item_id=${result.id}, mob_id=${mobId}, chance=${drop.chance}`);
             await addItemDrop(result.id, mobId, drop.chance);
             dropsCount++;
           }
         }
       }
+      console.log(`Imported ${dropsCount} drops for item ${itemId}`);
 
       if (existing) {
         results.updated.push({ itemId, id: result.id, name: result.name, dropsCount });

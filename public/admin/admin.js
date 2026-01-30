@@ -4833,14 +4833,19 @@ async function loadMobs() {
 
 async function loadItemDrops(itemId) {
   const res = await api(`/admin/items/${itemId}`, 'GET');
-  if (!res.ok) return;
+  if (!res.ok) {
+    console.error('Failed to load item drops:', res);
+    return;
+  }
 
+  console.log('Item drops response:', res.drops);
   itemDropsCache = res.drops;
   renderItemDrops();
 }
 
 function renderItemDrops() {
   itemDropsList.innerHTML = '';
+  console.log('Rendering drops, cache length:', itemDropsCache.length);
   if (itemDropsCache.length === 0) {
     itemDropsList.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #999;">暂无掉落配置</td></tr>';
     return;
@@ -4849,6 +4854,7 @@ function renderItemDrops() {
   itemDropsCache.forEach(drop => {
     const mob = mobsList.find(m => m.id === drop.mob_id);
     const mobName = mob ? mob.name : drop.mob_id;
+    console.log('Drop:', drop, 'Mob:', mobName);
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${mobName}</td>
