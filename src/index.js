@@ -4805,6 +4805,7 @@ io.on('connection', (socket) => {
           sendRoomState(to.zone, to.room, player.realmId || 1);
         }
       },
+      logLoot,
       partyApi: {
         parties: getRealmState(player.realmId || 1).parties,
         invites: getRealmState(player.realmId || 1).partyInvites,

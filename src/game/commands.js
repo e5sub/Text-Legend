@@ -604,7 +604,7 @@ function partyStatus(party) {
   return `队伍成员: ${party.members.join(', ')}`;
 }
 
-export async function handleCommand({ player, players, allCharacters, input, source, send, partyApi, guildApi, tradeApi, mailApi, consignApi, onMove }) {
+export async function handleCommand({ player, players, allCharacters, input, source, send, partyApi, guildApi, tradeApi, mailApi, consignApi, onMove, logLoot }) {
   const [cmdRaw, ...rest] = input.trim().split(' ');
   const cmd = (cmdRaw || '').toLowerCase();
   const args = rest.join(' ').trim();
@@ -1551,6 +1551,7 @@ export async function handleCommand({ player, players, allCharacters, input, sou
       const inventory = Array.isArray(player.inventory) ? player.inventory.slice() : [];
       let soldCount = 0;
       let totalGold = 0;
+      const soldItems = [];
       inventory.forEach((slot) => {
         if (!slot || !slot.id) return;
         const item = ITEM_TEMPLATES[slot.id];
@@ -1564,12 +1565,21 @@ export async function handleCommand({ player, players, allCharacters, input, sou
         if (qty <= 0) return;
         if (!removeItem(player, item.id, qty, slot.effects)) return;
         const price = Math.max(1, Math.floor((item.price || 10) * 0.5));
-        totalGold += price * qty;
+        const itemTotal = price * qty;
+        totalGold += itemTotal;
         soldCount += qty;
+        soldItems.push({ name: item.name, qty, gold: itemTotal });
       });
       if (soldCount <= 0) return send('没有可一键售卖的装备。');
       player.gold += totalGold;
       player.forceStateRefresh = true;
+
+      // 系统日志
+      if (logLoot) {
+        const itemsStr = soldItems.map(i => `${i.name} x${i.qty}`).join(', ');
+        logLoot(`[shop] ${player.name} 一键售卖：${itemsStr}，总共获得 ${totalGold} 金币`);
+      }
+
       send(`一键售卖完成：售出 ${soldCount} 件装备，获得 ${totalGold} 金币。`);
       return;
     }
@@ -1597,12 +1607,18 @@ export async function handleCommand({ player, players, allCharacters, input, sou
       if (!hasItemResult.ok) return send(hasItemResult.error);
       
       if (!removeItem(player, item.id, qtyResult.value, resolved.slot.effects)) return send('背包里没有足够数量。');
-      
+
       // 服务端重新计算总价
       const price = Math.max(1, Math.floor((item.price || 10) * 0.5));
       const total = price * qtyResult.value;
       player.gold += total;
       player.forceStateRefresh = true;
+
+      // 系统日志
+      if (logLoot) {
+        logLoot(`[shop] ${player.name} 卖出 ${item.name} x${qtyResult.value}，获得 ${total} 金币`);
+      }
+
       send(`卖出 ${item.name} x${qtyResult.value}，获得 ${total} 金币。`);
       return;
     }
