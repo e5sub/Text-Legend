@@ -4636,10 +4636,10 @@ function renderState(state) {
     }
     actions.splice(actions.length, 0, { id: 'vip activate', label: 'VIP\u6fc0\u6d3b' });
   }
-  actions.push({ id: 'sponsor', label: '\u8d5e\u52a9\u4f5c\u8005', highlight: true });
   actions.push({ id: 'rank', label: '\u73a9\u5bb6\u6392\u884c' });
   const afkLabel = state.stats && state.stats.autoSkillId ? '\u505c\u6b62\u6302\u673a' : '\u6302\u673a';
   actions.push({ id: 'afk', label: afkLabel });
+  actions.push({ id: 'sponsor', label: '\u8d5e\u52a9\u4f5c\u8005', highlight: true });
   renderChips(ui.actions, actions, async (a) => {
     if (socket && isStateThrottleActive()) {
       socket.emit('state_request', { reason: `action:${a.id}` });
