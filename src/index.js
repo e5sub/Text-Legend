@@ -37,6 +37,7 @@ import {
   setRefineBaseSuccessRate,
   setRefineDecayRate,
   setRefineMaterialCount,
+  getRefineMaterialCount,
   setRefineBonusPerLevel,
   setEffectResetSuccessRate,
   setEffectResetDoubleRate
