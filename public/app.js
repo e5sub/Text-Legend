@@ -4548,13 +4548,12 @@ function renderState(state) {
     { id: 'bag', label: '\u80cc\u5305' },
     { id: 'party', label: '\u961f\u4f0d' },
     { id: 'guild', label: '\u884c\u4f1a' },
-    { id: 'sabak status', label: '\u6c99\u5df4\u514b' },
     { id: 'mail list', label: '\u90ae\u4ef6' },
     { id: 'shop', label: '\u5546\u5e97' },
     { id: 'repair', label: '\u4FEE\u7406' },
+    { id: 'consign', label: '\u5BC4\u552E' },
     { id: 'forge', label: '\u88C5\u5907\u5408\u6210' },
     { id: 'refine', label: '\u88C5\u5907\u953B\u9020' },
-    { id: 'consign', label: '\u5BC4\u552E' },
     { id: 'drops', label: '\u5957\u88c5\u6389\u843d' },
     { id: 'switch', label: '\u5207\u6362\u89d2\u8272' },
     { id: 'logout', label: '\u9000\u51fa\u6e38\u620f' }
@@ -4566,10 +4565,10 @@ function renderState(state) {
     }
     actions.splice(actions.length, 0, { id: 'vip activate', label: 'VIP\u6fc0\u6d3b' });
   }
-  const afkLabel = state.stats && state.stats.autoSkillId ? '\u505c\u6b62\u6302\u673a' : '\u6302\u673a';
-  actions.push({ id: 'afk', label: afkLabel });
   actions.push({ id: 'sponsor', label: '\u8d5e\u52a9\u4f5c\u8005', highlight: true });
   actions.push({ id: 'rank', label: '\u73a9\u5bb6\u6392\u884c' });
+  const afkLabel = state.stats && state.stats.autoSkillId ? '\u505c\u6b62\u6302\u673a' : '\u6302\u673a';
+  actions.push({ id: 'afk', label: afkLabel });
   renderChips(ui.actions, actions, async (a) => {
     if (socket && isStateThrottleActive()) {
       socket.emit('state_request', { reason: `action:${a.id}` });
