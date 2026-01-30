@@ -5248,14 +5248,19 @@ if (itemDropAddBtn) {
   itemDropAddBtn.addEventListener('click', addItemDrop);
 }
 
-// 装备类型变化时自动清空槽位（技能书、消耗品、材料）
+// 装备类型变化时自动设置槽位
 const itemTypeSelect = document.getElementById('item-edit-type');
 if (itemTypeSelect) {
   itemTypeSelect.addEventListener('change', () => {
     const slotSelect = document.getElementById('item-edit-slot');
     const type = itemTypeSelect.value;
+
+    // 材料、技能书、消耗品 → 槽位自动选择"无"
     if (type === 'book' || type === 'consumable' || type === 'material') {
       slotSelect.value = '';
+    } else {
+      // 武器、装备 → 槽位自动选择对应的槽位
+      slotSelect.value = type;
     }
   });
 }

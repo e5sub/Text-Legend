@@ -384,6 +384,13 @@ body.theme-dark .block {
   z-index: 2000;
 }
 
+/* 确认对话框、提示对话框和输入对话框使用更高的 z-index */
+#confirm-modal,
+#alert-modal,
+#prompt-modal {
+  z-index: 2100;
+}
+
 .modal.hidden {
   display: none;
 }

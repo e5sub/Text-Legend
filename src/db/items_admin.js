@@ -345,6 +345,13 @@ export async function importItems(itemIds) {
           world_boss_only: template.worldBossOnly || false
         });
         result = await getItemByItemId(itemId);
+
+        // 清除旧的掉落配置（重新导入时）
+        const oldDrops = await knex('item_drops').where({ item_id: existing.id }).select('mob_id');
+        for (const oldDrop of oldDrops) {
+          await removeMobDropFromDb(existing.id, oldDrop.mob_id);
+        }
+        await knex('item_drops').where({ item_id: existing.id }).delete();
       } else {
         // 不存在，创建新装备
         result = await createItem({
