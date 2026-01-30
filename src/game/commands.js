@@ -1831,7 +1831,8 @@ export async function handleCommand({ player, players, allCharacters, input, sou
         if (!matItem) continue;
         if (!isEquipmentItem(matItem)) continue;
         if (allShopItems.has(slot.id)) continue; // 排除商店装备
-        const rarity = rarityByPrice(matItem);
+        // 优先使用装备模板中手动设置的 rarity，如果没有才使用价格计算
+        const rarity = matItem.rarity || rarityByPrice(matItem);
         if (!isBelowEpic(rarity)) continue; // 只能史诗（不含）以下
         if (hasSpecialEffects(slot.effects)) continue; // 不能有特效
         const qty = Math.max(0, Number(slot.qty || 0));
