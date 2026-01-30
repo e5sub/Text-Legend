@@ -1744,7 +1744,7 @@ function renderForgeSecondaryList(itemId) {
     const btn = document.createElement('div');
     btn.className = 'forge-item';
     applyRarityClass(btn, item);
-    btn.innerHTML = `${formatItemName(item)} x${item.qty || 1}<span class="forge-item-meta">${formatForgeMeta(item)}</span>`;
+    btn.textContent = `${formatItemName(item)} x${item.qty || 1}`;
     btn.addEventListener('click', () => {
       Array.from(forgeUi.secondaryList.querySelectorAll('.forge-item')).forEach((node) =>
         node.classList.remove('selected')
@@ -1758,6 +1758,19 @@ function renderForgeSecondaryList(itemId) {
     });
     forgeUi.secondaryList.appendChild(btn);
   });
+
+  // 自动选择第一个副件
+  if (candidates.length > 0 && forgeSelection?.main) {
+    const firstItem = candidates[0];
+    const firstBtn = forgeUi.secondaryList.querySelector('.forge-item');
+    if (firstBtn) {
+      firstBtn.classList.add('selected');
+      forgeSelection.secondary = firstItem;
+      forgeSelection.secondaryKey = firstItem.key;
+      forgeUi.secondary.textContent = `副件: ${formatItemName(firstItem)}`;
+      forgeUi.confirm.disabled = false;
+    }
+  }
 }
 
 function formatForgeMeta(item) {
@@ -1842,10 +1855,10 @@ function renderRefineModal() {
     });
   }
   // 获取背包中的装备
-  if (lastState?.inventory) {
-    lastState.inventory.forEach((slot) => {
-      if (slot && slot.item && ['weapon', 'armor', 'accessory'].includes(slot.item.type)) {
-        allEquipment.push({ ...slot, fromEquip: false });
+  if (lastState?.items) {
+    lastState.items.forEach((slot) => {
+      if (slot && ['weapon', 'armor', 'accessory'].includes(slot.type)) {
+        allEquipment.push({ ...slot, item: slot, fromEquip: false });
       }
     });
   }
@@ -1870,10 +1883,9 @@ function renderRefineModal() {
     btn.className = 'forge-item';
     applyRarityClass(btn, item);
     const refineLevel = entry.refine_level || 0;
+    const refineText = refineLevel > 0 ? ` +${refineLevel}` : '';
     btn.innerHTML = `
-      <div>${formatItemName(item)}</div>
-      <div class="item-detail">锻造: +${refineLevel}</div>
-      <div class="item-detail">${entry.fromEquip ? '(已装备)' : '(背包)'}</div>
+      <div>${formatItemName(item)}${refineText}</div>
     `;
     btn.addEventListener('click', () => {
       refineSelection = { slot: entry.slotName || entry.key, item, refineLevel, fromEquip: entry.fromEquip };
@@ -1903,15 +1915,15 @@ function calculateRefineSuccessRate(level) {
 }
 
 function countRefineMaterials() {
-  if (!lastState?.inventory) return 0;
-  return lastState.inventory.filter((slot) => {
-    if (!slot || !slot.item) return false;
-    if (!['weapon', 'armor', 'accessory'].includes(slot.item.type)) return false;
+  if (!lastState?.items) return 0;
+  return lastState.items.filter((slot) => {
+    if (!slot) return false;
+    if (!['weapon', 'armor', 'accessory'].includes(slot.type)) return false;
     if (slot.is_shop_item) return false; // 排除商店装备
-    const rarity = slot.item.rarity || slot.item.price >= 30000 ? 'epic' :
-                   slot.item.price >= 10000 ? 'rare' :
-                   slot.item.price >= 2000 ? 'uncommon' : 'common';
-    return ['common', 'uncommon', 'rare'].includes(rarity) && !hasSpecialEffects(slot.item.effects);
+    const rarity = slot.rarity || slot.price >= 30000 ? 'epic' :
+                   slot.price >= 10000 ? 'rare' :
+                   slot.price >= 2000 ? 'uncommon' : 'common';
+    return ['common', 'uncommon', 'rare'].includes(rarity) && !hasSpecialEffects(slot.effects);
   }).length;
 }
 
@@ -1931,9 +1943,17 @@ function renderEffectModal() {
     return Object.keys(entry.item.effects).length > 0;
   });
 
-  renderChips(effectUi.list, equippedWithEffect.map(e => ({ ...e, equipped: true, raw: { id: e.item.id, slot: e.slot } })), (selected) => {
-    effectSelection = selected;
-    updateEffectSelection(selected);
+  effectUi.list.innerHTML = '';
+  equippedWithEffect.forEach(e => {
+    const btn = document.createElement('div');
+    btn.className = 'forge-item';
+    applyRarityClass(btn, e.item);
+    btn.textContent = formatItemName(e.item);
+    btn.addEventListener('click', () => {
+      effectSelection = { ...e, equipped: true, raw: { id: e.item.id, slot: e.slot } };
+      updateEffectSelection(effectSelection);
+    });
+    effectUi.list.appendChild(btn);
   });
 
   // 重置选择状态
@@ -1954,9 +1974,9 @@ function updateEffectSelection(selected) {
 
   // 自动选择副件（背包中带有特效的装备）
   const inventoryWithEffect = (lastState?.items || []).filter(slot => {
-    if (!slot || !slot.item) return false;
-    if (!slot.item.effects) return false;
-    return Object.keys(slot.item.effects).length > 0;
+    if (!slot) return false;
+    if (!slot.effects) return false;
+    return Object.keys(slot.effects).length > 0;
   });
 
   if (inventoryWithEffect.length > 0) {

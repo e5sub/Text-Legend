@@ -16,7 +16,7 @@ import { addGuildMember, createGuild, getGuildByName, getGuildByNameInRealm, get
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
 import { sendMail, listMail, listSentMail, markMailRead, markMailClaimed, deleteMail } from './db/mail.js';
 import { createVipCodes, listVipCodes, useVipCode } from './db/vip.js';
-import { getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate, setRefineBaseSuccessRate, getRefineDecayRate, setRefineDecayRate, getRefineMaterialCount, setRefineMaterialCount, getEffectResetSuccessRate, setEffectResetSuccessRate, getEffectResetDoubleRate, setEffectResetDoubleRate } from './db/settings.js';
+import { getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb } from './db/settings.js';
 import { listRealms, getRealmById, updateRealmName, createRealm } from './db/realms.js';
 import { listMobRespawns, upsertMobRespawn, clearMobRespawn, saveMobState } from './db/mobs.js';
 import {
@@ -33,6 +33,14 @@ import {
   createConsignmentHistory
 } from './db/consignment_history.js';
 import { listAllSponsors, addSponsor, updateSponsor, deleteSponsor, getSponsorById, updateSponsorCustomTitle, getSponsorByPlayerName } from './db/sponsors.js';
+import {
+  setRefineBaseSuccessRate,
+  setRefineDecayRate,
+  setRefineMaterialCount,
+  setRefineBonusPerLevel,
+  setEffectResetSuccessRate,
+  setEffectResetDoubleRate
+} from './game/settings.js';
 import {
   listItems,
   getItemById,
@@ -89,19 +97,7 @@ import {
   getTrainingFruitDropRate,
   setTrainingFruitCoefficient,
   setTrainingFruitDropRate as setTrainingFruitDropRateConfig,
-  setTrainingPerLevelConfig as setTrainingPerLevelConfigMem,
-  setRefineBaseSuccessRate,
-  getRefineBaseSuccessRate,
-  setRefineDecayRate,
-  getRefineDecayRate,
-  setRefineMaterialCount,
-  getRefineMaterialCount,
-  setRefineBonusPerLevel,
-  getRefineBonusPerLevel,
-  setEffectResetSuccessRate,
-  getEffectResetSuccessRate,
-  setEffectResetDoubleRate,
-  getEffectResetDoubleRate
+  setTrainingPerLevelConfig as setTrainingPerLevelConfigMem
 } from './game/settings.js';
 
 const app = express();
@@ -866,10 +862,10 @@ app.get('/admin/refine-settings', async (req, res) => {
   try {
     const admin = await requireAdmin(req);
     if (!admin) return res.status(401).json({ error: '无管理员权限。' });
-    const baseSuccessRate = await getRefineBaseSuccessRate();
-    const decayRate = await getRefineDecayRate();
-    const materialCount = await getRefineMaterialCount();
-    const bonusPerLevel = await getRefineBonusPerLevel();
+    const baseSuccessRate = await getRefineBaseSuccessRateDb();
+    const decayRate = await getRefineDecayRateDb();
+    const materialCount = await getRefineMaterialCountDb();
+    const bonusPerLevel = await getRefineBonusPerLevelDb();
     res.json({ ok: true, baseSuccessRate, decayRate, materialCount, bonusPerLevel });
   } catch (err) {
     console.error('锻造系统配置加载失败:', err);
@@ -887,7 +883,7 @@ app.post('/admin/refine-settings/update', async (req, res) => {
     if (isNaN(parsed) || parsed < 1 || parsed > 100) {
       return res.status(400).json({ error: '基础成功率必须在1-100之间' });
     }
-    await setRefineBaseSuccessRate(parsed);
+    await setRefineBaseSuccessRateDb(parsed);
   }
 
   if (decayRate !== undefined) {
@@ -895,7 +891,7 @@ app.post('/admin/refine-settings/update', async (req, res) => {
     if (isNaN(parsed) || parsed < 0) {
       return res.status(400).json({ error: '衰减率必须为有效数字且不小于0' });
     }
-    await setRefineDecayRate(parsed);
+    await setRefineDecayRateDb(parsed);
   }
 
   if (materialCount !== undefined) {
@@ -903,7 +899,7 @@ app.post('/admin/refine-settings/update', async (req, res) => {
     if (isNaN(parsed) || parsed < 1) {
       return res.status(400).json({ error: '材料数量必须为正整数' });
     }
-    await setRefineMaterialCount(parsed);
+    await setRefineMaterialCountDb(parsed);
   }
 
   if (bonusPerLevel !== undefined) {
@@ -911,14 +907,14 @@ app.post('/admin/refine-settings/update', async (req, res) => {
     if (isNaN(parsed) || parsed < 0) {
       return res.status(400).json({ error: '每级加成值必须为有效数字且不小于0' });
     }
-    await setRefineBonusPerLevel(parsed);
+    await setRefineBonusPerLevelDb(parsed);
   }
 
   // 更新内存中的配置
-  const newBaseSuccessRate = await getRefineBaseSuccessRate();
-  const newDecayRate = await getRefineDecayRate();
-  const newMaterialCount = await getRefineMaterialCount();
-  const newBonusPerLevel = await getRefineBonusPerLevel();
+  const newBaseSuccessRate = await getRefineBaseSuccessRateDb();
+  const newDecayRate = await getRefineDecayRateDb();
+  const newMaterialCount = await getRefineMaterialCountDb();
+  const newBonusPerLevel = await getRefineBonusPerLevelDb();
   setRefineBaseSuccessRate(newBaseSuccessRate);
   setRefineDecayRate(newDecayRate);
   setRefineMaterialCount(newMaterialCount);
@@ -931,8 +927,8 @@ app.get('/admin/effect-reset-settings', async (req, res) => {
   try {
     const admin = await requireAdmin(req);
     if (!admin) return res.status(401).json({ error: '无管理员权限。' });
-    const successRate = await getEffectResetSuccessRate();
-    const doubleRate = await getEffectResetDoubleRate();
+    const successRate = await getEffectResetSuccessRateDb();
+    const doubleRate = await getEffectResetDoubleRateDb();
     res.json({ ok: true, successRate, doubleRate });
   } catch (err) {
     console.error('特效重置配置加载失败:', err);
@@ -950,7 +946,7 @@ app.post('/admin/effect-reset-settings/update', async (req, res) => {
     if (isNaN(parsed) || parsed < 0 || parsed > 100) {
       return res.status(400).json({ error: '成功率必须在0-100之间' });
     }
-    await setEffectResetSuccessRate(parsed);
+    await setEffectResetSuccessRateDb(parsed);
   }
 
   if (doubleRate !== undefined) {
@@ -958,12 +954,12 @@ app.post('/admin/effect-reset-settings/update', async (req, res) => {
     if (isNaN(parsed) || parsed < 0 || parsed > 100) {
       return res.status(400).json({ error: '双特效概率必须在0-100之间' });
     }
-    await setEffectResetDoubleRate(parsed);
+    await setEffectResetDoubleRateDb(parsed);
   }
 
   // 更新内存中的配置
-  const newSuccessRate = await getEffectResetSuccessRate();
-  const newDoubleRate = await getEffectResetDoubleRate();
+  const newSuccessRate = await getEffectResetSuccessRateDb();
+  const newDoubleRate = await getEffectResetDoubleRateDb();
   setEffectResetSuccessRate(newSuccessRate);
   setEffectResetDoubleRate(newDoubleRate);
   res.json({ ok: true, successRate: newSuccessRate, doubleRate: newDoubleRate });
@@ -7334,19 +7330,19 @@ async function start() {
   setAllClassLevelBonusConfigs(classLevelConfigs);
 
   // 加载锻造系统配置
-  const refineBaseSuccessRate = await getRefineBaseSuccessRate();
+  const refineBaseSuccessRate = await getRefineBaseSuccessRateDb();
   setRefineBaseSuccessRate(refineBaseSuccessRate);
-  const refineDecayRate = await getRefineDecayRate();
+  const refineDecayRate = await getRefineDecayRateDb();
   setRefineDecayRate(refineDecayRate);
-  const refineMaterialCount = await getRefineMaterialCount();
+  const refineMaterialCount = await getRefineMaterialCountDb();
   setRefineMaterialCount(refineMaterialCount);
-  const refineBonusPerLevel = await getRefineBonusPerLevel();
+  const refineBonusPerLevel = await getRefineBonusPerLevelDb();
   setRefineBonusPerLevel(refineBonusPerLevel);
 
   // 加载特效重置配置
-  const effectResetSuccessRate = await getEffectResetSuccessRate();
+  const effectResetSuccessRate = await getEffectResetSuccessRateDb();
   setEffectResetSuccessRate(effectResetSuccessRate);
-  const effectResetDoubleRate = await getEffectResetDoubleRate();
+  const effectResetDoubleRate = await getEffectResetDoubleRateDb();
   setEffectResetDoubleRate(effectResetDoubleRate);
   for (const realm of realmCache) {
     checkMobRespawn(realm.id);
