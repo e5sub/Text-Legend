@@ -9,7 +9,14 @@ export async function listItems(page = 1, limit = 20) {
   const offset = (page - 1) * limit;
   const items = await knex('items')
     .orderBy('type')
-    .orderByRaw("FIELD(rarity, 'common', 'uncommon', 'rare', 'epic', 'legendary', 'supreme')")
+    .orderByRaw("CASE rarity " +
+      "WHEN 'common' THEN 0 " +
+      "WHEN 'uncommon' THEN 1 " +
+      "WHEN 'rare' THEN 2 " +
+      "WHEN 'epic' THEN 3 " +
+      "WHEN 'legendary' THEN 4 " +
+      "WHEN 'supreme' THEN 5 " +
+      "ELSE 6 END")
     .orderBy('item_id')
     .limit(limit)
     .offset(offset);
@@ -184,7 +191,14 @@ export async function searchItems(keyword, page = 1, limit = 20) {
           .orWhere('item_id', 'like', `%${keyword}%`);
     })
     .orderBy('type')
-    .orderByRaw("FIELD(rarity, 'common', 'uncommon', 'rare', 'epic', 'legendary', 'supreme')")
+    .orderByRaw("CASE rarity " +
+      "WHEN 'common' THEN 0 " +
+      "WHEN 'uncommon' THEN 1 " +
+      "WHEN 'rare' THEN 2 " +
+      "WHEN 'epic' THEN 3 " +
+      "WHEN 'legendary' THEN 4 " +
+      "WHEN 'supreme' THEN 5 " +
+      "ELSE 6 END")
     .orderBy('item_id')
     .limit(limit)
     .offset(offset);
