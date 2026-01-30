@@ -4988,7 +4988,6 @@ async function importSelectedItems() {
   results.skipped.forEach(item => {
     importedItemIds.add(item.itemId);
   });
-  });
 
   renderImportItems();
   loadItems(itemsCurrentPage, itemsCurrentKeyword);
