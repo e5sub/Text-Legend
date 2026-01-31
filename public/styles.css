@@ -344,58 +344,60 @@ body.dark .afk-skill-item {
   color: #e8e0d4;
 }
 
-body.dark .bag-item.rarity-uncommon,
-body.dark .bag-item.rarity-rare,
-body.dark .bag-item.rarity-epic,
-body.dark .bag-item.rarity-legendary,
-body.dark .bag-item.rarity-supreme,
-.shop-sell-item.rarity-uncommon,
-.shop-sell-item.rarity-rare,
-.shop-sell-item.rarity-epic,
-.shop-sell-item.rarity-legendary,
-.shop-sell-item.rarity-supreme {
-  border-color: currentColor;
-  color: currentColor;
-}
+body.dark .bag-item.rarity-uncommon { border-color: #7ed18a; color: #7ed18a; }
+body.dark .bag-item.rarity-rare { border-color: #7fb8ff; color: #7fb8ff; }
+body.dark .bag-item.rarity-epic { border-color: #e08bd3; color: #e08bd3; }
+body.dark .bag-item.rarity-legendary { border-color: #f2c464; color: #f2c464; }
+body.dark .bag-item.rarity-supreme { border-color: #ff8c8c; color: #ff8c8c; }
+body.dark .shop-sell-item.rarity-rare { border-color: #7fb8ff; color: #7fb8ff; }
+body.dark .shop-sell-item.rarity-epic { border-color: #e08bd3; color: #e08bd3; }
+body.dark .shop-sell-item.rarity-legendary { border-color: #f2c464; color: #f2c464; }
+body.dark .shop-sell-item.rarity-supreme { border-color: #ff8c8c; color: #ff8c8c; }
 
 body.dark .shop-sell-item.rarity-uncommon,
 body.dark .shop-sell-item.rarity-rare,
 body.dark .shop-sell-item.rarity-epic,
 body.dark .shop-sell-item.rarity-legendary,
-body.dark .shop-sell-item.rarity-supreme,
-body.dark .consign-item.rarity-uncommon,
-body.dark .consign-item.rarity-rare,
-body.dark .consign-item.rarity-epic,
-body.dark .consign-item.rarity-legendary,
-body.dark .consign-item.rarity-supreme,
-body.dark .consign-history-item.rarity-uncommon,
-body.dark .consign-history-item.rarity-rare,
-body.dark .consign-history-item.rarity-epic,
-body.dark .consign-history-item.rarity-legendary,
-body.dark .consign-history-item.rarity-supreme,
-body.dark .repair-item.rarity-uncommon,
-body.dark .repair-item.rarity-rare,
-body.dark .repair-item.rarity-epic,
-body.dark .repair-item.rarity-legendary,
-body.dark .repair-item.rarity-supreme,
-body.dark .forge-item.rarity-uncommon,
-body.dark .forge-item.rarity-rare,
-body.dark .forge-item.rarity-epic,
-body.dark .forge-item.rarity-legendary,
-body.dark .forge-item.rarity-supreme,
-body.dark .trade-item.rarity-uncommon,
-body.dark .trade-item.rarity-rare,
-body.dark .trade-item.rarity-epic,
-body.dark .trade-item.rarity-legendary,
-body.dark .trade-item.rarity-supreme,
-body.dark .mail-attach-item.rarity-uncommon,
-body.dark .mail-attach-item.rarity-rare,
-body.dark .mail-attach-item.rarity-epic,
-body.dark .mail-attach-item.rarity-legendary,
-body.dark .mail-attach-item.rarity-supreme {
+body.dark .shop-sell-item.rarity-supreme {
   border-color: currentColor;
   color: currentColor;
 }
+
+body.dark .consign-item.rarity-uncommon { border-color: #7ed18a; color: #7ed18a; }
+body.dark .consign-item.rarity-rare { border-color: #7fb8ff; color: #7fb8ff; }
+body.dark .consign-item.rarity-epic { border-color: #e08bd3; color: #e08bd3; }
+body.dark .consign-item.rarity-legendary { border-color: #f2c464; color: #f2c464; }
+body.dark .consign-item.rarity-supreme { border-color: #ff8c8c; color: #ff8c8c; }
+
+body.dark .consign-history-item.rarity-uncommon { border-color: #7ed18a; color: #7ed18a; }
+body.dark .consign-history-item.rarity-rare { border-color: #7fb8ff; color: #7fb8ff; }
+body.dark .consign-history-item.rarity-epic { border-color: #e08bd3; color: #e08bd3; }
+body.dark .consign-history-item.rarity-legendary { border-color: #f2c464; color: #f2c464; }
+body.dark .consign-history-item.rarity-supreme { border-color: #ff8c8c; color: #ff8c8c; }
+
+body.dark .repair-item.rarity-uncommon { border-color: #7ed18a; color: #7ed18a; }
+body.dark .repair-item.rarity-rare { border-color: #7fb8ff; color: #7fb8ff; }
+body.dark .repair-item.rarity-epic { border-color: #e08bd3; color: #e08bd3; }
+body.dark .repair-item.rarity-legendary { border-color: #f2c464; color: #f2c464; }
+body.dark .repair-item.rarity-supreme { border-color: #ff8c8c; color: #ff8c8c; }
+
+body.dark .forge-item.rarity-uncommon { border-color: #7ed18a; color: #7ed18a; }
+body.dark .forge-item.rarity-rare { border-color: #7fb8ff; color: #7fb8ff; }
+body.dark .forge-item.rarity-epic { border-color: #e08bd3; color: #e08bd3; }
+body.dark .forge-item.rarity-legendary { border-color: #f2c464; color: #f2c464; }
+body.dark .forge-item.rarity-supreme { border-color: #ff8c8c; color: #ff8c8c; }
+
+body.dark .trade-item.rarity-uncommon { border-color: #7ed18a; color: #7ed18a; }
+body.dark .trade-item.rarity-rare { border-color: #7fb8ff; color: #7fb8ff; }
+body.dark .trade-item.rarity-epic { border-color: #e08bd3; color: #e08bd3; }
+body.dark .trade-item.rarity-legendary { border-color: #f2c464; color: #f2c464; }
+body.dark .trade-item.rarity-supreme { border-color: #ff8c8c; color: #ff8c8c; }
+
+body.dark .mail-attach-item.rarity-uncommon { border-color: #7ed18a; color: #7ed18a; }
+body.dark .mail-attach-item.rarity-rare { border-color: #7fb8ff; color: #7fb8ff; }
+body.dark .mail-attach-item.rarity-epic { border-color: #e08bd3; color: #e08bd3; }
+body.dark .mail-attach-item.rarity-legendary { border-color: #f2c464; color: #f2c464; }
+body.dark .mail-attach-item.rarity-supreme { border-color: #ff8c8c; color: #ff8c8c; }
 
 body.dark .mail-item {
   color: #f1e5ce;
