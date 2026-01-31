@@ -2917,13 +2917,23 @@ export async function handleCommand({ player, players, allCharacters, input, sou
 
       send(`${className}排行榜: ${rankText}`);
 
-      // 为第一名添加排行榜称号
+      // 处理排行榜称号：清除该职业所有玩家的称号，只给第一名添加
       if (rankedPlayers.length > 0) {
         const topPlayer = rankedPlayers[0];
         const rankTitle = `天下第一${className}`;
         const currentRealmId = realmId || player.realmId || 1;
 
-        // 更新数据库中的排行榜称号
+        // 清除该职业所有玩家的排行榜称号
+        try {
+          await knex('characters')
+            .where({ class_id: classId, realm_id: currentRealmId })
+            .update({ rank_title: null });
+          console.log(`[Rank] 清除所有${className}的排行榜称号`);
+        } catch (err) {
+          console.error('清除排行榜称号失败:', err);
+        }
+
+        // 为第一名设置称号
         try {
           await knex('characters')
             .where({ name: topPlayer.name, realm_id: currentRealmId })
@@ -2932,13 +2942,22 @@ export async function handleCommand({ player, players, allCharacters, input, sou
         } catch (err) {
           console.error('更新排行榜称号失败:', err);
         }
-        
-        // 如果在线，通知玩家
+
+        // 如果第一名在线，通知玩家
         const topPlayerObj = playersByName(topPlayer.name, currentRealmId);
         if (topPlayerObj) {
           topPlayerObj.send(`恭喜！你已成为${className}排行榜第一名，获得称号：${rankTitle}`);
-          // 更新玩家对象的称号
           topPlayerObj.rankTitle = rankTitle;
+        }
+
+        // 通知该职业其他在线玩家称号被清除
+        const classNamePlayers = allClassPlayers.filter(p => p.classId === classId && p.name !== topPlayer.name);
+        for (const p of classNamePlayers) {
+          const playerObj = playersByName(p.name, currentRealmId);
+          if (playerObj && playerObj.rankTitle) {
+            playerObj.send(`你已不再是${className}排行榜第一名，称号已被收回`);
+            playerObj.rankTitle = null;
+          }
         }
       }
       
