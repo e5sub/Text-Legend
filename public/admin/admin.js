@@ -4995,7 +4995,7 @@ async function loadItems(page = 1, keyword = '') {
     tr.innerHTML = `
       <td style="font-size: 12px;">${item.id}</td>
       <td style="font-size: 13px;">${item.name}</td>
-      <td style="font-size: 12px;">${getTypeName(item.type)}</td>
+      <td style="font-size: 12px;">${getTypeName(item.type, item.slot)}</td>
       <td style="font-size: 12px;">${getRarityName(item.rarity)}</td>
       <td style="font-size: 12px;">${item.atk}</td>
       <td style="font-size: 12px;">${item.mag}</td>
@@ -5067,20 +5067,37 @@ function renderItemDrops() {
   });
 }
 
-function getTypeName(type) {
+function getTypeName(type, slot) {
   const typeNames = {
     weapon: '武器',
-    armor: '胸甲',
-    helmet: '头盔',
-    boots: '鞋子',
-    belt: '腰带',
-    necklace: '项链',
-    ring: '戒指',
-    bracelet: '手镯',
+    armor: '防具',
+    accessory: '饰品',
     consumable: '消耗品',
     book: '技能书',
-    material: '材料'
+    material: '材料',
+    currency: '货币'
   };
+  
+  // 对于防具和饰品，根据 slot 显示更具体的类型
+  if (type === 'armor' && slot) {
+    const slotNames = {
+      chest: '胸甲',
+      head: '头盔',
+      feet: '鞋子',
+      waist: '腰带'
+    };
+    return slotNames[slot] || '防具';
+  }
+  
+  if (type === 'accessory' && slot) {
+    const slotNames = {
+      neck: '项链',
+      ring: '戒指',
+      bracelet: '手镯'
+    };
+    return slotNames[slot] || '饰品';
+  }
+  
   return typeNames[type] || type;
 }
 
@@ -5134,7 +5151,7 @@ function renderImportItems(keyword = '') {
         <input type="checkbox" class="import-item-checkbox" data-id="${template.item_id}">
       </td>
       <td style="font-size: 13px;">${template.name}</td>
-      <td style="font-size: 12px;">${getTypeName(template.type)}</td>
+      <td style="font-size: 12px;">${getTypeName(template.type, template.slot)}</td>
       <td style="font-size: 12px;">${getRarityName(template.rarity)}</td>
       <td style="font-size: 12px;">${mainStats.join(', ') || '-'}</td>
       <td style="font-size: 12px;">${template.price || '-'}</td>
