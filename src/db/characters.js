@@ -18,8 +18,8 @@ export async function listCharacters(userId, realmId = 1) {
 export async function listAllCharacters(realmId = 1) {
   const characters = await knex('characters')
     .where({ realm_id: realmId })
-    .select('id', 'name', 'class', 'level', 'exp', 'gold', 'hp', 'mp', 'max_hp', 'max_mp', 'stats_json', 'equipment_json');
-  
+    .select('id', 'name', 'class', 'level', 'exp', 'gold', 'hp', 'mp', 'max_hp', 'max_mp', 'stats_json', 'equipment_json', 'flags_json', 'skills_json');
+
   return characters.map(char => ({
     name: char.name,
     classId: char.class,
@@ -31,7 +31,9 @@ export async function listAllCharacters(realmId = 1) {
     max_hp: char.max_hp,
     max_mp: char.max_mp,
     stats: parseJson(char.stats_json, {}),
-    equipment: parseJson(char.equipment_json, {})
+    equipment: parseJson(char.equipment_json, {}),
+    flags: parseJson(char.flags_json, {}),
+    skills: parseJson(char.skills_json, [])
   }));
 }
 

@@ -2905,9 +2905,6 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         })
         .slice(0, 10);
 
-      // 调试：输出前3名详细信息
-      console.log(`[Rank Debug] ${classId}排行榜前3名:`, rankedPlayers.slice(0, 3).map(p => `${p.name} - atk:${p.atk} mag:${p.mag} spirit:${p.spirit}`).join(', '));
-
       if (rankedPlayers.length === 0) {
         send(`${className}排行榜: 暂无数据`);
         return;
