@@ -718,10 +718,8 @@ function buildLine(payload) {
     text.classList.add('line-text');
     text.textContent = ` ${guildMatch[3] || ''}`.trimStart();
     p.appendChild(text);
-    // 检查是否是赞助玩家
-    if (sponsorNames.has(guildMatch[2])) {
-      addSponsorBadge(p, guildMatch[2]);
-    }
+    // 为玩家添加称号（赞助称号或排行榜称号）
+    addPlayerTitle(p, guildMatch[2], data.rankTitle);
   } else if (normalMatch) {
     const nameBtn = document.createElement('button');
     nameBtn.className = 'chat-name-btn';
@@ -732,10 +730,8 @@ function buildLine(payload) {
     text.classList.add('line-text');
     text.textContent = ` ${normalMatch[2] || ''}`.trimStart();
     p.appendChild(text);
-    // 检查是否是赞助玩家
-    if (sponsorNames.has(normalMatch[1])) {
-      addSponsorBadge(p, normalMatch[1]);
-    }
+    // 为玩家添加称号（赞助称号或排行榜称号）
+    addPlayerTitle(p, normalMatch[1], data.rankTitle);
   } else {
     const text = document.createElement('span');
     text.classList.add('line-text');
@@ -745,23 +741,34 @@ function buildLine(payload) {
   return p;
 }
 
-function addSponsorBadge(line, playerName) {
-  // 查找玩家名按钮并添加赞助称号
+function addPlayerTitle(line, playerName, rankTitleFromServer = null) {
+  // 查找玩家名按钮并添加称号
   const nameBtns = line.querySelectorAll('.chat-name-btn');
   nameBtns.forEach((btn) => {
     if (btn.textContent === `[${playerName}]`) {
-      btn.classList.add('sponsor-player-name');
-      
-      // 优先显示赞助称号，然后是排行榜称号
-      let customTitle = sponsorCustomTitles.get(playerName) || '';
-      
-      // 如果没有赞助称号，尝试从当前玩家状态中查找排行榜称号
-      if (!customTitle) {
-        if (lastState && lastState.player && lastState.player.name === playerName && lastState.player.rankTitle) {
-          customTitle = lastState.player.rankTitle;
-        }
+      // 检查是否是赞助玩家
+      const isSponsor = sponsorNames.has(playerName);
+
+      if (isSponsor) {
+        btn.classList.add('sponsor-player-name');
       }
-      
+
+      // 优先显示赞助称号，然后是排行榜称号
+      let customTitle = null;
+
+      // 1. 优先检查是否有赞助称号
+      if (sponsorCustomTitles.has(playerName)) {
+        customTitle = sponsorCustomTitles.get(playerName);
+      }
+      // 2. 如果没有赞助称号，检查服务器传递的排行榜称号
+      else if (rankTitleFromServer) {
+        customTitle = rankTitleFromServer;
+      }
+      // 3. 最后尝试从当前玩家状态中查找排行榜称号
+      else if (lastState && lastState.player && lastState.player.name === playerName && lastState.player.rankTitle) {
+        customTitle = lastState.player.rankTitle;
+      }
+
       // 只有当有称号时才显示
       if (customTitle) {
         const badge = document.createElement('span');

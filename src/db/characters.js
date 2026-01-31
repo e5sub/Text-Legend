@@ -60,6 +60,7 @@ export async function loadCharacter(userId, name, realmId = 1) {
     quests: parseJson(row.quests_json, {}),
     skills: parseJson(row.skills_json, []),
     flags: parseJson(row.flags_json, {}),
+    rankTitle: row.rank_title || null,
     status: {}
   };
   normalizeInventory(player);

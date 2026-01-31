@@ -1566,6 +1566,9 @@ async function updateRankTitles() {
 
   // 获取所有服务器列表
   const realms = await listRealms();
+
+  // 清空在线玩家称号Map
+  onlinePlayerRankTitles.clear();
   const classes = [
     { id: 'warrior', name: '战士' },
     { id: 'mage', name: '法师' },
@@ -1616,6 +1619,8 @@ async function updateRankTitles() {
           if (topPlayerObj) {
             topPlayerObj.send(`恭喜！你已成为${cls.name}排行榜第一名，获得称号：${rankTitle}`);
             topPlayerObj.rankTitle = rankTitle;
+            // 更新在线玩家称号Map
+            onlinePlayerRankTitles.set(topPlayer.name, rankTitle);
           }
 
           // 通知该职业其他在线玩家称号被清除
@@ -1625,6 +1630,8 @@ async function updateRankTitles() {
               if (playerObj && playerObj.rankTitle) {
                 playerObj.send(`你已不再是${cls.name}排行榜第一名，称号已被收回`);
                 playerObj.rankTitle = null;
+                // 从在线玩家称号Map中移除
+                onlinePlayerRankTitles.delete(p.name);
               }
             }
           }
@@ -3764,6 +3771,8 @@ const stateThrottleLastRoom = new Map();
 const stateThrottleLastInBoss = new Map();
 // BOSS血量公告状态：Map<mobId, { announced50: boolean, announced30: boolean, announced10: boolean }>
 const bossBloodAnnouncementStatus = new Map();
+// 在线玩家排行榜称号：Map<playerName, rankTitle>
+const onlinePlayerRankTitles = new Map();
 
 function getStateThrottleKey(player, socket = null) {
   if (player) {
@@ -5070,6 +5079,11 @@ io.on('connection', (socket) => {
     loaded.guild = null;
     if (!loaded.flags) loaded.flags = {};
     loaded.stateThrottleOverride = socket.data?.stateThrottleOverride === true;
+
+    // 将玩家称号添加到在线玩家称号Map
+    if (loaded.rankTitle) {
+      onlinePlayerRankTitles.set(loaded.name, loaded.rankTitle);
+    }
     const throttleKey = getStateThrottleKey(loaded, socket);
     if (throttleKey) {
       stateThrottleLastSent.delete(throttleKey);
@@ -5668,6 +5682,8 @@ io.on('connection', (socket) => {
         stateThrottleLastRoom.delete(throttleKey);
         stateThrottleLastInBoss.delete(throttleKey);
       }
+      // 从在线玩家称号Map中移除
+      onlinePlayerRankTitles.delete(player.name);
       players.delete(socket.id);
     }
   });

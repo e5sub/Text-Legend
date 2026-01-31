@@ -851,7 +851,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       if (!args) return;
       const message = `[${player.name}] ${args}`;
       const locationMatch = args.match(/^我在\s+(.+?)\s+-\s+(.+)$/);
-      const payload = { text: message };
+      const payload = { text: message, playerName: player.name, rankTitle: player.rankTitle || null };
       if (locationMatch) {
         // 检查是否是已知的位置，发送位置ID信息
         const locationName = `${locationMatch[1]} - ${locationMatch[2]}`;
