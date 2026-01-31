@@ -1559,6 +1559,71 @@ function scheduleAutoBackup() {
   console.log('[AutoBackup] 已设置每日0点自动备份，备份目录: data/backup，保留30天');
 }
 
+// 每日0点自动更新排行榜称号
+async function updateRankTitles() {
+  console.log('[Rank] 开始自动更新排行榜称号...');
+
+  const classes = [
+    { id: 'warrior', name: '战士' },
+    { id: 'mage', name: '法师' },
+    { id: 'taoist', name: '道士' }
+  ];
+
+  for (const cls of classes) {
+    try {
+      // 获取所有该职业的玩家
+      const allCharacters = await listAllCharacters();
+      const classPlayers = allCharacters.filter(p => p.classId === cls.id);
+
+      // 计算并排序
+      const rankedPlayers = classPlayers
+        .map(p => {
+          computeDerived(p);
+          return {
+            name: p.name,
+            atk: Math.floor(p.atk || 0),
+            mag: Math.floor(p.mag || 0),
+            spirit: Math.floor(p.spirit || 0)
+          };
+        })
+        .sort((a, b) => {
+          if (cls.id === 'warrior') return b.atk - a.atk;
+          if (cls.id === 'mage') return b.mag - b.mag;
+          return b.spirit - a.spirit;
+        });
+
+      // 清除该职业所有玩家的排行榜称号
+      await knex('characters')
+        .where({ class_id: cls.id })
+        .update({ rank_title: null });
+
+      // 为第一名设置称号
+      if (rankedPlayers.length > 0) {
+        const topPlayer = rankedPlayers[0];
+        const rankTitle = `天下第一${cls.name}`;
+        await knex('characters')
+          .where({ name: topPlayer.name })
+          .update({ rank_title: rankTitle });
+        console.log(`[Rank] ${cls.name}排行榜第一名: ${topPlayer.name}，称号: ${rankTitle}`);
+      } else {
+        console.log(`[Rank] ${cls.name}排行榜暂无玩家`);
+      }
+    } catch (err) {
+      console.error(`[Rank] 更新${cls.name}排行榜失败:`, err);
+    }
+  }
+
+  console.log('[Rank] 排行榜称号更新完成');
+}
+
+// 设置排行榜自动更新
+function setupRankUpdate() {
+  cron.schedule('0 0 * * *', async () => {
+    await updateRankTitles();
+  });
+  console.log('[Rank] 已设置每日0点自动更新排行榜称号');
+}
+
 app.get('/admin/backup', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
@@ -7358,6 +7423,9 @@ async function start() {
 
   // 启动自动备份定时任务
   scheduleAutoBackup();
+
+  // 启动排行榜自动更新定时任务
+  setupRankUpdate();
 
   setRespawnStore({
     set: (realmId, zoneId, roomId, slotIndex, templateId, respawnAt) =>
