@@ -1579,6 +1579,8 @@ async function updateRankTitles() {
         const allCharacters = await listAllCharacters(realm.id);
         const classPlayers = allCharacters.filter(p => p.classId === cls.id);
 
+        console.log(`[Rank Update] ${realm.name} - 总玩家数: ${allCharacters.length}, ${cls.name}职业玩家数: ${classPlayers.length}`);
+
         // 计算并排序
         const rankedPlayers = classPlayers
           .map(p => {
@@ -1596,6 +1598,13 @@ async function updateRankTitles() {
             if (cls.id === 'mage') return b.mag - a.mag;
             return b.spirit - a.spirit;
           });
+
+        // 调试日志：输出前5名
+        if (rankedPlayers.length > 0) {
+          const attrName = cls.id === 'warrior' ? 'atk' : cls.id === 'mage' ? 'mag' : 'spirit';
+          const top5 = rankedPlayers.slice(0, 5);
+          console.log(`[Rank Update] ${realm.name} - ${cls.name}排行榜前5名:`, top5.map(p => `${p.name}(${p[attrName]})`).join(', '));
+        }
 
         // 清除该服务器该职业所有玩家的排行榜称号
         await knex('characters')
