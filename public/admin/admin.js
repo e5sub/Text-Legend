@@ -5216,7 +5216,23 @@ function openItemEditModal(item = null) {
     document.getElementById('item-edit-id').value = item.id;
     document.getElementById('item-edit-item-id').value = item.item_id;
     document.getElementById('item-edit-name').value = item.name;
-    document.getElementById('item-edit-type').value = item.type;
+
+    // 设置 type select，根据 slot 来选择正确的 option
+    const typeSelect = document.getElementById('item-edit-type');
+    typeSelect.value = item.type;
+    // 如果是 armor 或 accessory，根据 slot 找到匹配的 option
+    if (item.type === 'armor' || item.type === 'accessory') {
+      const options = typeSelect.querySelectorAll('option');
+      for (const opt of options) {
+        if (opt.value === item.type) {
+          if (!opt.dataset.type || opt.dataset.type === item.slot) {
+            typeSelect.value = opt.value;
+            break;
+          }
+        }
+      }
+    }
+
     document.getElementById('item-edit-slot').value = item.slot || '';
     document.getElementById('item-edit-rarity').value = item.rarity;
     document.getElementById('item-edit-price').value = item.price;
@@ -5300,12 +5316,72 @@ window.deleteItemDrop = async function(dropId) {
   renderItemDrops();
 };
 
+// 中英文映射
+const TYPE_CN_TO_EN = {
+  '武器': 'weapon',
+  '胸甲': 'armor',
+  '头盔': 'armor',
+  '鞋子': 'armor',
+  '腰带': 'armor',
+  '项链': 'accessory',
+  '戒指': 'accessory',
+  '手镯': 'accessory',
+  '消耗品': 'consumable',
+  '技能书': 'book',
+  '材料': 'material'
+};
+
+const RARITY_CN_TO_EN = {
+  '普通': 'common',
+  '优秀': 'uncommon',
+  '稀有': 'rare',
+  '史诗': 'epic',
+  '传说': 'legendary',
+  '至尊': 'supreme'
+};
+
 async function saveItem() {
   const itemId = document.getElementById('item-edit-item-id').value.trim();
   const name = document.getElementById('item-edit-name').value.trim();
-  const type = document.getElementById('item-edit-type').value;
-  const slot = document.getElementById('item-edit-slot').value;
-  const rarity = document.getElementById('item-edit-rarity').value;
+  const typeSelect = document.getElementById('item-edit-type');
+  const slotSelect = document.getElementById('item-edit-slot');
+  const raritySelect = document.getElementById('item-edit-rarity');
+
+  // 获取选中的 option
+  const selectedTypeOption = typeSelect.options[typeSelect.selectedIndex];
+  const type = selectedTypeOption.value;
+
+  // 根据选中的 type 和 slot 自动确定正确的值
+  let finalType = type;
+  let finalSlot = slotSelect.value;
+
+  // 如果是 armor 或 accessory，根据 data-type 或 slot 来设置
+  if (type === 'armor' || type === 'accessory') {
+    const dataType = selectedTypeOption.dataset.type;
+    if (dataType) {
+      finalSlot = dataType;
+    } else if (!finalSlot) {
+      // 根据 option 的文本推断 slot
+      const typeText = selectedTypeOption.textContent;
+      if (typeText.includes('头盔')) finalSlot = 'head';
+      else if (typeText.includes('鞋子')) finalSlot = 'feet';
+      else if (typeText.includes('腰带')) finalSlot = 'waist';
+      else if (typeText.includes('胸甲')) finalSlot = 'chest';
+      else if (typeText.includes('项链')) finalSlot = 'neck';
+      else if (typeText.includes('戒指')) finalSlot = 'ring';
+      else if (typeText.includes('手镯')) finalSlot = 'bracelet';
+    }
+  }
+
+  // 中英文映射转换（兼容旧数据）
+  if (TYPE_CN_TO_EN[finalType]) {
+    finalType = TYPE_CN_TO_EN[finalType];
+  }
+  if (RARITY_CN_TO_EN[raritySelect.value]) {
+    rarity = RARITY_CN_TO_EN[raritySelect.value];
+  } else {
+    rarity = raritySelect.value;
+  }
   const price = parseInt(document.getElementById('item-edit-price').value) || 0;
   const atk = parseInt(document.getElementById('item-edit-atk').value) || 0;
   const mag = parseInt(document.getElementById('item-edit-mag').value) || 0;
@@ -5328,10 +5404,9 @@ async function saveItem() {
   const data = {
     item_id: itemId,
     name,
-    type,
-    slot,
+    type: finalType,
+    slot: finalSlot,
     rarity,
-    price,
     atk,
     mag,
     spirit,
@@ -5471,14 +5546,29 @@ const itemTypeSelect = document.getElementById('item-edit-type');
 if (itemTypeSelect) {
   itemTypeSelect.addEventListener('change', () => {
     const slotSelect = document.getElementById('item-edit-slot');
-    const type = itemTypeSelect.value;
+    const selectedOption = itemTypeSelect.options[itemTypeSelect.selectedIndex];
+    const type = selectedOption.value;
+    const dataType = selectedOption.dataset.type;
 
     // 材料、技能书、消耗品 → 槽位自动选择"无"
-    if (type === 'book' || type === 'consumable' || type === 'material') {
+    if (type === 'book' || type === 'consumable' || type === 'material' || type === 'currency') {
       slotSelect.value = '';
-    } else {
-      // 武器、装备 → 槽位自动选择对应的槽位
-      slotSelect.value = type;
+    } else if (type === 'weapon') {
+      // 武器 → 槽位为 weapon
+      slotSelect.value = 'weapon';
+    } else if (type === 'armor') {
+      // 根据选项文本设置槽位
+      const typeText = selectedOption.textContent;
+      if (typeText.includes('头盔')) slotSelect.value = 'head';
+      else if (typeText.includes('鞋子')) slotSelect.value = 'feet';
+      else if (typeText.includes('腰带')) slotSelect.value = 'waist';
+      else slotSelect.value = 'chest';
+    } else if (type === 'accessory') {
+      // 根据选项文本设置槽位
+      const typeText = selectedOption.textContent;
+      if (typeText.includes('项链')) slotSelect.value = 'neck';
+      else if (typeText.includes('戒指')) slotSelect.value = 'ring';
+      else if (typeText.includes('手镯')) slotSelect.value = 'bracelet';
     }
   });
 }

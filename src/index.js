@@ -2163,6 +2163,7 @@ function buildItemView(itemId, effects = null, durability = null, max_durability
   const item = ITEM_TEMPLATES[itemId] || { id: itemId, name: itemId, type: 'unknown' };
   // 优先使用装备模板中手动设置的 rarity，如果没有才使用价格计算
   const rarity = item.rarity || rarityByPrice(item);
+  console.log('[buildItemView] itemId:', itemId, 'name:', item.name, 'type:', item.type, 'rarity:', rarity, 'slot:', item.slot, 'ITEM_TEMPLATES[itemId]:', ITEM_TEMPLATES[itemId]);
   return {
     id: itemId,
     name: item.name,
