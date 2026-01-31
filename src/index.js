@@ -4424,12 +4424,12 @@ function applyDamageToMob(mob, dmg, attackerName, realmId = null) {
       return { damageTaken: false };
     }
 
-    // 世界BOSS受到攻击时1%几率触发无敌效果（持续10秒）
+    // 世界BOSS受到攻击时1%几率触发无敌效果（持续5秒）
     if (isWorldBoss && Math.random() <= 0.01) {
       if (!mob.status) mob.status = {};
-      mob.status.invincible = now + 10000;
+      mob.status.invincible = now + 5000;
 
-      // 清除所有毒效果和负面状态
+      // 清除所有毒效果和负面状态（保留禁疗效果）
       if (mob.status.activePoisons) {
         delete mob.status.activePoisons;
       }
@@ -4441,6 +4441,7 @@ function applyDamageToMob(mob, dmg, attackerName, realmId = null) {
         delete mob.status.debuffs.poisonEffect;
         delete mob.status.debuffs.weak;
         delete mob.status.debuffs.armorBreak;
+        // 注意：不删除 healBlock（禁疗效果），让无敌期间也能受禁疗影响
       }
 
       if (attackerName) {
@@ -4453,7 +4454,7 @@ function applyDamageToMob(mob, dmg, attackerName, realmId = null) {
             p.hp > 0
           );
           roomPlayers.forEach((roomPlayer) => {
-            roomPlayer.send(`${mob.name} 触发了无敌效果，10秒内免疫所有伤害、毒、麻痹、降攻击、降防效果！`);
+            roomPlayer.send(`${mob.name} 触发了无敌效果，5秒内免疫所有伤害、毒、麻痹、降攻击、降防效果！`);
           });
         }
       }
@@ -4554,7 +4555,7 @@ function retaliateMobAgainstPlayer(mob, player, online) {
       if (!mob.status) mob.status = {};
       mob.status.invincible = now + 10000;
 
-      // 清除所有毒效果和负面状态
+      // 清除所有毒效果和负面状态（保留禁疗效果）
       if (mob.status.activePoisons) {
         delete mob.status.activePoisons;
       }
@@ -4566,6 +4567,7 @@ function retaliateMobAgainstPlayer(mob, player, online) {
         delete mob.status.debuffs.poisonEffect;
         delete mob.status.debuffs.weak;
         delete mob.status.debuffs.armorBreak;
+        // 注意：不删除 healBlock（禁疗效果），让无敌期间也能受禁疗影响
       }
 
       // 通知房间内所有玩家
