@@ -1430,6 +1430,10 @@ function showShopModal(items) {
 
 function filterConsignItems(items, filter) {
   if (!filter || filter === 'all') return items;
+  if (filter === 'accessory') {
+    return items.filter((entry) => entry && entry.item && 
+      ['ring_left', 'ring_right', 'bracelet_left', 'bracelet_right', 'neck', 'accessory'].includes(entry.item.type));
+  }
   return items.filter((entry) => entry && entry.item && entry.item.type === filter);
 }
 

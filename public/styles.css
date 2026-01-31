@@ -349,6 +349,15 @@ body.dark .bag-item.rarity-rare,
 body.dark .bag-item.rarity-epic,
 body.dark .bag-item.rarity-legendary,
 body.dark .bag-item.rarity-supreme,
+.shop-sell-item.rarity-uncommon,
+.shop-sell-item.rarity-rare,
+.shop-sell-item.rarity-epic,
+.shop-sell-item.rarity-legendary,
+.shop-sell-item.rarity-supreme {
+  border-color: currentColor;
+  color: currentColor;
+}
+
 body.dark .shop-sell-item.rarity-uncommon,
 body.dark .shop-sell-item.rarity-rare,
 body.dark .shop-sell-item.rarity-epic,
@@ -456,6 +465,7 @@ body.dark .consign-history-item {
   background: #3a3028;
   border-color: #5a4838;
   color: #e8e0d4;
+  color: currentColor;
 }
 
 body.dark .consignment-history-meta {
@@ -2387,16 +2397,35 @@ body.dark .mail-tab.active {
   cursor: pointer;
   font-size: 0.85rem;
   line-height: 1.3;
+  color: currentColor;
 }
 
 .consign-item:hover {
   filter: brightness(1.03);
 }
 
+.consign-item.rarity-uncommon,
+.consign-item.rarity-rare,
+.consign-item.rarity-epic,
+.consign-item.rarity-legendary,
+.consign-item.rarity-supreme {
+  border-color: currentColor;
+  color: currentColor;
+}
+
 .consign-item small {
   display: block;
   color: #6b4a2a;
   margin-top: 4px;
+}
+
+.consign-history-item.rarity-uncommon,
+.consign-history-item.rarity-rare,
+.consign-history-item.rarity-epic,
+.consign-history-item.rarity-legendary,
+.consign-history-item.rarity-supreme {
+  border-color: currentColor;
+  color: currentColor;
 }
 
 .consign-history-item {
@@ -3845,6 +3874,15 @@ body.dark .sabak-empty {
 .rarity-epic { color: #8a2c7a; }
 .rarity-legendary { color: #8f5a12; }
 .rarity-supreme { color: #b63c3c; }
+
+.bag-item.rarity-uncommon,
+.bag-item.rarity-rare,
+.bag-item.rarity-epic,
+.bag-item.rarity-legendary,
+.bag-item.rarity-supreme {
+  border-color: currentColor;
+  color: currentColor;
+}
 
 body.dark .rarity-common { color: #b9a48b; }
 body.dark .rarity-uncommon { color: #7ed18a; }
