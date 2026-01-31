@@ -1432,8 +1432,8 @@ function filterConsignItems(items, filter) {
   if (!filter || filter === 'all') return items;
   if (filter === 'accessory') {
     return items.filter((entry) => entry && entry.item &&
-      ['ring_left', 'ring_right', 'bracelet_left', 'bracelet_right', 'neck', 'accessory'].includes(entry.item.type) ||
-      ['ring_left', 'ring_right', 'bracelet_left', 'bracelet_right', 'neck'].includes(entry.item.slot));
+      ['ring', 'ring_left', 'ring_right', 'bracelet', 'bracelet_left', 'bracelet_right', 'neck', 'accessory'].includes(entry.item.type) ||
+      ['ring', 'ring_left', 'ring_right', 'bracelet', 'bracelet_left', 'bracelet_right', 'neck'].includes(entry.item.slot));
   }
   return items.filter((entry) => entry && entry.item && entry.item.type === filter);
 }
