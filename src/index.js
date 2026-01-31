@@ -294,10 +294,15 @@ app.post('/api/character', async (req, res) => {
     }
   }
   if (!name || !classId) return res.status(400).json({ error: '角色名或职业缺失。' });
-  const existing = await findCharacterByName(name);
+  // 验证角色名
+  const nameResult = validatePlayerName(name);
+  if (!nameResult.ok) {
+    return res.status(400).json({ error: nameResult.error });
+  }
+  const existing = await findCharacterByName(nameResult.value);
   if (existing) return res.status(400).json({ error: '角色名已存在。' });
 
-  const player = newCharacter(name, classId);
+  const player = newCharacter(nameResult.value, classId);
   player.realmId = realmInfo.realmId;
   computeDerived(player);
   await saveCharacter(session.user_id, player, realmInfo.realmId);

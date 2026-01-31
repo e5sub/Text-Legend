@@ -2382,9 +2382,17 @@ export async function handleCommand({ player, players, allCharacters, input, sou
         const hasHorn = player.inventory.find((i) => i.id === 'woma_horn' && i.qty >= 1);
         if (!hasHorn) return send('创建行会需要沃玛号角。');
         removeItem(player, 'woma_horn', 1);
-        const guildId = await guildApi.createGuild(nameArg, player.userId, player.name);
-        player.guild = { id: guildId, name: nameArg, role: 'leader' };
-        send(`行会创建成功: ${nameArg}`);
+        try {
+          const guildId = await guildApi.createGuild(nameArg, player.userId, player.name);
+          player.guild = { id: guildId, name: nameArg, role: 'leader' };
+          send(`行会创建成功: ${nameArg}`);
+        } catch (err) {
+          if (err.code === 'VALIDATION_ERROR') {
+            send(err.message);
+          } else {
+            throw err;
+          }
+        }
         return;
       }
 

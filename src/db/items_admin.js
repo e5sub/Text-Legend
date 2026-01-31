@@ -119,6 +119,7 @@ export async function updateItem(id, data) {
       ITEM_TEMPLATES[item.item_id].dex = item.dex;
       ITEM_TEMPLATES[item.item_id].hp = item.hp;
       ITEM_TEMPLATES[item.item_id].mp = item.mp;
+      ITEM_TEMPLATES[item.item_id].price = item.price;
     }
   }
 

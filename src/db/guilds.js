@@ -1,4 +1,5 @@
 import knex from './index.js';
+import { validateGuildName } from '../game/validator.js';
 
 export async function getGuildByName(name) {
   return knex('guilds').where({ name }).first();
@@ -13,8 +14,15 @@ export async function getGuildById(id) {
 }
 
 export async function createGuild(name, leaderUserId, leaderCharName, realmId = 1) {
+  // 验证公会名
+  const nameResult = validateGuildName(name);
+  if (!nameResult.ok) {
+    const error = new Error(nameResult.error);
+    error.code = 'VALIDATION_ERROR';
+    throw error;
+  }
   const [id] = await knex('guilds').insert({
-    name,
+    name: nameResult.value,
     leader_user_id: leaderUserId,
     leader_char_name: leaderCharName,
     realm_id: realmId

@@ -64,9 +64,25 @@ export function validateGold(amount, maxAmount = 999999999) {
 
 /**
  * 验证玩家名称
+ * 限制：1-8个字，只允许中文、英文、数字
  */
 export function validatePlayerName(name) {
-  return validateString(name, 1, 20);
+  if (typeof name !== 'string') {
+    return { ok: false, error: '不是字符串类型' };
+  }
+  const trimmed = name.trim();
+  if (trimmed.length === 0) {
+    return { ok: false, error: '角色名不能为空' };
+  }
+  // 只允许中文、英文、数字
+  const validChars = /^[\u4e00-\u9fa5a-zA-Z0-9]+$/;
+  if (!validChars.test(trimmed)) {
+    return { ok: false, error: '角色名只能包含中文、英文、数字' };
+  }
+  if (trimmed.length > 8) {
+    return { ok: false, error: '角色名不能超过8个字' };
+  }
+  return { ok: true, value: trimmed };
 }
 
 /**
@@ -170,6 +186,29 @@ export function sanitizeInput(input) {
   if (typeof input !== 'string') return '';
   // 移除可能危险的特殊字符
   return input.replace(/[\x00-\x1F\x7F]/g, '').trim();
+}
+
+/**
+ * 验证公会名称
+ * 限制：1-8个字，只允许中文、英文、数字
+ */
+export function validateGuildName(name) {
+  if (typeof name !== 'string') {
+    return { ok: false, error: '不是字符串类型' };
+  }
+  const trimmed = name.trim();
+  if (trimmed.length === 0) {
+    return { ok: false, error: '公会名不能为空' };
+  }
+  // 只允许中文、英文、数字
+  const validChars = /^[\u4e00-\u9fa5a-zA-Z0-9]+$/;
+  if (!validChars.test(trimmed)) {
+    return { ok: false, error: '公会名只能包含中文、英文、数字' };
+  }
+  if (trimmed.length > 8) {
+    return { ok: false, error: '公会名不能超过8个字' };
+  }
+  return { ok: true, value: trimmed };
 }
 
 /**
