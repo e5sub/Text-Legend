@@ -349,19 +349,11 @@ body.dark .bag-item.rarity-rare { border-color: #7fb8ff; color: #7fb8ff; }
 body.dark .bag-item.rarity-epic { border-color: #e08bd3; color: #e08bd3; }
 body.dark .bag-item.rarity-legendary { border-color: #f2c464; color: #f2c464; }
 body.dark .bag-item.rarity-supreme { border-color: #ff8c8c; color: #ff8c8c; }
+body.dark .shop-sell-item.rarity-uncommon { border-color: #7ed18a; color: #7ed18a; }
 body.dark .shop-sell-item.rarity-rare { border-color: #7fb8ff; color: #7fb8ff; }
 body.dark .shop-sell-item.rarity-epic { border-color: #e08bd3; color: #e08bd3; }
 body.dark .shop-sell-item.rarity-legendary { border-color: #f2c464; color: #f2c464; }
 body.dark .shop-sell-item.rarity-supreme { border-color: #ff8c8c; color: #ff8c8c; }
-
-body.dark .shop-sell-item.rarity-uncommon,
-body.dark .shop-sell-item.rarity-rare,
-body.dark .shop-sell-item.rarity-epic,
-body.dark .shop-sell-item.rarity-legendary,
-body.dark .shop-sell-item.rarity-supreme {
-  border-color: currentColor;
-  color: currentColor;
-}
 
 body.dark .consign-item.rarity-uncommon { border-color: #7ed18a; color: #7ed18a; }
 body.dark .consign-item.rarity-rare { border-color: #7fb8ff; color: #7fb8ff; }
@@ -3934,6 +3926,7 @@ body.dark .rarity-supreme { color: #ff8c8c; }
 .mail-attach-item.rarity-legendary,
 .mail-attach-item.rarity-supreme {
   border-color: currentColor;
+  color: currentColor;
 }
 
 .side {
