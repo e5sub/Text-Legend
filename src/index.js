@@ -6127,10 +6127,6 @@ function processMobDeath(player, mob, online) {
 
   // 清理BOSS血量公告状态
   bossBloodAnnouncementStatus.delete(mob.id);
-  // 清理世界BOSS伤害第一奖励标记
-  if (isWorldBoss) {
-    worldBossFirstDamageRewardGiven.delete(`${realmId}:${mob.id}`);
-  }
 
   const realmId = player?.realmId || 1;
   const damageSnapshot = mob.status?.damageBy ? { ...mob.status.damageBy } : {};
@@ -6165,6 +6161,8 @@ function processMobDeath(player, mob, online) {
     void setWorldBossKillCount(nextKills, realmId).catch((err) => {
       console.warn('Failed to persist world boss kill count:', err);
     });
+    // 清理世界BOSS伤害第一奖励标记
+    worldBossFirstDamageRewardGiven.delete(`${realmId}:${mob.id}`);
   }
   const { rankMap, entries } = isSpecialBoss ? buildDamageRankMap(mob, damageSnapshot) : { rankMap: {}, entries: [] };
   let lootOwner = player;
