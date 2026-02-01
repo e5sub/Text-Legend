@@ -606,6 +606,8 @@ app.post('/admin/worldboss-respawn', async (req, res) => {
 
       for (const boss of worldBossMobs) {
         removeMob(boss.id, 'mg_town', 'lair', realm.id);
+        // 清除该BOSS的奖励标记
+        worldBossFirstDamageRewardGiven.delete(`${realm.id}:${boss.id}`);
         removedCount++;
       }
 
@@ -2546,6 +2548,7 @@ function rollRarityEquipmentDrop(mobTemplate, bonus = 1) {
 }
 
 let WORLD_BOSS_DROP_BONUS = 1.5;
+const worldBossFirstDamageRewardGiven = new Map(); // 追踪世界BOSS伤害第一奖励是否已发放
 
 async function applyWorldBossSettings() {
   // 从数据库加载世界BOSS设置并应用到常量
@@ -4905,7 +4908,11 @@ function tryApplyPoisonEffect(attacker, target) {
 
 function buildDamageRankMap(mob, damageByOverride = null) {
   const damageBy = damageByOverride || mob.status?.damageBy || {};
-  const entries = Object.entries(damageBy).sort((a, b) => b[1] - a[1]);
+  // 按伤害降序排序，伤害相同时按名字排序，确保稳定性
+  const entries = Object.entries(damageBy).sort((a, b) => {
+    if (b[1] !== a[1]) return b[1] - a[1]; // 按伤害降序
+    return a[0].localeCompare(b[0]); // 伤害相同时按名字排序
+  });
   const rankMap = {};
   entries.forEach(([name], idx) => {
     rankMap[name] = idx + 1;
@@ -6120,6 +6127,10 @@ function processMobDeath(player, mob, online) {
 
   // 清理BOSS血量公告状态
   bossBloodAnnouncementStatus.delete(mob.id);
+  // 清理世界BOSS伤害第一奖励标记
+  if (isWorldBoss) {
+    worldBossFirstDamageRewardGiven.delete(`${realmId}:${mob.id}`);
+  }
 
   const realmId = player?.realmId || 1;
   const damageSnapshot = mob.status?.damageBy ? { ...mob.status.damageBy } : {};
@@ -6254,28 +6265,34 @@ function processMobDeath(player, mob, online) {
         topPlayer = null;
       }
       if (topPlayer) {
-        let forcedId = rollRarityEquipmentDrop(template, 1);
-        if (!forcedId) {
-          const equipPool = Object.values(ITEM_TEMPLATES)
-            .filter((i) => i && ['weapon', 'armor', 'accessory'].includes(i.type))
-            .map((i) => i.id);
-          if (equipPool.length) {
-            forcedId = equipPool[randInt(0, equipPool.length - 1)];
+        // 检查该BOSS的奖励是否已发放
+        const rewardKey = `${realmId}:${mob.id}`;
+        if (!worldBossFirstDamageRewardGiven.has(rewardKey)) {
+          let forcedId = rollRarityEquipmentDrop(template, 1);
+          if (!forcedId) {
+            const equipPool = Object.values(ITEM_TEMPLATES)
+              .filter((i) => i && ['weapon', 'armor', 'accessory'].includes(i.type))
+              .map((i) => i.id);
+            if (equipPool.length) {
+              forcedId = equipPool[randInt(0, equipPool.length - 1)];
+            }
           }
-        }
-        if (forcedId) {
-          const forcedEffects = forceEquipmentEffects(forcedId);
-          addItem(topPlayer, forcedId, 1, forcedEffects);
-          topPlayer.send(`世界BOSS伤害第一奖励：${formatItemLabel(forcedId, forcedEffects)}。`);
-          const forcedItem = ITEM_TEMPLATES[forcedId];
-          if (forcedItem) {
-            const forcedRarity = rarityByPrice(forcedItem);
-            if (['epic', 'legendary', 'supreme'].includes(forcedRarity)) {
-              emitAnnouncement(`${topPlayer.name} 获得世界BOSS伤害第一奖励 ${formatItemLabel(forcedId, forcedEffects)}！`, forcedRarity, null, realmId);
+          if (forcedId) {
+            const forcedEffects = forceEquipmentEffects(forcedId);
+            addItem(topPlayer, forcedId, 1, forcedEffects);
+            topPlayer.send(`世界BOSS伤害第一奖励：${formatItemLabel(forcedId, forcedEffects)}。`);
+            const forcedItem = ITEM_TEMPLATES[forcedId];
+            if (forcedItem) {
+              const forcedRarity = rarityByPrice(forcedItem);
+              if (['epic', 'legendary', 'supreme'].includes(forcedRarity)) {
+                emitAnnouncement(`${topPlayer.name} 获得世界BOSS伤害第一奖励 ${formatItemLabel(forcedId, forcedEffects)}！`, forcedRarity, null, realmId);
+              }
+              if (isEquipmentItem(forcedItem) && hasSpecialEffects(forcedEffects)) {
+                emitAnnouncement(`${topPlayer.name} 获得特效装备 ${formatItemLabel(forcedId, forcedEffects)}！`, 'announce', null, realmId);
+              }
             }
-            if (isEquipmentItem(forcedItem) && hasSpecialEffects(forcedEffects)) {
-              emitAnnouncement(`${topPlayer.name} 获得特效装备 ${formatItemLabel(forcedId, forcedEffects)}！`, 'announce', null, realmId);
-            }
+            // 标记奖励已发放
+            worldBossFirstDamageRewardGiven.set(rewardKey, true);
           }
         }
       }
