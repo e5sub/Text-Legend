@@ -702,9 +702,9 @@ body::after {
 }
 
 #app {
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 32px 20px 40px;
+  padding: 32px 20px 60px;
   position: relative;
   z-index: 1;
 }
@@ -1456,6 +1456,8 @@ body.dark .battle-column-title {
 .chat-log p {
   margin: 0 0 8px;
   white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .chat-actions {
@@ -1503,6 +1505,8 @@ body.dark .battle-column-title {
   font-weight: 600;
   cursor: pointer;
   padding: 0;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .chat-name-btn:hover {

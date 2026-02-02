@@ -1002,8 +1002,13 @@ function appendLine(payload) {
   }
   if (showDamage && isDamageLine) {
     const dmgMatch = text.match(/(\d+)\s*点伤害/);
+    const targetMatch = text.match(/对\s*([^\s]+)\s*造成/);
     if (dmgMatch) {
-      spawnDamageFloat(dmgMatch[1]);
+      if (targetMatch && targetMatch[1]) {
+        spawnDamageFloatOnMob(targetMatch[1], dmgMatch[1]);
+      } else {
+        spawnDamageFloat(dmgMatch[1]);
+      }
     }
   }
 
@@ -4588,6 +4593,7 @@ function renderState(state) {
   }, selectedMob ? selectedMob.id : null);
 
   const battleMobs = (state.mobs || []).map((m) => ({
+    type: 'mob',
     name: m.name,
     meta: `HP ${Math.max(0, Math.floor(m.hp))}/${Math.max(0, Math.floor(m.max_hp || 0))}`,
     hp: m.hp || 0,
@@ -5347,6 +5353,9 @@ function renderBattleList(container, entries) {
   entries.forEach((entry) => {
     const card = document.createElement('div');
     card.className = 'battle-card';
+    if (entry.type === 'mob' && entry.name) {
+      card.dataset.mobName = entry.name;
+    }
     const header = document.createElement('div');
     header.className = 'battle-card-header';
     const name = document.createElement('div');
@@ -5378,6 +5387,28 @@ function spawnDamageFloat(amount) {
   const rect = battleUi.damageLayer.getBoundingClientRect();
   const x = Math.max(12, Math.min(rect.width - 48, Math.random() * rect.width));
   const y = Math.max(20, Math.min(rect.height - 40, rect.height * 0.4 + Math.random() * rect.height * 0.2));
+  el.style.left = `${x}px`;
+  el.style.top = `${y}px`;
+  battleUi.damageLayer.appendChild(el);
+  setTimeout(() => {
+    el.remove();
+  }, 1200);
+}
+
+function spawnDamageFloatOnMob(mobName, amount) {
+  if (!battleUi.damageLayer || !mobName || !amount) return;
+  const card = battleUi.mobs?.querySelector(`[data-mob-name="${CSS.escape(mobName)}"]`);
+  if (!card) {
+    spawnDamageFloat(amount);
+    return;
+  }
+  const layerRect = battleUi.damageLayer.getBoundingClientRect();
+  const cardRect = card.getBoundingClientRect();
+  const el = document.createElement('div');
+  el.className = 'damage-float';
+  el.textContent = `-${amount}`;
+  const x = Math.max(0, cardRect.left - layerRect.left + cardRect.width * 0.6);
+  const y = Math.max(0, cardRect.top - layerRect.top + 6);
   el.style.left = `${x}px`;
   el.style.top = `${y}px`;
   battleUi.damageLayer.appendChild(el);
