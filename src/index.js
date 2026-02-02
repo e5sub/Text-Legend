@@ -6209,7 +6209,7 @@ function handleDeath(player) {
   player.send('你被击败，返回了平原。');
 }
 
-function processMobDeath(player, mob, online) {
+async function processMobDeath(player, mob, online) {
   // 防止同一个BOSS被重复处理
   if (mob.status && mob.status.processed) {
     return;
@@ -7108,7 +7108,9 @@ async function combatTick() {
         player.send(`你释放了 ${skillName}，造成范围伤害。`);
         const deadTargets = mobs.filter((target) => target.hp <= 0);
         if (deadTargets.length) {
-          deadTargets.forEach((target) => processMobDeath(player, target, online));
+          for (const target of deadTargets) {
+            await processMobDeath(player, target, online);
+          }
           if (deadTargets.some((target) => target.id === mob.id)) {
             player.combat = null;
           }
@@ -7149,9 +7151,9 @@ async function combatTick() {
             if (tryApplyPoisonEffect(player, extraTarget)) {
               player.send(`你的毒特效作用于 ${extraTarget.name}。`);
             }
-            if (extraTarget.hp <= 0) {
-              processMobDeath(player, extraTarget, online);
-            }
+          if (extraTarget.hp <= 0) {
+              await processMobDeath(player, extraTarget, online);
+          }
           }
         }
         if (mob.hp > 0) {
@@ -7275,7 +7277,7 @@ async function combatTick() {
     }
 
     if (mob.hp <= 0) {
-      processMobDeath(player, mob, online);
+      await processMobDeath(player, mob, online);
       player.combat = null;
       sendRoomState(player.position.zone, player.position.room, player.realmId || 1);
       continue;
