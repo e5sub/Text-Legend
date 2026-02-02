@@ -4791,6 +4791,8 @@ function renderState(state) {
     } else {
       if (rankBlock) rankBlock.classList.remove('hidden');
       const ranks = state.worldBossRank || [];
+      const classRanks = state.worldBossClassRank || null;
+      const hasClassRanks = classRanks && Object.values(classRanks).some((list) => Array.isArray(list) && list.length);
       const nextRespawn = state.worldBossNextRespawn;
       if (ui.worldBossRank) {
         const respawnNodes = ui.worldBossRank.querySelectorAll('.boss-respawn-time');
@@ -4849,6 +4851,43 @@ function renderState(state) {
         } else {
           updateTimer();
         }
+      } else if (hasClassRanks) {
+        resetBossRespawn();
+        if (ui.worldBossRank) ui.worldBossRank.innerHTML = '';
+        const classLabels = [
+          { id: 'warrior', name: '战士' },
+          { id: 'mage', name: '法师' },
+          { id: 'taoist', name: '道士' }
+        ];
+        classLabels.forEach((cls) => {
+          const list = classRanks[cls.id] || [];
+          const title = document.createElement('div');
+          title.className = 'rank-subtitle';
+          title.textContent = `${cls.name}伤害排行`;
+          ui.worldBossRank.appendChild(title);
+          if (!list.length) {
+            const empty = document.createElement('div');
+            empty.className = 'rank-empty';
+            empty.textContent = '暂无排行';
+            ui.worldBossRank.appendChild(empty);
+            return;
+          }
+          list.forEach((entry, idx) => {
+            const row = document.createElement('div');
+            row.className = 'rank-item';
+            const name = document.createElement('span');
+            name.textContent = `${entry.name}`;
+            const dmg = document.createElement('span');
+            dmg.textContent = `${entry.damage}`;
+            const pos = document.createElement('span');
+            pos.className = 'rank-pos';
+            pos.textContent = `#${idx + 1}`;
+            row.appendChild(pos);
+            row.appendChild(name);
+            row.appendChild(dmg);
+            ui.worldBossRank.appendChild(row);
+          });
+        });
       } else if (!ranks.length) {
         resetBossRespawn();
         const empty = document.createElement('div');

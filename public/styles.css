@@ -3671,6 +3671,20 @@ body.dark .rank-item {
   color: #8f4a12;
 }
 
+.rank-subtitle {
+  margin-top: 8px;
+  margin-bottom: 4px;
+  font-size: 0.8rem;
+  color: #e8d9c4;
+  letter-spacing: 0.3px;
+}
+
+.rank-empty {
+  color: #b8a898;
+  font-size: 0.8rem;
+  padding: 2px 0 6px;
+}
+
 body.dark .rank-item .rank-pos {
   color: #e8a058;
 }

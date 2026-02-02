@@ -652,7 +652,7 @@ app.post('/admin/worldboss-respawn', async (req, res) => {
       for (const boss of worldBossMobs) {
         removeMob(boss.id, 'mg_town', 'lair', realm.id);
         // 清除该BOSS的奖励标记
-        worldBossFirstDamageRewardGiven.delete(`${realm.id}:${boss.id}`);
+        bossClassFirstDamageRewardGiven.delete(`${realm.id}:${boss.id}`);
         removedCount++;
       }
 
@@ -2594,7 +2594,7 @@ function rollRarityEquipmentDrop(mobTemplate, bonus = 1) {
 }
 
 let WORLD_BOSS_DROP_BONUS = 1.5;
-const worldBossFirstDamageRewardGiven = new Map(); // 追踪世界BOSS伤害第一奖励是否已发放
+const bossClassFirstDamageRewardGiven = new Map(); // 追踪特殊BOSS各职业伤害第一奖励是否已发放
 
 async function applyWorldBossSettings() {
   // 从数据库加载世界BOSS设置并应用到常量
@@ -3983,6 +3983,8 @@ function getRoomCommonState(zoneId, roomId, realmId = 1) {
     : null;
 
   let bossRank = [];
+  let bossClassRank = null;
+  let bossClassRank = null;
   let bossNextRespawn = null;
   const deadSpecialBosses = deadBosses.filter((m) => {
     const tpl = MOB_TEMPLATES[m.templateId];
@@ -3999,6 +4001,7 @@ function getRoomCommonState(zoneId, roomId, realmId = 1) {
   if (bossMob) {
     const { entries } = buildDamageRankMap(bossMob);
     bossRank = entries.slice(0, 5).map(([name, damage]) => ({ name, damage }));
+    bossClassRank = buildBossClassRank(bossMob, entries, realmId);
   }
 
   const roomPlayers = listOnlinePlayers(realmId)
@@ -4020,6 +4023,7 @@ function getRoomCommonState(zoneId, roomId, realmId = 1) {
     exits: buildRoomExits(zoneId, roomId),
     roomPlayers,
     bossRank,
+    bossClassRank,
     bossNextRespawn
   };
   roomStateDataCache.set(cacheKey, { at: now, data });
@@ -4037,6 +4041,7 @@ async function buildState(player) {
   let nextRespawn = null;
   let roomPlayers = [];
   let bossRank = [];
+  let bossClassRank = null;
   let bossNextRespawn = null;
   if (isBoss) {
     const cached = getRoomCommonState(player.position.zone, player.position.room, realmId);
@@ -4045,6 +4050,7 @@ async function buildState(player) {
     nextRespawn = cached.nextRespawn;
     roomPlayers = cached.roomPlayers;
     bossRank = cached.bossRank;
+    bossClassRank = cached.bossClassRank || null;
     bossNextRespawn = cached.bossNextRespawn;
   } else {
     if (zone && room) spawnMobs(player.position.zone, player.position.room, realmId);
@@ -4252,6 +4258,7 @@ async function buildState(player) {
       siegeEndsAt: getSabakState(realmId).siegeEndsAt || null
     },
     worldBossRank: bossRank,
+    worldBossClassRank: bossClassRank,
     worldBossNextRespawn: bossNextRespawn,
     players: roomPlayers,
     bossRespawn: nextRespawn,
@@ -4969,6 +4976,23 @@ function buildDamageRankMap(mob, damageByOverride = null) {
     rankMap[name] = idx + 1;
   });
   return { rankMap, entries };
+}
+
+function buildBossClassRank(mob, entries, realmId = 1) {
+  const classBuckets = { warrior: [], mage: [], taoist: [] };
+  const online = listOnlinePlayers(realmId);
+  const nameToClass = new Map(online.map((p) => [p.name, p.classId]));
+  entries.forEach(([name, damage]) => {
+    const cls = nameToClass.get(name);
+    if (!cls || !classBuckets[cls]) return;
+    classBuckets[cls].push({ name, damage });
+  });
+  Object.keys(classBuckets).forEach((cls) => {
+    classBuckets[cls] = classBuckets[cls]
+      .sort((a, b) => (b.damage !== a.damage ? b.damage - a.damage : a.name.localeCompare(b.name)))
+      .slice(0, 5);
+  });
+  return classBuckets;
 }
 
 function rankDropBonus(rank) {
@@ -6231,8 +6255,10 @@ function processMobDeath(player, mob, online) {
     void setWorldBossKillCount(nextKills, realmId).catch((err) => {
       console.warn('Failed to persist world boss kill count:', err);
     });
-    // 清理世界BOSS伤害第一奖励标记
-    worldBossFirstDamageRewardGiven.delete(`${realmId}:${mob.id}`);
+  }
+  if (isSpecialBoss) {
+    // 清理特殊BOSS职业伤害第一奖励标记
+    bossClassFirstDamageRewardGiven.delete(`${realmId}:${mob.id}`);
   }
   const { rankMap, entries } = isSpecialBoss ? buildDamageRankMap(mob, damageSnapshot) : { rankMap: {}, entries: [] };
   let lootOwner = player;
@@ -6306,67 +6332,93 @@ function processMobDeath(player, mob, online) {
 
   const dropTargets = [];
   if (isSpecialBoss) {
-      const topEntries = entries.slice(0, 10);
-      const totalDamage = entries.reduce((sum, [, dmg]) => sum + dmg, 0) || 1;
-      topEntries.forEach(([name, damage]) => {
-        const player = playersByName(name, realmId);
-        if (!player) return;
-        if (isBoss && !isPlayerInMobRoom(player)) return;
-        const damageRatio = damage / totalDamage;
-        dropTargets.push({ player, damageRatio, rank: entries.findIndex(([n]) => n === name) + 1 });
-      });
-      if (!dropTargets.length) {
-        if (!isBoss || isPlayerInMobRoom(lootOwner)) {
-          dropTargets.push({ player: lootOwner, damageRatio: 1, rank: 1 });
-        }
-      }
-    } else {
+    const totalDamage = entries.reduce((sum, [, dmg]) => sum + dmg, 0) || 1;
+    const classBuckets = { warrior: [], mage: [], taoist: [] };
+    entries.forEach(([name, damage]) => {
+      const player = playersByName(name, realmId);
+      if (!player) return;
+      if (isBoss && !isPlayerInMobRoom(player)) return;
+      const cls = player.classId;
+      if (!classBuckets[cls]) return;
+      classBuckets[cls].push({ player, damage, name });
+    });
+    Object.values(classBuckets).forEach((list) => {
+      list
+        .sort((a, b) => (b.damage !== a.damage ? b.damage - a.damage : a.name.localeCompare(b.name)))
+        .slice(0, 10)
+        .forEach((entry, idx) => {
+          const damageRatio = entry.damage / totalDamage;
+          dropTargets.push({
+            player: entry.player,
+            damageRatio,
+            rank: entries.findIndex(([n]) => n === entry.name) + 1,
+            classRank: idx + 1
+          });
+        });
+    });
+    if (!dropTargets.length) {
       if (!isBoss || isPlayerInMobRoom(lootOwner)) {
-        dropTargets.push({ player: lootOwner, damageRatio: 1, rank: 1 });
+        dropTargets.push({ player: lootOwner, damageRatio: 1, rank: 1, classRank: 1 });
       }
     }
+  } else {
+    if (!isBoss || isPlayerInMobRoom(lootOwner)) {
+      dropTargets.push({ player: lootOwner, damageRatio: 1, rank: 1, classRank: 1 });
+    }
+  }
 
-    if (isWorldBoss && entries.length) {
-      const [topName, topDamage] = entries[0];
-      let topPlayer = topDamage > 0 ? playersByName(topName, realmId) : null;
-      if (topPlayer && !isPlayerInMobRoom(topPlayer)) {
-        topPlayer = null;
+    if (isSpecialBoss && entries.length) {
+      const classRanks = buildBossClassRank(mob, entries, realmId);
+      const rewardKey = `${realmId}:${mob.id}`;
+      let rewardState = bossClassFirstDamageRewardGiven.get(rewardKey);
+      if (!rewardState) {
+        rewardState = new Set();
+        bossClassFirstDamageRewardGiven.set(rewardKey, rewardState);
       }
-      if (topPlayer) {
-        // 检查该BOSS的奖励是否已发放
-        const rewardKey = `${realmId}:${mob.id}`;
-        if (!worldBossFirstDamageRewardGiven.has(rewardKey)) {
-          let forcedId = rollRarityEquipmentDrop(template, 1);
-          if (!forcedId) {
-            const equipPool = Object.values(ITEM_TEMPLATES)
-              .filter((i) => i && ['weapon', 'armor', 'accessory'].includes(i.type))
-              .map((i) => i.id);
-            if (equipPool.length) {
-              forcedId = equipPool[randInt(0, equipPool.length - 1)];
-            }
-          }
-          if (forcedId) {
-            const forcedEffects = forceEquipmentEffects(forcedId);
-            addItem(topPlayer, forcedId, 1, forcedEffects);
-            topPlayer.send(`世界BOSS伤害第一奖励：${formatItemLabel(forcedId, forcedEffects)}。`);
-            const forcedItem = ITEM_TEMPLATES[forcedId];
-            if (forcedItem) {
-              const forcedRarity = rarityByPrice(forcedItem);
-              if (['legendary', 'supreme'].includes(forcedRarity)) {
-                emitAnnouncement(`${topPlayer.name} 获得世界BOSS伤害第一奖励 ${formatItemLabel(forcedId, forcedEffects)}！`, forcedRarity, null, realmId);
-              }
-              if (isEquipmentItem(forcedItem) && hasSpecialEffects(forcedEffects)) {
-                emitAnnouncement(`${topPlayer.name} 获得特效装备 ${formatItemLabel(forcedId, forcedEffects)}！`, 'announce', null, realmId);
-              }
-            }
-            // 标记奖励已发放
-            worldBossFirstDamageRewardGiven.set(rewardKey, true);
+      const classLabels = [
+        { id: 'warrior', name: '战士' },
+        { id: 'mage', name: '法师' },
+        { id: 'taoist', name: '道士' }
+      ];
+      classLabels.forEach((cls) => {
+        if (rewardState.has(cls.id)) return;
+        const topEntry = classRanks?.[cls.id]?.[0];
+        if (!topEntry || !topEntry.damage) return;
+        let topPlayer = playersByName(topEntry.name, realmId);
+        if (topPlayer && !isPlayerInMobRoom(topPlayer)) {
+          topPlayer = null;
+        }
+        if (!topPlayer) return;
+        let forcedId = rollRarityEquipmentDrop(template, 1);
+        if (!forcedId) {
+          const equipPool = Object.values(ITEM_TEMPLATES)
+            .filter((i) => i && ['weapon', 'armor', 'accessory'].includes(i.type))
+            .map((i) => i.id);
+          if (equipPool.length) {
+            forcedId = equipPool[randInt(0, equipPool.length - 1)];
           }
         }
-      }
+        if (!forcedId) return;
+        const forcedEffects = forceEquipmentEffects(forcedId);
+        addItem(topPlayer, forcedId, 1, forcedEffects);
+        topPlayer.send(`${cls.name}伤害第一奖励：${formatItemLabel(forcedId, forcedEffects)}。`);
+        const forcedItem = ITEM_TEMPLATES[forcedId];
+        if (forcedItem) {
+          const forcedRarity = rarityByPrice(forcedItem);
+          if (['legendary', 'supreme'].includes(forcedRarity)) {
+            emitAnnouncement(`${topPlayer.name} 获得${cls.name}伤害第一奖励 ${formatItemLabel(forcedId, forcedEffects)}！`, forcedRarity, null, realmId);
+          }
+          if (isEquipmentItem(forcedItem) && hasSpecialEffects(forcedEffects)) {
+            emitAnnouncement(`${topPlayer.name} 获得特效装备 ${formatItemLabel(forcedId, forcedEffects)}！`, 'announce', null, realmId);
+          }
+        }
+        rewardState.add(cls.id);
+      });
     }
 
-    dropTargets.forEach(({ player: owner, damageRatio, rank }) => {
+    const legendaryClassAwarded = new Set();
+    const supremeClassAwarded = new Set();
+    dropTargets.forEach(({ player: owner, damageRatio, rank, classRank }) => {
       const drops = dropLoot(template, 1);
       if (!drops.length) return;
       if (!isSpecialBoss && party && partyMembersForLoot.length > 0) {
@@ -6398,11 +6450,15 @@ function processMobDeath(player, mob, online) {
           const item = ITEM_TEMPLATES[entry.id];
           if (item) {
             const rarity = rarityByPrice(item);
-            if ((rarity === 'legendary' || rarity === 'supreme') && rank > 3) {
-              logLoot(`[loot][special][skip] ${owner.name} ${entry.id} (rank:${rank})`);
+            if ((rarity === 'legendary' || rarity === 'supreme') && classRank > 3) {
+              logLoot(`[loot][special][skip] ${owner.name} ${entry.id} (classRank:${classRank})`);
               return;
             }
             if (rarity === 'legendary') {
+              if (owner.classId && legendaryClassAwarded.has(owner.classId)) {
+                logLoot(`[loot][special][skip] ${owner.name} ${entry.id} (legendary class limit)`);
+                return;
+              }
               // 检查该玩家是否已经获得过传说装备
               if (actualDrops.some(d => {
                 const dItem = ITEM_TEMPLATES[d.id];
@@ -6416,8 +6472,13 @@ function processMobDeath(player, mob, online) {
                 logLoot(`[loot][special][skip] ${owner.name} ${entry.id} (legendary limit reached)`);
                 return;
               }
+              if (owner.classId) legendaryClassAwarded.add(owner.classId);
             }
             if (rarity === 'supreme') {
+              if (owner.classId && supremeClassAwarded.has(owner.classId)) {
+                logLoot(`[loot][special][skip] ${owner.name} ${entry.id} (supreme class limit)`);
+                return;
+              }
               // 检查该玩家是否已经获得过至尊装备
               if (actualDrops.some(d => {
                 const dItem = ITEM_TEMPLATES[d.id];
@@ -6431,6 +6492,7 @@ function processMobDeath(player, mob, online) {
                 logLoot(`[loot][special][skip] ${owner.name} ${entry.id} (supreme limit reached)`);
                 return;
               }
+              if (owner.classId) supremeClassAwarded.add(owner.classId);
             }
           }
 
