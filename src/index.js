@@ -2548,6 +2548,7 @@ function rollRarityDrop(mobTemplate, bonus = 1) {
   const table = RARITY_BOSS;
   const allowSet = true;
   for (const rarity of RARITY_ORDER) {
+    if (!mobTemplate?.worldBoss && rarity === 'supreme') continue;
     if (Math.random() <= Math.min(1, table[rarity] * bonus)) {
       const pool = allowSet
         ? ITEM_POOLS[rarity]
@@ -2571,6 +2572,7 @@ function rollRarityEquipmentDrop(mobTemplate, bonus = 1) {
   const table = RARITY_BOSS;
   const allowSet = true;
   for (const rarity of RARITY_ORDER) {
+    if (!mobTemplate?.worldBoss && rarity === 'supreme') continue;
     if (Math.random() <= Math.min(1, table[rarity] * bonus)) {
       const pool = allowSet
         ? ITEM_POOLS[rarity]
@@ -6391,6 +6393,7 @@ function processMobDeath(player, mob, online) {
         if (!forcedId) {
           const equipPool = Object.values(ITEM_TEMPLATES)
             .filter((i) => i && ['weapon', 'armor', 'accessory'].includes(i.type))
+            .filter((i) => template?.worldBoss || rarityByPrice(i) !== 'supreme')
             .map((i) => i.id);
           if (equipPool.length) {
             forcedId = equipPool[randInt(0, equipPool.length - 1)];
