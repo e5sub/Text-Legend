@@ -5686,12 +5686,13 @@ io.on('connection', (socket) => {
       player.send('你不在行会中。');
       return;
     }
-    const isLeader = await isGuildLeader(player.guild.id, player.userId, player.name);
+    const realmId = player.realmId || 1;
+    const isLeader = await isGuildLeader(player.guild.id, player.userId, player.name, realmId);
     if (!isLeader) {
       player.send('只有会长可以报名。');
       return;
     }
-    const sabakState = getSabakState(player.realmId || 1);
+    const sabakState = getSabakState(realmId);
     const isOwner = String(player.guild.id) === String(sabakState.ownerGuildId);
     if (isOwner) {
       player.send('守城行会无需报名。');
@@ -5707,12 +5708,12 @@ io.on('connection', (socket) => {
       player.send('报名时间为每日 0:00-19:50，当前时间已截止报名。');
       return;
     }
-    const hasRegisteredToday = await hasSabakRegistrationToday(player.guild.id);
+    const hasRegisteredToday = await hasSabakRegistrationToday(player.guild.id, realmId);
     if (hasRegisteredToday) {
       player.send('该行会今天已经报名过了。');
       return;
     }
-    const registrations = await listSabakRegistrations(player.realmId || 1);
+    const registrations = await listSabakRegistrations(realmId);
     const today = new Date();
     const todayRegistrations = registrations.filter(r => {
       if (!r.registered_at) return false;

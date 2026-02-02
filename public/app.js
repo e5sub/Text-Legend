@@ -5412,19 +5412,13 @@ function spawnDamageFloatOnMob(mobName, amount) {
     spawnDamageFloat(amount, 'mob');
     return;
   }
-  const layerRect = battleUi.damageLayer.getBoundingClientRect();
-  const cardRect = card.getBoundingClientRect();
   const el = document.createElement('div');
-  el.className = 'damage-float damage-mob';
+  el.className = 'damage-float damage-mob in-card';
   el.textContent = `-${amount}`;
-  const x = Math.max(0, cardRect.left - layerRect.left + cardRect.width * 0.6);
-  const y = Math.max(0, cardRect.top - layerRect.top + 6);
-  el.style.left = `${x}px`;
-  el.style.top = `${y}px`;
-  battleUi.damageLayer.appendChild(el);
+  card.appendChild(el);
   setTimeout(() => {
     el.remove();
-  }, 1200);
+  }, 2000);
 }
 
 function spawnDamageFloatOnPlayer(playerName, amount) {
@@ -5434,16 +5428,10 @@ function spawnDamageFloatOnPlayer(playerName, amount) {
     spawnDamageFloat(amount, 'player');
     return;
   }
-  const layerRect = battleUi.damageLayer.getBoundingClientRect();
-  const cardRect = card.getBoundingClientRect();
   const el = document.createElement('div');
-  el.className = 'damage-float damage-player';
+  el.className = 'damage-float damage-player in-card';
   el.textContent = `-${amount}`;
-  const x = Math.max(0, cardRect.left - layerRect.left + cardRect.width * 0.6);
-  const y = Math.max(0, cardRect.top - layerRect.top + 6);
-  el.style.left = `${x}px`;
-  el.style.top = `${y}px`;
-  battleUi.damageLayer.appendChild(el);
+  card.appendChild(el);
   setTimeout(() => {
     el.remove();
   }, 2000);
