@@ -5336,7 +5336,13 @@ function enterGame(name) {
       showToast('服务器已合并,已自动清除旧服务器信息,请重新选择服务器');
       exitGame();
     } else {
-      showToast('登录已过期，请重新登录。');
+      if (payload.error && payload.error.includes('设备已在线')) {
+        showToast('该设备已在线，无法重复登录。');
+      } else if (payload.error && payload.error.includes('设备指纹缺失')) {
+        showToast('设备指纹缺失，无法登录。');
+      } else {
+        showToast('登录已过期，请重新登录。');
+      }
       exitGame();
     }
   });
