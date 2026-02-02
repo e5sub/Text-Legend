@@ -1073,10 +1073,6 @@ function appendLine(payload) {
       } else {
         spawnDamageFloatOnMob(targetName, amount, kind, label, selectedMobId);
       }
-    } else if (!skipPoisonFloat) {
-      if (targetIsPlayer) {
-        spawnDamageFloatOnPlayer(selfName, amount, kind, label);
-      }
     }
   }
   if (!showDamage && isDamageLine) {
@@ -5672,7 +5668,6 @@ function spawnDamageFloatOnMob(mobName, amount, kind = 'mob', label = null, mobI
     card = pickMobCardByName(mobName);
   }
   if (!card) {
-    spawnDamageFloat(amount, kind, label);
     return;
   }
   const el = document.createElement('div');
@@ -5690,7 +5685,6 @@ function spawnDamageFloatOnPlayer(playerName, amount, kind = 'player', label = n
   if (!battleUi.damageLayer || !playerName || (!amount && !label)) return;
   const card = pickPlayerCardByName(playerName);
   if (!card) {
-    spawnDamageFloat(amount, kind, label);
     return;
   }
   const el = document.createElement('div');
