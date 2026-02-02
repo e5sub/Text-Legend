@@ -1060,6 +1060,9 @@ function appendLine(payload) {
         }
       }
     }
+    if (isPoisonLine && !targetName) {
+      return;
+    }
     if (targetName) {
       if (isSummonName(targetName)) {
         return;
