@@ -1005,7 +1005,12 @@ function appendLine(payload) {
     const targetMatch = text.match(/对\s*([^\s]+)\s*造成/);
     if (dmgMatch) {
       if (targetMatch && targetMatch[1]) {
-        spawnDamageFloatOnMob(targetMatch[1], dmgMatch[1]);
+        const targetName = targetMatch[1] === '你' ? (activeChar || lastState?.player?.name || '你') : targetMatch[1];
+        if (targetMatch[1] === '你') {
+          spawnDamageFloatOnPlayer(targetName, dmgMatch[1]);
+        } else {
+          spawnDamageFloatOnMob(targetName, dmgMatch[1]);
+        }
       } else {
         spawnDamageFloat(dmgMatch[1]);
       }
@@ -4568,6 +4573,7 @@ function renderState(state) {
   const battlePlayers = [];
   if (state.player && state.stats) {
     battlePlayers.push({
+      type: 'player',
       name: state.player.name,
       meta: `Lv${state.player.level} ${classNames[state.player.classId] || state.player.classId}`,
       hp: state.stats.hp,
@@ -4578,6 +4584,7 @@ function renderState(state) {
     .filter((p) => p.name && (!state.player || p.name !== state.player.name))
     .forEach((p) => {
       battlePlayers.push({
+        type: 'player',
         name: p.name,
         meta: `Lv${p.level} ${classNames[p.classId] || p.classId}`,
         hp: p.hp || 0,
@@ -5356,6 +5363,9 @@ function renderBattleList(container, entries) {
     if (entry.type === 'mob' && entry.name) {
       card.dataset.mobName = entry.name;
     }
+    if (entry.type === 'player' && entry.name) {
+      card.dataset.playerName = entry.name;
+    }
     const header = document.createElement('div');
     header.className = 'battle-card-header';
     const name = document.createElement('div');
@@ -5415,6 +5425,28 @@ function spawnDamageFloatOnMob(mobName, amount) {
   setTimeout(() => {
     el.remove();
   }, 1200);
+}
+
+function spawnDamageFloatOnPlayer(playerName, amount) {
+  if (!battleUi.damageLayer || !playerName || !amount) return;
+  const card = battleUi.players?.querySelector(`[data-player-name="${CSS.escape(playerName)}"]`);
+  if (!card) {
+    spawnDamageFloat(amount);
+    return;
+  }
+  const layerRect = battleUi.damageLayer.getBoundingClientRect();
+  const cardRect = card.getBoundingClientRect();
+  const el = document.createElement('div');
+  el.className = 'damage-float';
+  el.textContent = `-${amount}`;
+  const x = Math.max(0, cardRect.left - layerRect.left + cardRect.width * 0.6);
+  const y = Math.max(0, cardRect.top - layerRect.top + 6);
+  el.style.left = `${x}px`;
+  el.style.top = `${y}px`;
+  battleUi.damageLayer.appendChild(el);
+  setTimeout(() => {
+    el.remove();
+  }, 2000);
 }
 
 async function createCharacter() {

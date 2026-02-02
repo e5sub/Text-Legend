@@ -1394,13 +1394,13 @@ button:hover {
   font-weight: 700;
   color: #ff6b5a;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
-  animation: float-up 1.2s ease forwards;
+  animation: float-up 2s ease forwards;
   font-size: 1.1rem;
 }
 
 @keyframes float-up {
   0% { transform: translateY(0); opacity: 1; }
-  100% { transform: translateY(-28px); opacity: 0; }
+  100% { transform: translateY(-40px); opacity: 0; }
 }
 
 body.dark .battle-panel {
@@ -1505,8 +1505,8 @@ body.dark .battle-column-title {
   font-weight: 600;
   cursor: pointer;
   padding: 0;
-  word-break: break-word;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .chat-name-btn:hover {
