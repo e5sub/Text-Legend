@@ -5767,7 +5767,6 @@ io.on('connection', (socket) => {
         console.log(`[disconnect] ${player.name} (${player.userId || 'unknown'}) reason=${reason || 'unknown'}`);
         if (!player.flags) player.flags = {};
         player.flags.offlineAt = Date.now();
-      setSummons(player, []);
         const trade = getTradeByPlayer(player.name, player.realmId || 1);
       if (trade) {
         clearTrade(trade, `交易已取消（${player.name} 离线）。`, player.realmId || 1);

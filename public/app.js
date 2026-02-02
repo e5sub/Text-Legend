@@ -1049,7 +1049,7 @@ function appendLine(payload) {
           const card = pickPlayerCardByName(targetName);
           updateBattleCardHp(card, updated.hp, updated.maxHp, false);
         }
-      } else {
+      } else if (targetName !== selfName) {
         const updated = applyLocalDamage('mobs', targetName, Number(amount));
         if (updated) {
           const card = pickMobCardByName(targetName);
@@ -1064,11 +1064,15 @@ function appendLine(payload) {
       const selectedMobId = selectedMob && targetName === selectedMob.name ? selectedMob.id : null;
       if (targetIsPlayer) {
         spawnDamageFloatOnPlayer(targetName, amount, kind, label);
+      } else if (targetName === selfName) {
+        // 不要飘召唤物或其他玩家的血
       } else {
         spawnDamageFloatOnMob(targetName, amount, kind, label, selectedMobId);
       }
     } else {
-      spawnDamageFloat(amount, kind, label);
+      if (targetIsPlayer) {
+        spawnDamageFloatOnPlayer(selfName, amount, kind, label);
+      }
     }
   }
   if (!showDamage && isDamageLine) {
@@ -5529,6 +5533,17 @@ function normalizeBattleName(name) {
   return String(name || '')
     .replace(/\s+/g, '')
     .replace(/[()（）\[\]【】]/g, '');
+}
+
+function isKnownPlayerName(name) {
+  if (!name) return false;
+  const norm = normalizeBattleName(name);
+  if (!norm) return false;
+  if (localHpCache.players.has(name) || localHpCache.players.has(norm)) return true;
+  const selfName = lastState?.player?.name || activeChar || '';
+  if (normalizeBattleName(selfName) === norm) return true;
+  const others = lastState?.players || [];
+  return others.some((p) => normalizeBattleName(p.name) === norm);
 }
 
 function setLocalHpCache(type, name, hp, maxHp) {
