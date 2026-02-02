@@ -1042,7 +1042,7 @@ function appendLine(payload) {
       label = `-${amount}`;
     }
 
-    if (amount && targetName) {
+    if (amount && targetName && !isSummonName(targetName)) {
       if (targetIsPlayer) {
         const updated = applyLocalDamage('players', targetName, Number(amount));
         if (updated) {
@@ -1061,6 +1061,9 @@ function appendLine(payload) {
       }
     }
     if (targetName) {
+      if (isSummonName(targetName)) {
+        return;
+      }
       const selectedMobId = selectedMob && targetName === selectedMob.name ? selectedMob.id : null;
       if (targetIsPlayer) {
         spawnDamageFloatOnPlayer(targetName, amount, kind, label);
@@ -5544,6 +5547,14 @@ function isKnownPlayerName(name) {
   if (normalizeBattleName(selfName) === norm) return true;
   const others = lastState?.players || [];
   return others.some((p) => normalizeBattleName(p.name) === norm);
+}
+
+function isSummonName(name) {
+  if (!name) return false;
+  const norm = normalizeBattleName(name);
+  if (!norm) return false;
+  const summons = lastState?.summons || (lastState?.summon ? [lastState.summon] : []);
+  return summons.some((s) => s && normalizeBattleName(s.name) === norm);
 }
 
 function setLocalHpCache(type, name, hp, maxHp) {
