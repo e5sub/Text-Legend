@@ -1510,8 +1510,12 @@ body.dark .battle-skill-grid .chip {
 }
 
 .damage-float.in-card {
-  right: 10px;
+  left: 8px;
   top: -6px;
+}
+
+.damage-float.in-card.poison-offset {
+  top: -22px;
 }
 
 .damage-float.damage-player {

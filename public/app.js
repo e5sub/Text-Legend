@@ -5650,7 +5650,7 @@ function positionFloatInCard(card, el) {
   const bar = card.querySelector('.hp-bar');
   if (bar) {
     const barRect = bar.getBoundingClientRect();
-    const left = Math.max(6, Math.min(cardRect.width - 40, barRect.left - cardRect.left + barRect.width * 0.7));
+    const left = Math.max(6, Math.min(cardRect.width - 40, barRect.left - cardRect.left + 6));
     const top = Math.max(-4, barRect.top - cardRect.top - 12);
     el.style.left = `${left}px`;
     el.style.top = `${top}px`;
@@ -5678,7 +5678,8 @@ function spawnDamageFloatOnMob(mobName, amount, kind = 'mob', label = null, mobI
     return;
   }
   const el = document.createElement('div');
-  el.className = `damage-float damage-${kind} in-card`;
+  const isPoison = kind === 'poison';
+  el.className = `damage-float damage-${kind} in-card${isPoison ? ' poison-offset' : ''}`;
   el.textContent = label || `-${amount}`;
   card.appendChild(el);
   positionFloatInCard(card, el);
