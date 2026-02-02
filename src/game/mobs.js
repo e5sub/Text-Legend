@@ -151,7 +151,7 @@
 
   // Molong
   molong_guard: { id: 'molong_guard', name: '魔龙力士', level: 48, hp: 4600, atk: 130, def: 70, mdef: 70, exp: 3600, gold: [800, 1200], drops: [{ id: 'ring_strength', chance: 0.06 }] },
-  molong_boss: { id: 'molong_boss', name: '魔龙教主', level: 52, hp: 270000, atk: 180, def: 88, mdef: 88, exp: 4500, gold: [1000, 1600], respawnMs: 3 * 60 * 60 * 1000, specialBoss: true, drops: [
+  molong_boss: { id: 'molong_boss', name: '魔龙教主', level: 52, hp: 270000, atk: 180, def: 88, mdef: 88, exp: 4500, gold: [1000, 1600], respawnMs: 1 * 60 * 60 * 1000, specialBoss: true, drops: [
     { id: 'armor_molong', chance: 0.12 },
     { id: 'armor_taishan', chance: 0.06 },
     { id: 'armor_doom', chance: 0.06 },
@@ -202,7 +202,7 @@
   ,
 
   // Dark Bosses
-  dark_woma_boss: { id: 'dark_woma_boss', name: '暗之沃玛教主', level: 52, hp: 270000, atk: 180, def: 88, mdef: 88, exp: 4500, gold: [1000, 1600], respawnMs: 3 * 60 * 60 * 1000, specialBoss: true, drops: [
+  dark_woma_boss: { id: 'dark_woma_boss', name: '暗之沃玛教主', level: 52, hp: 270000, atk: 180, def: 88, mdef: 88, exp: 4500, gold: [1000, 1600], respawnMs: 1 * 60 * 60 * 1000, specialBoss: true, drops: [
     { id: 'armor_molong', chance: 0.12 },
     { id: 'armor_taishan', chance: 0.06 },
     { id: 'armor_doom', chance: 0.06 },
@@ -252,7 +252,7 @@
   ] }
   ,
 
-  dark_zuma_boss: { id: 'dark_zuma_boss', name: '暗之祖玛教主', level: 52, hp: 270000, atk: 180, def: 88, mdef: 88, exp: 4500, gold: [1000, 1600], respawnMs: 3 * 60 * 60 * 1000, specialBoss: true, drops: [
+  dark_zuma_boss: { id: 'dark_zuma_boss', name: '暗之祖玛教主', level: 52, hp: 270000, atk: 180, def: 88, mdef: 88, exp: 4500, gold: [1000, 1600], respawnMs: 1 * 60 * 60 * 1000, specialBoss: true, drops: [
     { id: 'armor_molong', chance: 0.12 },
     { id: 'armor_taishan', chance: 0.06 },
     { id: 'armor_doom', chance: 0.06 },
@@ -302,7 +302,7 @@
   ] }
   ,
 
-  dark_hongmo_boss: { id: 'dark_hongmo_boss', name: '暗之虹魔教主', level: 52, hp: 270000, atk: 180, def: 88, mdef: 88, exp: 4500, gold: [1000, 1600], respawnMs: 3 * 60 * 60 * 1000, specialBoss: true, drops: [
+  dark_hongmo_boss: { id: 'dark_hongmo_boss', name: '暗之虹魔教主', level: 52, hp: 270000, atk: 180, def: 88, mdef: 88, exp: 4500, gold: [1000, 1600], respawnMs: 1 * 60 * 60 * 1000, specialBoss: true, drops: [
     { id: 'armor_molong', chance: 0.12 },
     { id: 'armor_taishan', chance: 0.06 },
     { id: 'armor_doom', chance: 0.06 },
@@ -352,7 +352,7 @@
   ] }
   ,
 
-  dark_huangquan_boss: { id: 'dark_huangquan_boss', name: '暗之黄泉教主', level: 52, hp: 270000, atk: 180, def: 88, mdef: 88, exp: 4500, gold: [1000, 1600], respawnMs: 3 * 60 * 60 * 1000, specialBoss: true, drops: [
+  dark_huangquan_boss: { id: 'dark_huangquan_boss', name: '暗之黄泉教主', level: 52, hp: 270000, atk: 180, def: 88, mdef: 88, exp: 4500, gold: [1000, 1600], respawnMs: 1 * 60 * 60 * 1000, specialBoss: true, drops: [
     { id: 'armor_molong', chance: 0.12 },
     { id: 'armor_taishan', chance: 0.06 },
     { id: 'armor_doom', chance: 0.06 },
@@ -402,7 +402,7 @@
   ] }
   ,
 
-  dark_doublehead_boss: { id: 'dark_doublehead_boss', name: '暗之双头血魔', level: 52, hp: 270000, atk: 180, def: 88, mdef: 88, exp: 4500, gold: [1000, 1600], respawnMs: 3 * 60 * 60 * 1000, specialBoss: true, drops: [
+  dark_doublehead_boss: { id: 'dark_doublehead_boss', name: '暗之双头血魔', level: 52, hp: 270000, atk: 180, def: 88, mdef: 88, exp: 4500, gold: [1000, 1600], respawnMs: 1 * 60 * 60 * 1000, specialBoss: true, drops: [
     { id: 'armor_molong', chance: 0.12 },
     { id: 'armor_taishan', chance: 0.06 },
     { id: 'armor_doom', chance: 0.06 },
@@ -452,7 +452,7 @@
   ] }
   ,
 
-  dark_skeleton_boss: { id: 'dark_skeleton_boss', name: '暗之骷髅精灵', level: 52, hp: 270000, atk: 180, def: 88, mdef: 88, exp: 4500, gold: [1000, 1600], respawnMs: 3 * 60 * 60 * 1000, specialBoss: true, drops: [
+  dark_skeleton_boss: { id: 'dark_skeleton_boss', name: '暗之骷髅精灵', level: 52, hp: 270000, atk: 180, def: 88, mdef: 88, exp: 4500, gold: [1000, 1600], respawnMs: 1 * 60 * 60 * 1000, specialBoss: true, drops: [
     { id: 'armor_molong', chance: 0.12 },
     { id: 'armor_taishan', chance: 0.06 },
     { id: 'armor_doom', chance: 0.06 },
@@ -514,7 +514,7 @@
     gold: [2000, 3200],
     worldBoss: true,
     specialBoss: true,
-    respawnMs: 6 * 60 * 60 * 1000,
+    respawnMs: 1 * 60 * 60 * 1000,
     drops: [
       { id: 'kaitian', chance: 0.015 },
       { id: 'zhentian', chance: 0.015 },
@@ -618,7 +618,7 @@
     gold: [1050, 1820],
     sabakBoss: true,
     specialBoss: true,
-    respawnMs: 6 * 60 * 60 * 1000,
+    respawnMs: 1 * 60 * 60 * 1000,
     drops: [
       { id: 'kaitian', chance: 0.02 },
       { id: 'zhentian', chance: 0.02 },
@@ -682,3 +682,4 @@
     ]
   }
 };
+
