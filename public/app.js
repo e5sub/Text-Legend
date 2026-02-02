@@ -2647,35 +2647,42 @@ function setBar(el, current, max) {
 }
 
 function parseStats(line) {
-  if (line.startsWith('职业:')) {
-    ui.classLevel.textContent = line.replace('职业:', '').trim();
+  if (!line) return;
+  if (line.includes('\n')) {
+    line.split(/\r?\n/).forEach((entry) => parseStats(entry));
+    return;
   }
-  if (line.startsWith('等级:')) {
-    ui.classLevel.textContent = `${ui.classLevel.textContent} | ${line.replace('等级:', '').trim()}`;
-    const match = line.match(/\((\d+)\/(\d+)\s+EXP\)/);
+  const text = line.trim();
+  if (!text) return;
+  if (text.startsWith('职业:')) {
+    ui.classLevel.textContent = text.replace('职业:', '').trim();
+  }
+  if (text.startsWith('等级:')) {
+    ui.classLevel.textContent = `${ui.classLevel.textContent} | ${text.replace('等级:', '').trim()}`;
+    const match = text.match(/\((\d+)\/(\d+)\s+EXP\)/);
     if (match) {
       setBar(ui.exp, Number(match[1]), Number(match[2]));
     }
   }
-  if (line.startsWith('生命:')) {
-    const nums = line.replace('生命:', '').trim().split('/');
+  if (text.startsWith('生命:')) {
+    const nums = text.replace('生命:', '').trim().split('/');
     setBar(ui.hp, Number(nums[0]), Number(nums[1]));
   }
-  if (line.startsWith('魔法:')) {
-    const nums = line.replace('魔法:', '').trim().split('/');
+  if (text.startsWith('魔法:')) {
+    const nums = text.replace('魔法:', '').trim().split('/');
     setBar(ui.mp, Number(nums[0]), Number(nums[1]));
   }
-  if (line.startsWith('金币:')) {
-    ui.gold.textContent = line.replace('金币:', '').trim();
+  if (text.startsWith('金币:')) {
+    ui.gold.textContent = text.replace('金币:', '').trim();
   }
-  if (line.startsWith('行会:')) {
-    ui.guild.textContent = line.replace('行会:', '').trim();
+  if (text.startsWith('行会:')) {
+    ui.guild.textContent = text.replace('行会:', '').trim();
   }
-  if (line.startsWith('PK值:')) {
-    ui.pk.textContent = line.replace('PK值:', '').trim();
+  if (text.startsWith('PK值:')) {
+    ui.pk.textContent = text.replace('PK值:', '').trim();
   }
-  if (line.startsWith('VIP:')) {
-    ui.vip.textContent = line.replace('VIP:', '').trim();
+  if (text.startsWith('VIP:')) {
+    ui.vip.textContent = text.replace('VIP:', '').trim();
   }
 }
 
