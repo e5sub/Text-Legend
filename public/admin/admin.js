@@ -5375,18 +5375,20 @@ async function saveItem() {
   // 如果是 armor 或 accessory，根据 data-type 或 slot 来设置
   if (type === 'armor' || type === 'accessory') {
     const dataType = selectedTypeOption.dataset.type;
-    if (dataType) {
-      finalSlot = dataType;
-    } else if (!finalSlot) {
-      // 根据 option 的文本推断 slot
-      const typeText = selectedTypeOption.textContent;
-      if (typeText.includes('头盔')) finalSlot = 'head';
-      else if (typeText.includes('鞋子')) finalSlot = 'feet';
-      else if (typeText.includes('腰带')) finalSlot = 'waist';
-      else if (typeText.includes('胸甲')) finalSlot = 'chest';
-      else if (typeText.includes('项链')) finalSlot = 'neck';
-      else if (typeText.includes('戒指')) finalSlot = 'ring';
-      else if (typeText.includes('手镯')) finalSlot = 'bracelet';
+    if (!finalSlot) {
+      if (dataType) {
+        finalSlot = dataType;
+      } else {
+        // 根据 option 的文本推断 slot
+        const typeText = selectedTypeOption.textContent;
+        if (typeText.includes('头盔')) finalSlot = 'head';
+        else if (typeText.includes('鞋子')) finalSlot = 'feet';
+        else if (typeText.includes('腰带')) finalSlot = 'waist';
+        else if (typeText.includes('胸甲')) finalSlot = 'chest';
+        else if (typeText.includes('项链')) finalSlot = 'neck';
+        else if (typeText.includes('戒指')) finalSlot = 'ring';
+        else if (typeText.includes('手镯')) finalSlot = 'bracelet';
+      }
     }
   }
 
