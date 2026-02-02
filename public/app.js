@@ -1046,7 +1046,7 @@ function appendLine(payload) {
       if (targetIsPlayer) {
         const updated = applyLocalDamage('players', targetName, Number(amount));
         if (updated) {
-          const card = battleUi.players?.querySelector(`[data-player-name="${CSS.escape(targetName)}"]`);
+          const card = pickPlayerCardByName(targetName);
           updateBattleCardHp(card, updated.hp, updated.maxHp, false);
         }
       } else {
@@ -5500,6 +5500,7 @@ function renderBattleList(container, entries, onClick) {
     }
     if (entry.type === 'player' && entry.name) {
       card.dataset.playerName = entry.name;
+      card.dataset.playerNameNorm = normalizeBattleName(entry.name);
     }
     const header = document.createElement('div');
     header.className = 'battle-card-header';
@@ -5599,6 +5600,21 @@ function pickMobCardByName(mobName) {
   return best;
 }
 
+function pickPlayerCardByName(playerName) {
+  if (!battleUi.players) return null;
+  const direct = battleUi.players.querySelector(`[data-player-name="${CSS.escape(playerName)}"]`);
+  if (direct) return direct;
+  const norm = normalizeBattleName(playerName);
+  const cards = battleUi.players.querySelectorAll('[data-player-name-norm]');
+  if (!cards || !cards.length) return null;
+  let best = null;
+  cards.forEach((card) => {
+    if (card.dataset.playerNameNorm !== norm) return;
+    if (!best) best = card;
+  });
+  return best;
+}
+
 function positionFloatInCard(card, el) {
   const cardRect = card.getBoundingClientRect();
   if (!cardRect.width || !cardRect.height) return;
@@ -5644,7 +5660,7 @@ function spawnDamageFloatOnMob(mobName, amount, kind = 'mob', label = null, mobI
 
 function spawnDamageFloatOnPlayer(playerName, amount, kind = 'player', label = null) {
   if (!battleUi.damageLayer || !playerName || (!amount && !label)) return;
-  const card = battleUi.players?.querySelector(`[data-player-name="${CSS.escape(playerName)}"]`);
+  const card = pickPlayerCardByName(playerName);
   if (!card) {
     spawnDamageFloat(amount, kind, label);
     return;

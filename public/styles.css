@@ -3767,9 +3767,12 @@ body.dark .rank-tab.active {
 }
 
 .guild-member button {
-  min-width: 48px;
-  padding: 4px 8px;
+  min-width: 72px;
+  height: 30px;
+  padding: 4px 10px;
   font-size: 0.75rem;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .sabak-guild-list {
