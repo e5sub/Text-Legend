@@ -1303,7 +1303,7 @@ button:hover {
 
 .battle-panel {
   display: grid;
-  grid-template-columns: 1fr 2fr 1fr;
+  grid-template-columns: minmax(180px, 1fr) minmax(320px, 1.4fr) minmax(180px, 1fr);
   gap: 14px;
   padding: 14px;
   background: #0d0b08;
@@ -1383,6 +1383,8 @@ button:hover {
   display: grid;
   grid-template-rows: 1fr 1fr;
   gap: 12px;
+  min-height: 360px;
+  max-height: 420px;
 }
 
 .battle-skill-panel {
@@ -1394,6 +1396,7 @@ button:hover {
   flex-direction: column;
   gap: 10px;
   overflow: hidden;
+  min-height: 0;
 }
 
 .battle-skill-title {
