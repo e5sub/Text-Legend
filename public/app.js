@@ -296,6 +296,7 @@ const ui = {
 };
 const battleUi = {
   players: document.getElementById('battle-players'),
+  skills: document.getElementById('battle-skills'),
   mobs: document.getElementById('battle-mobs'),
   damageLayer: document.getElementById('battle-damage-layer')
 };
@@ -2967,6 +2968,12 @@ function renderChips(container, items, onClick, activeId) {
   items.forEach((item) => {
     const btn = document.createElement('div');
     btn.className = `chip${activeId && activeId === item.id ? ' active' : ''}`;
+    if (item.dataAttrs) {
+      Object.entries(item.dataAttrs).forEach(([key, value]) => {
+        if (value == null) return;
+        btn.dataset[key] = String(value);
+      });
+    }
     if (item.className) {
       item.className.split(' ').filter(Boolean).forEach((name) => btn.classList.add(name));
     }
@@ -4608,25 +4615,29 @@ function renderState(state) {
   const battlePlayers = [];
   if (state.player && state.stats) {
     battlePlayers.push({
-      type: 'player',
-      name: state.player.name,
-      meta: `Lv${state.player.level} ${classNames[state.player.classId] || state.player.classId}`,
-      hp: state.stats.hp,
-      maxHp: state.stats.max_hp
+      id: state.player.name,
+      label: `${state.player.name} Lv${state.player.level} ${classNames[state.player.classId] || state.player.classId}`,
+      raw: state.player,
+      dataAttrs: {
+        playerName: state.player.name,
+        playerNameNorm: normalizeBattleName(state.player.name)
+      }
     });
   }
   (state.players || [])
     .filter((p) => p.name && (!state.player || p.name !== state.player.name))
     .forEach((p) => {
       battlePlayers.push({
-        type: 'player',
-        name: p.name,
-        meta: `Lv${p.level} ${classNames[p.classId] || p.classId}`,
-        hp: p.hp || 0,
-        maxHp: p.max_hp || 0
+        id: p.name,
+        label: `${p.name} Lv${p.level} ${classNames[p.classId] || p.classId}`,
+        raw: p,
+        dataAttrs: {
+          playerName: p.name,
+          playerNameNorm: normalizeBattleName(p.name)
+        }
       });
     });
-  renderBattleList(battleUi.players, battlePlayers);
+  renderChips(battleUi.players, battlePlayers, (p) => showPlayerModal(p.raw));
 
   const mobs = (state.mobs || []).map((m) => ({ id: m.id, label: `${m.name}(${m.hp})`, raw: m }));
   renderChips(ui.mobs, mobs, (m) => {
@@ -4635,14 +4646,20 @@ function renderState(state) {
   }, selectedMob ? selectedMob.id : null);
 
   const battleMobs = (state.mobs || []).map((m) => ({
-    type: 'mob',
     id: m.id,
-    name: m.name,
-    meta: `HP ${Math.max(0, Math.floor(m.hp))}/${Math.max(0, Math.floor(m.max_hp || 0))}`,
-    hp: m.hp || 0,
-    maxHp: m.max_hp || 0
+    label: `${m.name} (${Math.max(0, Math.floor(m.hp))}/${Math.max(0, Math.floor(m.max_hp || 0))})`,
+    raw: m,
+    dataAttrs: {
+      mobId: m.id,
+      mobName: m.name,
+      mobNameNorm: normalizeBattleName(m.name),
+      mobHp: Math.max(0, Math.floor(m.hp))
+    }
   }));
-  renderBattleList(battleUi.mobs, battleMobs);
+  renderChips(battleUi.mobs, battleMobs, (m) => {
+    selectedMob = m.raw;
+    socket.emit('cmd', { text: `attack ${m.raw.name}` });
+  }, selectedMob ? selectedMob.id : null);
 
   const skills = (state.skills || []).map((s) => ({
     id: s.id,
@@ -4651,7 +4668,7 @@ function renderState(state) {
     exp: s.exp || 0,
     expNext: s.expNext || 100
   }));
-  renderChips(ui.skills, skills, (s) => {
+  const handleSkillClick = (s) => {
     if (s.raw.type === 'heal') {
       socket.emit('cmd', { text: `cast ${s.raw.id}` });
       return;
@@ -4662,7 +4679,11 @@ function renderState(state) {
     }
     if (!selectedMob) return;
     socket.emit('cmd', { text: `cast ${s.raw.id} ${selectedMob.name}` });
-  });
+  };
+  renderChips(ui.skills, skills, handleSkillClick);
+  if (battleUi.skills) {
+    renderChips(battleUi.skills, skills, handleSkillClick);
+  }
 
   if (ui.summon) {
     const summonBlock = ui.summon.closest('.action-group');
@@ -5471,12 +5492,20 @@ function pickMobCardByName(mobName) {
 }
 
 function positionFloatInCard(card, el) {
-  const bar = card.querySelector('.hp-bar');
-  if (!bar) return;
-  const barRect = bar.getBoundingClientRect();
   const cardRect = card.getBoundingClientRect();
-  const left = Math.max(6, Math.min(cardRect.width - 40, barRect.left - cardRect.left + barRect.width * 0.7));
-  const top = Math.max(-4, barRect.top - cardRect.top - 12);
+  if (!cardRect.width || !cardRect.height) return;
+  const bar = card.querySelector('.hp-bar');
+  if (bar) {
+    const barRect = bar.getBoundingClientRect();
+    const left = Math.max(6, Math.min(cardRect.width - 40, barRect.left - cardRect.left + barRect.width * 0.7));
+    const top = Math.max(-4, barRect.top - cardRect.top - 12);
+    el.style.left = `${left}px`;
+    el.style.top = `${top}px`;
+    el.style.right = 'auto';
+    return;
+  }
+  const left = Math.max(6, Math.min(cardRect.width - 40, cardRect.width * 0.6));
+  const top = Math.max(-6, cardRect.height * 0.15);
   el.style.left = `${left}px`;
   el.style.top = `${top}px`;
   el.style.right = 'auto';

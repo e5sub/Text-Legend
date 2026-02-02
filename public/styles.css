@@ -1379,11 +1379,55 @@ button:hover {
   min-height: 360px;
 }
 
+.battle-center-split {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 12px;
+}
+
+.battle-skill-panel {
+  background: rgba(22, 14, 8, 0.9);
+  border: 1px solid rgba(232, 160, 88, 0.35);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.battle-skill-title {
+  font-size: 0.9rem;
+  color: #f3e6d2;
+  letter-spacing: 0.4px;
+}
+
+.battle-skill-grid {
+  flex: 1;
+  overflow: auto;
+}
+
+.battle-chip-grid {
+  gap: 8px;
+}
+
+.battle-chip-grid .chip,
+.battle-skill-grid .chip {
+  position: relative;
+  overflow: visible;
+}
+
 .battle-log {
   max-height: 420px;
   min-height: 360px;
   scrollbar-width: none;
   -ms-overflow-style: none;
+}
+
+.battle-center-split .battle-log {
+  max-height: none;
+  min-height: 0;
+  height: 100%;
 }
 
 .battle-log::-webkit-scrollbar {
@@ -1483,6 +1527,11 @@ button:hover {
 
 body.dark .battle-panel {
   background: #0d0b08;
+}
+
+body.dark .battle-skill-panel {
+  background: rgba(18, 12, 8, 0.92);
+  border-color: rgba(232, 160, 88, 0.4);
 }
 
 body.dark .battle-card {
