@@ -1514,9 +1514,6 @@ body.dark .battle-skill-grid .chip {
   top: -6px;
 }
 
-.damage-float.in-card.poison-offset {
-  top: -22px;
-}
 
 .damage-float.damage-player {
   color: #ffd27a;

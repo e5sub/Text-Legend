@@ -1023,13 +1023,11 @@ function appendLine(payload) {
     const isShieldLine = /护盾/.test(text);
     const isCritLine = /暴击/.test(text);
 
+    const skipPoisonFloat = isPoisonLine;
     if (isHealLine) {
       kind = 'heal';
       amount = healMatch?.[1] || null;
       label = amount ? `+${amount}` : '恢复';
-    } else if (isPoisonLine) {
-      kind = 'poison';
-      label = amount ? `-${amount}` : '中毒';
     } else if (isShieldLine) {
       kind = 'shield';
       const shieldMatch = text.match(/(\d+)\s*点/);
@@ -1042,7 +1040,7 @@ function appendLine(payload) {
       label = `-${amount}`;
     }
 
-    if (amount && targetName && !isSummonName(targetName)) {
+    if (!skipPoisonFloat && amount && targetName && !isSummonName(targetName)) {
       if (targetIsPlayer) {
         const updated = applyLocalDamage('players', targetName, Number(amount));
         if (updated) {
@@ -1063,7 +1061,7 @@ function appendLine(payload) {
     if (isPoisonLine && !targetName) {
       return;
     }
-    if (targetName) {
+    if (!skipPoisonFloat && targetName) {
       if (isSummonName(targetName)) {
         return;
       }
@@ -1075,7 +1073,7 @@ function appendLine(payload) {
       } else {
         spawnDamageFloatOnMob(targetName, amount, kind, label, selectedMobId);
       }
-    } else {
+    } else if (!skipPoisonFloat) {
       if (targetIsPlayer) {
         spawnDamageFloatOnPlayer(selfName, amount, kind, label);
       }
@@ -5644,21 +5642,21 @@ function pickPlayerCardByName(playerName) {
   return best;
 }
 
-function positionFloatInCard(card, el) {
+function positionFloatInCard(card, el, yOffset = 0) {
   const cardRect = card.getBoundingClientRect();
   if (!cardRect.width || !cardRect.height) return;
   const bar = card.querySelector('.hp-bar');
   if (bar) {
     const barRect = bar.getBoundingClientRect();
-    const left = Math.max(6, Math.min(cardRect.width - 40, barRect.left - cardRect.left + 6));
-    const top = Math.max(-4, barRect.top - cardRect.top - 12);
+    const left = Math.max(6, Math.min(cardRect.width - 40, barRect.left - cardRect.left + barRect.width - 24));
+    const top = Math.max(-4, barRect.top - cardRect.top - 12 - yOffset);
     el.style.left = `${left}px`;
     el.style.top = `${top}px`;
     el.style.right = 'auto';
     return;
   }
   const left = Math.max(6, Math.min(cardRect.width - 40, cardRect.width * 0.6));
-  const top = Math.max(-6, cardRect.height * 0.15);
+  const top = Math.max(-6, cardRect.height * 0.15 - yOffset);
   el.style.left = `${left}px`;
   el.style.top = `${top}px`;
   el.style.right = 'auto';
@@ -5682,7 +5680,7 @@ function spawnDamageFloatOnMob(mobName, amount, kind = 'mob', label = null, mobI
   el.className = `damage-float damage-${kind} in-card${isPoison ? ' poison-offset' : ''}`;
   el.textContent = label || `-${amount}`;
   card.appendChild(el);
-  positionFloatInCard(card, el);
+  positionFloatInCard(card, el, isPoison ? 18 : 0);
   setTimeout(() => {
     el.remove();
   }, 2000);
