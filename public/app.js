@@ -69,18 +69,59 @@ function hashString(input) {
   return (hash >>> 0).toString(16);
 }
 
+function getCanvasFingerprint() {
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 200;
+    canvas.height = 60;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return '';
+    ctx.textBaseline = 'top';
+    ctx.font = '16px Arial';
+    ctx.fillStyle = '#f60';
+    ctx.fillRect(0, 0, 200, 60);
+    ctx.fillStyle = '#069';
+    ctx.fillText('fingerprint', 10, 10);
+    ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+    ctx.fillText('fingerprint', 12, 12);
+    return canvas.toDataURL();
+  } catch {
+    return '';
+  }
+}
+
+function getWebglFingerprint() {
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    if (!gl) return '';
+    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+    const vendor = debugInfo ? gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) : gl.getParameter(gl.VENDOR);
+    const renderer = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+    const version = gl.getParameter(gl.VERSION);
+    const shading = gl.getParameter(gl.SHADING_LANGUAGE_VERSION);
+    return [vendor, renderer, version, shading].join('|');
+  } catch {
+    return '';
+  }
+}
+
 function computeDeviceFingerprint() {
   if (deviceFingerprint) return deviceFingerprint;
   const parts = [
-    getOrCreateDeviceId(),
     navigator.userAgent || '',
     navigator.platform || '',
     navigator.language || '',
+    Array.isArray(navigator.languages) ? navigator.languages.join(',') : '',
     Intl.DateTimeFormat().resolvedOptions().timeZone || '',
     screen.width || 0,
     screen.height || 0,
     screen.colorDepth || 0,
-    window.devicePixelRatio || 1
+    window.devicePixelRatio || 1,
+    navigator.hardwareConcurrency || 0,
+    navigator.deviceMemory || 0,
+    getCanvasFingerprint(),
+    getWebglFingerprint()
   ];
   deviceFingerprint = hashString(parts.join('|'));
   return deviceFingerprint;

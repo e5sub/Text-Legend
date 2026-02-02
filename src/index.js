@@ -5081,9 +5081,7 @@ io.on('connection', (socket) => {
       return;
     }
 
-    const deviceKey = String(deviceId || '').trim() && String(deviceFingerprint || '').trim()
-      ? `${String(deviceId).trim()}:${String(deviceFingerprint).trim()}`
-      : String(deviceId || deviceFingerprint || '').trim();
+    const deviceKey = String(deviceFingerprint || '').trim();
     if (!deviceKey) {
       socket.emit('auth_error', { error: '设备指纹缺失。' });
       socket.disconnect();
