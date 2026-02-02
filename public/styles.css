@@ -1299,8 +1299,14 @@ button:hover {
   max-height: 420px;
   overflow-y: auto;
   font-family: var(--font-mono);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
+.log::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
 .battle-panel {
   display: grid;
   grid-template-columns: minmax(180px, 1fr) minmax(320px, 1.4fr) minmax(180px, 1fr);
@@ -1433,8 +1439,14 @@ button:hover {
   grid-auto-rows: max-content;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
+.battle-skill-grid::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
 .battle-chip-grid {
   gap: 8px;
   align-content: start;
