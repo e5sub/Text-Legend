@@ -1382,6 +1382,13 @@ button:hover {
 .battle-log {
   max-height: 420px;
   min-height: 360px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.battle-log::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 .damage-layer {
