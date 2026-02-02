@@ -93,6 +93,7 @@ import {
 } from './game/validator.js';
 import {
   DEFAULT_SKILLS,
+  SKILLS,
   getLearnedSkills,
   getSkill,
   getSkillLevel,
@@ -2240,6 +2241,12 @@ function getSabakState(realmId) {
 
 function sendTo(player, message) {
   player.socket.emit('output', { text: message });
+}
+
+function sendToRoom(realmId, zoneId, roomId, message) {
+  const roomPlayers = listOnlinePlayers(realmId)
+    .filter((p) => p.position.zone === zoneId && p.position.room === roomId);
+  roomPlayers.forEach((p) => sendTo(p, message));
 }
 
 function emitAnnouncement(text, color, location, realmId = null) {
@@ -4879,6 +4886,96 @@ function applyPoisonDebuff(target) {
   };
 }
 
+const MOB_SKILL_TYPES = new Set(['attack', 'spell', 'dot', 'aoe', 'cleave', 'summon']);
+const MOB_SUMMON_SKILLS = new Set(['skeleton', 'summon', 'white_tiger']);
+const MOB_SUMMON_TEMPLATE_BY_SKILL = {
+  skeleton: 'mob_summon_skeleton',
+  summon: 'mob_summon_beast',
+  white_tiger: 'mob_summon_white_tiger'
+};
+const MOB_SKILL_POOL = Object.values(SKILLS)
+  .flatMap((group) => Object.values(group))
+  .filter((skill) => skill && MOB_SKILL_TYPES.has(skill.type) && !MOB_SUMMON_SKILLS.has(skill.id));
+const MOB_SUMMON_POOL = Object.values(SKILLS)
+  .flatMap((group) => Object.values(group))
+  .filter((skill) => skill && MOB_SUMMON_SKILLS.has(skill.id));
+const MOB_SKILL_CHANCE = 0.2;
+const MOB_SUMMON_CHANCE = 0.04;
+
+function getMobSkillLevel(mob) {
+  const level = Math.max(1, Number(mob?.level || 1));
+  return Math.max(1, Math.min(3, Math.floor(level / 15) + 1));
+}
+
+function pickMobSkill(mob) {
+  if (!mob) return null;
+  if (!mob.status) mob.status = {};
+  const now = Date.now();
+  const nextAt = mob.status.nextSkillAt || 0;
+  if (now < nextAt) return null;
+  if (Math.random() > MOB_SKILL_CHANCE) return null;
+  let skill = null;
+  if (MOB_SUMMON_POOL.length && Math.random() <= MOB_SUMMON_CHANCE) {
+    skill = MOB_SUMMON_POOL[randInt(0, MOB_SUMMON_POOL.length - 1)];
+  } else if (MOB_SKILL_POOL.length) {
+    skill = MOB_SKILL_POOL[randInt(0, MOB_SKILL_POOL.length - 1)];
+  }
+  if (!skill) return null;
+  mob.status.nextSkillAt = now + (skill.type === 'summon' ? 10000 : 3000);
+  return skill;
+}
+
+function removeSummonedMobsByOwner(ownerMob, realmId, zoneId, roomId) {
+  if (!ownerMob) return;
+  const mobs = getRoomMobs(zoneId, roomId, realmId);
+  for (let i = mobs.length - 1; i >= 0; i -= 1) {
+    const entry = mobs[i];
+    if (entry && entry.status?.summonedBy === ownerMob.id) {
+      mobs.splice(i, 1);
+    }
+  }
+}
+
+function tryMobSummon(mob, skill, realmId, zoneId, roomId) {
+  if (!mob || !skill) return null;
+  const templateId = MOB_SUMMON_TEMPLATE_BY_SKILL[skill.id];
+  if (!templateId) return null;
+  const mobs = getRoomMobs(zoneId, roomId, realmId);
+  const existing = mobs.find((entry) => entry?.status?.summonedBy === mob.id && entry.hp > 0);
+  if (existing) return null;
+  const fakeCaster = {
+    max_hp: mob.max_hp || 100,
+    spirit: mob.atk || 0,
+    def: mob.def || 0,
+    mdef: mob.mdef || 0
+  };
+  const skillLevel = getMobSkillLevel(mob);
+  const summon = summonStats(fakeCaster, skill, skillLevel);
+  const tpl = MOB_TEMPLATES[templateId];
+  const summonMob = {
+    id: `${templateId}-${Date.now()}-${randInt(100, 999)}`,
+    templateId,
+    zoneId,
+    roomId,
+    name: tpl?.name || summon.name,
+    level: summon.level,
+    hp: summon.hp,
+    max_hp: summon.max_hp,
+    atk: summon.atk,
+    def: summon.def,
+    mdef: summon.mdef || 0,
+    dex: summon.dex || 6,
+    status: {
+      baseStats: { atk: summon.atk, def: summon.def, mdef: summon.mdef || 0, max_hp: summon.max_hp },
+      summoned: true,
+      summonedBy: mob.id
+    },
+    summoned: true
+  };
+  mobs.push(summonMob);
+  return summonMob;
+}
+
 function applyPoisonEffectDebuff(target) {
   if (!target.status) target.status = {};
   if (!target.status.debuffs) target.status.debuffs = {};
@@ -6263,6 +6360,10 @@ async function processMobDeath(player, mob, online) {
   const isPlayerInMobRoom = (target) =>
     Boolean(target && target.position && target.position.zone === mobZoneId && target.position.room === mobRoomId);
   removeMob(mobZoneId, mobRoomId, mob.id, realmId);
+  removeSummonedMobsByOwner(mob, realmId, mobZoneId, mobRoomId);
+  if (template?.summoned || mob.summoned || mob.status?.summoned) {
+    return;
+  }
   gainSummonExp(player);
   const exp = template.exp;
   const gold = randInt(template.gold[0], template.gold[1]);
@@ -7348,6 +7449,19 @@ async function combatTick() {
         mobTarget = summonAlive ? primarySummon : player;
       }
     }
+    const mobZoneId = mob.zoneId || player.position.zone;
+    const mobRoomId = mob.roomId || player.position.room;
+    const mobSkill = pickMobSkill(mob);
+    let skipMobAttack = false;
+    if (mobSkill && mobSkill.type === 'summon') {
+      const summoned = tryMobSummon(mob, mobSkill, realmId, mobZoneId, mobRoomId);
+      if (summoned) {
+        sendToRoom(realmId, mobZoneId, mobRoomId, `${mob.name} 施放 ${mobSkill.name}，召唤了 ${summoned.name}！`);
+        sendRoomState(mobZoneId, mobRoomId, realmId);
+        skipMobAttack = true;
+      }
+    }
+    if (!skipMobAttack) {
     const mobHitChance = calcHitChance(mob, mobTarget);
     if (Math.random() <= mobHitChance) {
       const isWorldBoss = Boolean(mobTemplate?.worldBoss);
@@ -7361,12 +7475,51 @@ async function combatTick() {
         continue;
       }
       let dmg = calcDamage(mob, mobTarget, 1);
-      if (mobTemplate && isBossMob(mobTemplate)) {
-        const magicBase = Math.floor(mob.atk * 0.3);
-        const spiritBase = Math.floor(mob.atk * 0.3);
-        dmg += calcMagicDamageFromValue(magicBase, mobTarget);
-        dmg += calcMagicDamageFromValue(spiritBase, mobTarget);
+      let handledAoe = false;
+      if (mobSkill) {
+        const mobSkillLevel = getMobSkillLevel(mob);
+        const mobSkillPower = scaledSkillPower(mobSkill, mobSkillLevel);
+        sendToRoom(realmId, mobZoneId, mobRoomId, `${mob.name} 释放了 ${mobSkill.name}！`);
+        if (mobSkill.type === 'attack' || mobSkill.type === 'cleave') {
+          dmg = calcDamage(mob, mobTarget, mobSkillPower);
+        } else if (mobSkill.type === 'spell') {
+          dmg = calcMagicDamageFromValue(Math.floor((mob.atk || 0) * mobSkillPower), mobTarget);
+        } else if (mobSkill.type === 'dot') {
+          applyPoison(mobTarget, 10, calcPoisonTickDamage(mobTarget), mob.name);
+          applyPoisonDebuff(mobTarget);
+          dmg = calcTaoistDamageFromValue(Math.floor((mob.atk || 0) * mobSkillPower), mobTarget);
+        } else if (mobSkill.type === 'aoe') {
+          const roomPlayers = online.filter((p) =>
+            p.position.zone === mobZoneId &&
+            p.position.room === mobRoomId &&
+            p.hp > 0
+          );
+          roomPlayers.forEach((target) => {
+            const aoeDmg = calcMagicDamageFromValue(Math.floor((mob.atk || 0) * mobSkillPower), target);
+            const dealt = applyDamageToPlayer(target, aoeDmg);
+            target.send(`${mob.name} 的 ${mobSkill.name} 对你造成 ${dealt} 点伤害。`);
+            if (target.hp <= 0 && !tryRevive(target)) {
+              handleDeath(target);
+            }
+            const targetSummons = getAliveSummons(target);
+            targetSummons.forEach((summon) => {
+              applyDamageToSummon(summon, Math.floor(aoeDmg * 0.6));
+              target.send(`${mob.name} 的 ${mobSkill.name} 波及 ${summon.name}。`);
+              if (summon.hp <= 0) {
+                target.send(`${summon.name} 被击败。`);
+                removeSummonById(target, summon.id);
+                autoResummon(target, summon.id);
+              }
+            });
+          });
+          handledAoe = true;
+        }
       }
+      if (!handledAoe) {
+      const magicBase = Math.floor(mob.atk || 0);
+      const spiritBase = Math.floor(mob.atk || 0);
+      dmg += calcMagicDamageFromValue(magicBase, mobTarget);
+      dmg += calcTaoistDamageFromValue(spiritBase, mobTarget);
       // 特殊BOSS麻痹效果：魔龙教主、世界BOSS、沙巴克BOSS、暗之BOSS攻击时有20%几率麻痹目标2回合
       if (isSpecialBoss && Math.random() <= 0.2) {
         if (!mob.status) mob.status = {};
@@ -7542,8 +7695,10 @@ async function combatTick() {
           }
         }
       }
+      }
     } else {
       player.send(`${mob.name} 攻击落空。`);
+    }
     }
 
     if (player.hp <= 0 && !tryRevive(player)) {

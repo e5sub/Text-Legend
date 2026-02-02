@@ -289,9 +289,13 @@ export function removeMob(zoneId, roomId, mobId, realmId = 1) {
   const idx = mobs.findIndex((m) => m.id === mobId);
   if (idx >= 0) {
     const mob = mobs[idx];
+    const tpl = MOB_TEMPLATES[mob.templateId];
+    if (mob.summoned || mob.status?.summoned || tpl?.summoned) {
+      mobs.splice(idx, 1);
+      return mob;
+    }
     mob.hp = 0;
     mob.status = {};
-    const tpl = MOB_TEMPLATES[mob.templateId];
     const isSpecial = Boolean(tpl && (tpl.worldBoss || tpl.sabakBoss || tpl.specialBoss));
     const delayMs = tpl && tpl.respawnMs
       ? tpl.respawnMs
@@ -327,6 +331,8 @@ export function getAllAliveMobs(realmId = 1) {
     const keyRealmId = Number(realmKey || 1) || 1;
     if (keyRealmId !== realmId) continue;
     for (const mob of mobs) {
+      const tpl = MOB_TEMPLATES[mob.templateId];
+      if (mob.summoned || mob.status?.summoned || tpl?.summoned) continue;
       if (mob.hp > 0 && mob.hp < mob.max_hp) {
         aliveMobs.push({
           realmId: keyRealmId,

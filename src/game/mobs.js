@@ -680,6 +680,42 @@
       { id: 'ring_break', chance: 0.02 },
       { id: 'ring_recall', chance: 0.015 }
     ]
+  },
+  mob_summon_skeleton: {
+    id: 'mob_summon_skeleton',
+    name: '召唤骷髅',
+    level: 10,
+    hp: 200,
+    atk: 20,
+    def: 8,
+    mdef: 4,
+    gold: [0, 0],
+    drops: [],
+    summoned: true
+  },
+  mob_summon_beast: {
+    id: 'mob_summon_beast',
+    name: '召唤神兽',
+    level: 12,
+    hp: 320,
+    atk: 28,
+    def: 12,
+    mdef: 6,
+    gold: [0, 0],
+    drops: [],
+    summoned: true
+  },
+  mob_summon_white_tiger: {
+    id: 'mob_summon_white_tiger',
+    name: '召唤白虎',
+    level: 15,
+    hp: 480,
+    atk: 40,
+    def: 16,
+    mdef: 8,
+    gold: [0, 0],
+    drops: [],
+    summoned: true
   }
 };
 

@@ -839,6 +839,16 @@ function normalizePayload(payload) {
   return { text: String(payload || '') };
 }
 
+function isRedName(name) {
+  if (!name) return false;
+  const raw = String(name);
+  if (lastState?.player?.name === raw) {
+    return (lastState?.stats?.pk || 0) >= 100;
+  }
+  const other = (lastState?.players || []).find((p) => p.name === raw);
+  return (other?.pk || 0) >= 100;
+}
+
 function buildLine(payload) {
   const data = normalizePayload(payload);
   const p = document.createElement('p');
@@ -867,6 +877,9 @@ function buildLine(payload) {
     nameBtn.className = 'chat-name-btn';
     nameBtn.textContent = `[${guildMatch[2]}]`;
     nameBtn.addEventListener('click', () => openPlayerActions(guildMatch[2]));
+    if (isRedName(guildMatch[2])) {
+      nameBtn.classList.add('player-red-name');
+    }
     p.appendChild(nameBtn);
     const text = document.createElement('span');
     text.classList.add('line-text');
@@ -879,6 +892,9 @@ function buildLine(payload) {
     nameBtn.className = 'chat-name-btn';
     nameBtn.textContent = `[${normalMatch[1]}]`;
     nameBtn.addEventListener('click', () => openPlayerActions(normalMatch[1]));
+    if (isRedName(normalMatch[1])) {
+      nameBtn.classList.add('player-red-name');
+    }
     p.appendChild(nameBtn);
     const text = document.createElement('span');
     text.classList.add('line-text');

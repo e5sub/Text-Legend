@@ -1328,6 +1328,13 @@ button:hover {
   letter-spacing: 0.4px;
 }
 
+.battle-skill-panel,
+#battle-players,
+#battle-mobs,
+.battle-column-title {
+  display: none;
+}
+
 .battle-list {
   display: flex;
   flex-direction: column;
@@ -1700,6 +1707,14 @@ body.dark .battle-column-title {
   padding: 0;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.chat-name-btn.player-red-name {
+  color: #8B0000;
+}
+
+.chat-name-btn.player-red-name:hover {
+  color: #a11010;
 }
 
 .chat-name-btn:hover {
@@ -4280,6 +4295,21 @@ body.dark .sabak-empty {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+}
+
+#skills-list {
+  max-height: 240px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+#skills-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+#skills-list::-webkit-scrollbar-thumb {
+  background: rgba(122, 74, 31, 0.45);
+  border-radius: 999px;
 }
 
 .changeclass-options {
