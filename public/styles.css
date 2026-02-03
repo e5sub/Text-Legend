@@ -1613,8 +1613,8 @@ body.log-collapsed .status-log .tag {
   display: grid;
   grid-template-rows: 1fr 1fr;
   gap: 12px;
-  min-height: 360px;
-  max-height: 420px;
+  min-height: 0;
+  height: 100%;
 }
 
 .battle-skill-panel {
@@ -1686,8 +1686,9 @@ body.dark .battle-skill-grid .chip {
 }
 
 .battle-log {
-  max-height: 420px;
-  min-height: 360px;
+  height: 100%;
+  max-height: none;
+  min-height: 0;
   overflow-x: hidden;
   scrollbar-width: none;
   -ms-overflow-style: none;
