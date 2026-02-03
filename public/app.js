@@ -247,6 +247,7 @@ function getTrainingPerLevel(attr) {
 // 主题和日志折叠
 let isDarkMode = localStorage.getItem('darkMode') === 'true';
 let isLogCollapsed = localStorage.getItem('logCollapsed') === 'true';
+let isBattleCollapsed = localStorage.getItem('battleCollapsed') === 'true';
 let showDamage = localStorage.getItem('showDamage') !== 'false';
 let showExpGold = localStorage.getItem('showExpGold') !== 'false';
 const directionLabels = {
@@ -7006,6 +7007,9 @@ if (themeToggle) {
 // 日志折叠功能
 const logWrap = document.getElementById('log-wrap');
 const logToggle = document.getElementById('log-toggle');
+const battleWrap = document.querySelector('.battle-wrap');
+const battleToggle = document.getElementById('battle-toggle');
+const collapseButtons = document.querySelectorAll('[data-toggle]');
 const logShowDamage = document.getElementById('log-show-damage');
 const logShowExpGold = document.getElementById('log-show-exp-gold');
 const logThrottleNormal = document.getElementById('log-throttle-normal');
@@ -7030,6 +7034,52 @@ if (logWrap && logToggle) {
     isLogCollapsed = !isLogCollapsed;
     localStorage.setItem('logCollapsed', isLogCollapsed.toString());
     applyLogCollapsed(isLogCollapsed);
+  });
+}
+
+if (battleWrap && battleToggle) {
+  function applyBattleCollapsed(collapsed) {
+    if (collapsed) {
+      battleWrap.classList.add('collapsed');
+      battleToggle.textContent = '▼';
+    } else {
+      battleWrap.classList.remove('collapsed');
+      battleToggle.textContent = '▲';
+    }
+  }
+
+  applyBattleCollapsed(isBattleCollapsed);
+
+  battleToggle.addEventListener('click', () => {
+    isBattleCollapsed = !isBattleCollapsed;
+    localStorage.setItem('battleCollapsed', isBattleCollapsed.toString());
+    applyBattleCollapsed(isBattleCollapsed);
+  });
+}
+
+if (collapseButtons.length) {
+  collapseButtons.forEach((btn) => {
+    const targetKey = btn.dataset.toggle;
+    if (targetKey === 'log' || targetKey === 'battle') {
+      return;
+    }
+    if (!targetKey) return;
+    const target = document.querySelector(`[data-collapsible="${targetKey}"]`);
+    if (!target) return;
+
+    const storageKey = `collapse:${targetKey}`;
+    const isCollapsed = localStorage.getItem(storageKey) === 'true';
+    if (isCollapsed) {
+      target.classList.add('collapsed');
+      btn.textContent = '▼';
+    }
+
+    btn.addEventListener('click', () => {
+      const collapsed = !target.classList.contains('collapsed');
+      target.classList.toggle('collapsed', collapsed);
+      btn.textContent = collapsed ? '▼' : '▲';
+      localStorage.setItem(storageKey, collapsed.toString());
+    });
   });
 }
 

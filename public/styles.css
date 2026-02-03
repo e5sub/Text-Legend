@@ -595,6 +595,16 @@ body.dark .side {
   box-shadow: inset 0 0 0 1px rgba(232, 160, 88, 0.15);
 }
 
+body.dark .card-toggle {
+  background: rgba(232, 160, 88, 0.18);
+  color: #e8e0d4;
+  border-color: rgba(232, 160, 88, 0.3);
+}
+
+body.dark .side-header {
+  color: #e8e0d4;
+}
+
 body.dark .action-title {
   color: #c8b8a8;
 }
@@ -1034,14 +1044,54 @@ body.log-collapsed .game-layout {
 }
 
 .battle-wrap {
-  background: #1a120b;
+  background: #fffdf7;
+  border: 1px solid #f0dcc2;
   border-radius: 16px;
-  box-shadow: inset 0 0 0 1px rgba(255, 210, 150, 0.2), 0 10px 20px rgba(13, 10, 6, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(255, 224, 190, 0.35);
   overflow: hidden;
 }
 
 .battle-wrap .battle-panel {
   border-radius: 0;
+}
+
+.battle-wrap.collapsed .battle-panel {
+  display: none;
+}
+
+.battle-wrap.collapsed {
+  min-height: auto;
+}
+
+.battle-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(214, 169, 118, 0.35);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  color: #6b4a2a;
+}
+
+.battle-toggle {
+  background: rgba(118, 70, 22, 0.15);
+  color: #6b4a2a;
+  border: 1px solid rgba(118, 70, 22, 0.25);
+  padding: 0 8px;
+  font-size: 0.9rem;
+  min-width: auto;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.battle-toggle:hover {
+  filter: brightness(1.05);
 }
 
 .status-grid {
@@ -1057,6 +1107,26 @@ body.log-collapsed .game-layout {
   border: 1px solid #f0dcc2;
   padding: 14px;
   box-shadow: inset 0 0 0 1px rgba(255, 224, 190, 0.35);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.card-body {
+  min-height: 0;
+}
+
+.status-card.collapsed .card-body {
+  display: none;
+}
+
+.status-card.collapsed .card-header {
+  margin-bottom: 0;
 }
 
 .status-log {
@@ -1103,13 +1173,33 @@ body.log-collapsed .game-layout {
 .status-title {
   font-family: var(--font-display);
   font-size: 1rem;
-  margin-bottom: 10px;
+  margin-bottom: 0;
 }
 
 .status-row {
   display: flex;
   justify-content: space-between;
   margin: 6px 0;
+}
+
+.card-toggle {
+  background: rgba(118, 70, 22, 0.15);
+  color: #6b4a2a;
+  border: 1px solid rgba(118, 70, 22, 0.25);
+  padding: 0 8px;
+  font-size: 0.9rem;
+  min-width: auto;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-toggle:hover {
+  filter: brightness(1.05);
 }
 
 .status-row.compact {
@@ -1398,6 +1488,7 @@ body.log-collapsed .status-log .tag {
   min-height: 360px;
   max-height: 420px;
   overflow-y: auto;
+  overflow-x: hidden;
   font-family: var(--font-mono);
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -1412,7 +1503,7 @@ body.log-collapsed .status-log .tag {
   grid-template-columns: minmax(180px, 1fr) minmax(320px, 1.4fr) minmax(180px, 1fr);
   gap: 14px;
   padding: 14px;
-  background: #0d0b08;
+  background: transparent;
 }
 
 .battle-column {
@@ -1423,7 +1514,7 @@ body.log-collapsed .status-log .tag {
 }
 
 .battle-column-title {
-  color: #e8d9c4;
+  color: #6b4a2a;
   font-size: 0.85rem;
   letter-spacing: 0.4px;
 }
@@ -1694,7 +1785,7 @@ body.dark .battle-skill-grid .chip {
 }
 
 body.dark .battle-panel {
-  background: #0d0b08;
+  background: transparent;
 }
 
 body.dark .battle-skill-panel {
@@ -1715,6 +1806,23 @@ body.dark .battle-column-title {
   color: #e8d9c4;
 }
 
+body.dark .battle-wrap {
+  background: #2a2420;
+  border-color: #4a3a30;
+  box-shadow: inset 0 0 0 1px rgba(232, 160, 88, 0.15);
+}
+
+body.dark .battle-header {
+  border-bottom-color: rgba(232, 160, 88, 0.2);
+  color: #e8e0d4;
+}
+
+body.dark .battle-toggle {
+  background: rgba(232, 160, 88, 0.18);
+  color: #e8e0d4;
+  border-color: rgba(232, 160, 88, 0.3);
+}
+
 .chat-wrap {
   background: #fffdf7;
   border-radius: 16px;
@@ -1723,6 +1831,10 @@ body.dark .battle-column-title {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.chat-wrap.collapsed .card-body {
+  display: none;
 }
 
 .chat-header {
@@ -1735,6 +1847,12 @@ body.dark .battle-column-title {
   font-family: var(--font-display);
   font-size: 0.95rem;
   letter-spacing: 0.4px;
+}
+
+.chat-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .chat-log {
@@ -4274,8 +4392,16 @@ body.dark .sabak-empty {
 .log-line,
 .chat-log .log-line {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
+}
+
+.log .line-text {
+  flex: 1;
+  min-width: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .chat-log .announce-line {
@@ -4382,6 +4508,26 @@ body.dark .sabak-empty {
   padding: 16px;
   border: 1px solid #f0dcc2;
   box-shadow: inset 0 0 0 1px rgba(255, 224, 190, 0.4);
+}
+
+.side-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.side-header h3 {
+  margin: 0;
+}
+
+.side.collapsed .side-body {
+  display: none;
+}
+
+.side.collapsed {
+  min-height: auto;
 }
 
 .action-group {
