@@ -87,6 +87,64 @@ function hasAliveSummon(player, summonId) {
   return getAliveSummons(player).some((entry) => entry.id === summonId);
 }
 
+function normalizeVipStatus(player) {
+  if (!player) return false;
+  if (!player.flags) player.flags = {};
+  const expiresAt = Number(player.flags.vipExpiresAt || 0);
+  if (player.flags.vip && expiresAt && expiresAt <= Date.now()) {
+    player.flags.vip = false;
+    player.flags.vipExpiresAt = null;
+  }
+  return Boolean(player.flags.vip);
+}
+
+function resolveVipDurationFromCode(codeRow) {
+  const type = String(codeRow?.duration_type || '').trim().toLowerCase();
+  const days = Number(codeRow?.duration_days || 0);
+  if (type === 'permanent' || (!type && !days)) {
+    return { type: 'permanent', days: null };
+  }
+  if (days > 0) {
+    return { type: type || 'custom', days: Math.floor(days) };
+  }
+  switch (type) {
+    case 'year':
+      return { type: 'year', days: 365 };
+    case 'quarter':
+      return { type: 'quarter', days: 90 };
+    case 'month':
+    default:
+      return { type: 'month', days: 30 };
+  }
+}
+
+function applyVipCodeToPlayer(player, codeRow) {
+  if (!player.flags) player.flags = {};
+  const now = Date.now();
+  const duration = resolveVipDurationFromCode(codeRow);
+  if (duration.type === 'permanent') {
+    player.flags.vip = true;
+    player.flags.vipExpiresAt = null;
+    return { type: 'permanent' };
+  }
+  const currentExpiresAt = Number(player.flags.vipExpiresAt || 0);
+  const base = currentExpiresAt && currentExpiresAt > now ? currentExpiresAt : now;
+  const nextExpiresAt = base + duration.days * 24 * 60 * 60 * 1000;
+  player.flags.vip = true;
+  player.flags.vipExpiresAt = nextExpiresAt;
+  return { type: duration.type, days: duration.days, expiresAt: nextExpiresAt };
+}
+
+function formatVipStatus(player) {
+  const active = normalizeVipStatus(player);
+  if (!active) return 'VIP: 未开通';
+  const expiresAt = Number(player.flags.vipExpiresAt || 0);
+  if (!expiresAt) return 'VIP: 已开通(永久)';
+  const remainingMs = Math.max(0, expiresAt - Date.now());
+  const remainingDays = Math.ceil(remainingMs / (24 * 60 * 60 * 1000));
+  return `VIP: 已开通(剩余${remainingDays}天)`;
+}
+
 // 负载均衡：选择玩家最少的房间
 // 当目标房间有多个变体时（如 plains, plains1, plains2, plains3），自动分配到人最少的那个
 function selectLeastPopulatedRoom(zoneId, roomId, onlinePlayers, currentPlayer = null, partyApi = null) {
@@ -375,7 +433,11 @@ function formatStats(player, partyApi) {
     if (party) partyInfo = `${party.members.length} 人队伍`;
   }
   const pkValue = player.flags?.pkValue || 0;
-  const vip = player.flags?.vip ? '是' : '否';
+  const vipActive = normalizeVipStatus(player);
+  const vipExpiresAt = Number(player.flags?.vipExpiresAt || 0);
+  const vip = vipActive
+    ? (vipExpiresAt ? `是(剩余${Math.ceil((vipExpiresAt - Date.now()) / (24 * 60 * 60 * 1000))}天)` : '是(永久)')
+    : '否';
   return [
     `职业: ${className}`,
     `等级: ${player.level} (${player.exp}/${expForLevel(player.level)} EXP)`,
@@ -1520,10 +1582,6 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         send('已关闭自动技能与自动喝药。');
         return;
       }
-      if (!player.flags?.vip) {
-        send('挂机功能仅VIP可用。');
-        return;
-      }
       if (lower === 'all') {
         if (!player.flags) player.flags = {};
         player.flags.autoSkillId = 'all';
@@ -1566,10 +1624,6 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           player.flags.autoMpPct = null;
         }
         send('已关闭自动喝药。');
-        return;
-      }
-      if (!player.flags?.vip) {
-        send('挂机功能仅VIP可用。');
         return;
       }
       const parts = args.split(' ').filter(Boolean);
@@ -2716,7 +2770,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       const [subCmd, ...restArgs] = args.split(' ').filter(Boolean);
       const sub = (subCmd || 'status').toLowerCase();
       if (sub === 'status') {
-        send(`VIP: ${player.flags?.vip ? '已开通' : '未开通'}`);
+        send(formatVipStatus(player));
         return;
       }
       if (sub === 'activate') {
@@ -2725,8 +2779,13 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         if (!guildApi?.useVipCode) return send('VIP系统不可用。');
         const used = await guildApi.useVipCode(code, player.userId);
         if (!used) return send('激活码无效或已使用。');
-        player.flags.vip = true;
-        send('VIP 已开通。');
+        const applied = applyVipCodeToPlayer(player, used);
+        if (applied.type === 'permanent') {
+          send('VIP 已开通(永久)。');
+        } else {
+          const days = applied.days || 0;
+          send(`VIP 已开通，时长 ${days} 天。`);
+        }
         return;
       }
       if (sub === 'claim') {
@@ -2734,21 +2793,26 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         if (!guildApi?.getVipSelfClaimEnabled || !(await guildApi.getVipSelfClaimEnabled())) {
           return send('VIP自助领取功能已关闭。');
         }
-        if (player.flags.vip) {
+        if (normalizeVipStatus(player)) {
           return send('你已经是VIP了。');
         }
         if (!guildApi?.canUserClaimVip || !(await guildApi.canUserClaimVip(player.name))) {
           return send('每个角色只能领取一次VIP激活码。');
         }
-        const codes = await guildApi?.createVipCodes?.(1);
+        const codes = await guildApi?.createVipCodes?.(1, 'month');
         if (!codes || codes.length === 0) {
           return send('领取失败，请稍后重试。');
         }
         const used = await guildApi.useVipCode(codes[0], player.userId);
         if (!used) return send('激活失败，请稍后重试。');
         await guildApi.incrementCharacterVipClaimCount(player.name);
-        player.flags.vip = true;
-        send(`VIP 激活码领取成功！激活码: ${codes[0]}，已自动激活。`);
+        const applied = applyVipCodeToPlayer(player, used);
+        if (applied.type === 'permanent') {
+          send(`VIP 激活码领取成功！激活码: ${codes[0]}，已自动激活(永久)。`);
+        } else {
+          const days = applied.days || 0;
+          send(`VIP 激活码领取成功！激活码: ${codes[0]}，已自动激活(${days}天)。`);
+        }
         return;
       }
       return;

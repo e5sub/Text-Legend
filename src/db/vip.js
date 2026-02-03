@@ -1,13 +1,37 @@
 import knex from './index.js';
 
-export async function createVipCodes(count) {
+function resolveVipDuration(durationType, durationDays) {
+  const normalizedType = String(durationType || '').trim().toLowerCase();
+  if (normalizedType === 'permanent') {
+    return { durationType: 'permanent', durationDays: null };
+  }
+  if (Number.isFinite(Number(durationDays)) && Number(durationDays) > 0) {
+    return { durationType: normalizedType || 'custom', durationDays: Math.floor(Number(durationDays)) };
+  }
+  switch (normalizedType) {
+    case 'year':
+      return { durationType: 'year', durationDays: 365 };
+    case 'quarter':
+      return { durationType: 'quarter', durationDays: 90 };
+    case 'month':
+    default:
+      return { durationType: 'month', durationDays: 30 };
+  }
+}
+
+export async function createVipCodes(count, durationType = 'month', durationDays = null) {
   const codes = [];
+  const resolved = resolveVipDuration(durationType, durationDays);
   for (let i = 0; i < count; i += 1) {
     const code = `VIP${Math.random().toString(36).slice(2, 8).toUpperCase()}${Date.now().toString(36).slice(-4).toUpperCase()}`;
     codes.push(code);
   }
   for (const code of codes) {
-    await knex('vip_codes').insert({ code });
+    await knex('vip_codes').insert({
+      code,
+      duration_type: resolved.durationType,
+      duration_days: resolved.durationDays
+    });
   }
   return codes;
 }

@@ -702,9 +702,29 @@ app.post('/admin/mail/send', async (req, res) => {
 app.post('/admin/vip/create', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
-  const { count } = req.body || {};
-  const codes = await createVipCodes(Math.min(Number(count || 1), 100));
-  res.json({ ok: true, codes });
+  const { count, durationType, durationDays } = req.body || {};
+  const safeCount = Math.min(Number(count || 1), 100);
+  const rawType = String(durationType || 'month').trim().toLowerCase();
+  const typeMap = new Map([
+    ['月', 'month'],
+    ['月卡', 'month'],
+    ['季', 'quarter'],
+    ['季卡', 'quarter'],
+    ['年', 'year'],
+    ['年卡', 'year'],
+    ['永久', 'permanent']
+  ]);
+  const type = typeMap.get(rawType) || rawType;
+  const allowed = new Set(['month', 'quarter', 'year', 'permanent', 'custom']);
+  if (!allowed.has(type)) {
+    return res.status(400).json({ error: '无效的VIP期限类型' });
+  }
+  const days = durationDays == null ? null : Number(durationDays);
+  if (days != null && (!Number.isFinite(days) || days <= 0)) {
+    return res.status(400).json({ error: '无效的VIP期限天数' });
+  }
+  const codes = await createVipCodes(safeCount, type, days);
+  res.json({ ok: true, codes, durationType: type, durationDays: days ?? null });
 });
 
 app.get('/admin/vip/list', async (req, res) => {
@@ -3657,8 +3677,77 @@ function isInvincible(target) {
   return false;
 }
 
+const AUTO_DAILY_LIMIT_MS = 4 * 60 * 60 * 1000;
+
+function getAutoDailyKey(now = Date.now()) {
+  const date = new Date(now);
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function normalizeVipStatus(player) {
+  if (!player) return false;
+  if (!player.flags) player.flags = {};
+  const expiresAt = Number(player.flags.vipExpiresAt || 0);
+  if (player.flags.vip && expiresAt && expiresAt <= Date.now()) {
+    player.flags.vip = false;
+    player.flags.vipExpiresAt = null;
+  }
+  return Boolean(player.flags.vip);
+}
+
+function isVipActive(player) {
+  return normalizeVipStatus(player);
+}
+
 function isVipAutoEnabled(player) {
-  return Boolean(player?.flags?.vip);
+  if (isVipActive(player)) return true;
+  if (!player) return false;
+  if (!player.flags) player.flags = {};
+  const dayKey = getAutoDailyKey();
+  if (player.flags.autoDailyDay !== dayKey) {
+    player.flags.autoDailyDay = dayKey;
+    player.flags.autoDailyMs = 0;
+    player.flags.autoDailyLastAt = null;
+  }
+  return Number(player.flags.autoDailyMs || 0) < AUTO_DAILY_LIMIT_MS;
+}
+
+function updateAutoDailyUsage(player) {
+  if (!player) return;
+  if (!player.flags) player.flags = {};
+  if (isVipActive(player)) {
+    player.flags.autoDailyDay = null;
+    player.flags.autoDailyMs = null;
+    player.flags.autoDailyLastAt = null;
+    return;
+  }
+  const now = Date.now();
+  const dayKey = getAutoDailyKey(now);
+  if (player.flags.autoDailyDay !== dayKey) {
+    player.flags.autoDailyDay = dayKey;
+    player.flags.autoDailyMs = 0;
+    player.flags.autoDailyLastAt = null;
+  }
+  if (!player.flags.autoSkillId) {
+    player.flags.autoDailyLastAt = null;
+    return;
+  }
+  const lastAt = Number(player.flags.autoDailyLastAt || 0);
+  if (lastAt > 0) {
+    const delta = Math.max(0, now - lastAt);
+    player.flags.autoDailyMs = Math.max(0, Number(player.flags.autoDailyMs || 0) + delta);
+  }
+  player.flags.autoDailyLastAt = now;
+  if (Number(player.flags.autoDailyMs || 0) >= AUTO_DAILY_LIMIT_MS) {
+    player.flags.autoSkillId = null;
+    player.flags.autoHpPct = null;
+    player.flags.autoMpPct = null;
+    player.flags.autoDailyLastAt = null;
+    player.send('今日挂机时长已达上限（4小时）。');
+  }
 }
 
 function pickPlayerBonusConfig(playerBonusConfig, playerCount) {
@@ -3845,15 +3934,15 @@ function applyOfflineRewards(player) {
   if (!player.flags) player.flags = {};
   const offlineAt = player.flags.offlineAt;
   if (!offlineAt) return;
-  if (!player.flags.vip) {
+  if (!isVipActive(player)) {
     player.flags.offlineAt = null;
     player.send('离线挂机仅VIP可用。');
     return;
   }
-  const maxHours = player.flags.vip ? 24 : 12;
+  const maxHours = 24;
   const offlineMinutes = Math.min(Math.floor((Date.now() - offlineAt) / 60000), maxHours * 60);
   if (offlineMinutes <= 0) return;
-  const offlineMultiplier = player.flags.vip ? 2 : 1;
+  const offlineMultiplier = 2;
   const expGain = Math.floor(offlineMinutes * player.level * offlineMultiplier);
   const goldGain = Math.floor(offlineMinutes * player.level * offlineMultiplier);
   let fruitGain = 0;
@@ -4130,6 +4219,7 @@ function getRoomCommonState(zoneId, roomId, realmId = 1) {
 }
 
 async function buildState(player) {
+  normalizeVipStatus(player);
   computeDerived(player);
   const realmId = player.realmId || 1;
   const zone = WORLD[player.position.zone];
@@ -4318,7 +4408,8 @@ async function buildState(player) {
       spirit: Math.floor(player.spirit || 0),
       mdef: Math.floor(player.mdef || 0),
       pk: player.flags?.pkValue || 0,
-      vip: Boolean(player.flags?.vip),
+      vip: isVipActive(player),
+      vip_expires_at: player.flags?.vipExpiresAt || null,
       dodge: Math.round((player.evadeChance || 0) * 100),
       autoSkillId: player.flags?.autoSkillId || null,
       sabak_bonus: sabakBonus,
@@ -6417,7 +6508,7 @@ function reduceDurabilityOnAttack(player) {
   if (!player || !player.equipment) return;
   if (!player.flags) player.flags = {};
   player.flags.attackCount = (player.flags.attackCount || 0) + 1;
-  const threshold = player.flags.vip ? 400 : 200;
+  const threshold = isVipActive(player) ? 400 : 200;
   if (player.flags.attackCount < threshold) return;
   player.flags.attackCount = 0;
   let broken = false;
@@ -6538,7 +6629,7 @@ async function processMobDeath(player, mob, online) {
       const sabakState = getSabakState(realmId);
       const isSabakMember = member.guild && sabakState.ownerGuildId && String(member.guild.id) === String(sabakState.ownerGuildId);
       const sabakBonus = isSabakMember ? 2 : 1;
-      const vipBonus = member.flags?.vip ? 2 : 1;
+      const vipBonus = isVipActive(member) ? 2 : 1;
       let finalExp = Math.floor(shareExp * sabakBonus * vipBonus);
       let finalGold = Math.floor(shareGold * sabakBonus * vipBonus);
       if (sabakState.ownerGuildId && !isSabakMember) {
@@ -6881,6 +6972,7 @@ async function combatTick() {
     refreshBuffs(player);
     processPotionRegen(player);
     updateRedNameAutoClear(player);
+    updateAutoDailyUsage(player);
     const realmId = player.realmId || 1;
     const roomKey = `${realmId}:${player.position.zone}:${player.position.room}`;
     let roomMobs = roomMobsCache.get(roomKey);

@@ -225,6 +225,12 @@
             <div style="border-top: 1px solid #ddd; padding-top: 20px;">
               <h3>VIP 激活码管理</h3>
               <input id="vip-count" type="number" min="1" max="100" value="5">
+              <select id="vip-duration">
+                <option value="month">月卡</option>
+                <option value="quarter">季卡</option>
+                <option value="year">年卡</option>
+                <option value="permanent">永久</option>
+              </select>
               <button id="vip-create-btn">生成激活码</button>
               <button id="vip-list-btn">查看激活码列表</button>
               <div id="vip-codes-result" class="list"></div>
@@ -234,6 +240,7 @@
                   <thead>
                     <tr>
                       <th>激活码</th>
+                      <th>类型</th>
                       <th>状态</th>
                       <th>使用者ID</th>
                       <th>使用时间</th>

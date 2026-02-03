@@ -2638,6 +2638,23 @@ function formatMailDate(value) {
   return `${mm}-${dd} ${hh}:${mi}`;
 }
 
+function formatVipExpiry(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}/${mm}/${dd}`;
+}
+
+function formatVipDisplay(stats) {
+  if (!stats || !stats.vip) return '否';
+  const expiresAt = Number(stats.vip_expires_at || 0);
+  if (!expiresAt) return '永久';
+  return formatVipExpiry(expiresAt) || '是';
+}
+
 function renderMailDetail(mail) {
   if (!mailUi.detailTitle || !mailUi.detailBody || !mailUi.detailMeta || !mailUi.detailItems) return;
   if (!mail) {
@@ -3121,7 +3138,7 @@ function renderBagModal() {
       `生命: ${stats.hp || 0}/${stats.max_hp || 0}  魔法: ${stats.mp || 0}/${stats.max_mp || 0}`,
       `攻击: ${stats.atk || 0}  防御: ${stats.def || 0}  魔法: ${stats.mag || 0}`,
       `道术: ${stats.spirit || 0}  魔御: ${stats.mdef || 0}  金币: ${stats.gold || 0}`,
-      `PK值: ${stats.pk || 0}  VIP: ${stats.vip ? '是' : '否'}  沙巴克加成: ${stats.sabak_bonus ? '已生效' : '无'}  套装加成: ${stats.set_bonus ? '已激活' : '无'}`
+      `PK值: ${stats.pk || 0}  VIP: ${formatVipDisplay(stats)}  沙巴克加成: ${stats.sabak_bonus ? '已生效' : '无'}  套装加成: ${stats.set_bonus ? '已激活' : '无'}`
     ];
     if (statsUi.summary) statsUi.summary.textContent = summaryLines.join('\n');
 
@@ -4493,7 +4510,7 @@ function renderState(state) {
       ui.dodge.textContent = dodgeValue != null ? `${dodgeValue}%` : '-';
     }
     ui.pk.textContent = `${state.stats.pk} (${state.stats.pk >= 100 ? '红名' : '正常'})`;
-    ui.vip.textContent = state.stats.vip ? '是' : '否';
+    ui.vip.textContent = formatVipDisplay(state.stats);
     if (ui.bonusLine) {
       const sabakText = state.stats.sabak_bonus ? '已生效' : '无';
       const setText = state.stats.set_bonus ? '已激活' : '无';

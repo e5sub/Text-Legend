@@ -100,7 +100,9 @@ export function getRepairCost(item, missing, player = null) {
             ? 2.6
             : 2.0;
   let cost = Math.min(50000, Math.max(1, Math.floor(base * mult * missing)));
-  if (player?.flags?.vip) {
+  const vipExpiresAt = Number(player?.flags?.vipExpiresAt || 0);
+  const vipActive = Boolean(player?.flags?.vip) && (!vipExpiresAt || vipExpiresAt > Date.now());
+  if (vipActive) {
     cost = Math.max(1, Math.floor(cost * 0.5));
   }
   return cost;

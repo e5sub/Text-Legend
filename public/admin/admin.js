@@ -1601,7 +1601,8 @@ async function createVipCodes() {
   vipCodesTableContainer.style.display = 'none';
   try {
     const count = Number(document.getElementById('vip-count').value || 1);
-    const data = await api('/admin/vip/create', 'POST', { count });
+    const durationType = document.getElementById('vip-duration')?.value || 'month';
+    const data = await api('/admin/vip/create', 'POST', { count, durationType });
     vipCodesResult.textContent = `成功生成 ${data.codes.length} 个激活码:\n\n` + data.codes.join('\n');
   } catch (err) {
     vipCodesResult.textContent = err.message;
@@ -1681,12 +1682,31 @@ async function listVipCodes() {
     vipCodesTableContainer.style.display = 'block';
     data.codes.forEach((c) => {
       const tr = document.createElement('tr');
+      const typeMap = {
+        month: '月卡',
+        quarter: '季卡',
+        year: '年卡',
+        permanent: '永久',
+        custom: '自定义'
+      };
       
       // 激活码
       const tdCode = document.createElement('td');
       tdCode.textContent = c.code;
       tdCode.style.fontFamily = 'monospace';
       tr.appendChild(tdCode);
+
+      // 类型
+      const tdType = document.createElement('td');
+      const durationType = (c.duration_type || '').toLowerCase();
+      if (durationType === 'custom' && c.duration_days) {
+        tdType.textContent = `自定义(${c.duration_days}天)`;
+      } else if (durationType) {
+        tdType.textContent = typeMap[durationType] || durationType;
+      } else {
+        tdType.textContent = '永久';
+      }
+      tr.appendChild(tdType);
       
       // 状态
       const tdStatus = document.createElement('td');
