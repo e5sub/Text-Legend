@@ -7428,7 +7428,8 @@ async function combatTick() {
           if (result?.damageTaken) {
             player.send(`你对 ${target.name} 造成 ${aoeDmg} 点伤害。`);
           }
-          if (tryApplyHealBlockEffect(player, target)) {
+          const targetImmuneToDebuffs = enforceSpecialBossDebuffImmunity(target, player.realmId || 1);
+          if (!targetImmuneToDebuffs && tryApplyHealBlockEffect(player, target)) {
             player.send(`禁疗效果作用于 ${target.name}。`);
           }
           if (target.id !== mob.id) {
