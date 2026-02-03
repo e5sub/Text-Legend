@@ -2412,7 +2412,13 @@ function parseJson(value, fallback = null) {
 
 function buildMailItemView(entry) {
   if (!entry || !entry.id) return null;
-  const view = buildItemView(entry.id, entry.effects || null, entry.durability, entry.max_durability);
+  const view = buildItemView(
+    entry.id,
+    entry.effects || null,
+    entry.durability,
+    entry.max_durability,
+    entry.refine_level ?? 0
+  );
   return {
     ...view,
     qty: Math.max(1, Number(entry.qty || 1)),
@@ -5825,7 +5831,7 @@ io.on('connection', (socket) => {
           const slot = resolveInventorySlotByKey(player, key);
           if (!slot) continue;
           const qty = Math.max(1, Number(totalQty));
-          if (!removeItem(player, slot.id, qty, slot.effects)) {
+          if (!removeItem(player, slot.id, qty, slot.effects, slot.durability ?? null, slot.max_durability ?? null, slot.refine_level ?? null)) {
             return socket.emit('mail_send_result', { ok: false, msg: '附件数量超过背包数量。' });
           }
         items.push({
@@ -5833,7 +5839,8 @@ io.on('connection', (socket) => {
           qty,
           effects: slot.effects || null,
           durability: slot.durability ?? null,
-          max_durability: slot.max_durability ?? null
+          max_durability: slot.max_durability ?? null,
+          refine_level: slot.refine_level ?? null
         });
       }
     }
@@ -5841,7 +5848,15 @@ io.on('connection', (socket) => {
     if (gold > 0) {
       if (player.gold < gold) {
         items.forEach((entry) => {
-          addItem(player, entry.id, entry.qty || 1, entry.effects || null, entry.durability ?? null, entry.max_durability ?? null);
+          addItem(
+            player,
+            entry.id,
+            entry.qty || 1,
+            entry.effects || null,
+            entry.durability ?? null,
+            entry.max_durability ?? null,
+            entry.refine_level ?? null
+          );
         });
         return socket.emit('mail_send_result', { ok: false, msg: '金币不足。' });
       }
@@ -5877,7 +5892,15 @@ io.on('connection', (socket) => {
     if (items && items.length) {
       items.forEach((entry) => {
         if (!entry || !entry.id) return;
-        addItem(player, entry.id, entry.qty || 1, entry.effects || null, entry.durability ?? null, entry.max_durability ?? null);
+        addItem(
+          player,
+          entry.id,
+          entry.qty || 1,
+          entry.effects || null,
+          entry.durability ?? null,
+          entry.max_durability ?? null,
+          entry.refine_level ?? null
+        );
       });
     }
     if (gold > 0) {

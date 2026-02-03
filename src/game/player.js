@@ -568,11 +568,20 @@ function resolveEquipSlot(player, item) {
   return slot;
 }
 
-export function removeItem(player, itemId, qty = 1, effects = null) {
+export function removeItem(player, itemId, qty = 1, effects = null, durability = null, max_durability = null, refine_level = null) {
+  if (!player || !player.inventory) return false;
   const normalized = normalizeEffects(effects);
-  const slot = normalized
-    ? player.inventory.find((i) => i.id === itemId && sameEffects(i.effects, normalized))
-    : player.inventory.find((i) => i.id === itemId);
+  const needsMeta = durability != null || max_durability != null || refine_level != null;
+  const slot = player.inventory.find((i) => {
+    if (!i || i.id !== itemId) return false;
+    if (normalized && !sameEffects(i.effects, normalized)) return false;
+    if (needsMeta) {
+      if (durability != null && i.durability !== durability) return false;
+      if (max_durability != null && i.max_durability !== max_durability) return false;
+      if (refine_level != null && (i.refine_level ?? 0) !== refine_level) return false;
+    }
+    return true;
+  });
   if (!slot) return false;
   if (slot.qty < qty) return false;
   slot.qty -= qty;
