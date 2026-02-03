@@ -3770,7 +3770,7 @@ function isSpecialBossDebuffImmune(target) {
   const maxHp = Number(target.max_hp ?? tpl.hp ?? 0) || 0;
   if (maxHp <= 0) return false;
   const hp = Number(target.hp ?? maxHp) || 0;
-  return hp / maxHp <= 0.3;
+  return hp / maxHp <= 0.5;
 }
 
 function clearNegativeStatuses(target) {
