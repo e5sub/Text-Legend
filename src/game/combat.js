@@ -1,11 +1,13 @@
-import { clamp, randInt } from './utils.js';
+﻿import { clamp, randInt } from './utils.js';
 import { MOB_TEMPLATES } from './mobs.js';
 
+// 命中率：基于敏捷差的线性区间
 export function calcHitChance(attacker, defender) {
   const base = 0.75 + (attacker.dex - defender.dex) * 0.01;
   return clamp(base, 0.2, 0.95);
 }
 
+// 防御系数：叠加防御增益/减益（破防、毒等）
 export function getDefenseMultiplier(target) {
   const debuffs = target.status?.debuffs || {};
   const now = Date.now();
@@ -34,7 +36,6 @@ export function getDefenseMultiplier(target) {
       multiplier *= poisonEffect.defMultiplier || 1;
     }
   }
-  // 检查破防效果
   const armorBreak = debuffs.armorBreak;
   if (armorBreak) {
     if (armorBreak.expiresAt && armorBreak.expiresAt < now) {
@@ -46,6 +47,7 @@ export function getDefenseMultiplier(target) {
   return multiplier;
 }
 
+// 物理伤害：攻击浮动 + 防御减免 + 技能倍率
 export function calcDamage(attacker, defender, power = 1) {
   const atk = Math.floor(attacker.atk * randInt(70, 100) / 100);
   let defBonus = 0;
@@ -64,23 +66,28 @@ export function calcDamage(attacker, defender, power = 1) {
   return dmg;
 }
 
+// 直接扣血（带下限）
 export function applyDamage(target, dmg) {
   target.hp = clamp(target.hp - dmg, 0, target.max_hp);
 }
 
+// 直接回血（带上限）
 export function applyHealing(target, amount) {
   target.hp = clamp(target.hp + amount, 0, target.max_hp);
 }
 
+// 施加中毒：特殊BOSS允许多层叠加并按玩家分别冷却
 export function applyPoison(target, turns, tickDamage, sourceName = null) {
-  // 检查是否是特殊BOSS（魔龙教主、世界BOSS、沙巴克BOSS、暗之BOSS）
+  if (!target) return false;
+  if (!target.status) target.status = {};
+  // 处理毒效果（特殊BOSS可叠多层，普通怪只保留一层）
   const isSpecialBoss = Boolean(
     target.templateId &&
     MOB_TEMPLATES[target.templateId]?.specialBoss
   );
 
+  // 特殊BOSS：每个玩家单独冷却，允许多条毒同时存在
   if (isSpecialBoss) {
-    // 特殊BOSS：每个玩家独立的毒效果，每玩家1分钟冷却
     const now = Date.now();
     if (!target.status.poisonsBySource) {
       target.status.poisonsBySource = {};
@@ -89,17 +96,14 @@ export function applyPoison(target, turns, tickDamage, sourceName = null) {
     if (sourceName && target.status.poisonsBySource[sourceName]) {
       const cooldownUntil = target.status.poisonsBySource[sourceName];
       if (now < cooldownUntil) {
-        // 该玩家的毒效果还在冷却中
         return false;
       }
     }
 
-    // 设置该玩家的毒冷却时间为1分钟后
     if (sourceName) {
       target.status.poisonsBySource[sourceName] = now + 60000;
     }
 
-    // 添加新的毒效果
     if (!target.status.activePoisons) {
       target.status.activePoisons = [];
     }
@@ -107,7 +111,7 @@ export function applyPoison(target, turns, tickDamage, sourceName = null) {
     return true;
   }
 
-  // 普通怪物：单一毒效果
+  // 普通目标：只允许单条毒
   if (target.status.poison) {
     return false;
   }
@@ -115,12 +119,12 @@ export function applyPoison(target, turns, tickDamage, sourceName = null) {
   return true;
 }
 
+// 状态Tick：处理中毒、无敌等持续效果
 export function tickStatus(target) {
   const now = Date.now();
 
-  // 检查是否处于无敌状态（免疫毒伤害）
+  // 无敌状态：清除毒相关效果
   if (target.status?.invincible && target.status.invincible > now) {
-    // 无敌状态，清除所有毒效果
     if (target.status.activePoisons) {
       delete target.status.activePoisons;
     }
@@ -134,7 +138,7 @@ export function tickStatus(target) {
     return null;
   }
 
-  // 特殊BOSS的多个毒效果处理
+  // 多层毒（特殊BOSS）
   if (target.status.activePoisons && target.status.activePoisons.length > 0) {
     const isSpecialBoss = Boolean(
       target.templateId &&
@@ -145,7 +149,7 @@ export function tickStatus(target) {
     const remainingPoisons = [];
     const damageBySource = {}; // 记录每个玩家造成的伤害
 
-    // 按玩家分组计算毒伤害总和，每个玩家上限1000
+    // 按来源汇总，用于单来源伤害上限
     const totalDamageBySource = {};
     for (const poison of target.status.activePoisons) {
       const source = poison.sourceName || 'unknown';
@@ -159,7 +163,7 @@ export function tickStatus(target) {
       const source = poison.sourceName || 'unknown';
       let damage = poison.tickDamage;
 
-      // 特殊BOSS：同一玩家的毒效果总和上限为1000
+      // 特殊BOSS：同一来源每跳总伤害上限 1000
       if (isSpecialBoss && totalDamageBySource[source] > 1000) {
         damage = Math.floor(damage * (1000 / totalDamageBySource[source]));
       }
@@ -167,7 +171,6 @@ export function tickStatus(target) {
       applyDamage(target, damage);
       totalDamage += damage;
 
-      // 记录每个玩家造成的伤害
       if (!damageBySource[source]) {
         damageBySource[source] = 0;
       }
@@ -189,7 +192,7 @@ export function tickStatus(target) {
     return { type: 'poison', dmg: totalDamage, damageBySource };
   }
 
-  // 普通怪物/玩家的单一毒效果处理
+  // 单层毒（普通目标）
   if (target.status.poison && target.status.poison.turns > 0) {
     const damage = target.status.poison.tickDamage;
     const sourceName = target.status.poison.sourceName;
@@ -205,7 +208,7 @@ export function tickStatus(target) {
     };
   }
 
-  // 清理过期的中毒冷却
+  // 清理毒冷却记录
   if (target.status.poisonsBySource) {
     for (const [sourceName, cooldownUntil] of Object.entries(target.status.poisonsBySource)) {
       if (now >= cooldownUntil) {
