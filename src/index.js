@@ -7465,7 +7465,6 @@ async function combatTick() {
             player.send(`连击触发，对 ${mob.name} 造成 ${dmg} 点伤害。`);
           }
         }
-        const mobImmuneToDebuffs = enforceSpecialBossDebuffImmunity(mob, player.realmId || 1);
         if (!mobImmuneToDebuffs && tryApplyHealBlockEffect(player, mob)) {
           player.send(`禁疗效果作用于 ${mob.name}。`);
         }
@@ -7495,6 +7494,7 @@ async function combatTick() {
         }
       }
 
+      const mobImmuneToDebuffs = enforceSpecialBossDebuffImmunity(mob, player.realmId || 1);
       if (!mobImmuneToDebuffs && hasSpecialRingEquipped(player, 'ring_magic') &&
           canTriggerMagicRing(player, chosenSkillId, skill) &&
           Math.random() <= 0.1) {
