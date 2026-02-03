@@ -1068,14 +1068,15 @@ function appendLine(payload) {
     }
 
     if (!skipPoisonFloat && amount && targetName && !isSummonName(targetName)) {
+      const applyFn = isHealLine ? applyLocalHeal : applyLocalDamage;
       if (targetIsPlayer) {
-        const updated = applyLocalDamage('players', targetName, Number(amount));
+        const updated = applyFn('players', targetName, Number(amount));
         if (updated) {
           const card = pickPlayerCardByName(targetName);
           updateBattleCardHp(card, updated.hp, updated.maxHp, false);
         }
       } else if (targetName !== selfName) {
-        const updated = applyLocalDamage('mobs', targetName, Number(amount));
+        const updated = applyFn('mobs', targetName, Number(amount));
         if (updated) {
           const card = pickMobCardByName(targetName);
           updateBattleCardHp(card, updated.hp, updated.maxHp, true);
@@ -5610,6 +5611,16 @@ function applyLocalDamage(type, name, amount) {
   const cached = localHpCache[type].get(name);
   if (!cached) return null;
   const nextHp = Math.max(0, cached.hp - amount);
+  cached.hp = nextHp;
+  localHpCache[type].set(name, cached);
+  return cached;
+}
+
+function applyLocalHeal(type, name, amount) {
+  if (!name || !amount || !localHpCache[type]) return null;
+  const cached = localHpCache[type].get(name);
+  if (!cached) return null;
+  const nextHp = Math.min(cached.maxHp || cached.hp, cached.hp + amount);
   cached.hp = nextHp;
   localHpCache[type].set(name, cached);
   return cached;
