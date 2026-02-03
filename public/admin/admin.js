@@ -1357,6 +1357,7 @@ async function loadWorldBossSettings() {
     document.getElementById('wb-base-def').value = data.baseDef || '';
     document.getElementById('wb-base-mdef').value = data.baseMdef || '';
     document.getElementById('wb-drop-bonus').value = data.dropBonus || '';
+    document.getElementById('wb-respawn-mins').value = data.respawnMinutes || '';
     renderPlayerBonusList(data.playerBonusConfig || []);
     msg.textContent = '加载成功';
     msg.style.color = 'green';
@@ -1436,6 +1437,7 @@ async function saveWorldBossSettings() {
       baseDef: Number(document.getElementById('wb-base-def').value),
       baseMdef: Number(document.getElementById('wb-base-mdef').value),
       dropBonus: Number(document.getElementById('wb-drop-bonus').value),
+      respawnMinutes: Number(document.getElementById('wb-respawn-mins').value),
       playerBonusConfig
     });
     msg.textContent = '保存成功';
@@ -1509,23 +1511,6 @@ function addPlayerBonusConfig() {
   const currentConfigs = getPlayerBonusConfigFromUI();
   currentConfigs.push({ min: 1, hp: 0, atk: 0, def: 0, mdef: 0 });
   renderPlayerBonusList(currentConfigs);
-}
-
-async function respawnWorldBoss() {
-  if (!document.getElementById('wb-msg')) return;
-  const msg = document.getElementById('wb-msg');
-  msg.textContent = '';
-  const confirmed = await customConfirm('刷新世界BOSS', '确定要立即刷新所有区服的世界BOSS吗？\n\n这会删除当前的所有世界BOSS并重新生成。');
-  if (!confirmed) return;
-
-  try {
-    const data = await api('/admin/worldboss-respawn', 'POST', {});
-    msg.textContent = data.message || '刷新成功';
-    msg.style.color = 'green';
-  } catch (err) {
-    msg.textContent = err.message;
-    msg.style.color = 'red';
-  }
 }
 
 // 修炼系统配置
@@ -4301,6 +4286,7 @@ async function saveWorldBossSettings() {
       baseDef: document.getElementById('wb-base-def').value,
       baseMdef: document.getElementById('wb-base-mdef').value,
       dropBonus: document.getElementById('wb-drop-bonus').value,
+      respawnMinutes: document.getElementById('wb-respawn-mins').value,
       playerBonusConfig
     });
     wbMsg.textContent = '保存成功';
@@ -4367,18 +4353,6 @@ async function saveTrainingSettings() {
   } catch (err) {
     trainingMsg.textContent = `保存失败: ${err.message}`;
     trainingMsg.style.color = 'red';
-  }
-}
-
-async function respawnWorldBoss() {
-  const confirmed = confirm('确定要刷新世界BOSS吗？');
-  if (!confirmed) return;
-
-  try {
-    await api('/admin/worldboss-respawn', 'POST', {});
-    alert('世界BOSS已刷新');
-  } catch (err) {
-    alert(`刷新失败: ${err.message}`);
   }
 }
 
@@ -4451,6 +4425,7 @@ async function loadSpecialBossSettings() {
     document.getElementById('sb-base-def').value = data.baseDef || '';
     document.getElementById('sb-base-mdef').value = data.baseMdef || '';
     document.getElementById('sb-drop-bonus').value = data.dropBonus || '';
+    document.getElementById('sb-respawn-mins').value = data.respawnMinutes || '';
     specialBossPlayerBonusConfig = data.playerBonusConfig || [];
     renderSpecialBossPlayerBonusList();
   } catch (err) {
@@ -4580,6 +4555,7 @@ async function saveSpecialBossSettings() {
       baseDef: document.getElementById('sb-base-def').value,
       baseMdef: document.getElementById('sb-base-mdef').value,
       dropBonus: document.getElementById('sb-drop-bonus').value,
+      respawnMinutes: document.getElementById('sb-respawn-mins').value,
       playerBonusConfig
     });
     sbMsg.textContent = '保存成功';
@@ -4814,9 +4790,6 @@ async function saveTrainingSettings() {
   }
 }
 document.getElementById('wb-save-btn').addEventListener('click', saveWorldBossSettings);
-if (document.getElementById('wb-respawn-btn')) {
-  document.getElementById('wb-respawn-btn').addEventListener('click', respawnWorldBoss);
-}
 if (document.getElementById('wb-add-bonus-btn')) {
   document.getElementById('wb-add-bonus-btn').addEventListener('click', addPlayerBonusConfig);
 }

@@ -229,6 +229,17 @@ export async function setWorldBossBaseGold(gold) {
   await setSetting('world_boss_base_gold', String(normalized));
 }
 
+export async function getWorldBossRespawnMinutes() {
+  const value = await getSetting('world_boss_respawn_minutes', '60');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 60;
+}
+
+export async function setWorldBossRespawnMinutes(minutes) {
+  const normalized = Math.max(1, Math.floor(Number(minutes) || 60));
+  await setSetting('world_boss_respawn_minutes', String(normalized));
+}
+
 // 按人数分段加成配置
 // 格式: [{"min":1,"hp":0,"atk":1000,"def":5000,"mdef":5000},{"min":2,"hp":0,"atk":1000,"def":0,"mdef":0}]
 // 1人: +1000攻击, +5000防御, +5000魔御
@@ -324,6 +335,17 @@ export async function getSpecialBossBaseGold() {
 export async function setSpecialBossBaseGold(gold) {
   const normalized = Math.max(0, Math.floor(Number(gold) || 2000));
   await setSetting('special_boss_base_gold', String(normalized));
+}
+
+export async function getSpecialBossRespawnMinutes() {
+  const value = await getSetting('special_boss_respawn_minutes', '60');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 60;
+}
+
+export async function setSpecialBossRespawnMinutes(minutes) {
+  const normalized = Math.max(1, Math.floor(Number(minutes) || 60));
+  await setSetting('special_boss_respawn_minutes', String(normalized));
 }
 
 export async function getSpecialBossPlayerBonusConfig() {

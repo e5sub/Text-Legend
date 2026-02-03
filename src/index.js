@@ -17,7 +17,7 @@ import { addGuildMember, createGuild, getGuildByName, getGuildByNameInRealm, get
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
 import { sendMail, listMail, listSentMail, markMailRead, markMailClaimed, deleteMail } from './db/mail.js';
 import { createVipCodes, listVipCodes, useVipCode } from './db/vip.js';
-import { getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb } from './db/settings.js';
+import { getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb } from './db/settings.js';
 import { listRealms, getRealmById, updateRealmName, createRealm } from './db/realms.js';
 import { listMobRespawns, upsertMobRespawn, clearMobRespawn, saveMobState } from './db/mobs.js';
 import {
@@ -545,6 +545,7 @@ app.get('/admin/worldboss-settings', async (req, res) => {
   const baseMdef = await getWorldBossBaseMdef();
   const baseExp = await getWorldBossBaseExp();
   const baseGold = await getWorldBossBaseGold();
+  const respawnMinutes = await getWorldBossRespawnMinutes();
   const playerBonusConfig = await getWorldBossPlayerBonusConfig();
   res.json({
     ok: true,
@@ -555,6 +556,7 @@ app.get('/admin/worldboss-settings', async (req, res) => {
     baseMdef,
     baseExp,
     baseGold,
+    respawnMinutes,
     playerBonusConfig
   });
 });
@@ -562,7 +564,7 @@ app.get('/admin/worldboss-settings', async (req, res) => {
 app.post('/admin/worldboss-settings/update', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
-  const { dropBonus, baseHp, baseAtk, baseDef, baseMdef, baseExp, baseGold, playerBonusConfig } = req.body || {};
+  const { dropBonus, baseHp, baseAtk, baseDef, baseMdef, baseExp, baseGold, respawnMinutes, playerBonusConfig } = req.body || {};
 
   if (dropBonus !== undefined) {
     await setWorldBossDropBonus(Math.max(1, Math.floor(Number(dropBonus) || 1.5)));
@@ -585,6 +587,9 @@ app.post('/admin/worldboss-settings/update', async (req, res) => {
   if (baseGold !== undefined) {
     const goldMin = Math.max(0, Math.floor(Number(baseGold) || 2000));
     await setWorldBossBaseGold(goldMin);
+  }
+  if (respawnMinutes !== undefined) {
+    await setWorldBossRespawnMinutes(Math.max(1, Math.floor(Number(respawnMinutes) || 60)));
   }
   if (playerBonusConfig !== undefined) {
     // 验证配置格式
@@ -619,6 +624,7 @@ app.post('/admin/worldboss-settings/update', async (req, res) => {
     baseMdef: await getWorldBossBaseMdef(),
     baseExp: await getWorldBossBaseExp(),
     baseGold: await getWorldBossBaseGold(),
+    respawnMinutes: await getWorldBossRespawnMinutes(),
     playerBonusConfig: await getWorldBossPlayerBonusConfig()
   });
 });
@@ -1155,6 +1161,7 @@ app.get('/admin/specialboss-settings', async (req, res) => {
   const baseMdef = await getSpecialBossBaseMdef();
   const baseExp = await getSpecialBossBaseExp();
   const baseGold = await getSpecialBossBaseGold();
+  const respawnMinutes = await getSpecialBossRespawnMinutes();
   const playerBonusConfig = await getSpecialBossPlayerBonusConfig();
   res.json({
     ok: true,
@@ -1165,6 +1172,7 @@ app.get('/admin/specialboss-settings', async (req, res) => {
     baseMdef,
     baseExp,
     baseGold,
+    respawnMinutes,
     playerBonusConfig
   });
 });
@@ -1172,7 +1180,7 @@ app.get('/admin/specialboss-settings', async (req, res) => {
 app.post('/admin/specialboss-settings/update', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
-  const { dropBonus, baseHp, baseAtk, baseDef, baseMdef, baseExp, baseGold, playerBonusConfig } = req.body || {};
+  const { dropBonus, baseHp, baseAtk, baseDef, baseMdef, baseExp, baseGold, respawnMinutes, playerBonusConfig } = req.body || {};
 
   if (dropBonus !== undefined) {
     await setSpecialBossDropBonus(Math.max(1, Math.floor(Number(dropBonus) || 1.5)));
@@ -1195,6 +1203,9 @@ app.post('/admin/specialboss-settings/update', async (req, res) => {
   if (baseGold !== undefined) {
     const goldMin = Math.max(0, Math.floor(Number(baseGold) || 2000));
     await setSpecialBossBaseGold(goldMin);
+  }
+  if (respawnMinutes !== undefined) {
+    await setSpecialBossRespawnMinutes(Math.max(1, Math.floor(Number(respawnMinutes) || 60)));
   }
   if (playerBonusConfig !== undefined) {
     let validConfig = [];
@@ -2651,6 +2662,8 @@ const bossClassFirstDamageRewardGiven = new Map(); // 追踪特殊BOSS各职业�
 async function applyWorldBossSettings() {
   // 从数据库加载世界BOSS设置并应用到常量
   WORLD_BOSS_DROP_BONUS = await getWorldBossDropBonus();
+  const respawnMinutes = await getWorldBossRespawnMinutes();
+  const respawnMs = Math.max(1, respawnMinutes) * 60 * 1000;
 
   // 应用到世界BOSS模板
   const worldBossTemplate = MOB_TEMPLATES.world_boss;
@@ -2660,6 +2673,7 @@ async function applyWorldBossSettings() {
     worldBossTemplate.def = await getWorldBossBaseDef();
     worldBossTemplate.mdef = await getWorldBossBaseMdef();
     worldBossTemplate.exp = await getWorldBossBaseExp();
+    worldBossTemplate.respawnMs = respawnMs;
 
     const baseGold = await getWorldBossBaseGold();
     worldBossTemplate.gold = [baseGold, Math.floor(baseGold * 1.6)];
@@ -2677,6 +2691,8 @@ async function applySpecialBossSettings() {
   const baseMdef = await getSpecialBossBaseMdef();
   const baseExp = await getSpecialBossBaseExp();
   const baseGold = await getSpecialBossBaseGold();
+  const respawnMinutes = await getSpecialBossRespawnMinutes();
+  const respawnMs = Math.max(1, respawnMinutes) * 60 * 1000;
 
   // 应用到所有特殊BOSS模板（魔龙教主、暗之系列BOSS、沙巴克BOSS）
   // 注意：world_boss虽然也有specialBoss标记，但它使用独立的世界BOSS配置，不在此处处理
@@ -2700,6 +2716,7 @@ async function applySpecialBossSettings() {
       bossTemplate.mdef = baseMdef;
       bossTemplate.exp = baseExp;
       bossTemplate.gold = [baseGold, Math.floor(baseGold * 1.6)];
+      bossTemplate.respawnMs = respawnMs;
     }
   }
 
