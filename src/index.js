@@ -2807,7 +2807,8 @@ function dropLoot(mobTemplate, bonus = 1) {
     });
   }
   // 全地图怪物都有概率掉落修炼果（爆率可从后台配置）
-  if (Math.random() <= getTrainingFruitDropRate()) {
+  const trainingChance = Math.min(1, getTrainingFruitDropRate() * bonus);
+  if (Math.random() <= trainingChance) {
     loot.push({ id: 'training_fruit', effects: null });
   }
   const rarityDrop = rollRarityDrop(mobTemplate, finalBonus);
@@ -3438,6 +3439,68 @@ function distributeLoot(party, partyMembers, drops) {
       member.send(`队伍掉落: ${formatItemLabel(itemId, effects)} -> ${target.name}`);
     });
   });
+  return results;
+}
+
+function distributeLootWithBonus(party, partyMembers, mobTemplate, bonusResolver) {
+  if (!party || partyMembers.length === 0 || !mobTemplate) return [];
+  const results = [];
+  const sabakBonus = mobTemplate.sabakBoss ? 3.0 : 1.0;
+  const worldBossBonus = mobTemplate.worldBoss ? WORLD_BOSS_DROP_BONUS : 1;
+  const resolveFinalBonus = (target) => {
+    const baseBonus = typeof bonusResolver === 'function' ? bonusResolver(target) : 1;
+    return baseBonus * worldBossBonus * sabakBonus;
+  };
+  const notifyParty = (target, itemId, effects) => {
+    partyMembers.forEach((member) => {
+      member.send(`队伍掉落: ${formatItemLabel(itemId, effects)} -> ${target.name}`);
+    });
+  };
+
+  if (mobTemplate.drops) {
+    mobTemplate.drops.forEach((drop) => {
+      const dropItem = ITEM_TEMPLATES[drop.id];
+      if (dropItem?.bossOnly && !isBossMob(mobTemplate)) return;
+      if (dropItem?.worldBossOnly && !mobTemplate.worldBoss) return;
+      if (dropItem?.bossOnly) {
+        const rarity = rarityByPrice(dropItem);
+        if ((rarity === 'epic' || rarity === 'legendary') && !isSpecialBoss(mobTemplate)) {
+          return;
+        }
+      }
+      const target = partyMembers[randInt(0, partyMembers.length - 1)];
+      const finalBonus = resolveFinalBonus(target);
+      const chance = Math.min(1, (drop.chance || 0) * finalBonus);
+      if (Math.random() <= chance) {
+        const effects = rollEquipmentEffects(drop.id);
+        addItem(target, drop.id, 1, effects);
+        logLoot(`[loot][party] ${target.name} <- ${drop.id}`);
+        results.push({ id: drop.id, effects, target });
+        notifyParty(target, drop.id, effects);
+      }
+    });
+  }
+
+  const trainingTarget = partyMembers[randInt(0, partyMembers.length - 1)];
+  const trainingBonus = typeof bonusResolver === 'function' ? bonusResolver(trainingTarget) : 1;
+  const trainingChance = Math.min(1, getTrainingFruitDropRate() * trainingBonus);
+  if (Math.random() <= trainingChance) {
+    addItem(trainingTarget, 'training_fruit', 1, null);
+    logLoot(`[loot][party] ${trainingTarget.name} <- training_fruit`);
+    results.push({ id: 'training_fruit', effects: null, target: trainingTarget });
+    notifyParty(trainingTarget, 'training_fruit', null);
+  }
+
+  const rarityTarget = partyMembers[randInt(0, partyMembers.length - 1)];
+  const rarityDrop = rollRarityDrop(mobTemplate, resolveFinalBonus(rarityTarget));
+  if (rarityDrop) {
+    const effects = rollEquipmentEffects(rarityDrop);
+    addItem(rarityTarget, rarityDrop, 1, effects);
+    logLoot(`[loot][party] ${rarityTarget.name} <- ${rarityDrop}`);
+    results.push({ id: rarityDrop, effects, target: rarityTarget });
+    notifyParty(rarityTarget, rarityDrop, effects);
+  }
+
   return results;
 }
 
@@ -6771,10 +6834,16 @@ async function processMobDeath(player, mob, online) {
   const supremeClassAwarded = new Set();
   const lootOwnersToSave = new Set();
   dropTargets.forEach(({ player: owner, damageRatio, rank, classRank }) => {
-      const drops = dropLoot(template, 1);
+      const vipDropBonus = isVipActive(owner) ? 1.01 : 1;
+      const drops = dropLoot(template, vipDropBonus);
       if (!drops.length) return;
       if (!isSpecialBoss && party && partyMembersForLoot.length > 0) {
-        const distributed = distributeLoot(party, partyMembersForLoot, drops);
+        const distributed = distributeLootWithBonus(
+          party,
+          partyMembersForLoot,
+          template,
+          (member) => (isVipActive(member) ? 1.01 : 1)
+        );
         distributed.forEach(({ id, effects, target }) => {
           const item = ITEM_TEMPLATES[id];
           if (!item) return;
