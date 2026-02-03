@@ -77,74 +77,49 @@
     </section>
 
     <section id="game" class="panel hidden">
-      <div class="status-grid">
-        <div class="status-card">
-          <div class="status-title">角色信息</div>
-          <div class="status-row"><span>区服</span><strong id="ui-realm">-</strong></div>
-          <div class="status-row"><span>角色</span><strong id="ui-name">-</strong></div>
-          <div class="status-row"><span>职业/等级</span><strong id="ui-class">-</strong></div>
-          <div class="status-row"><span>行会</span><strong id="ui-guild">-</strong></div>
-          <div class="status-row"><span>PK/状态</span><strong id="ui-pk">-</strong></div>
-          <div class="status-row"><span>VIP</span><strong id="ui-vip">-</strong></div>
-          <div class="status-row"><span>在线人数</span><strong id="ui-online">-</strong></div>
-          <div class="status-row"><span>服务器时间</span><strong id="ui-server-time">-</strong></div>
-          <div class="status-row"><span>队伍成员</span><strong id="ui-party">-</strong></div>
-          <div class="status-row gold-row"><span>金币</span><strong id="ui-gold">0</strong></div>
-        </div>
-        <div class="status-card">
-          <div class="status-title">状态条</div>
-          <div class="bar-label">生命</div>
-          <div class="bar"><div id="bar-hp" class="bar-fill hp"></div></div>
-          <div class="status-row"><span>生命值</span><strong id="ui-hp">0/0</strong></div>
-          <div class="bar-label">魔法</div>
-          <div class="bar"><div id="bar-mp" class="bar-fill mp"></div></div>
-          <div class="status-row"><span>魔法值</span><strong id="ui-mp">0/0</strong></div>
-          <div class="bar-label">经验</div>
-          <div class="bar"><div id="bar-exp" class="bar-fill exp"></div></div>
-          <div class="status-row"><span>经验值</span><strong id="ui-exp">0/0</strong></div>
-          <div class="status-grid-3">
-            <div class="status-row compact"><span>攻击</span><strong id="ui-atk">0</strong></div>
-            <div class="status-row compact"><span>防御</span><strong id="ui-def">0</strong></div>
-            <div class="status-row compact"><span>魔法</span><strong id="ui-mag">0</strong></div>
-            <div class="status-row compact"><span>道术</span><strong id="ui-spirit">0</strong></div>
-            <div class="status-row compact"><span>魔御</span><strong id="ui-mdef">0</strong></div>
-            <div class="status-row compact"><span>闪避</span><strong id="ui-dodge">0</strong></div>
-            <div class="status-row compact wide"><span id="ui-bonus-line">沙巴克加成：- | 套装加成：-</span></div>
-          </div>
-        </div>
-        <div class="status-card">
-          <div class="status-title">常用操作</div>
-          <div id="actions-list" class="chip-grid"></div>
-        </div>
-        <div class="status-card status-log">
-          <div class="log-wrap" id="log-wrap">
-            <div class="log-header">
-              <span>&#x6218;&#x6597;&#x4E0E;&#x7CFB;&#x7EDF;&#x65E5;&#x5FD7;</span>
-              <div class="log-header-right">
-                <label class="log-filter switch">
-                  <input type="checkbox" id="log-show-damage" checked>
-                  <span class="switch-slider" aria-hidden="true"></span>
-                  <span class="switch-label">伤害</span>
-                </label>
-                <label class="log-filter switch">
-                  <input type="checkbox" id="log-show-exp-gold" checked>
-                  <span class="switch-slider" aria-hidden="true"></span>
-                  <span class="switch-label">经验/金币</span>
-                </label>
-                <label class="log-filter switch">
-                  <input type="checkbox" id="log-throttle-normal">
-                  <span class="switch-slider" aria-hidden="true"></span>
-                  <span class="switch-label">正常刷新</span>
-                </label>
-                <span class="tag">&#x5B9E;&#x65F6;</span>
-                <button id="log-toggle" class="log-toggle" type="button">▲</button>
+      <div class="game-layout">
+        <div class="game-main">
+          <div class="status-grid">
+            <div class="status-card">
+              <div class="status-title">角色信息</div>
+              <div class="status-row"><span>区服</span><strong id="ui-realm">-</strong></div>
+              <div class="status-row"><span>角色</span><strong id="ui-name">-</strong></div>
+              <div class="status-row"><span>职业/等级</span><strong id="ui-class">-</strong></div>
+              <div class="status-row"><span>行会</span><strong id="ui-guild">-</strong></div>
+              <div class="status-row"><span>PK/状态</span><strong id="ui-pk">-</strong></div>
+              <div class="status-row"><span>VIP</span><strong id="ui-vip">-</strong></div>
+              <div class="status-row"><span>在线人数</span><strong id="ui-online">-</strong></div>
+              <div class="status-row"><span>服务器时间</span><strong id="ui-server-time">-</strong></div>
+              <div class="status-row"><span>队伍成员</span><strong id="ui-party">-</strong></div>
+              <div class="status-row gold-row"><span>金币</span><strong id="ui-gold">0</strong></div>
+            </div>
+            <div class="status-card">
+              <div class="status-title">状态条</div>
+              <div class="bar-label">生命</div>
+              <div class="bar"><div id="bar-hp" class="bar-fill hp"></div></div>
+              <div class="status-row"><span>生命值</span><strong id="ui-hp">0/0</strong></div>
+              <div class="bar-label">魔法</div>
+              <div class="bar"><div id="bar-mp" class="bar-fill mp"></div></div>
+              <div class="status-row"><span>魔法值</span><strong id="ui-mp">0/0</strong></div>
+              <div class="bar-label">经验</div>
+              <div class="bar"><div id="bar-exp" class="bar-fill exp"></div></div>
+              <div class="status-row"><span>经验值</span><strong id="ui-exp">0/0</strong></div>
+              <div class="status-grid-3">
+                <div class="status-row compact"><span>攻击</span><strong id="ui-atk">0</strong></div>
+                <div class="status-row compact"><span>防御</span><strong id="ui-def">0</strong></div>
+                <div class="status-row compact"><span>魔法</span><strong id="ui-mag">0</strong></div>
+                <div class="status-row compact"><span>道术</span><strong id="ui-spirit">0</strong></div>
+                <div class="status-row compact"><span>魔御</span><strong id="ui-mdef">0</strong></div>
+                <div class="status-row compact"><span>闪避</span><strong id="ui-dodge">0</strong></div>
+                <div class="status-row compact wide"><span id="ui-bonus-line">沙巴克加成：- | 套装加成：-</span></div>
               </div>
             </div>
-            <div class="battle-log log" id="log"></div>
+            <div class="status-card">
+              <div class="status-title">常用操作</div>
+              <div id="actions-list" class="chip-grid"></div>
+            </div>
           </div>
-        </div>
-      </div>
-      <div class="game-grid">
+          <div class="game-grid">
         <div class="main-column">
           <div class="battle-wrap">
             <div class="battle-panel">
@@ -229,6 +204,35 @@
           </div>
           <div class="divider"></div>
         </div>
+      </div>
+      </div>
+      <div class="status-card status-log">
+        <div class="log-wrap" id="log-wrap">
+          <div class="log-header">
+            <span>&#x6218;&#x6597;&#x4E0E;&#x7CFB;&#x7EDF;&#x65E5;&#x5FD7;</span>
+            <div class="log-header-right">
+              <label class="log-filter switch">
+                <input type="checkbox" id="log-show-damage" checked>
+                <span class="switch-slider" aria-hidden="true"></span>
+                <span class="switch-label">伤害</span>
+              </label>
+              <label class="log-filter switch">
+                <input type="checkbox" id="log-show-exp-gold" checked>
+                <span class="switch-slider" aria-hidden="true"></span>
+                <span class="switch-label">经验/金币</span>
+              </label>
+              <label class="log-filter switch">
+                <input type="checkbox" id="log-throttle-normal">
+                <span class="switch-slider" aria-hidden="true"></span>
+                <span class="switch-label">正常刷新</span>
+              </label>
+              <span class="tag">&#x5B9E;&#x65F6;</span>
+              <button id="log-toggle" class="log-toggle" type="button">▲</button>
+            </div>
+          </div>
+          <div class="battle-log log" id="log"></div>
+        </div>
+      </div>
       </div>
     </section>
   </div>

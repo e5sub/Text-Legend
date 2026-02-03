@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Spectral:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Spectral:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
 :root {
   --bg: #f3ead7;
@@ -702,7 +702,7 @@ body::after {
 }
 
 #app {
-  max-width: 1200px;
+  max-width: 1760px;
   margin: 0 auto;
   padding: 32px 20px 60px;
   position: relative;
@@ -995,6 +995,20 @@ button:hover {
   gap: 18px;
 }
 
+.game-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 3.2fr) minmax(0, 1.2fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.game-main {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
 .main-column {
   display: flex;
   flex-direction: column;
@@ -1014,9 +1028,9 @@ button:hover {
 
 .status-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
-  margin-bottom: 16px;
+  margin-bottom: 0;
 }
 
 .status-card {
@@ -1027,13 +1041,23 @@ button:hover {
   box-shadow: inset 0 0 0 1px rgba(255, 224, 190, 0.35);
 }
 
+.status-log {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+}
+
 .status-log .log-wrap {
+  flex: 1;
   height: 100%;
   min-height: 360px;
 }
 
 .status-log .log {
-  max-height: 420px;
+  max-height: none;
+  height: 100%;
+  overflow-y: auto;
 }
 
 #change-password-btn {
@@ -2106,6 +2130,9 @@ body.dark .chat-name-btn.sponsor-player-name:hover {
     grid-template-columns: 1fr;
   }
   .game-grid {
+    grid-template-columns: 1fr;
+  }
+  .game-layout {
     grid-template-columns: 1fr;
   }
   header h1 {
@@ -5122,6 +5149,9 @@ body.dark .sponsor-markdown .sponsor-tip {
     font-size: 0.85rem;
   }
 }
+
+
+
 
 
 
