@@ -3773,6 +3773,16 @@ function isSpecialBossDebuffImmune(target) {
   return hp / maxHp <= 0.8;
 }
 
+function isSpecialBossEnraged(mob) {
+  if (!mob || !mob.templateId) return false;
+  const tpl = MOB_TEMPLATES[mob.templateId];
+  if (!tpl?.specialBoss) return false;
+  const maxHp = Number(mob.max_hp ?? tpl.hp ?? 0) || 0;
+  if (maxHp <= 0) return false;
+  const hp = Number(mob.hp ?? maxHp) || 0;
+  return hp / maxHp <= 0.1;
+}
+
 function clearNegativeStatuses(target) {
   if (!target?.status) return;
   delete target.status.stunTurns;
@@ -7668,6 +7678,7 @@ async function combatTick() {
     if (Math.random() <= mobHitChance) {
       const isWorldBoss = Boolean(mobTemplate?.worldBoss);
       const isSpecialBoss = Boolean(mobTemplate?.specialBoss);
+      const enragedMultiplier = isSpecialBossEnraged(mob) ? 2 : 1;
       if (!isWorldBoss && !isSpecialBoss && mobTarget && mobTarget.evadeChance && Math.random() <= mobTarget.evadeChance) {
         if (mobTarget.userId) {
           mobTarget.send(`你闪避了 ${mob.name} 的攻击。`);
@@ -7675,6 +7686,30 @@ async function combatTick() {
           player.send(`${mobTarget.name} 闪避了 ${mob.name} 的攻击。`);
         }
         continue;
+      }
+      if (enragedMultiplier > 1) {
+        if (!mob.status) mob.status = {};
+        if (!mob.status.enragedStatsApplied) {
+          mob.status.enragedStatsApplied = true;
+          mob.def = Math.floor((mob.def || 0) * enragedMultiplier);
+          mob.mdef = Math.floor((mob.mdef || 0) * enragedMultiplier);
+          if (mob.status.baseStats) {
+            mob.status.baseStats.def = mob.def;
+            mob.status.baseStats.mdef = mob.mdef;
+          }
+        }
+      } else if (mob.status?.enragedStatsApplied) {
+        mob.status.enragedStatsApplied = false;
+        const baseStats = mob.status?.baseStats;
+        const tpl = mobTemplate;
+        const baseDef = baseStats?.def ?? tpl?.def ?? mob.def ?? 0;
+        const baseMdef = baseStats?.mdef ?? tpl?.mdef ?? mob.mdef ?? 0;
+        mob.def = Math.floor(baseDef);
+        mob.mdef = Math.floor(baseMdef);
+        if (mob.status?.baseStats) {
+          mob.status.baseStats.def = mob.def;
+          mob.status.baseStats.mdef = mob.mdef;
+        }
       }
       let dmg = calcDamage(mob, mobTarget, 1);
       let handledAoe = false;
@@ -7687,7 +7722,8 @@ async function combatTick() {
         } else if (mobSkill.type === 'spell') {
           dmg = calcMagicDamageFromValue(Math.floor((mob.atk || 0) * mobSkillPower), mobTarget);
         } else if (mobSkill.type === 'dot') {
-          applyPoison(mobTarget, 10, calcPoisonTickDamage(mobTarget), mob.name);
+          const tickDmg = calcPoisonTickDamage(mobTarget);
+          applyPoison(mobTarget, 10, Math.max(1, Math.floor(tickDmg * enragedMultiplier)), mob.name);
           applyPoisonDebuff(mobTarget);
           dmg = calcTaoistDamageFromValue(Math.floor((mob.atk || 0) * mobSkillPower), mobTarget);
         } else if (mobSkill.type === 'aoe') {
@@ -7697,7 +7733,9 @@ async function combatTick() {
             p.hp > 0
           );
           roomPlayers.forEach((target) => {
-            const aoeDmg = calcMagicDamageFromValue(Math.floor((mob.atk || 0) * mobSkillPower), target);
+            const aoeDmg = Math.floor(
+              calcMagicDamageFromValue(Math.floor((mob.atk || 0) * mobSkillPower), target) * enragedMultiplier
+            );
             const dealt = applyDamageToPlayer(target, aoeDmg);
             target.send(`${mob.name} 的 ${mobSkill.name} 对你造成 ${dealt} 点伤害。`);
             if (target.hp <= 0 && !tryRevive(target)) {
@@ -7781,6 +7819,9 @@ async function combatTick() {
           player.send(`${mob.name} 对 ${mobTarget.name} 暴击！造成 ${dmg} 点伤害。`);
         }
       }
+      if (enragedMultiplier > 1) {
+        dmg = Math.floor(dmg * enragedMultiplier);
+      }
       if (mobTarget && mobTarget.userId) {
         const damageDealt = applyDamageToPlayer(mobTarget, dmg);
         mobTarget.send(`${mob.name} 对你造成 ${damageDealt} 点伤害。`);
@@ -7793,7 +7834,7 @@ async function combatTick() {
         
         // 特殊BOSS溅射效果：对房间所有其他玩家和召唤物造成BOSS攻击力50%的溅射伤害
         if (isSpecialBoss && online && online.length > 0) {
-          const splashDmg = Math.floor(mob.atk * 0.5);
+          const splashDmg = Math.floor(mob.atk * 0.5 * enragedMultiplier);
           const roomPlayers = online.filter((p) => 
             p.name !== mobTarget.name &&
             p.position.zone === player.position.zone &&
@@ -7841,7 +7882,7 @@ async function combatTick() {
         
         // 特殊BOSS溅射效果：主目标是召唤物时，对玩家和房间所有其他玩家及召唤物造成BOSS攻击力50%的溅射伤害
         if (isSpecialBoss && online && online.length > 0) {
-          const splashDmg = Math.floor(mob.atk * 0.5);
+          const splashDmg = Math.floor(mob.atk * 0.5 * enragedMultiplier);
           
           // 溅射到召唤物的主人
           if (player && player.hp > 0) {
