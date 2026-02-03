@@ -3767,10 +3767,7 @@ function isSpecialBossDebuffImmune(target) {
   if (!target || !target.templateId) return false;
   const tpl = MOB_TEMPLATES[target.templateId];
   if (!tpl?.specialBoss) return false;
-  const maxHp = Number(target.max_hp ?? tpl.hp ?? 0) || 0;
-  if (maxHp <= 0) return false;
-  const hp = Number(target.hp ?? maxHp) || 0;
-  return hp / maxHp <= 0.8;
+  return true;
 }
 
 function isSpecialBossEnraged(mob) {
@@ -3790,7 +3787,11 @@ function clearNegativeStatuses(target) {
   delete target.status.activePoisons;
   delete target.status.poisonsBySource;
   if (target.status.debuffs) {
+    const healBlock = target.status.debuffs.healBlock;
     delete target.status.debuffs;
+    if (healBlock) {
+      target.status.debuffs = { healBlock };
+    }
   }
 }
 
@@ -7440,7 +7441,7 @@ async function combatTick() {
             player.send(`你对 ${target.name} 造成 ${aoeDmg} 点伤害。`);
           }
           const targetImmuneToDebuffs = enforceSpecialBossDebuffImmunity(target, player.realmId || 1);
-          if (!targetImmuneToDebuffs && tryApplyHealBlockEffect(player, target)) {
+          if (tryApplyHealBlockEffect(player, target)) {
             player.send(`禁疗效果作用于 ${target.name}。`);
           }
           if (target.id !== mob.id) {
@@ -7476,7 +7477,7 @@ async function combatTick() {
             player.send(`连击触发，对 ${mob.name} 造成 ${dmg} 点伤害。`);
           }
         }
-        if (!mobImmuneToDebuffs && tryApplyHealBlockEffect(player, mob)) {
+        if (tryApplyHealBlockEffect(player, mob)) {
           player.send(`禁疗效果作用于 ${mob.name}。`);
         }
         if (skill && skill.id === 'assassinate') {
@@ -7489,7 +7490,7 @@ async function combatTick() {
               player.send(`刺杀剑术波及 ${extraTarget.name}，造成 ${extraDmg} 点伤害。`);
             }
             const extraImmuneToDebuffs = enforceSpecialBossDebuffImmunity(extraTarget, player.realmId || 1);
-            if (!extraImmuneToDebuffs && tryApplyHealBlockEffect(player, extraTarget)) {
+            if (tryApplyHealBlockEffect(player, extraTarget)) {
               player.send(`禁疗效果作用于 ${extraTarget.name}。`);
             }
             if (!extraImmuneToDebuffs && tryApplyPoisonEffect(player, extraTarget)) {
