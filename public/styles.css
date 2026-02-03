@@ -1002,6 +1002,11 @@ button:hover {
   align-items: stretch;
 }
 
+body.log-collapsed .game-layout {
+  grid-template-columns: minmax(0, 1200px) 52px;
+  justify-content: center;
+}
+
 .game-main {
   display: flex;
   flex-direction: column;
@@ -1207,8 +1212,10 @@ button:hover {
 
 .log-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 8px;
   padding: 10px 16px;
   background: linear-gradient(90deg, #2c1a0f 0%, #1b1008 100%);
   color: #f7e9d6;
@@ -1217,10 +1224,44 @@ button:hover {
   letter-spacing: 0.5px;
 }
 
+body.log-collapsed .status-log {
+  padding: 8px 6px;
+}
+
+body.log-collapsed .status-log .log-wrap {
+  min-height: auto;
+}
+
+body.log-collapsed .status-log .log-header {
+  align-items: center;
+  padding: 8px 6px;
+}
+
+body.log-collapsed .status-log .log-header > span {
+  display: none;
+}
+
+body.log-collapsed .status-log .log-header-right {
+  width: auto;
+  flex-direction: column;
+  gap: 6px;
+}
+
+body.log-collapsed .status-log .log-filter,
+body.log-collapsed .status-log .tag {
+  display: none;
+}
+
+.log-header > span {
+  white-space: nowrap;
+}
+
 .log-header-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 10px 12px;
+  flex-wrap: wrap;
+  width: 100%;
 }
 
 .log-filter {
