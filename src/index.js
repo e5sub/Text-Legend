@@ -2276,6 +2276,13 @@ const sabakConfig = {
   siegeMinutes: 30
 };
 const deviceOnlineMap = new Map();
+const CROSS_REALM_ZONE_ID = 'crb';
+const CROSS_REALM_REALM_ID = 0;
+
+function getRoomRealmId(zoneId, roomId, realmId = 1) {
+  if (zoneId === CROSS_REALM_ZONE_ID) return CROSS_REALM_REALM_ID;
+  return Number(realmId) || 1;
+}
 
 function listOnlinePlayers(realmId = null) {
   const list = Array.from(players.values());
@@ -2298,7 +2305,8 @@ function sendTo(player, message) {
 }
 
 function sendToRoom(realmId, zoneId, roomId, message) {
-  const roomPlayers = listOnlinePlayers(realmId)
+  const effectiveRealmId = getRoomRealmId(zoneId, roomId, realmId);
+  const roomPlayers = listOnlinePlayers(effectiveRealmId)
     .filter((p) => p.position.zone === zoneId && p.position.room === roomId);
   roomPlayers.forEach((p) => sendTo(p, message));
 }
@@ -2732,12 +2740,13 @@ async function applySpecialBossSettings() {
 
 // 根据房间内玩家数量调整世界BOSS属性（按人数分段加成）
 function adjustWorldBossStatsByPlayerCount(zoneId, roomId, realmId) {
-  const mobs = getAliveMobs(zoneId, roomId, realmId);
+  const effectiveRealmId = getRoomRealmId(zoneId, roomId, realmId);
+  const mobs = getAliveMobs(zoneId, roomId, effectiveRealmId);
   const worldBossMob = mobs.find(m => m.templateId === 'world_boss');
   if (!worldBossMob) return;
 
   // 获取房间内的在线玩家数量
-  const online = listOnlinePlayers(realmId);
+  const online = listOnlinePlayers(effectiveRealmId);
   const roomPlayers = online.filter(p =>
     p.position &&
     p.position.zone === zoneId &&
@@ -3902,7 +3911,7 @@ function enforceSpecialBossDebuffImmunity(target, realmId = null) {
   clearNegativeStatuses(target);
   if (!target.status.debuffImmuneActive) {
     target.status.debuffImmuneActive = true;
-    if (realmId && target.zoneId && target.roomId) {
+    if (realmId !== null && realmId !== undefined && target.zoneId && target.roomId) {
       const roomPlayers = listOnlinePlayers(realmId).filter((p) =>
         p.position.zone === target.zoneId &&
         p.position.room === target.roomId &&
@@ -4169,9 +4178,9 @@ function isBossRoom(zoneId, roomId, realmId = 1) {
   if (!zone) return false;
   const room = zone.rooms[roomId];
   if (!room) return false;
-  
+  const effectiveRealmId = getRoomRealmId(zoneId, roomId, realmId);
   // 检查房间内的怪物是否有特殊BOSS
-  const mobs = getRoomMobs(zoneId, roomId, realmId);
+  const mobs = getRoomMobs(zoneId, roomId, effectiveRealmId);
   return mobs.some(m => {
     const tpl = MOB_TEMPLATES[m.templateId];
     return tpl && tpl.specialBoss;
@@ -4250,26 +4259,27 @@ function buildRoomExits(zoneId, roomId) {
 }
 
 function getRoomCommonState(zoneId, roomId, realmId = 1) {
-  const cacheKey = `${realmId}:${zoneId}:${roomId}`;
+  const effectiveRealmId = getRoomRealmId(zoneId, roomId, realmId);
+  const cacheKey = `${effectiveRealmId}:${zoneId}:${roomId}`;
   const now = Date.now();
   const cached = roomStateDataCache.get(cacheKey);
   if (cached && now - cached.at < ROOM_STATE_TTL) return cached.data;
 
   const zone = WORLD[zoneId];
   const room = zone?.rooms?.[roomId];
-  if (zone && room) spawnMobs(zoneId, roomId, realmId);
+  if (zone && room) spawnMobs(zoneId, roomId, effectiveRealmId);
 
   // 根据房间内玩家数量调整世界BOSS属性
-  adjustWorldBossStatsByPlayerCount(zoneId, roomId, realmId);
+  adjustWorldBossStatsByPlayerCount(zoneId, roomId, effectiveRealmId);
 
-  const mobs = getAliveMobs(zoneId, roomId, realmId).map((m) => ({
+  const mobs = getAliveMobs(zoneId, roomId, effectiveRealmId).map((m) => ({
     id: m.id,
     name: m.name,
     hp: m.hp,
     max_hp: m.max_hp,
     mdef: m.mdef || 0
   }));
-  const roomMobs = getRoomMobs(zoneId, roomId, realmId);
+  const roomMobs = getRoomMobs(zoneId, roomId, effectiveRealmId);
   const deadBosses = roomMobs.filter((m) => {
     const tpl = MOB_TEMPLATES[m.templateId];
     return tpl && m.hp <= 0 && isBossMob(tpl);
@@ -4296,10 +4306,10 @@ function getRoomCommonState(zoneId, roomId, realmId = 1) {
   if (bossMob) {
     const { entries } = buildDamageRankMap(bossMob);
     bossRank = entries.slice(0, 5).map(([name, damage]) => ({ name, damage }));
-    bossClassRank = buildBossClassRank(bossMob, entries, realmId);
+    bossClassRank = buildBossClassRank(bossMob, entries, effectiveRealmId);
   }
 
-  const roomPlayers = listOnlinePlayers(realmId)
+  const roomPlayers = listOnlinePlayers(effectiveRealmId)
     .filter((p) => p.position.zone === zoneId && p.position.room === roomId)
     .map((p) => ({
       name: p.name,
@@ -4329,9 +4339,10 @@ async function buildState(player) {
   normalizeVipStatus(player);
   computeDerived(player);
   const realmId = player.realmId || 1;
+  const roomRealmId = getRoomRealmId(player.position.zone, player.position.room, realmId);
   const zone = WORLD[player.position.zone];
   const room = zone?.rooms[player.position.room];
-  const isBoss = isBossRoom(player.position.zone, player.position.room, realmId);
+  const isBoss = isBossRoom(player.position.zone, player.position.room, roomRealmId);
   let mobs = [];
   let exits = [];
   let nextRespawn = null;
@@ -4340,7 +4351,7 @@ async function buildState(player) {
   let bossClassRank = null;
   let bossNextRespawn = null;
   if (isBoss) {
-    const cached = getRoomCommonState(player.position.zone, player.position.room, realmId);
+    const cached = getRoomCommonState(player.position.zone, player.position.room, roomRealmId);
     mobs = cached.mobs;
     exits = cached.exits;
     nextRespawn = cached.nextRespawn;
@@ -4349,17 +4360,17 @@ async function buildState(player) {
     bossClassRank = cached.bossClassRank || null;
     bossNextRespawn = cached.bossNextRespawn;
   } else {
-    if (zone && room) spawnMobs(player.position.zone, player.position.room, realmId);
+    if (zone && room) spawnMobs(player.position.zone, player.position.room, roomRealmId);
     // 根据房间内玩家数量调整世界BOSS属性
-    adjustWorldBossStatsByPlayerCount(player.position.zone, player.position.room, realmId);
-    mobs = getAliveMobs(player.position.zone, player.position.room, realmId).map((m) => ({
+    adjustWorldBossStatsByPlayerCount(player.position.zone, player.position.room, roomRealmId);
+    mobs = getAliveMobs(player.position.zone, player.position.room, roomRealmId).map((m) => ({
       id: m.id,
       name: m.name,
       hp: m.hp,
       max_hp: m.max_hp,
       mdef: m.mdef || 0
     }));
-    const roomMobs = getRoomMobs(player.position.zone, player.position.room, realmId);
+    const roomMobs = getRoomMobs(player.position.zone, player.position.room, roomRealmId);
     const deadBosses = roomMobs.filter((m) => {
       const tpl = MOB_TEMPLATES[m.templateId];
       return tpl && m.hp <= 0 && isBossMob(tpl);
@@ -4368,7 +4379,7 @@ async function buildState(player) {
       ? deadBosses.sort((a, b) => (a.respawnAt || Infinity) - (b.respawnAt || Infinity))[0]?.respawnAt
       : null;
     exits = buildRoomExits(player.position.zone, player.position.room);
-    roomPlayers = listOnlinePlayers(realmId)
+    roomPlayers = listOnlinePlayers(roomRealmId)
       .filter((p) => p.position.zone === player.position.zone && p.position.room === player.position.room)
       .map((p) => ({
         name: p.name,
@@ -4631,17 +4642,18 @@ async function sendState(player) {
 }
 
 async function sendRoomState(zoneId, roomId, realmId = 1) {
-  const players = listOnlinePlayers(realmId)
+  const effectiveRealmId = getRoomRealmId(zoneId, roomId, realmId);
+  const players = listOnlinePlayers(effectiveRealmId)
     .filter((p) => p.position.zone === zoneId && p.position.room === roomId);
   
   if (players.length === 0) return;
   
   // BOSS房间优化：批量处理，减少序列化开销
-  const isBoss = isBossRoom(zoneId, roomId, realmId);
+  const isBoss = isBossRoom(zoneId, roomId, effectiveRealmId);
   
   if (isBoss && players.length > 5) {
     // BOSS房间且人很多时，使用节流，每100ms最多更新一次
-    const cacheKey = `${realmId}:${zoneId}:${roomId}`;
+    const cacheKey = `${effectiveRealmId}:${zoneId}:${roomId}`;
     const now = Date.now();
     const lastUpdate = roomStateCache.get(cacheKey) || 0;
     
@@ -4667,10 +4679,11 @@ function checkMobRespawn(realmId = 1) {
 
     Object.keys(zone.rooms).forEach((roomId) => {
       const room = zone.rooms[roomId];
-      const mobs = spawnMobs(zoneId, roomId, realmId);
+      const effectiveRealmId = getRoomRealmId(zoneId, roomId, realmId);
+      const mobs = spawnMobs(zoneId, roomId, effectiveRealmId);
 
       // 根据房间内玩家数量调整世界BOSS属性
-      adjustWorldBossStatsByPlayerCount(zoneId, roomId, realmId);
+      adjustWorldBossStatsByPlayerCount(zoneId, roomId, effectiveRealmId);
 
       const respawned = mobs.filter((m) => m.justRespawned);
 
@@ -4696,7 +4709,7 @@ function checkMobRespawn(realmId = 1) {
             `${bossName} 已刷新，点击前往。`,
             'announce',
             locationData,
-            realmId
+            effectiveRealmId || null
           );
         }
       }
@@ -5427,7 +5440,8 @@ function tryAutoPotion(player) {
   // 检查是否在特殊BOSS房间（魔龙教主、世界BOSS、沙巴克BOSS）
   const zone = WORLD[player.position.zone];
   const room = zone?.rooms[player.position.room];
-  const roomMobs = getAliveMobs(player.position.zone, player.position.room, player.realmId || 1);
+  const roomRealmId = getRoomRealmId(player.position.zone, player.position.room, player.realmId || 1);
+  const roomMobs = getAliveMobs(player.position.zone, player.position.room, roomRealmId);
   const isSpecialBossRoom = roomMobs.some((m) => {
     const tpl = MOB_TEMPLATES[m.templateId];
     return tpl && tpl.specialBoss;
@@ -6689,10 +6703,12 @@ async function processMobDeath(player, mob, online) {
   const template = MOB_TEMPLATES[mob.templateId];
   const mobZoneId = mob.zoneId || player.position.zone;
   const mobRoomId = mob.roomId || player.position.room;
+  const roomRealmId = getRoomRealmId(mobZoneId, mobRoomId, realmId);
+  const announcementRealmId = roomRealmId === CROSS_REALM_REALM_ID ? null : realmId;
   const isPlayerInMobRoom = (target) =>
     Boolean(target && target.position && target.position.zone === mobZoneId && target.position.room === mobRoomId);
-  removeMob(mobZoneId, mobRoomId, mob.id, realmId);
-  removeSummonedMobsByOwner(mob, realmId, mobZoneId, mobRoomId);
+  removeMob(mobZoneId, mobRoomId, mob.id, roomRealmId);
+  removeSummonedMobsByOwner(mob, roomRealmId, mobZoneId, mobRoomId);
   if (template?.summoned || mob.summoned || mob.status?.summoned) {
     return;
   }
@@ -6716,14 +6732,14 @@ async function processMobDeath(player, mob, online) {
   const isMolongBoss = template.id === 'molong_boss';
   const isSpecialBoss = isWorldBoss || isSabakBoss || isMolongBoss;
   if (isWorldBoss) {
-    const nextKills = incrementWorldBossKills(1, realmId);
-    void setWorldBossKillCount(nextKills, realmId).catch((err) => {
+    const nextKills = incrementWorldBossKills(1, roomRealmId);
+    void setWorldBossKillCount(nextKills, roomRealmId).catch((err) => {
       console.warn('Failed to persist world boss kill count:', err);
     });
   }
   if (isSpecialBoss) {
     // 清理特殊BOSS职业伤害第一奖励标记
-    bossClassFirstDamageRewardGiven.delete(`${realmId}:${mob.id}`);
+    bossClassFirstDamageRewardGiven.delete(`${roomRealmId}:${mob.id}`);
   }
   const { rankMap, entries } = isSpecialBoss ? buildDamageRankMap(mob, damageSnapshot) : { rankMap: {}, entries: [] };
   let lootOwner = player;
@@ -6742,7 +6758,7 @@ async function processMobDeath(player, mob, online) {
       ownerName = lastHitSnapshot;
     }
     if (!ownerName) ownerName = player.name;
-    lootOwner = playersByName(ownerName, realmId) || player;
+    lootOwner = playersByName(ownerName, roomRealmId) || player;
     partyMembersForReward = [lootOwner];
     partyMembersForLoot = [lootOwner];
   }
@@ -6759,15 +6775,15 @@ async function processMobDeath(player, mob, online) {
 
     let sabakTaxExp = 0;
     let sabakTaxGold = 0;
-    const sabakMembers = listSabakMembersOnline(realmId);
+    const sabakMembers = roomRealmId === CROSS_REALM_REALM_ID ? [] : listSabakMembersOnline(realmId);
     partyMembersForReward.forEach((member) => {
-      const sabakState = getSabakState(realmId);
-      const isSabakMember = member.guild && sabakState.ownerGuildId && String(member.guild.id) === String(sabakState.ownerGuildId);
+      const sabakState = roomRealmId === CROSS_REALM_REALM_ID ? null : getSabakState(realmId);
+      const isSabakMember = sabakState && member.guild && sabakState.ownerGuildId && String(member.guild.id) === String(sabakState.ownerGuildId);
       const sabakBonus = isSabakMember ? 2 : 1;
       const vipBonus = isVipActive(member) ? 2 : 1;
       let finalExp = Math.floor(shareExp * sabakBonus * vipBonus);
       let finalGold = Math.floor(shareGold * sabakBonus * vipBonus);
-      if (sabakState.ownerGuildId && !isSabakMember) {
+      if (sabakState && sabakState.ownerGuildId && !isSabakMember) {
         const taxExp = Math.floor(finalExp * SABAK_TAX_RATE);
         const taxGold = Math.floor(finalGold * SABAK_TAX_RATE);
         finalExp -= taxExp;
@@ -6800,7 +6816,7 @@ async function processMobDeath(player, mob, online) {
     const totalDamage = entries.reduce((sum, [, dmg]) => sum + dmg, 0) || 1;
     const classBuckets = { warrior: [], mage: [], taoist: [] };
     entries.forEach(([name, damage]) => {
-      const player = playersByName(name, realmId);
+      const player = playersByName(name, roomRealmId);
       if (!player) return;
       if (isBoss && !isPlayerInMobRoom(player)) return;
       const cls = player.classId;
@@ -6833,8 +6849,8 @@ async function processMobDeath(player, mob, online) {
   }
 
     if (isSpecialBoss && entries.length) {
-      const classRanks = buildBossClassRank(mob, entries, realmId);
-      const rewardKey = `${realmId}:${mob.id}`;
+      const classRanks = buildBossClassRank(mob, entries, roomRealmId);
+      const rewardKey = `${roomRealmId}:${mob.id}`;
       let rewardState = bossClassFirstDamageRewardGiven.get(rewardKey);
       if (!rewardState) {
         rewardState = new Set();
@@ -6849,7 +6865,7 @@ async function processMobDeath(player, mob, online) {
         if (rewardState.has(cls.id)) return;
         const topEntry = classRanks?.[cls.id]?.[0];
         if (!topEntry || !topEntry.damage) return;
-        let topPlayer = playersByName(topEntry.name, realmId);
+        let topPlayer = playersByName(topEntry.name, roomRealmId);
         if (topPlayer && !isPlayerInMobRoom(topPlayer)) {
           topPlayer = null;
         }
@@ -6872,10 +6888,10 @@ async function processMobDeath(player, mob, online) {
         if (forcedItem) {
           const forcedRarity = rarityByPrice(forcedItem);
           if (['legendary', 'supreme'].includes(forcedRarity)) {
-            emitAnnouncement(`${topPlayer.name}（${cls.name}）获得伤害第一奖励 ${formatItemLabel(forcedId, forcedEffects)}！`, forcedRarity, null, realmId);
+            emitAnnouncement(`${topPlayer.name}（${cls.name}）获得伤害第一奖励 ${formatItemLabel(forcedId, forcedEffects)}！`, forcedRarity, null, announcementRealmId);
           }
           if (isEquipmentItem(forcedItem) && hasSpecialEffects(forcedEffects)) {
-            emitAnnouncement(`${topPlayer.name}（${cls.name}）获得特效装备 ${formatItemLabel(forcedId, forcedEffects)}！`, 'announce', null, realmId);
+            emitAnnouncement(`${topPlayer.name}（${cls.name}）获得特效装备 ${formatItemLabel(forcedId, forcedEffects)}！`, 'announce', null, announcementRealmId);
           }
         }
         rewardState.add(cls.id);
@@ -6903,10 +6919,10 @@ async function processMobDeath(player, mob, online) {
           const rarity = rarityByPrice(item);
           if (['legendary', 'supreme'].includes(rarity)) {
             const text = `${target.name} 击败 ${template.name} 获得${RARITY_LABELS[rarity] || '稀有'}装备 ${formatItemLabel(id, effects)}！`;
-            emitAnnouncement(formatLegendaryAnnouncement(text, rarity), rarity, null, realmId);
+            emitAnnouncement(formatLegendaryAnnouncement(text, rarity), rarity, null, announcementRealmId);
           }
           if (isEquipmentItem(item) && hasSpecialEffects(effects)) {
-            emitAnnouncement(`${target.name} 获得特效装备 ${formatItemLabel(id, effects)}！`, 'announce', null, realmId);
+            emitAnnouncement(`${target.name} 获得特效装备 ${formatItemLabel(id, effects)}！`, 'announce', null, announcementRealmId);
           }
           if (target?.userId) lootOwnersToSave.add(target);
         });
@@ -6987,10 +7003,10 @@ async function processMobDeath(player, mob, online) {
           const rarity = rarityByPrice(item);
           if (['legendary', 'supreme'].includes(rarity)) {
             const text = `${owner.name} 击败 ${template.name} 获得${RARITY_LABELS[rarity] || '稀有'}装备 ${formatItemLabel(entry.id, entry.effects)}！`;
-            emitAnnouncement(formatLegendaryAnnouncement(text, rarity), rarity, null, realmId);
+            emitAnnouncement(formatLegendaryAnnouncement(text, rarity), rarity, null, announcementRealmId);
           }
           if (isEquipmentItem(item) && hasSpecialEffects(entry.effects)) {
-            emitAnnouncement(`${owner.name} 获得特效装备 ${formatItemLabel(entry.id, entry.effects)}！`, 'announce', null, realmId);
+            emitAnnouncement(`${owner.name} 获得特效装备 ${formatItemLabel(entry.id, entry.effects)}！`, 'announce', null, announcementRealmId);
           }
         });
         if (actualDrops.length > 0) {
@@ -7012,10 +7028,10 @@ async function processMobDeath(player, mob, online) {
           const rarity = rarityByPrice(item);
           if (['legendary', 'supreme'].includes(rarity)) {
             const text = `${owner.name} 击败 ${template.name} 获得${RARITY_LABELS[rarity] || '稀有'}装备 ${formatItemLabel(entry.id, entry.effects)}！`;
-            emitAnnouncement(formatLegendaryAnnouncement(text, rarity), rarity, null, realmId);
+            emitAnnouncement(formatLegendaryAnnouncement(text, rarity), rarity, null, announcementRealmId);
           }
           if (isEquipmentItem(item) && hasSpecialEffects(entry.effects)) {
-            emitAnnouncement(`${owner.name} 获得特效装备 ${formatItemLabel(entry.id, entry.effects)}！`, 'announce', null, realmId);
+            emitAnnouncement(`${owner.name} 获得特效装备 ${formatItemLabel(entry.id, entry.effects)}！`, 'announce', null, announcementRealmId);
           }
         });
       }
@@ -7029,16 +7045,17 @@ async function processMobDeath(player, mob, online) {
 }
 
 function updateSpecialBossStatsBasedOnPlayers() {
-  const realmIds = Array.from(new Set([1, ...realmStates.keys()]));
+  const realmIds = Array.from(new Set([0, 1, ...realmStates.keys()]));
 
   realmIds.forEach((realmId) => {
-    const online = listOnlinePlayers(realmId);
     Object.keys(WORLD).forEach((zoneId) => {
       const zone = WORLD[zoneId];
       if (!zone?.rooms) return;
 
       Object.keys(zone.rooms).forEach((roomId) => {
-        const roomMobs = getAliveMobs(zoneId, roomId, realmId);
+        const effectiveRealmId = getRoomRealmId(zoneId, roomId, realmId);
+        const online = listOnlinePlayers(effectiveRealmId);
+        const roomMobs = getAliveMobs(zoneId, roomId, effectiveRealmId);
         const specialBoss = roomMobs.find((m) => {
           const tpl = MOB_TEMPLATES[m.templateId];
           return tpl && tpl.specialBoss;
@@ -7115,10 +7132,11 @@ async function combatTick() {
     updateRedNameAutoClear(player);
     updateAutoDailyUsage(player);
     const realmId = player.realmId || 1;
-    const roomKey = `${realmId}:${player.position.zone}:${player.position.room}`;
+    const roomRealmId = getRoomRealmId(player.position.zone, player.position.room, realmId);
+    const roomKey = `${roomRealmId}:${player.position.zone}:${player.position.room}`;
     let roomMobs = roomMobsCache.get(roomKey);
     if (!roomMobs) {
-      roomMobs = getAliveMobs(player.position.zone, player.position.room, realmId);
+      roomMobs = getAliveMobs(player.position.zone, player.position.room, roomRealmId);
       roomMobsCache.set(roomKey, roomMobs);
     }
     if (!regenRooms.has(roomKey)) {
@@ -7130,7 +7148,7 @@ async function combatTick() {
       if (playerPoisonTick && playerPoisonTick.type === 'poison') {
         player.send(`你受到 ${playerPoisonTick.dmg} 点中毒伤害。`);
         if (poisonSource) {
-          const source = playersByName(poisonSource, realmId);
+          const source = playersByName(poisonSource, roomRealmId);
           if (source) {
             source.send(`你的施毒对 ${player.name} 造成 ${playerPoisonTick.dmg} 点伤害。`);
           }
@@ -7507,7 +7525,7 @@ async function combatTick() {
 
     const hitChance = calcHitChance(player, mob);
       if (Math.random() <= hitChance) {
-      const mobImmuneToDebuffs = enforceSpecialBossDebuffImmunity(mob, player.realmId || 1);
+      const mobImmuneToDebuffs = enforceSpecialBossDebuffImmunity(mob, roomRealmId);
       let dmg = 0;
       let skillPower = 1;
       if (skill && (skill.type === 'attack' || skill.type === 'spell' || skill.type === 'cleave' || skill.type === 'dot' || skill.type === 'aoe')) {
@@ -7566,11 +7584,11 @@ async function combatTick() {
           if (elementAtk > 0) {
             aoeDmg += elementAtk * 10;
           }
-          const result = applyDamageToMob(target, aoeDmg, player.name, player.realmId || 1);
+          const result = applyDamageToMob(target, aoeDmg, player.name, roomRealmId);
           if (result?.damageTaken) {
             player.send(`你对 ${target.name} 造成 ${aoeDmg} 点伤害。`);
           }
-          const targetImmuneToDebuffs = enforceSpecialBossDebuffImmunity(target, player.realmId || 1);
+          const targetImmuneToDebuffs = enforceSpecialBossDebuffImmunity(target, roomRealmId);
           if (tryApplyHealBlockEffect(player, target)) {
             player.send(`禁疗效果作用于 ${target.name}。`);
           }
@@ -7588,21 +7606,21 @@ async function combatTick() {
           if (deadTargets.some((target) => target.id === mob.id)) {
             player.combat = null;
           }
-          sendRoomState(player.position.zone, player.position.room, player.realmId || 1);
+          sendRoomState(player.position.zone, player.position.room, roomRealmId);
           continue;
         }
-        sendRoomState(player.position.zone, player.position.room, player.realmId || 1);
+        sendRoomState(player.position.zone, player.position.room, roomRealmId);
       } else {
         const elementAtk = Math.max(0, Math.floor(player.elementAtk || 0));
         if (elementAtk > 0) {
           dmg += elementAtk * 10;
         }
-        const result = applyDamageToMob(mob, dmg, player.name, player.realmId || 1);
+        const result = applyDamageToMob(mob, dmg, player.name, roomRealmId);
         if (result?.damageTaken) {
           player.send(`你对 ${mob.name} 造成 ${dmg} 点伤害。`);
         }
         if (hasComboWeapon(player) && mob.hp > 0 && Math.random() <= COMBO_PROC_CHANCE) {
-          const comboResult = applyDamageToMob(mob, dmg, player.name, player.realmId || 1);
+          const comboResult = applyDamageToMob(mob, dmg, player.name, roomRealmId);
           if (comboResult?.damageTaken) {
             player.send(`连击触发，对 ${mob.name} 造成 ${dmg} 点伤害。`);
           }
@@ -7615,11 +7633,11 @@ async function combatTick() {
           if (extraTargets.length) {
             const extraTarget = extraTargets[randInt(0, extraTargets.length - 1)];
             const extraDmg = Math.max(1, Math.floor(dmg * ASSASSINATE_SECONDARY_DAMAGE_RATE));
-            const extraResult = applyDamageToMob(extraTarget, extraDmg, player.name, player.realmId || 1);
+            const extraResult = applyDamageToMob(extraTarget, extraDmg, player.name, roomRealmId);
             if (extraResult?.damageTaken) {
               player.send(`刺杀剑术波及 ${extraTarget.name}，造成 ${extraDmg} 点伤害。`);
             }
-            const extraImmuneToDebuffs = enforceSpecialBossDebuffImmunity(extraTarget, player.realmId || 1);
+            const extraImmuneToDebuffs = enforceSpecialBossDebuffImmunity(extraTarget, roomRealmId);
             if (tryApplyHealBlockEffect(player, extraTarget)) {
               player.send(`禁疗效果作用于 ${extraTarget.name}。`);
             }
@@ -7632,7 +7650,7 @@ async function combatTick() {
           }
         }
         if (mob.hp > 0) {
-          sendRoomState(player.position.zone, player.position.room, player.realmId || 1);
+          sendRoomState(player.position.zone, player.position.room, roomRealmId);
         }
       }
 
@@ -7682,7 +7700,7 @@ async function combatTick() {
           if (elementAtk > 0) {
             cleaveDmg += elementAtk * 10;
           }
-          const cleaveResult = applyDamageToMob(other, cleaveDmg, player.name, player.realmId || 1);
+          const cleaveResult = applyDamageToMob(other, cleaveDmg, player.name, roomRealmId);
           if (cleaveResult?.damageTaken) {
             player.send(`你对 ${other.name} 造成 ${cleaveDmg} 点伤害。`);
           }
@@ -7702,7 +7720,7 @@ async function combatTick() {
       }
     }
 
-    enforceSpecialBossDebuffImmunity(mob, player.realmId || 1);
+    enforceSpecialBossDebuffImmunity(mob, roomRealmId);
     const statusTick = tickStatus(mob);
     if (statusTick && statusTick.type === 'poison') {
       player.send(`${mob.name} 受到 ${statusTick.dmg} 点中毒伤害。`);
@@ -7712,7 +7730,7 @@ async function combatTick() {
         for (const [sourceName, damage] of Object.entries(statusTick.damageBySource)) {
           if (sourceName && sourceName !== 'unknown') {
             recordMobDamage(mob, sourceName, damage);
-            const source = playersByName(sourceName, player.realmId || 1);
+            const source = playersByName(sourceName, roomRealmId);
             if (source && source.name !== player.name) {
               source.send(`你的施毒对 ${mob.name} 造成 ${damage} 点伤害。`);
             }
@@ -7732,7 +7750,7 @@ async function combatTick() {
               if (target.id !== mob.id) {
                 dmg = Math.max(1, Math.floor(dmg * 0.5));
               }
-              const summonResult = applyDamageToMob(target, dmg, player.name, player.realmId || 1);
+              const summonResult = applyDamageToMob(target, dmg, player.name, roomRealmId);
               if (summonResult?.damageTaken) {
                 player.send(`${summon.name} 对 ${target.name} 造成 ${dmg} 点伤害。`);
               }
@@ -7746,7 +7764,7 @@ async function combatTick() {
           const dmg = useTaoist
             ? calcTaoistDamageFromValue(getSpiritValue(summon), mob)
             : calcDamage(summon, mob, 1);
-          const summonResult = applyDamageToMob(mob, dmg, player.name, player.realmId || 1);
+          const summonResult = applyDamageToMob(mob, dmg, player.name, roomRealmId);
           if (summonResult?.damageTaken) {
             player.send(`${summon.name} 对 ${mob.name} 造成 ${dmg} 点伤害。`);
           }
@@ -7757,7 +7775,7 @@ async function combatTick() {
     if (mob.hp <= 0) {
       await processMobDeath(player, mob, online);
       player.combat = null;
-      sendRoomState(player.position.zone, player.position.room, player.realmId || 1);
+      sendRoomState(player.position.zone, player.position.room, roomRealmId);
       continue;
     }
 
@@ -7799,10 +7817,10 @@ async function combatTick() {
     const mobSkill = pickMobSkill(mob);
     let skipMobAttack = false;
     if (mobSkill && mobSkill.type === 'summon') {
-      const summoned = tryMobSummon(mob, mobSkill, realmId, mobZoneId, mobRoomId);
+      const summoned = tryMobSummon(mob, mobSkill, roomRealmId, mobZoneId, mobRoomId);
       if (summoned) {
-        sendToRoom(realmId, mobZoneId, mobRoomId, `${mob.name} 施放 ${getSkillDisplayName(mobSkill)}，召唤了 ${summoned.name}！`);
-        sendRoomState(mobZoneId, mobRoomId, realmId);
+        sendToRoom(roomRealmId, mobZoneId, mobRoomId, `${mob.name} 施放 ${getSkillDisplayName(mobSkill)}，召唤了 ${summoned.name}！`);
+        sendRoomState(mobZoneId, mobRoomId, roomRealmId);
         skipMobAttack = true;
       }
     }
@@ -7849,7 +7867,7 @@ async function combatTick() {
       if (mobSkill) {
         const mobSkillLevel = getMobSkillLevel(mob);
         const mobSkillPower = scaledSkillPower(mobSkill, mobSkillLevel);
-        sendToRoom(realmId, mobZoneId, mobRoomId, `${mob.name} 释放了 ${getSkillDisplayName(mobSkill)}！`);
+        sendToRoom(roomRealmId, mobZoneId, mobRoomId, `${mob.name} 释放了 ${getSkillDisplayName(mobSkill)}！`);
         if (mobSkill.type === 'attack' || mobSkill.type === 'cleave') {
           dmg = calcDamage(mob, mobTarget, mobSkillPower);
         } else if (mobSkill.type === 'spell') {
