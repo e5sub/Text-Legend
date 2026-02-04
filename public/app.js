@@ -4801,6 +4801,7 @@ function renderState(state) {
 
   if (ui.worldBossRank) {
     const inWorldBossRoom = state.room && state.room.zoneId === 'wb' && state.room.roomId === 'lair';
+    const inCrossBossRoom = state.room && state.room.zoneId === 'crb' && state.room.roomId === 'arena';
     const inMolongRoom = state.room && state.room.zoneId === 'molong' && state.room.roomId === 'deep';
     const inSabakBossRoom = state.room && state.room.zoneId === 'sb_guild' && state.room.roomId === 'sanctum';
     const inDarkWomaRoom = state.room && state.room.zoneId === 'dark_bosses' && state.room.roomId === 'dark_woma_lair';
@@ -4809,13 +4810,15 @@ function renderState(state) {
     const inDarkHuangquanRoom = state.room && state.room.zoneId === 'dark_bosses' && state.room.roomId === 'dark_huangquan_lair';
     const inDarkDoubleheadRoom = state.room && state.room.zoneId === 'dark_bosses' && state.room.roomId === 'dark_doublehead_lair';
     const inDarkSkeletonRoom = state.room && state.room.zoneId === 'dark_bosses' && state.room.roomId === 'dark_skeleton_lair';
-    const inSpecialBossRoom = inWorldBossRoom || inMolongRoom || inSabakBossRoom || inDarkWomaRoom || inDarkZumaRoom || inDarkHongmoRoom || inDarkHuangquanRoom || inDarkDoubleheadRoom || inDarkSkeletonRoom;
+    const inSpecialBossRoom = inWorldBossRoom || inCrossBossRoom || inMolongRoom || inSabakBossRoom || inDarkWomaRoom || inDarkZumaRoom || inDarkHongmoRoom || inDarkHuangquanRoom || inDarkDoubleheadRoom || inDarkSkeletonRoom;
     const rankBlock = ui.worldBossRank.closest('.action-group');
 
     // 根据所在的BOSS房间设置不同的标题
     if (ui.worldBossRankTitle) {
       if (inWorldBossRoom) {
         ui.worldBossRankTitle.textContent = '世界BOSS·炎龙伤害排行';
+      } else if (inCrossBossRoom) {
+        ui.worldBossRankTitle.textContent = '跨服BOSS·白虎伤害排行';
       } else if (inMolongRoom) {
         ui.worldBossRankTitle.textContent = '魔龙教主伤害排行';
       } else if (inSabakBossRoom) {

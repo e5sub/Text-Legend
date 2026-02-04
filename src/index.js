@@ -2693,6 +2693,23 @@ async function applyWorldBossSettings() {
     worldBossTemplate.gold = [baseGold, Math.floor(baseGold * 1.6)];
   }
 
+  // 应用到跨服世界BOSS模板（同世界BOSS配置）
+  const crossWorldBossTemplate = MOB_TEMPLATES.cross_world_boss;
+  if (crossWorldBossTemplate) {
+    crossWorldBossTemplate.hp = await getWorldBossBaseHp();
+    crossWorldBossTemplate.atk = await getWorldBossBaseAtk();
+    crossWorldBossTemplate.def = await getWorldBossBaseDef();
+    crossWorldBossTemplate.mdef = await getWorldBossBaseMdef();
+    crossWorldBossTemplate.exp = await getWorldBossBaseExp();
+    crossWorldBossTemplate.respawnMs = respawnMs;
+
+    const baseGold = await getWorldBossBaseGold();
+    crossWorldBossTemplate.gold = [baseGold, Math.floor(baseGold * 1.6)];
+    if (worldBossTemplate?.drops) {
+      crossWorldBossTemplate.drops = worldBossTemplate.drops;
+    }
+  }
+
   // 加载每名玩家增加的属性值缓存
   await loadWorldBossSettingsCache();
 }
@@ -2742,7 +2759,10 @@ async function applySpecialBossSettings() {
 function adjustWorldBossStatsByPlayerCount(zoneId, roomId, realmId) {
   const effectiveRealmId = getRoomRealmId(zoneId, roomId, realmId);
   const mobs = getAliveMobs(zoneId, roomId, effectiveRealmId);
-  const worldBossMob = mobs.find(m => m.templateId === 'world_boss');
+  const worldBossMob = mobs.find((m) => {
+    const tpl = MOB_TEMPLATES[m.templateId];
+    return tpl && tpl.worldBoss;
+  });
   if (!worldBossMob) return;
 
   // 获取房间内的在线玩家数量
@@ -2755,7 +2775,7 @@ function adjustWorldBossStatsByPlayerCount(zoneId, roomId, realmId) {
   const playerCount = roomPlayers.length;
 
   // 从模板获取基础属性（防止重复叠加）
-  const template = MOB_TEMPLATES.world_boss;
+  const template = MOB_TEMPLATES[worldBossMob.templateId] || MOB_TEMPLATES.world_boss;
   if (!template) return;
 
   const baseHp = template.hp || worldBossMob.max_hp;

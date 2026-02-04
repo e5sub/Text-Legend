@@ -1021,7 +1021,7 @@ export const WORLD = {
         name: '跨服BOSS战场',
         desc: '各区服玩家同场战斗，世界BOSS盘踞于此。',
         exits: { southeast: 'mg_town:gate' },
-        spawns: ['world_boss']
+        spawns: ['cross_world_boss']
       }
     }
   }
