@@ -159,8 +159,8 @@ export function spawnMobs(zoneId, roomId, realmId = 1) {
     let mob = mobList.find((m) => m.slotIndex === index);
     const tpl = MOB_TEMPLATES[templateId];
     const scaled = scaledStats(tpl, realmId);
+    const cached = RESPAWN_CACHE.get(respawnKey(realmId, zoneId, roomId, index));
     if (!mob) {
-      const cached = RESPAWN_CACHE.get(respawnKey(realmId, zoneId, roomId, index));
       if (cached && cached.respawnAt > now) {
         // 检查缓存的怪物类型是否匹配当前配置
         if (!cached.templateId || cached.templateId === templateId) {
@@ -242,6 +242,30 @@ export function spawnMobs(zoneId, roomId, realmId = 1) {
       };
       mobList.push(mob);
       return;
+    }
+    if (cached && cached.respawnAt > now && mob.hp > 0) {
+      if (!cached.templateId || cached.templateId === templateId) {
+        mob.id = `${templateId}-${Date.now()}-${randInt(100, 999)}`;
+        mob.templateId = templateId;
+        mob.zoneId = zoneId;
+        mob.roomId = roomId;
+        mob.name = tpl.name;
+        mob.level = tpl.level;
+        mob.hp = 0;
+        mob.max_hp = scaled.hp;
+        mob.atk = scaled.atk;
+        mob.def = scaled.def;
+        mob.mdef = scaled.mdef;
+        mob.dex = tpl.dex || 6;
+        mob.status = { baseStats: { atk: scaled.atk, def: scaled.def, mdef: scaled.mdef, max_hp: scaled.hp } };
+        mob.respawnAt = cached.respawnAt;
+        mob.justRespawned = false;
+        return;
+      }
+      RESPAWN_CACHE.delete(respawnKey(realmId, zoneId, roomId, index));
+      if (respawnStore && respawnStore.clear) {
+        respawnStore.clear(realmId, zoneId, roomId, index);
+      }
     }
     if (!mob.zoneId) mob.zoneId = zoneId;
     if (!mob.roomId) mob.roomId = roomId;

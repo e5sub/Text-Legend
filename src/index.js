@@ -2277,10 +2277,22 @@ const sabakConfig = {
 };
 const deviceOnlineMap = new Map();
 const CROSS_REALM_ZONE_ID = 'crb';
+const CROSS_RANK_ZONE_ID = 'crr';
+const CROSS_RANK_ROOM_ID = 'arena';
 const CROSS_REALM_REALM_ID = 0;
+const CROSS_REALM_ZONES = new Set([CROSS_REALM_ZONE_ID, CROSS_RANK_ZONE_ID]);
+
+const CROSS_RANK_EVENT_START_MINUTES = 19 * 60;
+const CROSS_RANK_EVENT_END_MINUTES = 19 * 60 + 30;
+const CROSS_RANK_EVENT_STATE = {
+  active: false,
+  startAt: null,
+  endAt: null,
+  stats: new Map()
+};
 
 function getRoomRealmId(zoneId, roomId, realmId = 1) {
-  if (zoneId === CROSS_REALM_ZONE_ID) return CROSS_REALM_REALM_ID;
+  if (CROSS_REALM_ZONES.has(zoneId)) return CROSS_REALM_REALM_ID;
   return Number(realmId) || 1;
 }
 
@@ -2365,6 +2377,17 @@ const ITEM_POOLS = (() => {
     if (!['weapon', 'armor', 'accessory', 'book', 'material', 'consumable'].includes(item.type)) return;
     const rarity = rarityByPrice(item);
     pools[rarity].push(item.id);
+  });
+  return pools;
+})();
+
+const EQUIPMENT_POOLS = (() => {
+  const pools = { common: [], uncommon: [], rare: [], epic: [], legendary: [], supreme: [] };
+  Object.entries(ITEM_POOLS).forEach(([rarity, ids]) => {
+    pools[rarity] = ids.filter((id) => {
+      const item = ITEM_TEMPLATES[id];
+      return item && ['weapon', 'armor', 'accessory'].includes(item.type);
+    });
   });
   return pools;
 })();
@@ -2535,6 +2558,140 @@ function formatLegendaryAnnouncement(text, rarity) {
   if (rarity === 'supreme') return `至尊掉落：${text}`;
   if (rarity === 'legendary') return `传说掉落：${text}`;
   return text;
+}
+
+function isCrossRankRoom(zoneId, roomId) {
+  return zoneId === CROSS_RANK_ZONE_ID && roomId === CROSS_RANK_ROOM_ID;
+}
+
+function pickEquipmentByRarity(targetRarity) {
+  const startIndex = Math.max(0, RARITY_ORDER.indexOf(targetRarity));
+  for (let i = startIndex; i < RARITY_ORDER.length; i += 1) {
+    const rarity = RARITY_ORDER[i];
+    const pool = EQUIPMENT_POOLS[rarity] || [];
+    if (!pool.length) continue;
+    return pool[randInt(0, pool.length - 1)];
+  }
+  return null;
+}
+
+function chooseCrossRankRewardRarity(rank) {
+  if (rank === 1) return 'supreme';
+  if (rank === 2 || rank === 3) return Math.random() < 0.05 ? 'supreme' : 'legendary';
+  return Math.random() < 0.05 ? 'legendary' : 'epic';
+}
+
+function getCrossRankEndAt(now = new Date()) {
+  const end = new Date(now);
+  end.setHours(19, 30, 0, 0);
+  return end.getTime();
+}
+
+function getCrossRankSnapshot(limit = 10) {
+  const entries = Array.from(CROSS_RANK_EVENT_STATE.stats.values())
+    .filter((entry) => entry.kills > 0)
+    .sort((a, b) => {
+      if (b.kills !== a.kills) return b.kills - a.kills;
+      return (a.firstKillAt || 0) - (b.firstKillAt || 0);
+    })
+    .slice(0, limit)
+    .map((entry) => ({ name: entry.name, kills: entry.kills }));
+  return {
+    active: CROSS_RANK_EVENT_STATE.active,
+    endsAt: CROSS_RANK_EVENT_STATE.active ? getCrossRankEndAt() : null,
+    entries
+  };
+}
+
+function recordCrossRankKill(attacker, target) {
+  if (!CROSS_RANK_EVENT_STATE.active) return;
+  if (!attacker || !target) return;
+  if (!isCrossRankRoom(attacker.position.zone, attacker.position.room)) return;
+  if (target.position.zone !== attacker.position.zone || target.position.room !== attacker.position.room) return;
+  const realmId = attacker.realmId || 1;
+  const key = `${realmId}:${attacker.name}`;
+  const now = Date.now();
+  let entry = CROSS_RANK_EVENT_STATE.stats.get(key);
+  if (!entry) {
+    entry = {
+      name: attacker.name,
+      userId: attacker.userId,
+      realmId,
+      kills: 0,
+      firstKillAt: now,
+      lastKillAt: now
+    };
+    CROSS_RANK_EVENT_STATE.stats.set(key, entry);
+  }
+  entry.kills += 1;
+  entry.lastKillAt = now;
+}
+
+function startCrossRankEvent() {
+  CROSS_RANK_EVENT_STATE.active = true;
+  CROSS_RANK_EVENT_STATE.startAt = Date.now();
+  CROSS_RANK_EVENT_STATE.endAt = null;
+  CROSS_RANK_EVENT_STATE.stats.clear();
+  const locationData = {
+    zoneId: CROSS_RANK_ZONE_ID,
+    roomId: CROSS_RANK_ROOM_ID,
+    label: '跨服排位赛场 - 跨服排位赛'
+  };
+  emitAnnouncement('跨服排位赛已开始（19:00-19:30），前往跨服排位赛场参与！', 'announce', locationData, null);
+}
+
+async function endCrossRankEvent() {
+  CROSS_RANK_EVENT_STATE.active = false;
+  CROSS_RANK_EVENT_STATE.endAt = Date.now();
+  const entries = Array.from(CROSS_RANK_EVENT_STATE.stats.values())
+    .filter((entry) => entry.kills > 0)
+    .sort((a, b) => {
+      if (b.kills !== a.kills) return b.kills - a.kills;
+      return (a.firstKillAt || 0) - (b.firstKillAt || 0);
+    });
+  CROSS_RANK_EVENT_STATE.stats.clear();
+  if (!entries.length) {
+    emitAnnouncement('跨服排位赛结束，无人上榜。', 'announce', null, null);
+    return;
+  }
+  const topNames = entries.slice(0, 3).map((entry, idx) => `第${idx + 1}名 ${entry.name}（${entry.kills}杀）`);
+  emitAnnouncement(`跨服排位赛结束！${topNames.join('，')}`, 'announce', null, null);
+  for (let i = 0; i < entries.length; i += 1) {
+    const entry = entries[i];
+    if (!entry.userId) continue;
+    const rank = i + 1;
+    const rarity = chooseCrossRankRewardRarity(rank);
+    const itemId = pickEquipmentByRarity(rarity);
+    if (!itemId) continue;
+    const effects = rollEquipmentEffects(itemId);
+    const items = [{ id: itemId, qty: 1, effects }];
+    const title = '跨服排位赛奖励';
+    const body = `恭喜你在跨服排位赛中获得第${rank}名（击杀数:${entry.kills}），奖励: ${formatItemLabel(itemId, effects)}。`;
+    try {
+      await sendMail(entry.userId, entry.name, '系统', null, title, body, items, 0, entry.realmId);
+      const online = Array.from(players.values()).find((p) => p.userId === entry.userId);
+      if (online) {
+        online.send(`跨服排位赛奖励已发送：${formatItemLabel(itemId, effects)}。`);
+      }
+    } catch (err) {
+      console.warn('Failed to send cross rank reward:', err);
+    }
+  }
+}
+
+function tickCrossRankEvent() {
+  const now = new Date();
+  const minutes = now.getHours() * 60 + now.getMinutes();
+  const inWindow = minutes >= CROSS_RANK_EVENT_START_MINUTES && minutes < CROSS_RANK_EVENT_END_MINUTES;
+  if (inWindow && !CROSS_RANK_EVENT_STATE.active) {
+    startCrossRankEvent();
+    return;
+  }
+  if (!inWindow && CROSS_RANK_EVENT_STATE.active) {
+    endCrossRankEvent().catch((err) => {
+      console.warn('Failed to finalize cross rank event:', err);
+    });
+  }
 }
 
 function rollEquipmentEffects(itemId) {
@@ -4371,6 +4528,7 @@ async function buildState(player) {
   let bossRank = [];
   let bossClassRank = null;
   let bossNextRespawn = null;
+  let crossRank = null;
   if (isBoss) {
     const cached = getRoomCommonState(player.position.zone, player.position.room, roomRealmId);
     mobs = cached.mobs;
@@ -4413,6 +4571,9 @@ async function buildState(player) {
         realmId: p.realmId || 1,
         pk: p.pk || 0
       }));
+  }
+  if (isCrossRankRoom(player.position.zone, player.position.room)) {
+    crossRank = getCrossRankSnapshot(10);
   }
   const summonList = getAliveSummons(player);
   const summonPayloads = summonList.map((summon) => ({
@@ -4591,6 +4752,7 @@ async function buildState(player) {
     worldBossRank: bossRank,
     worldBossClassRank: bossClassRank,
     worldBossNextRespawn: bossNextRespawn,
+    crossRank,
     players: roomPlayers,
     bossRespawn: nextRespawn,
     server_time: Date.now(),
@@ -7436,6 +7598,7 @@ async function combatTick() {
             if (wasRed && droppedBag.length) {
               player.send(`${extraTarget.name} 掉落了: ${droppedBag.join(', ')}`);
             }
+            recordCrossRankKill(player, extraTarget);
             handleDeath(extraTarget);
           }
         }
@@ -7514,6 +7677,7 @@ async function combatTick() {
         if (wasRed && droppedBag.length) {
           player.send(`${target.name} 掉落了: ${droppedBag.join(', ')}`);
         }
+        recordCrossRankKill(player, target);
         handleDeath(target);
       }
       await sendState(player);
@@ -8411,6 +8575,10 @@ async function start() {
       sabakTick(realmId).catch(() => {});
     });
   }, 5000);
+  tickCrossRankEvent();
+  setInterval(() => {
+    tickCrossRankEvent();
+  }, 10000);
   if (config.adminBootstrapSecret && config.adminBootstrapUser) {
     const admins = await knex('users').where({ is_admin: true }).first();
     if (!admins) {

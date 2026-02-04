@@ -504,7 +504,7 @@ export const WORLD = {
         id: 'gate',
         name: '土城城门',
         desc: '黄沙漫天，旅人聚集。',
-        exits: { south: 'mg_plains:gate', south1: 'mg_plains:gate1', south2: 'mg_plains:gate2', south3: 'mg_plains:gate3', north: 'mg_market', west: 'wms:entrance', west1: 'wms:entrance1', west2: 'wms:entrance2', west3: 'wms:entrance3', east: 'zm:hall', east1: 'zm:hall1', east2: 'zm:hall2', east3: 'zm:hall3', northeast: 'cr:valley', northeast1: 'cr:valley1', northeast2: 'cr:valley2', northeast3: 'cr:valley3', northwest: 'wb:lair', up: 'crb:arena', southwest: 'dark_bosses:dark_woma_lair', southwest1: 'dark_bosses:dark_zuma_lair', southwest2: 'dark_bosses:dark_hongmo_lair', southwest3: 'dark_bosses:dark_huangquan_lair', southwest4: 'dark_bosses:dark_doublehead_lair', southwest5: 'dark_bosses:dark_skeleton_lair' },
+        exits: { south: 'mg_plains:gate', south1: 'mg_plains:gate1', south2: 'mg_plains:gate2', south3: 'mg_plains:gate3', north: 'mg_market', west: 'wms:entrance', west1: 'wms:entrance1', west2: 'wms:entrance2', west3: 'wms:entrance3', east: 'zm:hall', east1: 'zm:hall1', east2: 'zm:hall2', east3: 'zm:hall3', northeast: 'cr:valley', northeast1: 'cr:valley1', northeast2: 'cr:valley2', northeast3: 'cr:valley3', northwest: 'wb:lair', up: 'crb:arena', down: 'crr:arena', southwest: 'dark_bosses:dark_woma_lair', southwest1: 'dark_bosses:dark_zuma_lair', southwest2: 'dark_bosses:dark_hongmo_lair', southwest3: 'dark_bosses:dark_huangquan_lair', southwest4: 'dark_bosses:dark_doublehead_lair', southwest5: 'dark_bosses:dark_skeleton_lair' },
         npcs: ['guard'],
         spawns: []
       },
@@ -1022,6 +1022,21 @@ export const WORLD = {
         desc: '各区服玩家同场战斗，世界BOSS盘踞于此。',
         exits: { southeast: 'mg_town:gate' },
         spawns: ['cross_world_boss']
+      }
+    }
+  }
+  ,
+
+  crr: {
+    id: 'crr',
+    name: '跨服排位赛场',
+    rooms: {
+      arena: {
+        id: 'arena',
+        name: '跨服排位赛',
+        desc: '跨服排位赛活动房间，所有区服玩家同场竞技。',
+        exits: { southeast: 'mg_town:gate' },
+        spawns: []
       }
     }
   }

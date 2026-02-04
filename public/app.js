@@ -4667,7 +4667,9 @@ function renderState(state) {
     }
   });
 
-  const inCrossBossRoom = state.room && state.room.zoneId === 'crb' && state.room.roomId === 'arena';
+  const inCrossRealmRoom = state.room
+    && (state.room.zoneId === 'crb' || state.room.zoneId === 'crr')
+    && state.room.roomId === 'arena';
   const localRealmId = state.player ? state.player.realmId : null;
   const players = (state.players || [])
     .filter((p) => p.name && (!state.player || p.name !== state.player.name))
@@ -4677,7 +4679,7 @@ function renderState(state) {
       // 红名玩家显示深红色
       if (p.pk >= 100) {
         className = 'player-red-name';
-      } else if (inCrossBossRoom && localRealmId && p.realmId) {
+      } else if (inCrossRealmRoom && localRealmId && p.realmId) {
         className = p.realmId === localRealmId ? 'player-friendly' : 'player-red-name';
         badgeLabel = p.realmId === localRealmId ? '' : '跨服';
       } else if (state.sabak && state.sabak.inZone) {
@@ -4710,8 +4712,8 @@ function renderState(state) {
   (state.players || [])
     .filter((p) => p.name && (!state.player || p.name !== state.player.name))
     .forEach((p) => {
-      const isCrossEnemy = inCrossBossRoom && localRealmId && p.realmId && p.realmId !== localRealmId;
-      const isCrossAlly = inCrossBossRoom && localRealmId && p.realmId && p.realmId === localRealmId;
+      const isCrossEnemy = inCrossRealmRoom && localRealmId && p.realmId && p.realmId !== localRealmId;
+      const isCrossAlly = inCrossRealmRoom && localRealmId && p.realmId && p.realmId === localRealmId;
       battlePlayers.push({
         type: 'player',
         name: p.name,
@@ -4820,6 +4822,7 @@ function renderState(state) {
   if (ui.worldBossRank) {
     const inWorldBossRoom = state.room && state.room.zoneId === 'wb' && state.room.roomId === 'lair';
     const inCrossBossRoom = state.room && state.room.zoneId === 'crb' && state.room.roomId === 'arena';
+    const inCrossRankRoom = state.room && state.room.zoneId === 'crr' && state.room.roomId === 'arena';
     const inMolongRoom = state.room && state.room.zoneId === 'molong' && state.room.roomId === 'deep';
     const inSabakBossRoom = state.room && state.room.zoneId === 'sb_guild' && state.room.roomId === 'sanctum';
     const inDarkWomaRoom = state.room && state.room.zoneId === 'dark_bosses' && state.room.roomId === 'dark_woma_lair';
@@ -4829,6 +4832,7 @@ function renderState(state) {
     const inDarkDoubleheadRoom = state.room && state.room.zoneId === 'dark_bosses' && state.room.roomId === 'dark_doublehead_lair';
     const inDarkSkeletonRoom = state.room && state.room.zoneId === 'dark_bosses' && state.room.roomId === 'dark_skeleton_lair';
     const inSpecialBossRoom = inWorldBossRoom || inCrossBossRoom || inMolongRoom || inSabakBossRoom || inDarkWomaRoom || inDarkZumaRoom || inDarkHongmoRoom || inDarkHuangquanRoom || inDarkDoubleheadRoom || inDarkSkeletonRoom;
+    const inRankRoom = inSpecialBossRoom || inCrossRankRoom;
     const rankBlock = ui.worldBossRank.closest('.action-group');
 
     // 根据所在的BOSS房间设置不同的标题
@@ -4853,6 +4857,8 @@ function renderState(state) {
         ui.worldBossRankTitle.textContent = '暗之双头血魔伤害排行';
       } else if (inDarkSkeletonRoom) {
         ui.worldBossRankTitle.textContent = '暗之骷髅精灵伤害排行';
+      } else if (inCrossRankRoom) {
+        ui.worldBossRankTitle.textContent = '跨服排位赛击杀排行';
       }
     }
 
@@ -4877,7 +4883,7 @@ function renderState(state) {
         ui.worldBossRank.dataset.roomKey = currentRoomKey || '';
       }
     }
-    if (!inSpecialBossRoom) {
+    if (!inRankRoom) {
       if (rankBlock) rankBlock.classList.add('hidden');
       resetBossRespawn();
       if (ui.worldBossRank) ui.worldBossRank.innerHTML = '';
@@ -4890,6 +4896,8 @@ function renderState(state) {
       const classRanks = state.worldBossClassRank || null;
       const hasClassRanks = classRanks && Object.values(classRanks).some((list) => Array.isArray(list) && list.length);
       const nextRespawn = state.worldBossNextRespawn;
+      const crossRank = state.crossRank || null;
+      const isCrossRankActive = Boolean(crossRank && crossRank.active);
       if (ui.worldBossRank) {
         const respawnNodes = ui.worldBossRank.querySelectorAll('.boss-respawn-time');
         if (respawnNodes.length > 1) {
@@ -4906,7 +4914,39 @@ function renderState(state) {
       }
 
       // 如果有下次刷新时间，显示刷新倒计时
-      if (nextRespawn && nextRespawn > Date.now()) {
+      if (inCrossRankRoom) {
+        resetBossRespawn();
+        if (ui.worldBossRank) ui.worldBossRank.innerHTML = '';
+        if (!crossRank) {
+          const empty = document.createElement('div');
+          empty.textContent = '暂无排行';
+          ui.worldBossRank.appendChild(empty);
+        } else if (!isCrossRankActive) {
+          const empty = document.createElement('div');
+          empty.textContent = '排位赛尚未开始';
+          ui.worldBossRank.appendChild(empty);
+        } else if (!crossRank.entries.length) {
+          const empty = document.createElement('div');
+          empty.textContent = '暂无排行';
+          ui.worldBossRank.appendChild(empty);
+        } else {
+          crossRank.entries.forEach((entry, idx) => {
+            const row = document.createElement('div');
+            row.className = 'rank-item';
+            const name = document.createElement('span');
+            name.textContent = `${entry.name}`;
+            const kills = document.createElement('span');
+            kills.textContent = `${entry.kills}`;
+            const pos = document.createElement('span');
+            pos.className = 'rank-pos';
+            pos.textContent = `#${idx + 1}`;
+            row.appendChild(pos);
+            row.appendChild(name);
+            row.appendChild(kills);
+            ui.worldBossRank.appendChild(row);
+          });
+        }
+      } else if (nextRespawn && nextRespawn > Date.now()) {
         if (bossRespawnTimerEl && !bossRespawnTimerEl.isConnected) {
           bossRespawnTimerEl = null;
         }
