@@ -54,6 +54,15 @@ export async function clearMobRespawn(realmId, zoneId, roomId, slotIndex) {
   );
 }
 
+export async function clearInvalidCrossWorldBossRespawns() {
+  return withSqliteRetry(() =>
+    knex('mob_respawns')
+      .where({ zone_id: 'crb', template_id: 'cross_world_boss' })
+      .whereNot('realm_id', 0)
+      .del()
+  );
+}
+
 export async function saveMobState(realmId, zoneId, roomId, slotIndex, templateId, currentHp, status) {
   return upsertMobRespawn(realmId, zoneId, roomId, slotIndex, templateId, 0, currentHp, status);
 }
