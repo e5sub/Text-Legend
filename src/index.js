@@ -4417,7 +4417,15 @@ function buildRoomExits(zoneId, roomId) {
     const fullLabel = destRoom
       ? (destZoneId === zoneId ? destRoom.name : `${destZone.name} - ${destRoom.name}`)
       : dest;
-    const label = fullLabel.includes(' - ')
+    const isBossDestination = (
+      (destZoneId === 'wb' && destRoomId === 'lair') ||
+      (destZoneId === 'crb' && destRoomId === 'arena') ||
+      (destZoneId === 'crr' && destRoomId === 'arena') ||
+      (destZoneId === 'molong' && destRoomId === 'deep') ||
+      (destZoneId === 'sb_guild' && destRoomId === 'sanctum') ||
+      (destZoneId === 'dark_bosses')
+    );
+    const label = (isBossDestination && fullLabel.includes(' - '))
       ? fullLabel.split(' - ').slice(1).join(' - ')
       : fullLabel;
     return { dir, label };
