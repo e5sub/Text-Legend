@@ -4955,7 +4955,7 @@ function renderState(state) {
       crossRankTimerEl = null;
       crossRankTimerLabel = null;
       if (ui.worldBossRank) {
-        ui.worldBossRank.querySelectorAll('.cross-rank-time').forEach((node) => node.remove());
+        ui.worldBossRank.querySelectorAll('.cross-rank-time, .boss-respawn-time').forEach((node) => node.remove());
       }
     };
     const prevRoomKey = ui.worldBossRank.dataset.roomKey || null;
@@ -5021,7 +5021,7 @@ function renderState(state) {
             crossRankTimerTarget = target;
             crossRankTimerLabel = label;
             const timeDiv = document.createElement('div');
-            timeDiv.className = 'cross-rank-time';
+            timeDiv.className = 'boss-respawn-time cross-rank-time';
             const timerSpan = document.createElement('span');
             timerSpan.textContent = '计算中...';
             timeDiv.appendChild(document.createTextNode(label === 'start' ? '距离开始: ' : '距离结束: '));
