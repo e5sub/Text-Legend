@@ -66,3 +66,15 @@ export async function clearAllSessions() {
   // 只清除玩家 session（token不以 'adm_' 开头），保留管理员 session
   await knex('sessions').whereNot('token', 'like', 'adm_%').del();
 }
+
+export async function clearRealmSessions(realmIds = []) {
+  const ids = Array.from(new Set(realmIds.map((id) => Number(id)).filter((id) => Number.isFinite(id) && id > 0)));
+  if (ids.length === 0) return;
+  const rows = await knex('characters').whereIn('realm_id', ids).distinct('user_id');
+  const userIds = rows.map((row) => row.user_id).filter((id) => id !== null && id !== undefined);
+  if (userIds.length === 0) return;
+  await knex('sessions')
+    .whereIn('user_id', userIds)
+    .whereNot('token', 'like', 'adm_%')
+    .del();
+}

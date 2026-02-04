@@ -11,7 +11,7 @@ import cron from 'node-cron';
 import config from './config.js';
 import { validatePlayerName } from './game/validator.js';
 import knex from './db/index.js';
-import { createUser, verifyUser, createSession, getSession, getUserByName, setAdminFlag, verifyUserPassword, updateUserPassword, clearUserSessions, clearAllSessions } from './db/users.js';
+import { createUser, verifyUser, createSession, getSession, getUserByName, setAdminFlag, verifyUserPassword, updateUserPassword, clearUserSessions, clearRealmSessions } from './db/users.js';
 import { listCharacters, loadCharacter, saveCharacter, findCharacterByName, findCharacterByNameInRealm, listAllCharacters, deleteCharacter } from './db/characters.js';
 import { addGuildMember, createGuild, getGuildByName, getGuildByNameInRealm, getGuildById, getGuildMember, getSabakOwner, isGuildLeader, isGuildLeaderOrVice, setGuildMemberRole, listGuildMembers, listSabakRegistrations, registerSabak, hasSabakRegistrationToday, hasAnySabakRegistrationToday, removeGuildMember, leaveGuild, setSabakOwner, clearSabakRegistrations, transferGuildLeader, ensureSabakState, applyToGuild, listGuildApplications, removeGuildApplication, approveGuildApplication, getApplicationByUser, listAllGuilds } from './db/guilds.js';
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
@@ -1406,13 +1406,14 @@ app.post('/admin/realms/merge', async (req, res) => {
     });
   }
 
-  // 强制下线所有玩家
-  for (const player of Array.from(players.values())) {
-    try {
-      player.send('GM正在执行合区操作，已强制下线。');
-      player.socket.disconnect();
-    } catch {}
-  }
+    // 仅强制下线源区与目标区玩家
+    for (const player of Array.from(players.values())) {
+      if ((player.realmId || 1) !== sourceId && (player.realmId || 1) !== targetId) continue;
+      try {
+        player.send('GM正在执行合区操作，已强制下线。');
+        player.socket.disconnect();
+      } catch {}
+    }
 
   // 创建合区前的备份
   const backupPayload = {
@@ -1535,15 +1536,15 @@ app.post('/admin/realms/merge', async (req, res) => {
 
   await refreshRealmCache();
 
-  // 清除所有session，强制玩家重新登录
-  await clearAllSessions();
+    // 仅清除源区与目标区的session，强制相关玩家重新登录
+    await clearRealmSessions([sourceId, targetId]);
 
   // 返回结果，不包含备份数据（数据量太大，前端通过单独接口下载）
   res.json({
     ok: true,
     sourceId,
     targetId,
-    message: `合区完成。角色: ${stats.characters}, 行会: ${stats.guilds}, 邮件: ${stats.mails}, 寄售: ${stats.consignments}, 寄售历史: ${stats.consignmentHistory}, 沙巴克报名: ${stats.sabakRegistrations}。所有服务器ID已重新编号，保持连续性。所有玩家已强制下线，请重新登录。`,
+      message: `合区完成。角色: ${stats.characters}, 行会: ${stats.guilds}, 邮件: ${stats.mails}, 寄售: ${stats.consignments}, 寄售历史: ${stats.consignmentHistory}, 沙巴克报名: ${stats.sabakRegistrations}。所有服务器ID已重新编号，保持连续性。源区与目标区玩家已强制下线，请重新登录。`,
     backupAvailable: true
   });
 });
