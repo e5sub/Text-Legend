@@ -19,7 +19,17 @@ export async function getConsignment(id, realmId = 1) {
   return knex('consignments').where({ id, realm_id: realmId }).first();
 }
 
-export async function createConsignment({ sellerName, itemId, qty, price, effectsJson, durability = null, maxDurability = null, realmId = 1 }) {
+export async function createConsignment({
+  sellerName,
+  itemId,
+  qty,
+  price,
+  effectsJson,
+  durability = null,
+  maxDurability = null,
+  refineLevel = null,
+  realmId = 1
+}) {
   const [id] = await knex('consignments').insert({
     seller_name: sellerName,
     item_id: itemId,
@@ -28,6 +38,7 @@ export async function createConsignment({ sellerName, itemId, qty, price, effect
     effects_json: effectsJson || null,
     durability,
     max_durability: maxDurability,
+    refine_level: refineLevel,
     realm_id: realmId
   });
   return id;

@@ -3217,7 +3217,7 @@ const consignApi = {
         seller: row.seller_name,
         qty: row.qty,
         price: row.price,
-        item: buildItemView(row.item_id, parseJson(row.effects_json), row.durability, row.max_durability)
+        item: buildItemView(row.item_id, parseJson(row.effects_json), row.durability, row.max_durability, row.refine_level ?? 0)
       }));
       player.socket.emit('consign_list', { type: 'market', items });
       return items;
@@ -3230,12 +3230,14 @@ const consignApi = {
         seller: row.seller_name,
         qty: row.qty,
         price: row.price,
-        item: buildItemView(row.item_id, parseJson(row.effects_json), row.durability, row.max_durability)
+        item: buildItemView(row.item_id, parseJson(row.effects_json), row.durability, row.max_durability, row.refine_level ?? 0)
       }));
       player.socket.emit('consign_list', { type: 'mine', items });
       return items;
     },
-    async sell(player, itemId, qty, price, effects = null) {
+    async sell(player, invSlot, qty, price, effects = null) {
+      if (!invSlot || !invSlot.id) return { ok: false, msg: '背包里没有该物品。' };
+      const itemId = invSlot.id;
       // 验证物品ID
       const itemResult = validateItemId(itemId);
       if (!itemResult.ok) return { ok: false, msg: '未找到物品。' };
@@ -3256,16 +3258,14 @@ const consignApi = {
       // 验证effects
       const effectsResult = validateEffects(effects);
       if (!effectsResult.ok) return { ok: false, msg: effectsResult.error };
-      
-      // 验证玩家拥有该物品
-      const hasItemResult = validatePlayerHasItem(player, itemId, qtyResult.value, effectsResult.value);
-      if (!hasItemResult.ok) return { ok: false, msg: hasItemResult.error };
-      
-      const invSlot = hasItemResult.slot;
+
       const durability = validateDurability(invSlot.durability).value ?? null;
       const maxDurability = validateMaxDurability(invSlot.max_durability).value ?? null;
-      
-      if (!removeItem(player, itemId, qtyResult.value, effectsResult.value)) return { ok: false, msg: '背包里没有足够数量。' };
+      const refineLevel = Number.isFinite(invSlot.refine_level) ? invSlot.refine_level : 0;
+
+      if (!removeItem(player, itemId, qtyResult.value, effectsResult.value, durability, maxDurability, refineLevel)) {
+        return { ok: false, msg: '背包里没有足够数量。' };
+      }
       const id = await createConsignment({
         sellerName: player.name,
         itemId,
@@ -3274,6 +3274,7 @@ const consignApi = {
         effectsJson: effectsResult.value ? JSON.stringify(effectsResult.value) : null,
         durability,
         maxDurability,
+        refineLevel,
         realmId: player.realmId || 1
       });
       await consignApi.listMine(player);
@@ -3302,7 +3303,7 @@ const consignApi = {
     if (!hasGoldResult.ok) return { ok: false, msg: hasGoldResult.error };
 
     player.gold -= serverTotal;
-      addItem(player, row.item_id, qtyResult.value, parseJson(row.effects_json), row.durability, row.max_durability);
+    addItem(player, row.item_id, qtyResult.value, parseJson(row.effects_json), row.durability, row.max_durability, row.refine_level ?? null);
 
     const remain = row.qty - qtyResult.value;
     if (remain > 0) {
@@ -3321,6 +3322,7 @@ const consignApi = {
       effectsJson: row.effects_json,
       durability: row.durability,
       maxDurability: row.max_durability,
+      refineLevel: row.refine_level ?? null,
       realmId: player.realmId || 1
     });
 
@@ -3354,7 +3356,7 @@ const consignApi = {
     const row = await getConsignment(idResult.value, player.realmId || 1);
     if (!row) return { ok: false, msg: '寄售不存在。' };
     if (row.seller_name !== player.name) return { ok: false, msg: '只能取消自己的寄售。' };
-      addItem(player, row.item_id, row.qty, parseJson(row.effects_json), row.durability, row.max_durability);
+    addItem(player, row.item_id, row.qty, parseJson(row.effects_json), row.durability, row.max_durability, row.refine_level ?? null);
     await deleteConsignment(idResult.value, player.realmId || 1);
     await consignApi.listMine(player);
     await consignApi.listMarket(player);
@@ -3369,7 +3371,7 @@ const consignApi = {
       qty: row.qty,
       price: row.price,
       total: row.price * row.qty,
-      item: buildItemView(row.item_id, parseJson(row.effects_json), row.durability, row.max_durability),
+      item: buildItemView(row.item_id, parseJson(row.effects_json), row.durability, row.max_durability, row.refine_level ?? 0),
       soldAt: row.sold_at
     }));
     player.socket.emit('consign_history', { items });
@@ -3397,7 +3399,7 @@ async function cleanupExpiredConsignments(realmId = 1) {
       const effects = parseJson(row.effects_json);
       const seller = playersByName(row.seller_name, realmId);
       if (seller) {
-        addItem(seller, row.item_id, qty, effects, row.durability, row.max_durability);
+        addItem(seller, row.item_id, qty, effects, row.durability, row.max_durability, row.refine_level ?? null);
         seller.send(`寄售到期自动下架：${ITEM_TEMPLATES[row.item_id]?.name || row.item_id} x${qty} 已返还背包。`);
         seller.forceStateRefresh = true;
         refreshedSellers.add(seller);
@@ -3407,7 +3409,7 @@ async function cleanupExpiredConsignments(realmId = 1) {
         if (sellerRow) {
           const sellerPlayer = await loadCharacter(sellerRow.user_id, sellerRow.name, sellerRow.realm_id || 1);
           if (sellerPlayer) {
-            addItem(sellerPlayer, row.item_id, qty, effects, row.durability, row.max_durability);
+            addItem(sellerPlayer, row.item_id, qty, effects, row.durability, row.max_durability, row.refine_level ?? null);
             await saveCharacter(sellerRow.user_id, sellerPlayer, sellerRow.realm_id || 1);
           }
         }

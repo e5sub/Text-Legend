@@ -1789,7 +1789,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           }
           const resolved = resolveInventoryItem(player, name);
           if (!resolved.slot || !resolved.item) return send('背包里没有该物品。');
-          const res = await consignApi.sell(player, resolved.slot.id, qty, price, resolved.slot.effects || null);
+          const res = await consignApi.sell(player, resolved.slot, qty, price, resolved.slot.effects || null);
           if (res && res.ok) player.forceStateRefresh = true;
           send(res.msg);
           return;
