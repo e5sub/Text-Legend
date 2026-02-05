@@ -3982,7 +3982,7 @@ function formatItemTooltip(item) {
     lines.push('\u7279\u6548: \u8fde\u51fb(10%\u53cc\u51fb)');
   }
   if (item.effects && item.effects.fury) {
-    lines.push('\u7279\u6548: \u7834\u8840\u72C2\u653B(\u6B66\u5668\u5C5E\u6027+25%)');
+    lines.push('\u7279\u6548: \u7834\u8840\u72C2\u653B(\u653b\u51fb/\u9b54\u6cd5/\u9053\u672f+25%)');
   }
   if (item.effects && item.effects.unbreakable) {
     lines.push('\u7279\u6548: \u6c38\u4e0d\u78e8\u635f(\u8010\u4e45\u4e0d\u4f1a\u964d\u4f4e)');
