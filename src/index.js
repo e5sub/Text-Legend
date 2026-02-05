@@ -6369,7 +6369,11 @@ io.on('connection', (socket) => {
     // 检查是否已有申请
     const existingApp = await getApplicationByUser(player.userId, player.realmId || 1);
     if (existingApp) {
-      return socket.emit('guild_apply_result', { ok: false, msg: '你已经申请了行会，请等待处理' });
+      return socket.emit('guild_apply_result', {
+        ok: false,
+        msg: '你已经申请了行会，请等待处理',
+        guildId: existingApp.guild_id || null
+      });
     }
 
     const guild = await getGuildById(clean.guildId);
@@ -6378,7 +6382,7 @@ io.on('connection', (socket) => {
     }
 
     await applyToGuild(clean.guildId, player.userId, player.name, player.realmId || 1);
-    socket.emit('guild_apply_result', { ok: true, msg: `已申请加入行会 ${guild.name}` });
+    socket.emit('guild_apply_result', { ok: true, msg: `已申请加入行会 ${guild.name}`, guildId: clean.guildId });
 
     // 通知在线的会长和副会长
     const members = await listGuildMembers(clean.guildId, player.realmId || 1);

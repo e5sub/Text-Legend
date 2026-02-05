@@ -6152,24 +6152,24 @@ function enterGame(name) {
     const msg = payload.ok ? payload.msg : (payload.msg || '申请失败');
     appendLine(msg);
     showToast(msg);
-    const shouldLockAll = payload.ok || msg.includes('已经申请了行会') || msg.includes('已申请加入行会');
-    if (shouldLockAll) {
-      guildApplyButtons.forEach((btn) => {
+    const targetId = payload.guildId || lastGuildApplyId;
+    const shouldLockTarget = payload.ok || msg.includes('已经申请了行会') || msg.includes('已申请加入行会');
+    if (shouldLockTarget && targetId) {
+      const btn = guildApplyButtons.get(targetId);
+      if (btn) {
         btn.textContent = '等待审批';
         btn.disabled = true;
-      });
-      if (lastGuildApplyId) {
-        guildApplyPending.delete(lastGuildApplyId);
       }
+      guildApplyPending.delete(targetId);
       return;
     }
-    if (lastGuildApplyId) {
-      const btn = guildApplyButtons.get(lastGuildApplyId);
+    if (targetId) {
+      const btn = guildApplyButtons.get(targetId);
       if (btn) {
         btn.textContent = '申请加入';
         btn.disabled = false;
       }
-      guildApplyPending.delete(lastGuildApplyId);
+      guildApplyPending.delete(targetId);
     }
   });
   socket.on('guild_approve_result', (payload) => {
