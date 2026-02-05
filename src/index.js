@@ -5369,6 +5369,10 @@ function retaliateMobAgainstPlayer(mob, player, online) {
     
     // 特殊BOSS溅射效果：对房间所有其他玩家和召唤物造成BOSS攻击力50%的溅射伤害
     if (isSpecialBoss && online && online.length > 0) {
+      if (!mob.status) mob.status = {};
+      if (mob.status.splashing) return;
+      mob.status.splashing = true;
+      try {
       const splashDmg = Math.floor(mob.atk * 0.5);
       const roomPlayers = online.filter((p) => 
         p.name !== mobTarget.name &&
@@ -5410,6 +5414,9 @@ function retaliateMobAgainstPlayer(mob, player, online) {
           }
         });
       }
+      } finally {
+        mob.status.splashing = false;
+      }
     }
     
     return;
@@ -5419,6 +5426,10 @@ function retaliateMobAgainstPlayer(mob, player, online) {
   
   // 特殊BOSS溅射效果：主目标是召唤物时，对玩家和房间所有其他玩家及召唤物造成BOSS攻击力50%的溅射伤害
   if (isSpecialBoss && online && online.length > 0) {
+    if (!mob.status) mob.status = {};
+    if (mob.status.splashing) return;
+    mob.status.splashing = true;
+    try {
     const splashDmg = Math.floor(mob.atk * 0.5);
     
     // 溅射到召唤物的主人
@@ -5457,6 +5468,9 @@ function retaliateMobAgainstPlayer(mob, player, online) {
         }
       });
     });
+    } finally {
+      mob.status.splashing = false;
+    }
   }
   
   if (mobTarget.hp <= 0) {
@@ -8378,46 +8392,54 @@ async function combatTick() {
         
         // 特殊BOSS溅射效果：对房间所有其他玩家和召唤物造成BOSS攻击力50%的溅射伤害
         if (isSpecialBoss && online && online.length > 0) {
-          const splashDmg = Math.floor(mob.atk * 0.5 * enragedMultiplier);
-          const roomPlayers = online.filter((p) => 
-            p.name !== mobTarget.name &&
-            p.position.zone === player.position.zone &&
-            p.position.room === player.position.room &&
-            p.hp > 0
-          );
-          
-          roomPlayers.forEach((splashTarget) => {
-            const splashDealt = applyDamageToPlayer(splashTarget, splashDmg);
-            splashTarget.send(`${mob.name} 的攻击溅射到你，造成 ${splashDealt} 点伤害。`);
-            if (splashTarget.hp <= 0 && !tryRevive(splashTarget)) {
-              handleDeath(splashTarget);
+          if (!mob.status) mob.status = {};
+          if (!mob.status.splashing) {
+            mob.status.splashing = true;
+            try {
+              const splashDmg = Math.floor(mob.atk * 0.5 * enragedMultiplier);
+              const roomPlayers = online.filter((p) => 
+                p.name !== mobTarget.name &&
+                p.position.zone === player.position.zone &&
+                p.position.room === player.position.room &&
+                p.hp > 0
+              );
+              
+              roomPlayers.forEach((splashTarget) => {
+                const splashDealt = applyDamageToPlayer(splashTarget, splashDmg);
+                splashTarget.send(`${mob.name} 的攻击溅射到你，造成 ${splashDealt} 点伤害。`);
+                if (splashTarget.hp <= 0 && !tryRevive(splashTarget)) {
+                  handleDeath(splashTarget);
+                }
+                
+                // 溅射到召唤物
+                const splashSummons = getAliveSummons(splashTarget);
+                splashSummons.forEach((summon) => {
+                  applyDamageToSummon(summon, splashDmg);
+                  splashTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${splashDmg} 点伤害。`);
+                  if (summon.hp <= 0) {
+                    splashTarget.send(`${summon.name} 被击败。`);
+                    removeSummonById(splashTarget, summon.id);
+                    autoResummon(splashTarget, summon.id);
+                  }
+                });
+              });
+              
+              // 溅射到主目标的召唤物（如果主目标是玩家且有召唤物）
+              if (mobTarget && mobTarget.userId) {
+                const targetSummons = getAliveSummons(mobTarget);
+                targetSummons.forEach((summon) => {
+                  applyDamageToSummon(summon, splashDmg);
+                  mobTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${splashDmg} 点伤害。`);
+                  if (summon.hp <= 0) {
+                    mobTarget.send(`${summon.name} 被击败。`);
+                    removeSummonById(mobTarget, summon.id);
+                    autoResummon(mobTarget, summon.id);
+                  }
+                });
+              }
+            } finally {
+              mob.status.splashing = false;
             }
-            
-            // 溅射到召唤物
-            const splashSummons = getAliveSummons(splashTarget);
-            splashSummons.forEach((summon) => {
-              applyDamageToSummon(summon, splashDmg);
-              splashTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${splashDmg} 点伤害。`);
-              if (summon.hp <= 0) {
-                splashTarget.send(`${summon.name} 被击败。`);
-                removeSummonById(splashTarget, summon.id);
-                autoResummon(splashTarget, summon.id);
-              }
-            });
-          });
-          
-          // 溅射到主目标的召唤物（如果主目标是玩家且有召唤物）
-          if (mobTarget && mobTarget.userId) {
-            const targetSummons = getAliveSummons(mobTarget);
-            targetSummons.forEach((summon) => {
-              applyDamageToSummon(summon, splashDmg);
-              mobTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${splashDmg} 点伤害。`);
-              if (summon.hp <= 0) {
-                mobTarget.send(`${summon.name} 被击败。`);
-                removeSummonById(mobTarget, summon.id);
-                autoResummon(mobTarget, summon.id);
-              }
-            });
           }
         }
       } else {
@@ -8426,44 +8448,52 @@ async function combatTick() {
         
         // 特殊BOSS溅射效果：主目标是召唤物时，对玩家和房间所有其他玩家及召唤物造成BOSS攻击力50%的溅射伤害
         if (isSpecialBoss && online && online.length > 0) {
-          const splashDmg = Math.floor(mob.atk * 0.5 * enragedMultiplier);
-          
-          // 溅射到召唤物的主人
-          if (player && player.hp > 0) {
-            const splashDealt = applyDamageToPlayer(player, splashDmg);
-            player.send(`${mob.name} 的攻击溅射到你，造成 ${splashDealt} 点伤害。`);
-            if (player.hp <= 0 && !tryRevive(player)) {
-              handleDeath(player);
+          if (!mob.status) mob.status = {};
+          if (!mob.status.splashing) {
+            mob.status.splashing = true;
+            try {
+              const splashDmg = Math.floor(mob.atk * 0.5 * enragedMultiplier);
+              
+              // 溅射到召唤物的主人
+              if (player && player.hp > 0) {
+                const splashDealt = applyDamageToPlayer(player, splashDmg);
+                player.send(`${mob.name} 的攻击溅射到你，造成 ${splashDealt} 点伤害。`);
+                if (player.hp <= 0 && !tryRevive(player)) {
+                  handleDeath(player);
+                }
+              }
+              
+              // 溅射到房间所有其他玩家和召唤物
+              const roomPlayers = online.filter((p) => 
+                p.name !== player.name &&
+                p.position.zone === player.position.zone &&
+                p.position.room === player.position.room &&
+                p.hp > 0
+              );
+              
+              roomPlayers.forEach((splashTarget) => {
+                const splashDealt = applyDamageToPlayer(splashTarget, splashDmg);
+                splashTarget.send(`${mob.name} 的攻击溅射到你，造成 ${splashDealt} 点伤害。`);
+                if (splashTarget.hp <= 0 && !tryRevive(splashTarget)) {
+                  handleDeath(splashTarget);
+                }
+                
+                // 溅射到其他玩家的召唤物
+                const splashSummons = getAliveSummons(splashTarget);
+                splashSummons.forEach((summon) => {
+                  applyDamageToSummon(summon, splashDmg);
+                  splashTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${splashDmg} 点伤害。`);
+                  if (summon.hp <= 0) {
+                    splashTarget.send(`${summon.name} 被击败。`);
+                    removeSummonById(splashTarget, summon.id);
+                    autoResummon(splashTarget, summon.id);
+                  }
+                });
+              });
+            } finally {
+              mob.status.splashing = false;
             }
           }
-          
-          // 溅射到房间所有其他玩家和召唤物
-          const roomPlayers = online.filter((p) => 
-            p.name !== player.name &&
-            p.position.zone === player.position.zone &&
-            p.position.room === player.position.room &&
-            p.hp > 0
-          );
-          
-          roomPlayers.forEach((splashTarget) => {
-            const splashDealt = applyDamageToPlayer(splashTarget, splashDmg);
-            splashTarget.send(`${mob.name} 的攻击溅射到你，造成 ${splashDealt} 点伤害。`);
-            if (splashTarget.hp <= 0 && !tryRevive(splashTarget)) {
-              handleDeath(splashTarget);
-            }
-            
-            // 溅射到其他玩家的召唤物
-            const splashSummons = getAliveSummons(splashTarget);
-            splashSummons.forEach((summon) => {
-              applyDamageToSummon(summon, splashDmg);
-              splashTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${splashDmg} 点伤害。`);
-              if (summon.hp <= 0) {
-                splashTarget.send(`${summon.name} 被击败。`);
-                removeSummonById(splashTarget, summon.id);
-                autoResummon(splashTarget, summon.id);
-              }
-            });
-          });
         }
         
         if (mobTarget.hp <= 0) {
