@@ -4204,6 +4204,8 @@ function pickPlayerBonusConfig(playerBonusConfig, playerCount) {
 }
 
 function isSpecialBossDebuffImmune(target) {
+  // 取消低血量负面免疫
+  return false;
   if (!target || !target.templateId) return false;
   const tpl = MOB_TEMPLATES[target.templateId];
   if (!tpl) return false;
@@ -4226,19 +4228,24 @@ function isSpecialBossEnraged(mob) {
 
 function clearNegativeStatuses(target) {
   if (!target?.status) return;
-  delete target.status.poison;
-  delete target.status.activePoisons;
-  delete target.status.poisonsBySource;
+  // 保留毒相关状态，BOSS不再免疫毒
   if (target.status.debuffs) {
     const healBlock = target.status.debuffs.healBlock;
     const armorBreak = target.status.debuffs.armorBreak;
     const weak = target.status.debuffs.weak;
+    const poison = target.status.debuffs.poison;
+    const poisonEffect = target.status.debuffs.poisonEffect;
     delete target.status.debuffs;
     if (healBlock || armorBreak || weak) {
       target.status.debuffs = {};
       if (healBlock) target.status.debuffs.healBlock = healBlock;
       if (armorBreak) target.status.debuffs.armorBreak = armorBreak;
       if (weak) target.status.debuffs.weak = weak;
+    }
+    if (poison || poisonEffect) {
+      if (!target.status.debuffs) target.status.debuffs = {};
+      if (poison) target.status.debuffs.poison = poison;
+      if (poisonEffect) target.status.debuffs.poisonEffect = poisonEffect;
     }
   }
 }
@@ -5806,7 +5813,6 @@ function calcPoisonEffectTickDamage(target) {
 
 function tryApplyPoisonEffect(attacker, target) {
   if (!attacker || !target) return false;
-  if (isSpecialBossDebuffImmune(target)) return false;
   if (!attacker?.flags?.hasPoisonEffect) return false;
   if (Math.random() > 0.1) return false;
   applyPoison(target, 10, calcPoisonEffectTickDamage(target), attacker.name);
@@ -8272,12 +8278,12 @@ async function combatTick() {
         mob.status.debuffs.armorBreak = { expiresAt: Date.now() + 2000, defMultiplier: 0.8 };
         player.send(`破防戒指生效，${mob.name} 防御降低20%！`);
       }
-      if (!mobImmuneToDebuffs && skill && skill.type === 'dot') {
+      if (skill && skill.type === 'dot') {
         if (!mob.status) mob.status = {};
         applyPoison(mob, 30, calcPoisonTickDamage(mob), player.name);
         applyPoisonDebuff(mob);
         player.send(`施毒成功：${mob.name} 中毒。`);
-      } else if (!mobImmuneToDebuffs && tryApplyPoisonEffect(player, mob)) {
+      } else if (tryApplyPoisonEffect(player, mob)) {
         player.send(`你的毒特效作用于 ${mob.name}。`);
       }
       if (skill && skill.type === 'cleave') {

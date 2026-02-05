@@ -88,42 +88,18 @@ export function applyHealing(target, amount) {
 export function applyPoison(target, turns, tickDamage, sourceName = null) {
   if (!target) return false;
   if (!target.status) target.status = {};
-  // 处理毒效果（特殊BOSS可叠多层，普通怪只保留一层）
-  const isSpecialBoss = Boolean(
-    target.templateId &&
-    MOB_TEMPLATES[target.templateId]?.specialBoss
-  );
-
-  // 特殊BOSS：每个玩家单独冷却，允许多条毒同时存在
-  if (isSpecialBoss) {
-    const now = Date.now();
-    if (!target.status.poisonsBySource) {
-      target.status.poisonsBySource = {};
-    }
-
-    if (sourceName && target.status.poisonsBySource[sourceName]) {
-      const cooldownUntil = target.status.poisonsBySource[sourceName];
-      if (now < cooldownUntil) {
-        return false;
-      }
-    }
-
-    if (sourceName) {
-      target.status.poisonsBySource[sourceName] = now + 60000;
-    }
-
-    if (!target.status.activePoisons) {
-      target.status.activePoisons = [];
-    }
-    target.status.activePoisons.push({ turns, tickDamage, sourceName });
-    return true;
+  if (target.status.activePoisons) {
+    delete target.status.activePoisons;
   }
-
-  // 普通目标：只允许单条毒
+  if (target.status.poisonsBySource) {
+    delete target.status.poisonsBySource;
+  }
+  // 不允许叠加毒
   if (target.status.poison) {
     return false;
   }
-  target.status.poison = { turns, tickDamage, sourceName };
+  const cappedDamage = Math.min(1000, Math.max(1, Math.floor(tickDamage || 0)));
+  target.status.poison = { turns, tickDamage: cappedDamage, sourceName };
   return true;
 }
 
@@ -176,13 +152,15 @@ export function tickStatus(target) {
         damage = Math.floor(damage * (1000 / totalDamageBySource[source]));
       }
 
-      applyDamage(target, damage);
-      totalDamage += damage;
+      const remainingCap = Math.max(0, 1000 - totalDamage);
+      const applied = Math.min(damage, remainingCap);
+      applyDamage(target, applied);
+      totalDamage += applied;
 
       if (!damageBySource[source]) {
         damageBySource[source] = 0;
       }
-      damageBySource[source] += damage;
+      damageBySource[source] += applied;
 
       poison.turns -= 1;
 
@@ -202,7 +180,7 @@ export function tickStatus(target) {
 
   // 单层毒（普通目标）
   if (target.status.poison && target.status.poison.turns > 0) {
-    const damage = target.status.poison.tickDamage;
+    const damage = Math.min(1000, target.status.poison.tickDamage);
     const sourceName = target.status.poison.sourceName;
     applyDamage(target, damage);
     target.status.poison.turns -= 1;
