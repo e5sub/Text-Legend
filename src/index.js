@@ -5284,6 +5284,7 @@ function applyDamageToMob(mob, dmg, attackerName, realmId = null) {
 
 function retaliateMobAgainstPlayer(mob, player, online) {
   if (!mob || mob.hp <= 0) return;
+  if (mob.status?.processed) return;
   if (mob.respawnAt && mob.respawnAt > Date.now()) return;
   if (mob.status && mob.status.stunTurns > 0) return;
   const primarySummon = getPrimarySummon(player);
@@ -8443,8 +8444,8 @@ async function combatTick() {
     }
     const mobZoneId = mob.zoneId || player.position.zone;
     const mobRoomId = mob.roomId || player.position.room;
-    // BOSS刷新中或已死亡时，不应继续对玩家造成伤害
-    if (mob.hp <= 0 || (mob.respawnAt && mob.respawnAt > Date.now())) {
+    // BOSS刷新中/已处理/已死亡时，不应继续对玩家造成伤害
+    if (mob.status?.processed || mob.hp <= 0 || (mob.respawnAt && mob.respawnAt > Date.now())) {
       continue;
     }
     const mobSkill = pickMobSkill(mob);
