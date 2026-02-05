@@ -5751,16 +5751,19 @@ function tryApplyHealBlockEffect(attacker, target) {
   return true;
 }
 
-function calcMagicDamageFromValue(value, target) {
-  const base = Math.max(0, value || 0);
+function calcMagicDamage(powerStat, target, skillPower = 1) {
+  const base = Math.max(0, powerStat || 0);
+  const magicAtk = Math.floor(base * randInt(70, 100) / 100);
   const mdefMultiplier = getMagicDefenseMultiplier(target);
-  const mdef = Math.floor((target.mdef || 0) * mdefMultiplier);
-  const dmg = Math.floor((base + randInt(0, base / 2)) - mdef * 0.6);
+  const baseMdef = Math.floor((target.mdef || 0) * mdefMultiplier);
+  const mdef = baseMdef + randInt(0, Math.max(0, baseMdef / 2));
+  const dmg = Math.floor((magicAtk - mdef) * skillPower);
   return Math.max(1, dmg);
 }
 
-function calcTaoistDamageFromValue(value, target) {
-  const base = Math.max(0, value || 0);
+function calcTaoistDamage(powerStat, target, skillPower = 1) {
+  const base = Math.max(0, powerStat || 0);
+  const magicAtk = Math.floor(base * randInt(70, 100) / 100);
   let defBonus = 0;
   const defBuff = target.status?.buffs?.defBuff;
   if (defBuff) {
@@ -5772,11 +5775,20 @@ function calcTaoistDamageFromValue(value, target) {
   }
   const defMultiplier = getDefenseMultiplier(target);
   const baseDef = (target.def || 0) + defBonus;
-  const def = Math.floor(baseDef * defMultiplier);
+  const def = Math.floor(baseDef * defMultiplier) + randInt(0, Math.max(0, baseDef / 2));
   const mdefMultiplier = getMagicDefenseMultiplier(target);
-  const mdef = Math.floor((target.mdef || 0) * mdefMultiplier);
-  const dmg = Math.floor((base + randInt(0, base / 2)) - def * 0.3 - mdef * 0.3);
+  const baseMdef = Math.floor((target.mdef || 0) * mdefMultiplier);
+  const mdef = baseMdef + randInt(0, Math.max(0, baseMdef / 2));
+  const dmg = Math.floor(magicAtk * skillPower - def * 0.3 - mdef * 0.3);
   return Math.max(1, dmg);
+}
+
+function calcMagicDamageFromValue(value, target) {
+  return calcMagicDamage(value, target, 1);
+}
+
+function calcTaoistDamageFromValue(value, target) {
+  return calcTaoistDamage(value, target, 1);
 }
 
 function calcPoisonTickDamage(target) {
@@ -7851,27 +7863,18 @@ async function combatTick() {
           if (skill.powerStat === 'atk') {
             dmg = calcDamage(player, target, skillPower);
           } else {
-            const mdefMultiplier = getMagicDefenseMultiplier(target);
-            const mdef = Math.floor((target.mdef || 0) * mdefMultiplier);
             const powerStat = getPowerStatValue(player, skill);
             // 道士的soul技能受防御和魔御各50%影响
             if (skill.id === 'soul') {
-              const defMultiplier = getDefenseMultiplier(target);
-              const def = Math.floor((target.def || 0) * defMultiplier);
-              dmg = Math.floor((powerStat + randInt(0, powerStat / 2)) * skillPower - mdef * 0.3 - def * 0.3);
+              dmg = calcTaoistDamage(powerStat, target, skillPower);
             } else {
-              dmg = Math.floor((powerStat + randInt(0, powerStat / 2)) * skillPower - mdef * 0.6);
+              dmg = calcMagicDamage(powerStat, target, skillPower);
             }
-            if (dmg < 1) dmg = 1;
           }
         } else if (skill.type === 'dot') {
-          const mdefMultiplier = getMagicDefenseMultiplier(target);
-          const defMultiplier = getDefenseMultiplier(target);
-          const mdef = Math.floor((target.mdef || 0) * mdefMultiplier);
-          const def = Math.floor((target.def || 0) * defMultiplier);
           const spirit = getSpiritValue(player);
           // 道术攻击受防御和魔御各50%影响
-          dmg = Math.max(1, Math.floor((spirit + randInt(0, spirit / 2)) * skillPower - mdef * 0.3 - def * 0.3));
+          dmg = calcTaoistDamage(spirit, target, skillPower);
         } else {
           const isNormal = !skill || skill.id === 'slash';
           const crit = consumeFirestrikeCrit(player, 'player', isNormal);
@@ -8125,11 +8128,8 @@ async function combatTick() {
           if (skill.powerStat === 'atk') {
             dmg = calcDamage(player, mob, skillPower);
           } else {
-            const mdefMultiplier = getMagicDefenseMultiplier(mob);
-            const mdef = Math.floor((mob.mdef || 0) * mdefMultiplier);
             const powerStat = getPowerStatValue(player, skill);
-            dmg = Math.floor((powerStat + randInt(0, powerStat / 2)) * skillPower - mdef * 0.6);
-            if (dmg < 1) dmg = 1;
+            dmg = calcMagicDamage(powerStat, mob, skillPower);
           }
         } else if (skill.type === 'dot') {
           dmg = Math.max(1, Math.floor(player.mag * 0.5 * skillPower));
@@ -8162,10 +8162,8 @@ async function combatTick() {
           if (skill.powerStat === 'atk') {
             aoeDmg = calcDamage(player, target, skillPower);
           } else {
-            const mdefMultiplier = getMagicDefenseMultiplier(target);
-            const mdef = Math.floor((target.mdef || 0) * mdefMultiplier);
             const powerStat = getPowerStatValue(player, skill);
-            aoeDmg = Math.max(1, Math.floor((powerStat + randInt(0, powerStat / 2)) * skillPower - mdef * 0.6));
+            aoeDmg = calcMagicDamage(powerStat, target, skillPower);
           }
           if (hasFalloff && target.id !== mob.id) {
             aoeDmg = Math.max(1, Math.floor(aoeDmg * 0.5));
