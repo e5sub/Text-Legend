@@ -76,7 +76,8 @@ export function calcDamage(attacker, defender, power = 1) {
 
 // 直接扣血（带下限）
 export function applyDamage(target, dmg) {
-  target.hp = clamp(target.hp - dmg, 0, target.max_hp);
+  const actual = Math.max(0, Math.floor(Number(dmg) || 0));
+  target.hp = clamp(target.hp - actual, 0, target.max_hp);
 }
 
 // 直接回血（带上限）

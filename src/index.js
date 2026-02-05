@@ -4321,6 +4321,7 @@ function applyDamageToSummon(target, dmg) {
       dmg -= convert;
     }
   }
+  dmg = Math.max(0, Math.floor(Number(dmg) || 0));
   applyDamage(target, dmg);
   return dmg;
 }
@@ -4353,6 +4354,7 @@ function applyDamageToPlayer(target, dmg) {
       dmg = Math.floor(dmg * (1 - (buff.dmgReduction || 0)));
     }
   }
+  dmg = Math.max(0, Math.floor(Number(dmg) || 0));
   applyDamage(target, dmg);
   return dmg;
 }
@@ -5282,6 +5284,7 @@ function applyDamageToMob(mob, dmg, attackerName, realmId = null) {
 
 function retaliateMobAgainstPlayer(mob, player, online) {
   if (!mob || mob.hp <= 0) return;
+  if (mob.respawnAt && mob.respawnAt > Date.now()) return;
   if (mob.status && mob.status.stunTurns > 0) return;
   const primarySummon = getPrimarySummon(player);
   const summonAlive = Boolean(primarySummon);
