@@ -606,6 +606,9 @@ let tradeData = {
   partnerName: ''
 };
 let guildMembers = [];
+let lastGuildApplyId = null;
+const guildApplyButtons = new Map();
+const guildApplyPending = new Set();
 const CONSIGN_PAGE_SIZE = 9;
 let bagItems = [];
 let bagPage = 0;
@@ -4120,6 +4123,8 @@ function renderGuildModal() {
 function renderGuildListModal(guilds) {
   if (!guildListUi.modal || !guildListUi.list) return;
   guildListUi.list.innerHTML = '';
+  guildApplyButtons.clear();
+  guildApplyPending.clear();
 
   if (!guilds || guilds.length === 0) {
     const empty = document.createElement('div');
@@ -4134,9 +4139,26 @@ function renderGuildListModal(guilds) {
       const applyBtn = document.createElement('button');
       applyBtn.textContent = '申请加入';
       applyBtn.addEventListener('click', () => {
-        if (socket) socket.emit('guild_apply', { guildId: guild.id });
+        if (!socket) {
+          showToast('未连接服务器');
+          return;
+        }
+        if (guildApplyPending.has(guild.id)) return;
+        lastGuildApplyId = guild.id;
+        guildApplyPending.add(guild.id);
+        applyBtn.disabled = true;
+        applyBtn.textContent = '申请中...';
+        socket.emit('guild_apply', { guildId: guild.id });
+        setTimeout(() => {
+          if (!guildApplyPending.has(guild.id)) return;
+          guildApplyPending.delete(guild.id);
+          applyBtn.disabled = false;
+          applyBtn.textContent = '申请加入';
+          showToast('申请超时，请重试');
+        }, 5000);
       });
       row.appendChild(applyBtn);
+      guildApplyButtons.set(guild.id, applyBtn);
       guildListUi.list.appendChild(row);
     });
   }
@@ -6127,10 +6149,21 @@ function enterGame(name) {
   });
   socket.on('guild_apply_result', (payload) => {
     if (!payload) return;
-    if (payload.ok) {
-      appendLine(payload.msg);
-    } else {
-      appendLine(payload.msg || '申请失败');
+    const msg = payload.ok ? payload.msg : (payload.msg || '申请失败');
+    appendLine(msg);
+    showToast(msg);
+    if (lastGuildApplyId) {
+      const btn = guildApplyButtons.get(lastGuildApplyId);
+      if (btn) {
+        if (payload.ok) {
+          btn.textContent = '已申请';
+          btn.disabled = true;
+        } else {
+          btn.textContent = '申请加入';
+          btn.disabled = false;
+        }
+      }
+      guildApplyPending.delete(lastGuildApplyId);
     }
   });
   socket.on('guild_approve_result', (payload) => {
