@@ -626,17 +626,27 @@ export function summonStats(player, skill, summonLevelOverride = null) {
   let atk;
   let def;
   let mdef;
+  let max_mp;
     const summonFactor = 0.1 + ((level - 1) * (0.9 / 7));
-    if (skill.id === 'skeleton' || skill.id === 'summon' || skill.id === 'white_tiger') {
+    if (skill.id === 'moon_fairy') {
+      const factor = 3.0;
+      max_hp = Math.floor((player.max_hp || 0) * factor);
+      max_mp = Math.floor((player.max_mp || 0) * factor);
+      atk = Math.floor((player.atk || 0) * factor);
+      def = Math.floor((player.def || 0) * factor);
+      mdef = Math.floor((player.mdef || 0) * factor);
+    } else if (skill.id === 'skeleton' || skill.id === 'summon' || skill.id === 'white_tiger') {
       const maxRatio = skill.id === 'white_tiger' ? 2.0 : (skill.id === 'summon' ? 1.0 : 0.6);
       const factor = summonFactor * maxRatio;
       max_hp = Math.floor((player.max_hp || 0) * factor);
+      max_mp = Math.floor((player.max_mp || 0) * factor);
       atk = Math.floor((player.spirit || 0) * factor);
       def = Math.floor((player.def || 0) * factor);
       mdef = Math.floor((player.mdef || 0) * factor);
     } else {
       const factor = summonFactor * 0.6;
       max_hp = Math.floor(base.baseHp * factor);
+      max_mp = Math.floor((player.max_mp || 0) * factor);
       atk = Math.floor((player.spirit || 0) * factor);
       def = Math.floor(base.baseDef * factor);
       mdef = 0;
@@ -650,6 +660,8 @@ export function summonStats(player, skill, summonLevelOverride = null) {
     skillLevel,
     hp: max_hp,
     max_hp,
+    mp: max_mp,
+    max_mp,
     atk,
     def,
     mdef,
@@ -661,6 +673,32 @@ function applyBuff(target, buff) {
   if (!target.status) target.status = {};
   if (!target.status.buffs) target.status.buffs = {};
   target.status.buffs[buff.key] = buff;
+}
+
+function applyMagicShield(target, ratio, durationSec, mpMultiplier = 1) {
+  if (!target) return false;
+  if (!target.status) target.status = {};
+  if (!target.status.buffs) target.status.buffs = {};
+  const now = Date.now();
+  const existing = target.status.buffs.magicShield;
+  if (existing && (!existing.expiresAt || existing.expiresAt > now)) {
+    return false;
+  }
+  const buff = {
+    key: 'magicShield',
+    expiresAt: now + durationSec * 1000,
+    ratio
+  };
+  if (mpMultiplier > 1 && target.max_mp !== undefined) {
+    const boost = Math.floor((target.max_mp || 0) * (mpMultiplier - 1));
+    if (boost > 0) {
+      target.max_mp += boost;
+      target.mp = clamp((target.mp || 0) + boost, 0, target.max_mp);
+      buff.mpBoost = boost;
+    }
+  }
+  applyBuff(target, buff);
+  return true;
 }
 
 function recordMobDamage(mob, attackerName, dmg) {
@@ -1441,6 +1479,59 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         notifyMastery(player, skill);
         return;
       }
+      if (skill.type === 'buff_magic_shield_group') {
+        if (player.mp < skill.mp) return send('魔法不足。');
+        if (skill.cooldown) {
+          if (!player.status) player.status = {};
+          if (!player.status.skillCooldowns) player.status.skillCooldowns = {};
+          const now = Date.now();
+          const lastUse = player.status.skillCooldowns[skill.id] || 0;
+          const cooldownRemaining = Math.max(0, lastUse + skill.cooldown - now);
+          if (cooldownRemaining > 0) {
+            send(`${skill.name} 冷却中，还需 ${Math.ceil(cooldownRemaining / 1000)} 秒。`);
+            return;
+          }
+        }
+        const duration = 5;
+        const party = partyApi?.getPartyByMember ? partyApi.getPartyByMember(player.name) : null;
+        const members = party
+          ? players.filter(
+              (p) =>
+                party.members.includes(p.name) &&
+                p.position.zone === player.position.zone &&
+                p.position.room === player.position.room
+            )
+          : [player];
+        const targets = members.slice();
+        members.forEach((p) => {
+          const summons = getAliveSummons(p);
+          summons.forEach((summon) => targets.push(summon));
+        });
+        const now = Date.now();
+        const alreadyActive = targets.every((p) => {
+          const shield = p.status?.buffs?.magicShield;
+          return shield && (!shield.expiresAt || shield.expiresAt > now + 1000);
+        });
+        if (alreadyActive) {
+          send(`${skill.name} 效果已存在。`);
+          return;
+        }
+        player.mp -= skill.mp;
+        targets.forEach((p) => {
+          const applied = applyMagicShield(p, 1, duration, 2);
+          if (applied && p.send && p.name && p.name !== player.name) {
+            p.send(`${player.name} 为你施放了 ${skill.name}。`);
+          }
+        });
+        if (skill.cooldown) {
+          if (!player.status) player.status = {};
+          if (!player.status.skillCooldowns) player.status.skillCooldowns = {};
+          player.status.skillCooldowns[skill.id] = Date.now();
+        }
+        send(`你施放了 ${skill.name}，持续 ${duration} 秒。`);
+        notifyMastery(player, skill);
+        return;
+      }
       if (skill.type === 'buff_def') {
         if (player.mp < skill.mp) return send('魔法不足。');
         player.mp -= skill.mp;
@@ -1541,6 +1632,34 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           player.status.skillCooldowns[skill.id] = Date.now();
         }
         send(`你施放了 ${skill.name}，自己和召唤物 ${duration} 秒内免疫所有伤害，道术提升100%。`);
+        notifyMastery(player, skill);
+        return;
+      }
+      if (skill.type === 'buff_tiangang') {
+        if (player.mp < skill.mp) return send('魔法不足。');
+        if (skill.cooldown) {
+          if (!player.status) player.status = {};
+          if (!player.status.skillCooldowns) player.status.skillCooldowns = {};
+          const now = Date.now();
+          const lastUse = player.status.skillCooldowns[skill.id] || 0;
+          const cooldownRemaining = Math.max(0, lastUse + skill.cooldown - now);
+          if (cooldownRemaining > 0) {
+            send(`${skill.name} 冷却中，还需 ${Math.ceil(cooldownRemaining / 1000)} 秒。`);
+            return;
+          }
+        }
+        player.mp -= skill.mp;
+        const duration = 5;
+        const now = Date.now();
+        applyBuff(player, { key: 'atkBuff', expiresAt: now + duration * 1000, multiplier: 2.0 });
+        applyBuff(player, { key: 'defBuff', expiresAt: now + duration * 1000, defMultiplier: 1.5 });
+        applyBuff(player, { key: 'mdefBuff', expiresAt: now + duration * 1000, mdefMultiplier: 1.5 });
+        if (skill.cooldown) {
+          if (!player.status) player.status = {};
+          if (!player.status.skillCooldowns) player.status.skillCooldowns = {};
+          player.status.skillCooldowns[skill.id] = Date.now();
+        }
+        send(`你施放了 ${skill.name}，持续 ${duration} 秒。`);
         notifyMastery(player, skill);
         return;
       }

@@ -113,7 +113,7 @@ import { MOB_TEMPLATES } from './game/mobs.js';
 import { ITEM_TEMPLATES, SHOP_STOCKS } from './game/items.js';
 import { WORLD, expandRoomVariants, shrinkRoomVariants } from './game/world.js';
 import { getRoomMobs, getAliveMobs, spawnMobs, removeMob, seedRespawnCache, setRespawnStore, getAllAliveMobs, incrementWorldBossKills, setWorldBossKillCount as setWorldBossKillCountState } from './game/state.js';
-import { calcHitChance, calcDamage, applyDamage, applyPoison, tickStatus, getDefenseMultiplier } from './game/combat.js';
+import { calcHitChance, calcDamage, applyDamage, applyHealing, applyPoison, tickStatus, getDefenseMultiplier } from './game/combat.js';
 import { randInt, clamp } from './game/utils.js';
 import { expForLevel, setRoomVariantCount as applyRoomVariantCount } from './game/constants.js';
 import {
@@ -4262,15 +4262,39 @@ function getSpiritValue(target) {
   return Math.floor(base * (buff.multiplier || 1));
 }
 
+function getAttackValue(target) {
+  if (!target) return 0;
+  const base = Number(target.atk || 0) || 0;
+  const buff = target.status?.buffs?.atkBuff;
+  if (!buff) return base;
+  const now = Date.now();
+  if (buff.expiresAt && buff.expiresAt < now) {
+    if (target.status?.buffs) delete target.status.buffs.atkBuff;
+    return base;
+  }
+  return Math.floor(base * (buff.multiplier || 1));
+}
+
 function getPowerStatValue(player, skill) {
   if (!player || !skill) return 0;
-  if (skill.powerStat === 'atk') return Number(player.atk || 0);
+  if (skill.powerStat === 'atk') return getAttackValue(player);
   if (skill.powerStat === 'spirit' || skill.id === 'soul') return getSpiritValue(player);
   return Number(player.mag || 0);
 }
 
 function applyDamageToSummon(target, dmg) {
   if (isInvincible(target)) return 0;
+  if (target.status?.buffs?.magicShield) {
+    const buff = target.status.buffs.magicShield;
+    if (buff.expiresAt && buff.expiresAt < Date.now()) {
+      delete target.status.buffs.magicShield;
+    } else if (target.mp > 0) {
+      const ratio = Number.isFinite(buff.ratio) ? buff.ratio : 0.2;
+      const convert = Math.min(Math.floor(dmg * ratio), target.mp);
+      target.mp = Math.max(0, target.mp - convert);
+      dmg -= convert;
+    }
+  }
   applyDamage(target, dmg);
   return dmg;
 }
@@ -4282,7 +4306,7 @@ function applyDamageToPlayer(target, dmg) {
     if (buff.expiresAt && buff.expiresAt < Date.now()) {
       delete target.status.buffs.magicShield;
     } else if (target.mp > 0) {
-      const ratio = 0.2;
+      const ratio = Number.isFinite(buff.ratio) ? buff.ratio : 0.2;
       const convert = Math.min(Math.floor(dmg * ratio), target.mp);
       target.mp = Math.max(0, target.mp - convert);
       dmg -= convert;
@@ -6666,8 +6690,46 @@ function refreshBuffs(target) {
   const now = Date.now();
   Object.entries(buffs).forEach(([key, buff]) => {
     if (buff && buff.expiresAt && buff.expiresAt < now) {
+      if (key === 'magicShield' && buff.mpBoost) {
+        const boost = Number(buff.mpBoost) || 0;
+        if (boost > 0 && target.max_mp !== undefined) {
+          target.max_mp = Math.max(1, (target.max_mp || 0) - boost);
+          if (target.mp !== undefined) {
+            target.mp = Math.min(target.mp, target.max_mp);
+          }
+        }
+      }
       delete buffs[key];
     }
+  });
+}
+
+function applyMoonFairyAura(player, online) {
+  const aliveSummons = getAliveSummons(player);
+  const moonFairy = aliveSummons.find((summon) => summon.id === 'moon_fairy');
+  if (!moonFairy) return;
+  const realmId = player.realmId || 1;
+  const party = getPartyByMember(player.name, realmId);
+  const members = party
+    ? online.filter(
+        (p) =>
+          party.members.includes(p.name) &&
+          p.position.zone === player.position.zone &&
+          p.position.room === player.position.room
+      )
+    : [player];
+  const targets = members.slice();
+  members.forEach((p) => {
+    const summons = getAliveSummons(p);
+    summons.forEach((summon) => targets.push(summon));
+  });
+  const now = Date.now();
+  targets.forEach((target) => {
+    if (!target || target.hp <= 0) return;
+    const heal = Math.max(1, Math.floor((target.max_hp || 0) * 0.1));
+    applyHealing(target, heal);
+    applyBuff(target, { key: 'defBuff', expiresAt: now + 1500, defMultiplier: 1.2 });
+    applyBuff(target, { key: 'mdefBuff', expiresAt: now + 1500, mdefMultiplier: 1.2 });
   });
 }
 
@@ -7537,6 +7599,7 @@ async function combatTick() {
     }
 
     refreshBuffs(player);
+    applyMoonFairyAura(player, online);
     processPotionRegen(player);
     updateRedNameAutoClear(player);
     updateAutoDailyUsage(player);
@@ -8162,6 +8225,7 @@ async function combatTick() {
     const aliveSummons = getAliveSummons(player);
     if (aliveSummons.length && mob.hp > 0) {
       aliveSummons.forEach((summon) => {
+        if (summon.id === 'moon_fairy') return;
         if (summon.id === 'white_tiger') {
           mobs.forEach((target) => {
             const hitChance = calcHitChance(summon, target);

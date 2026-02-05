@@ -49,7 +49,15 @@ export function getDefenseMultiplier(target) {
 
 // 物理伤害：攻击浮动 + 防御减免 + 技能倍率
 export function calcDamage(attacker, defender, power = 1) {
-  const atk = Math.floor(attacker.atk * randInt(70, 100) / 100);
+  let atk = Math.floor(attacker.atk * randInt(70, 100) / 100);
+  const atkBuff = attacker.status?.buffs?.atkBuff;
+  if (atkBuff) {
+    if (atkBuff.expiresAt && atkBuff.expiresAt < Date.now()) {
+      delete attacker.status.buffs.atkBuff;
+    } else {
+      atk = Math.floor(atk * (atkBuff.multiplier || 1));
+    }
+  }
   let defBonus = 0;
   const buff = defender.status?.buffs?.defBuff;
   const defMultiplier = getDefenseMultiplier(defender);

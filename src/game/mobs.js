@@ -603,7 +603,10 @@
       { id: 'book_mage_ice', chance: 0.05 },
       { id: 'book_war_earth_spike', chance: 0.03 },
       { id: 'book_mage_thunderstorm', chance: 0.03 },
-      { id: 'book_tao_white_tiger', chance: 0.03 }
+      { id: 'book_tao_white_tiger', chance: 0.03 },
+      { id: 'book_war_tiangang', chance: 0.03 },
+      { id: 'book_mage_group_shield', chance: 0.03 },
+      { id: 'book_tao_moon_fairy', chance: 0.03 }
     ]
   },
   cross_world_boss: {
@@ -707,7 +710,10 @@
       { id: 'book_mage_ice', chance: 0.05 },
       { id: 'book_war_earth_spike', chance: 0.03 },
       { id: 'book_mage_thunderstorm', chance: 0.03 },
-      { id: 'book_tao_white_tiger', chance: 0.03 }
+      { id: 'book_tao_white_tiger', chance: 0.03 },
+      { id: 'book_war_tiangang', chance: 0.03 },
+      { id: 'book_mage_group_shield', chance: 0.03 },
+      { id: 'book_tao_moon_fairy', chance: 0.03 }
     ]
   },
   sabak_boss: {
