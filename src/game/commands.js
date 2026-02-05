@@ -2861,8 +2861,8 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       }
       if (sub === 'register') {
         if (!player.guild) return send('你不在行会中。');
-        const isLeader = await guildApi.isGuildLeader(player.guild.id, player.userId, player.name);
-        if (!isLeader) return send('只有会长可以报名。');
+        const isLeader = await guildApi.isGuildLeaderOrVice(player.guild.id, player.userId, player.name);
+        if (!isLeader) return send('只有会长或副会长可以报名。');
         const isOwner = guildApi.sabakState.ownerGuildId === player.guild.id;
         if (isOwner) return send('守城行会无需报名。');
         const hasRegisteredToday = await guildApi.hasSabakRegistrationToday(player.guild.id);

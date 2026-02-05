@@ -5429,7 +5429,7 @@ function retaliateMobAgainstPlayer(mob, player, online) {
       if (mob.status.splashing) return;
       mob.status.splashing = true;
       try {
-      const splashDmg = Math.floor(mob.atk * 0.5);
+      const splashBase = Math.floor(mob.atk * 0.5);
       const roomPlayers = online.filter((p) => 
         p.name !== mobTarget.name &&
         p.position.zone === player.position.zone &&
@@ -5438,7 +5438,10 @@ function retaliateMobAgainstPlayer(mob, player, online) {
       );
       
       roomPlayers.forEach((splashTarget) => {
-        const splashDealt = applyDamageToPlayer(splashTarget, splashDmg);
+        const splashDealt = applyDamageToPlayer(
+          splashTarget,
+          calcTaoistDamageFromValue(splashBase, splashTarget)
+        );
         splashTarget.send(`${mob.name} 的攻击溅射到你，造成 ${splashDealt} 点伤害。`);
         if (splashTarget.hp <= 0 && !tryRevive(splashTarget)) {
           handleDeath(splashTarget);
@@ -5447,8 +5450,9 @@ function retaliateMobAgainstPlayer(mob, player, online) {
         // 溅射到召唤物
         const splashSummons = getAliveSummons(splashTarget);
         splashSummons.forEach((summon) => {
-          applyDamageToSummon(summon, splashDmg);
-          splashTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${splashDmg} 点伤害。`);
+          const summonDmg = calcTaoistDamageFromValue(splashBase, summon);
+          const applied = applyDamageToSummon(summon, summonDmg);
+          splashTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${applied} 点伤害。`);
           if (summon.hp <= 0) {
             splashTarget.send(`${summon.name} 被击败。`);
             removeSummonById(splashTarget, summon.id);
@@ -5461,12 +5465,13 @@ function retaliateMobAgainstPlayer(mob, player, online) {
       if (mobTarget && mobTarget.userId) {
         const targetSummons = getAliveSummons(mobTarget);
         targetSummons.forEach((summon) => {
-        applyDamageToSummon(summon, splashDmg);
-        mobTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${splashDmg} 点伤害。`);
+        const summonDmg = calcTaoistDamageFromValue(splashBase, summon);
+        const applied = applyDamageToSummon(summon, summonDmg);
+        mobTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${applied} 点伤害。`);
         if (summon.hp <= 0) {
           mobTarget.send(`${summon.name} 被击败。`);
-            removeSummonById(mobTarget, summon.id);
-            autoResummon(mobTarget, summon.id);
+          removeSummonById(mobTarget, summon.id);
+          autoResummon(mobTarget, summon.id);
           }
         });
       }
@@ -5492,11 +5497,14 @@ function retaliateMobAgainstPlayer(mob, player, online) {
     if (mob.status.splashing) return;
     mob.status.splashing = true;
     try {
-    const splashDmg = Math.floor(mob.atk * 0.5);
+    const splashBase = Math.floor(mob.atk * 0.5);
     
     // 溅射到召唤物的主人
     if (player && player.hp > 0) {
-    const splashDealt = applyDamageToPlayer(player, splashDmg);
+    const splashDealt = applyDamageToPlayer(
+      player,
+      calcTaoistDamageFromValue(splashBase, player)
+    );
     player.send(`${mob.name} 的攻击溅射到你，造成 ${splashDealt} 点伤害。`);
     if (player.hp <= 0 && !tryRevive(player)) {
       handleDeath(player);
@@ -5512,7 +5520,10 @@ function retaliateMobAgainstPlayer(mob, player, online) {
     );
     
     roomPlayers.forEach((splashTarget) => {
-      const splashDealt = applyDamageToPlayer(splashTarget, splashDmg);
+      const splashDealt = applyDamageToPlayer(
+        splashTarget,
+        calcTaoistDamageFromValue(splashBase, splashTarget)
+      );
       splashTarget.send(`${mob.name} 的攻击溅射到你，造成 ${splashDealt} 点伤害。`);
       if (splashTarget.hp <= 0 && !tryRevive(splashTarget)) {
         handleDeath(splashTarget);
@@ -5521,8 +5532,9 @@ function retaliateMobAgainstPlayer(mob, player, online) {
       // 溅射到其他玩家的召唤物
       const splashSummons = getAliveSummons(splashTarget);
       splashSummons.forEach((summon) => {
-        applyDamageToSummon(summon, splashDmg);
-        splashTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${splashDmg} 点伤害。`);
+        const summonDmg = calcTaoistDamageFromValue(splashBase, summon);
+        const applied = applyDamageToSummon(summon, summonDmg);
+        splashTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${applied} 点伤害。`);
         if (summon.hp <= 0) {
           splashTarget.send(`${summon.name} 被击败。`);
           removeSummonById(splashTarget, summon.id);
@@ -7769,6 +7781,18 @@ async function combatTick() {
       if (aggroMob) {
         player.combat = { targetId: aggroMob.id, targetType: 'mob', skillId: null };
       }
+      if (!player.combat && CROSS_RANK_EVENT_STATE.active && isCrossRankRoom(player.position.zone, player.position.room)) {
+        const enemy = online.find((p) =>
+          p.name !== player.name &&
+          p.position.zone === player.position.zone &&
+          p.position.room === player.position.room &&
+          p.hp > 0 &&
+          (p.realmId || 1) !== (player.realmId || 1)
+        );
+        if (enemy) {
+          player.combat = { targetId: enemy.name, targetType: 'player', skillId: null };
+        }
+      }
       if (player.flags?.autoSkillId && isVipAutoEnabled(player)) {
         if (!player.combat) {
           const idle = roomMobs.filter((m) => !m.status?.aggroTarget);
@@ -7802,9 +7826,15 @@ async function combatTick() {
           continue;
         }
         const inCrossBossRoom = player.position.zone === 'crb' && player.position.room === 'arena';
+        const inCrossRankRoom = isCrossRankRoom(player.position.zone, player.position.room);
         if (inCrossBossRoom && (target.realmId || 1) === (player.realmId || 1)) {
           player.combat = null;
           player.send('跨服房间不能攻击同区服玩家。');
+          continue;
+        }
+        if (inCrossRankRoom && (target.realmId || 1) === (player.realmId || 1)) {
+          player.combat = null;
+          player.send('跨服排位赛不能攻击同区服玩家。');
           continue;
         }
         if (isSabakZone(player.position.zone)) {
@@ -8059,8 +8089,9 @@ async function combatTick() {
         if (!player.flags) player.flags = {};
         const inCrossBossRoom = player.position.zone === 'crb' && player.position.room === 'arena';
         const inCrossRankRoom = isCrossRankRoom(player.position.zone, player.position.room);
+        const inCrossRankEvent = inCrossRankRoom && CROSS_RANK_EVENT_STATE.active;
         const crossRealmKill = inCrossBossRoom && (target.realmId || 1) !== (player.realmId || 1);
-        if (!wasRed && !isSabakZone(player.position.zone) && !crossRealmKill && !inCrossRankRoom) {
+        if (!wasRed && !isSabakZone(player.position.zone) && !crossRealmKill && !inCrossRankEvent) {
           player.flags.pkValue = (player.flags.pkValue || 0) + 50;
           savePlayer(player);
         }
@@ -8595,7 +8626,7 @@ async function combatTick() {
           if (!mob.status.splashing) {
             mob.status.splashing = true;
             try {
-              const splashDmg = Math.floor(mob.atk * 0.5 * enragedMultiplier);
+              const splashBase = Math.floor(mob.atk * 0.5 * enragedMultiplier);
               const roomPlayers = online.filter((p) => 
                 p.name !== mobTarget.name &&
                 p.position.zone === player.position.zone &&
@@ -8604,7 +8635,10 @@ async function combatTick() {
               );
               
               roomPlayers.forEach((splashTarget) => {
-                const splashDealt = applyDamageToPlayer(splashTarget, splashDmg);
+                const splashDealt = applyDamageToPlayer(
+                  splashTarget,
+                  calcTaoistDamageFromValue(splashBase, splashTarget)
+                );
                 splashTarget.send(`${mob.name} 的攻击溅射到你，造成 ${splashDealt} 点伤害。`);
                 if (splashTarget.hp <= 0 && !tryRevive(splashTarget)) {
                   handleDeath(splashTarget);
@@ -8613,8 +8647,9 @@ async function combatTick() {
                 // 溅射到召唤物
                 const splashSummons = getAliveSummons(splashTarget);
                 splashSummons.forEach((summon) => {
-                  applyDamageToSummon(summon, splashDmg);
-                  splashTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${splashDmg} 点伤害。`);
+                  const summonDmg = calcTaoistDamageFromValue(splashBase, summon);
+                  const applied = applyDamageToSummon(summon, summonDmg);
+                  splashTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${applied} 点伤害。`);
                   if (summon.hp <= 0) {
                     splashTarget.send(`${summon.name} 被击败。`);
                     removeSummonById(splashTarget, summon.id);
@@ -8627,8 +8662,9 @@ async function combatTick() {
               if (mobTarget && mobTarget.userId) {
                 const targetSummons = getAliveSummons(mobTarget);
                 targetSummons.forEach((summon) => {
-                  applyDamageToSummon(summon, splashDmg);
-                  mobTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${splashDmg} 点伤害。`);
+                  const summonDmg = calcTaoistDamageFromValue(splashBase, summon);
+                  const applied = applyDamageToSummon(summon, summonDmg);
+                  mobTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${applied} 点伤害。`);
                   if (summon.hp <= 0) {
                     mobTarget.send(`${summon.name} 被击败。`);
                     removeSummonById(mobTarget, summon.id);
@@ -8657,11 +8693,14 @@ async function combatTick() {
           if (!mob.status.splashing) {
             mob.status.splashing = true;
             try {
-              const splashDmg = Math.floor(mob.atk * 0.5 * enragedMultiplier);
+              const splashBase = Math.floor(mob.atk * 0.5 * enragedMultiplier);
               
               // 溅射到召唤物的主人
               if (player && player.hp > 0) {
-                const splashDealt = applyDamageToPlayer(player, splashDmg);
+                const splashDealt = applyDamageToPlayer(
+                  player,
+                  calcTaoistDamageFromValue(splashBase, player)
+                );
                 player.send(`${mob.name} 的攻击溅射到你，造成 ${splashDealt} 点伤害。`);
                 if (player.hp <= 0 && !tryRevive(player)) {
                   handleDeath(player);
@@ -8677,7 +8716,10 @@ async function combatTick() {
               );
               
               roomPlayers.forEach((splashTarget) => {
-                const splashDealt = applyDamageToPlayer(splashTarget, splashDmg);
+                const splashDealt = applyDamageToPlayer(
+                  splashTarget,
+                  calcTaoistDamageFromValue(splashBase, splashTarget)
+                );
                 splashTarget.send(`${mob.name} 的攻击溅射到你，造成 ${splashDealt} 点伤害。`);
                 if (splashTarget.hp <= 0 && !tryRevive(splashTarget)) {
                   handleDeath(splashTarget);
@@ -8686,8 +8728,9 @@ async function combatTick() {
                 // 溅射到其他玩家的召唤物
                 const splashSummons = getAliveSummons(splashTarget);
                 splashSummons.forEach((summon) => {
-                  applyDamageToSummon(summon, splashDmg);
-                  splashTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${splashDmg} 点伤害。`);
+                  const summonDmg = calcTaoistDamageFromValue(splashBase, summon);
+                  const applied = applyDamageToSummon(summon, summonDmg);
+                  splashTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${applied} 点伤害。`);
                   if (summon.hp <= 0) {
                     splashTarget.send(`${summon.name} 被击败。`);
                     removeSummonById(splashTarget, summon.id);
