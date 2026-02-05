@@ -5779,7 +5779,8 @@ function calcTaoistDamage(powerStat, target, skillPower = 1) {
   const mdefMultiplier = getMagicDefenseMultiplier(target);
   const baseMdef = Math.floor((target.mdef || 0) * mdefMultiplier);
   const mdef = baseMdef + randInt(0, Math.max(0, baseMdef / 2));
-  const dmg = Math.floor(magicAtk * skillPower - def * 0.3 - mdef * 0.3);
+  // 最小改动：降低道术伤害受到防御/魔御的削减比例
+  const dmg = Math.floor(magicAtk * skillPower - def * 0.2 - mdef * 0.2);
   return Math.max(1, dmg);
 }
 
