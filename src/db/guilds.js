@@ -129,8 +129,8 @@ export async function ensureSabakState(realmId = 1) {
 export async function registerSabak(guildId, realmId = 1) {
   await knex('sabak_registrations')
     .insert({ guild_id: guildId, registered_at: knex.fn.now(), realm_id: realmId })
-    .onConflict(['guild_id', 'realm_id'])
-    .merge({ registered_at: knex.fn.now() });
+    .onConflict(['guild_id'])
+    .merge({ registered_at: knex.fn.now(), realm_id: realmId });
 }
 
 export async function listSabakRegistrations(realmId = 1) {
