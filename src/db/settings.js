@@ -52,6 +52,17 @@ export async function setWorldBossKillCount(count, realmId = 1) {
   await setSetting(`world_boss_kill_count_${realmId}`, String(normalized));
 }
 
+export async function getSpecialBossKillCount(realmId = 1) {
+  const count = await getSetting(`special_boss_kill_count_${realmId}`, '0');
+  const parsed = parseInt(count, 10);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+export async function setSpecialBossKillCount(count, realmId = 1) {
+  const normalized = Math.max(0, Math.floor(Number(count) || 0));
+  await setSetting(`special_boss_kill_count_${realmId}`, String(normalized));
+}
+
 /**
  * 设置掉落日志开关
  */

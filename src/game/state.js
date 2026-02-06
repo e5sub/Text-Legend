@@ -6,6 +6,7 @@ const ROOM_MOBS = new Map();
 const RESPAWN_CACHE = new Map();
 let respawnStore = null;
 const worldBossKillCounts = new Map();
+const specialBossKillCounts = new Map();
 const BOSS_SCALE = { hp: 1.25, atk: 1.42, def: 1.77 };
 const MOB_HP_SCALE = 2;
 const MOB_STAT_SCALE = 1.69;
@@ -30,12 +31,14 @@ function scaledStats(tpl, realmId = 1) {
   if (!tpl) return { hp: 0, atk: 0, def: 0, mdef: 0 };
 
   // 特殊BOSS：不进行任何属性缩放，直接使用GM设置的值（房间人数加成由外部函数处理）
-  if (tpl.specialBoss) {
+  if (tpl.specialBoss && !tpl.worldBoss) {
+    const count = specialBossKillCounts.get(realmId) || 0;
+    const growth = 1 + Math.floor(count / 5) * 0.01;
     return {
-      hp: tpl.hp || 0,
-      atk: tpl.atk || 0,
-      def: tpl.def || 0,
-      mdef: tpl.mdef || 0
+      hp: Math.floor((tpl.hp || 0) * growth),
+      atk: Math.floor((tpl.atk || 0) * growth),
+      def: Math.floor((tpl.def || 0) * growth),
+      mdef: Math.floor((tpl.mdef || 0) * growth)
     };
   }
 
@@ -307,6 +310,20 @@ export function incrementWorldBossKills(amount = 1, realmId = 1) {
 export function setWorldBossKillCount(count, realmId = 1) {
   const next = Math.max(0, Math.floor(Number(count) || 0));
   worldBossKillCounts.set(realmId, next);
+  return next;
+}
+
+export function incrementSpecialBossKills(amount = 1, realmId = 1) {
+  const delta = Number(amount) || 0;
+  const current = specialBossKillCounts.get(realmId) || 0;
+  const next = Math.max(0, current + delta);
+  specialBossKillCounts.set(realmId, next);
+  return next;
+}
+
+export function setSpecialBossKillCount(count, realmId = 1) {
+  const next = Math.max(0, Math.floor(Number(count) || 0));
+  specialBossKillCounts.set(realmId, next);
   return next;
 }
 
