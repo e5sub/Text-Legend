@@ -5574,7 +5574,7 @@ function retaliateMobAgainstPlayer(mob, player, online) {
       handleDeath(mobTarget);
     }
     
-    // 特殊BOSS溅射效果：对房间所有其他玩家和召唤物造成BOSS攻击力50%的溅射伤害
+    // 特殊BOSS AOE：主目标全额伤害，其他目标为BOSS攻击力50%
     if (
       isSpecialBoss &&
       isSplashBossTemplate(mobTemplate) &&
@@ -5583,57 +5583,42 @@ function retaliateMobAgainstPlayer(mob, player, online) {
       online.length > 0
     ) {
       if (!mob.status) mob.status = {};
-      if (mob.status.splashing) return;
-      mob.status.splashing = true;
+      if (mob.status.aoeAttacking) return;
+      mob.status.aoeAttacking = true;
       try {
-      const splashBase = Math.floor(mob.atk * 0.5);
-      const roomPlayers = online.filter((p) => 
-        p.name !== mobTarget.name &&
-        p.position.zone === player.position.zone &&
-        p.position.room === player.position.room &&
-        p.hp > 0
-      );
-      
-      roomPlayers.forEach((splashTarget) => {
-        const splashDealt = applyDamageToPlayer(
-          splashTarget,
-          calcTaoistDamageFromValue(splashBase, splashTarget)
+        const aoeBase = Math.floor(mob.atk * 0.5);
+        const roomPlayers = online.filter((p) => 
+          p.position.zone === player.position.zone &&
+          p.position.room === player.position.room &&
+          p.hp > 0
         );
-        splashTarget.send(`${mob.name} 的攻击溅射到你，造成 ${splashDealt} 点伤害。`);
-        if (splashTarget.hp <= 0 && !tryRevive(splashTarget)) {
-          handleDeath(splashTarget);
-        }
-        
-        // 溅射到召唤物
-        const splashSummons = getAliveSummons(splashTarget);
-        splashSummons.forEach((summon) => {
-          const summonDmg = calcTaoistDamageFromValue(splashBase, summon);
-          const applied = applyDamageToSummon(summon, summonDmg);
-          splashTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${applied} 点伤害。`);
-          if (summon.hp <= 0) {
-            splashTarget.send(`${summon.name} 被击败。`);
-            removeSummonById(splashTarget, summon.id);
-            autoResummon(splashTarget, summon.id);
+
+        roomPlayers.forEach((aoeTarget) => {
+          if (mobTarget && mobTarget.userId && aoeTarget.name === mobTarget.name) return;
+          const aoeDealt = applyDamageToPlayer(
+            aoeTarget,
+            calcTaoistDamageFromValue(aoeBase, aoeTarget)
+          );
+          aoeTarget.send(`${mob.name} 的范围攻击波及你，造成 ${aoeDealt} 点伤害。`);
+          if (aoeTarget.hp <= 0 && !tryRevive(aoeTarget)) {
+            handleDeath(aoeTarget);
           }
+
+          const aoeSummons = getAliveSummons(aoeTarget);
+          aoeSummons.forEach((summon) => {
+            if (mobTarget && !mobTarget.userId && mobTarget.id === summon.id) return;
+            const summonDmg = calcTaoistDamageFromValue(aoeBase, summon);
+            const applied = applyDamageToSummon(summon, summonDmg);
+            aoeTarget.send(`${mob.name} 的范围攻击波及 ${summon.name}，造成 ${applied} 点伤害。`);
+            if (summon.hp <= 0) {
+              aoeTarget.send(`${summon.name} 被击败。`);
+              removeSummonById(aoeTarget, summon.id);
+              autoResummon(aoeTarget, summon.id);
+            }
+          });
         });
-      });
-      
-      // 溅射到主目标的召唤物（如果主目标是玩家且有召唤物）
-      if (mobTarget && mobTarget.userId) {
-        const targetSummons = getAliveSummons(mobTarget);
-        targetSummons.forEach((summon) => {
-        const summonDmg = calcTaoistDamageFromValue(splashBase, summon);
-        const applied = applyDamageToSummon(summon, summonDmg);
-        mobTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${applied} 点伤害。`);
-        if (summon.hp <= 0) {
-          mobTarget.send(`${summon.name} 被击败。`);
-          removeSummonById(mobTarget, summon.id);
-          autoResummon(mobTarget, summon.id);
-          }
-        });
-      }
       } finally {
-        mob.status.splashing = false;
+        mob.status.aoeAttacking = false;
       }
     }
     
@@ -5642,7 +5627,7 @@ function retaliateMobAgainstPlayer(mob, player, online) {
   applyDamageToSummon(mobTarget, dmg);
   player.send(`${mob.name} 对 ${mobTarget.name} 造成 ${dmg} 点伤害。`);
   
-  // 特殊BOSS溅射效果：主目标是召唤物时，对玩家和房间所有其他玩家及召唤物造成BOSS攻击力50%的溅射伤害
+  // 特殊BOSS AOE：主目标全额伤害，其他目标为BOSS攻击力50%
   if (
     isSpecialBoss &&
     isSplashBossTemplate(mobTemplate) &&
@@ -5651,56 +5636,41 @@ function retaliateMobAgainstPlayer(mob, player, online) {
     online.length > 0
   ) {
     if (!mob.status) mob.status = {};
-    if (mob.status.splashing) return;
-    mob.status.splashing = true;
+    if (mob.status.aoeAttacking) return;
+    mob.status.aoeAttacking = true;
     try {
-    const splashBase = Math.floor(mob.atk * 0.5);
-    
-    // 溅射到召唤物的主人
-    if (player && player.hp > 0) {
-    const splashDealt = applyDamageToPlayer(
-      player,
-      calcTaoistDamageFromValue(splashBase, player)
-    );
-    player.send(`${mob.name} 的攻击溅射到你，造成 ${splashDealt} 点伤害。`);
-    if (player.hp <= 0 && !tryRevive(player)) {
-      handleDeath(player);
-    }
-    }
-    
-    // 溅射到房间所有其他玩家和召唤物
-    const roomPlayers = online.filter((p) => 
-      p.name !== player.name &&
-      p.position.zone === player.position.zone &&
-      p.position.room === player.position.room &&
-      p.hp > 0
-    );
-    
-    roomPlayers.forEach((splashTarget) => {
-      const splashDealt = applyDamageToPlayer(
-        splashTarget,
-        calcTaoistDamageFromValue(splashBase, splashTarget)
+      const aoeBase = Math.floor(mob.atk * 0.5);
+      const roomPlayers = online.filter((p) => 
+        p.position.zone === player.position.zone &&
+        p.position.room === player.position.room &&
+        p.hp > 0
       );
-      splashTarget.send(`${mob.name} 的攻击溅射到你，造成 ${splashDealt} 点伤害。`);
-      if (splashTarget.hp <= 0 && !tryRevive(splashTarget)) {
-        handleDeath(splashTarget);
-      }
-      
-      // 溅射到其他玩家的召唤物
-      const splashSummons = getAliveSummons(splashTarget);
-      splashSummons.forEach((summon) => {
-        const summonDmg = calcTaoistDamageFromValue(splashBase, summon);
-        const applied = applyDamageToSummon(summon, summonDmg);
-        splashTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${applied} 点伤害。`);
-        if (summon.hp <= 0) {
-          splashTarget.send(`${summon.name} 被击败。`);
-          removeSummonById(splashTarget, summon.id);
-          autoResummon(splashTarget, summon.id);
+
+      roomPlayers.forEach((aoeTarget) => {
+        const aoeDealt = applyDamageToPlayer(
+          aoeTarget,
+          calcTaoistDamageFromValue(aoeBase, aoeTarget)
+        );
+        aoeTarget.send(`${mob.name} 的范围攻击波及你，造成 ${aoeDealt} 点伤害。`);
+        if (aoeTarget.hp <= 0 && !tryRevive(aoeTarget)) {
+          handleDeath(aoeTarget);
         }
+
+        const aoeSummons = getAliveSummons(aoeTarget);
+        aoeSummons.forEach((summon) => {
+          if (mobTarget && mobTarget.id === summon.id) return;
+          const summonDmg = calcTaoistDamageFromValue(aoeBase, summon);
+          const applied = applyDamageToSummon(summon, summonDmg);
+          aoeTarget.send(`${mob.name} 的范围攻击波及 ${summon.name}，造成 ${applied} 点伤害。`);
+          if (summon.hp <= 0) {
+            aoeTarget.send(`${summon.name} 被击败。`);
+            removeSummonById(aoeTarget, summon.id);
+            autoResummon(aoeTarget, summon.id);
+          }
+        });
       });
-    });
     } finally {
-      mob.status.splashing = false;
+      mob.status.aoeAttacking = false;
     }
   }
   
@@ -8825,7 +8795,7 @@ async function combatTick() {
           handleDeath(mobTarget);
         }
         
-        // 特殊BOSS溅射效果：对房间所有其他玩家和召唤物造成BOSS攻击力50%的溅射伤害
+        // 特殊BOSS AOE：主目标全额伤害，其他目标为BOSS攻击力50%
         if (
           isSpecialBoss &&
           isSplashBossTemplate(mobTemplate) &&
@@ -8834,65 +8804,49 @@ async function combatTick() {
           online.length > 0
         ) {
           if (!mob.status) mob.status = {};
-          if (!mob.status.splashing) {
-            mob.status.splashing = true;
-            try {
-              const splashBase = Math.floor(mob.atk * 0.5 * enragedMultiplier);
-              const roomPlayers = online.filter((p) => 
-                p.name !== mobTarget.name &&
-                p.position.zone === player.position.zone &&
-                p.position.room === player.position.room &&
-                p.hp > 0
+          if (mob.status.aoeAttacking) return;
+          mob.status.aoeAttacking = true;
+          try {
+            const aoeBase = Math.floor(mob.atk * 0.5 * enragedMultiplier);
+            const roomPlayers = online.filter((p) => 
+              p.position.zone === player.position.zone &&
+              p.position.room === player.position.room &&
+              p.hp > 0
+            );
+            
+            roomPlayers.forEach((aoeTarget) => {
+              if (mobTarget && mobTarget.userId && aoeTarget.name === mobTarget.name) return;
+              const aoeDealt = applyDamageToPlayer(
+                aoeTarget,
+                calcTaoistDamageFromValue(aoeBase, aoeTarget)
               );
-              
-              roomPlayers.forEach((splashTarget) => {
-                const splashDealt = applyDamageToPlayer(
-                  splashTarget,
-                  calcTaoistDamageFromValue(splashBase, splashTarget)
-                );
-                splashTarget.send(`${mob.name} 的攻击溅射到你，造成 ${splashDealt} 点伤害。`);
-                if (splashTarget.hp <= 0 && !tryRevive(splashTarget)) {
-                  handleDeath(splashTarget);
-                }
-                
-                // 溅射到召唤物
-                const splashSummons = getAliveSummons(splashTarget);
-                splashSummons.forEach((summon) => {
-                  const summonDmg = calcTaoistDamageFromValue(splashBase, summon);
-                  const applied = applyDamageToSummon(summon, summonDmg);
-                  splashTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${applied} 点伤害。`);
-                  if (summon.hp <= 0) {
-                    splashTarget.send(`${summon.name} 被击败。`);
-                    removeSummonById(splashTarget, summon.id);
-                    autoResummon(splashTarget, summon.id);
-                  }
-                });
-              });
-              
-              // 溅射到主目标的召唤物（如果主目标是玩家且有召唤物）
-              if (mobTarget && mobTarget.userId) {
-                const targetSummons = getAliveSummons(mobTarget);
-                targetSummons.forEach((summon) => {
-                  const summonDmg = calcTaoistDamageFromValue(splashBase, summon);
-                  const applied = applyDamageToSummon(summon, summonDmg);
-                  mobTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${applied} 点伤害。`);
-                  if (summon.hp <= 0) {
-                    mobTarget.send(`${summon.name} 被击败。`);
-                    removeSummonById(mobTarget, summon.id);
-                    autoResummon(mobTarget, summon.id);
-                  }
-                });
+              aoeTarget.send(`${mob.name} 的范围攻击波及你，造成 ${aoeDealt} 点伤害。`);
+              if (aoeTarget.hp <= 0 && !tryRevive(aoeTarget)) {
+                handleDeath(aoeTarget);
               }
-            } finally {
-              mob.status.splashing = false;
-            }
+              
+              const aoeSummons = getAliveSummons(aoeTarget);
+              aoeSummons.forEach((summon) => {
+                if (mobTarget && !mobTarget.userId && mobTarget.id === summon.id) return;
+                const summonDmg = calcTaoistDamageFromValue(aoeBase, summon);
+                const applied = applyDamageToSummon(summon, summonDmg);
+                aoeTarget.send(`${mob.name} 的范围攻击波及 ${summon.name}，造成 ${applied} 点伤害。`);
+                if (summon.hp <= 0) {
+                  aoeTarget.send(`${summon.name} 被击败。`);
+                  removeSummonById(aoeTarget, summon.id);
+                  autoResummon(aoeTarget, summon.id);
+                }
+              });
+            });
+          } finally {
+            mob.status.aoeAttacking = false;
           }
         }
       } else {
         applyDamageToSummon(mobTarget, dmg);
         player.send(`${mob.name} 对 ${mobTarget.name} 造成 ${dmg} 点伤害。`);
         
-        // 特殊BOSS溅射效果：主目标是召唤物时，对玩家和房间所有其他玩家及召唤物造成BOSS攻击力50%的溅射伤害
+        // 特殊BOSS AOE：主目标全额伤害，其他目标为BOSS攻击力50%
         if (
           isSpecialBoss &&
           isSplashBossTemplate(mobTemplate) &&
@@ -8901,57 +8855,41 @@ async function combatTick() {
           online.length > 0
         ) {
           if (!mob.status) mob.status = {};
-          if (!mob.status.splashing) {
-            mob.status.splashing = true;
-            try {
-              const splashBase = Math.floor(mob.atk * 0.5 * enragedMultiplier);
-              
-              // 溅射到召唤物的主人
-              if (player && player.hp > 0) {
-                const splashDealt = applyDamageToPlayer(
-                  player,
-                  calcTaoistDamageFromValue(splashBase, player)
-                );
-                player.send(`${mob.name} 的攻击溅射到你，造成 ${splashDealt} 点伤害。`);
-                if (player.hp <= 0 && !tryRevive(player)) {
-                  handleDeath(player);
-                }
+          if (mob.status.aoeAttacking) return;
+          mob.status.aoeAttacking = true;
+          try {
+            const aoeBase = Math.floor(mob.atk * 0.5 * enragedMultiplier);
+            const roomPlayers = online.filter((p) => 
+              p.position.zone === player.position.zone &&
+              p.position.room === player.position.room &&
+              p.hp > 0
+            );
+            
+            roomPlayers.forEach((aoeTarget) => {
+              const aoeDealt = applyDamageToPlayer(
+                aoeTarget,
+                calcTaoistDamageFromValue(aoeBase, aoeTarget)
+              );
+              aoeTarget.send(`${mob.name} 的范围攻击波及你，造成 ${aoeDealt} 点伤害。`);
+              if (aoeTarget.hp <= 0 && !tryRevive(aoeTarget)) {
+                handleDeath(aoeTarget);
               }
               
-              // 溅射到房间所有其他玩家和召唤物
-              const roomPlayers = online.filter((p) => 
-                p.name !== player.name &&
-                p.position.zone === player.position.zone &&
-                p.position.room === player.position.room &&
-                p.hp > 0
-              );
-              
-              roomPlayers.forEach((splashTarget) => {
-                const splashDealt = applyDamageToPlayer(
-                  splashTarget,
-                  calcTaoistDamageFromValue(splashBase, splashTarget)
-                );
-                splashTarget.send(`${mob.name} 的攻击溅射到你，造成 ${splashDealt} 点伤害。`);
-                if (splashTarget.hp <= 0 && !tryRevive(splashTarget)) {
-                  handleDeath(splashTarget);
+              const aoeSummons = getAliveSummons(aoeTarget);
+              aoeSummons.forEach((summon) => {
+                if (mobTarget && mobTarget.id === summon.id) return;
+                const summonDmg = calcTaoistDamageFromValue(aoeBase, summon);
+                const applied = applyDamageToSummon(summon, summonDmg);
+                aoeTarget.send(`${mob.name} 的范围攻击波及 ${summon.name}，造成 ${applied} 点伤害。`);
+                if (summon.hp <= 0) {
+                  aoeTarget.send(`${summon.name} 被击败。`);
+                  removeSummonById(aoeTarget, summon.id);
+                  autoResummon(aoeTarget, summon.id);
                 }
-                
-                // 溅射到其他玩家的召唤物
-                const splashSummons = getAliveSummons(splashTarget);
-                splashSummons.forEach((summon) => {
-                  const summonDmg = calcTaoistDamageFromValue(splashBase, summon);
-                  const applied = applyDamageToSummon(summon, summonDmg);
-                  splashTarget.send(`${mob.name} 的攻击溅射到 ${summon.name}，造成 ${applied} 点伤害。`);
-                  if (summon.hp <= 0) {
-                    splashTarget.send(`${summon.name} 被击败。`);
-                    removeSummonById(splashTarget, summon.id);
-                    autoResummon(splashTarget, summon.id);
-                  }
-                });
               });
-            } finally {
-              mob.status.splashing = false;
-            }
+            });
+          } finally {
+            mob.status.aoeAttacking = false;
           }
         }
         
