@@ -3945,6 +3945,14 @@ function sabakWindowInfo() {
   return `每天 ${startHour}:00-${startHour}:${String(endMinute).padStart(2, '0')}`;
 }
 
+function isSabakRegistrationToday(registration, now = new Date()) {
+  if (!registration?.registered_at) return false;
+  const regDate = new Date(registration.registered_at);
+  if (Number.isNaN(regDate.getTime())) return true;
+  if (regDate.toDateString() === now.toDateString()) return true;
+  return Math.abs(now.getTime() - regDate.getTime()) < 24 * 60 * 60 * 1000;
+}
+
 async function autoCaptureSabak(player) {
   if (!player || !player.guild || !isSabakZone(player.position.zone)) return false;
   const sabakState = getSabakState(player.realmId || 1);
@@ -6607,13 +6615,7 @@ io.on('connection', (socket) => {
     const windowInfo = sabakWindowInfo();
     const registrations = await listSabakRegistrations(player.realmId || 1);
     const today = new Date();
-    const todayKey = today.toDateString();
-    const todaysRegistrations = (registrations || []).filter((r) => {
-      if (!r.registered_at) return false;
-      const regDate = new Date(r.registered_at);
-      if (Number.isNaN(regDate.getTime())) return true;
-      return regDate.toDateString() === todayKey;
-    });
+    const todaysRegistrations = (registrations || []).filter((r) => isSabakRegistrationToday(r, today));
 
     // 将守城方行会添加到报名列表中显示
     let displayRegistrations = todaysRegistrations || [];
@@ -6650,9 +6652,9 @@ io.on('connection', (socket) => {
       return;
     }
     const realmId = player.realmId || 1;
-    const isLeader = await isGuildLeader(player.guild.id, player.userId, player.name, realmId);
+    const isLeader = await isGuildLeaderOrVice(player.guild.id, player.userId, player.name, realmId);
     if (!isLeader) {
-      player.send('只有会长可以报名。');
+      player.send('只有会长或副会长可以报名。');
       return;
     }
     const sabakState = getSabakState(realmId);
@@ -8801,13 +8803,7 @@ async function sabakTick(realmId) {
   if (!sabakState.active && isSabakActive(nowDate) && sabakState.ownerGuildId) {
     // 检查是否有行会报名（使用应用侧日期判断，避免DB时区/类型差异）
     const registrations = await listSabakRegistrations(realmId);
-    const todayKey = nowDate.toDateString();
-    const hasRegistration = registrations.some((r) => {
-      if (!r?.registered_at) return false;
-      const regDate = new Date(r.registered_at);
-      if (Number.isNaN(regDate.getTime())) return true;
-      return regDate.toDateString() === todayKey;
-    });
+    const hasRegistration = registrations.some((r) => isSabakRegistrationToday(r, nowDate));
     if (!hasRegistration) {
       // 没有行会报名，直接判定守城方胜利（每日仅公告一次）
       const todayKey = nowDate.toDateString();
