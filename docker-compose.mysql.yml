@@ -30,6 +30,8 @@ services:
       - SESSION_TTL_MIN=0
       - ADMIN_BOOTSTRAP_SECRET=change_me
       - ADMIN_BOOTSTRAP_USER=admin_account
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     volumes:
       - ./data:/app/data
 
