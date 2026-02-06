@@ -9049,10 +9049,10 @@ async function start() {
     await loadSabakState(realm.id);
   }
   lootLogEnabled = await getLootLogEnabled();
-  // 世界BOSS击杀次数改为按区服维护
-  for (const realm of realmCache) {
-    const worldBossKillCount = await getWorldBossKillCount(realm.id);
-    setWorldBossKillCountState(worldBossKillCount, realm.id);
+  // 世界BOSS击杀次数改为按区服维护（含跨服realm=0）
+  for (const realmId of getRealmIds()) {
+    const worldBossKillCount = await getWorldBossKillCount(realmId);
+    setWorldBossKillCountState(worldBossKillCount, realmId);
   }
   const roomVariantCount = await getRoomVariantCount();
   applyRoomVariantCount(roomVariantCount);
