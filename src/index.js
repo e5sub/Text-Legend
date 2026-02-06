@@ -6807,7 +6807,16 @@ io.on('connection', (socket) => {
     const isLeaderOrVice = player.guild && (player.guild.role === 'leader' || player.guild.role === 'vice');
     const now = new Date();
     const registerEnd = new Date(sabakWindowRange(now).start.getTime() - 10 * 60 * 1000);
-    const canRegister = isLeaderOrVice && !isOwner && now < registerEnd;
+    const hasRegisteredToday = player.guild
+      ? await hasSabakRegistrationToday(player.guild.id, realmId)
+      : false;
+    const hasAnyRegistrationToday = (todaysRegistrations || []).length >= 1;
+    const canRegister =
+      isLeaderOrVice &&
+      !isOwner &&
+      now < registerEnd &&
+      !hasRegisteredToday &&
+      !hasAnyRegistrationToday;
 
     socket.emit('sabak_info', {
       windowInfo,
