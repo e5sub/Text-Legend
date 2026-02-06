@@ -5034,18 +5034,21 @@ function renderState(state) {
       }
 
       // 如果有下次刷新时间，显示刷新倒计时
-      if (inCrossRankRoom) {
-        resetBossRespawn();
-        if (ui.worldBossRank) ui.worldBossRank.innerHTML = '';
-        const ensureCrossRankTimer = (label, target) => {
-          if (!target || target <= getServerNow()) {
-            resetCrossRankTimer();
-            return;
-          }
-          const updateTimer = () => {
-            if (!crossRankTimerTarget || !crossRankTimerEl) return;
-            const remaining = Math.max(0, crossRankTimerTarget - getServerNow());
-            const minutes = Math.floor(remaining / 60000);
+        if (inCrossRankRoom) {
+          resetBossRespawn();
+          if (ui.worldBossRank) ui.worldBossRank.innerHTML = '';
+          const ensureCrossRankTimer = (label, target) => {
+            if (!target || target <= getServerNow()) {
+              resetCrossRankTimer();
+              return;
+            }
+            if (crossRankTimerEl && !crossRankTimerEl.isConnected) {
+              crossRankTimerEl = null;
+            }
+            const updateTimer = () => {
+              if (!crossRankTimerTarget || !crossRankTimerEl) return;
+              const remaining = Math.max(0, crossRankTimerTarget - getServerNow());
+              const minutes = Math.floor(remaining / 60000);
             const seconds = Math.floor((remaining % 60000) / 1000);
             crossRankTimerEl.textContent = `${minutes}分${seconds}秒`;
           };
