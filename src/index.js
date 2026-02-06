@@ -5848,6 +5848,17 @@ function tryApplyPoisonEffect(attacker, target) {
   return true;
 }
 
+async function resolvePlayerGuildRealmId(player) {
+  const fallback = player?.realmId || 1;
+  if (!player?.guild?.id) return fallback;
+  try {
+    const guild = await getGuildById(player.guild.id);
+    const guildRealmId = Number(guild?.realm_id);
+    if (Number.isFinite(guildRealmId) && guildRealmId > 0) return guildRealmId;
+  } catch {}
+  return fallback;
+}
+
 function buildDamageRankMap(mob, damageByOverride = null) {
   const damageBy = damageByOverride || mob.status?.damageBy || {};
   // 按伤害降序排序，伤害相同时按名字排序，确保稳定性
@@ -6610,10 +6621,11 @@ io.on('connection', (socket) => {
     const player = players.get(socket.id);
     if (!player) return;
 
-    const sabakState = getSabakState(player.realmId || 1);
+    const realmId = await resolvePlayerGuildRealmId(player);
+    const sabakState = getSabakState(realmId);
     const ownerGuildName = sabakState.ownerGuildName || '无';
     const windowInfo = sabakWindowInfo();
-    const registrations = await listSabakRegistrations(player.realmId || 1);
+    const registrations = await listSabakRegistrations(realmId);
     const today = new Date();
     const todaysRegistrations = (registrations || []).filter((r) => isSabakRegistrationToday(r, today));
 
@@ -6651,7 +6663,7 @@ io.on('connection', (socket) => {
       player.send('你不在行会中。');
       return;
     }
-    const realmId = player.realmId || 1;
+    const realmId = await resolvePlayerGuildRealmId(player);
     const isLeader = await isGuildLeaderOrVice(player.guild.id, player.userId, player.name, realmId);
     if (!isLeader) {
       player.send('只有会长或副会长可以报名。');
