@@ -6787,7 +6787,8 @@ io.on('connection', (socket) => {
     const ownerGuildName = sabakState.ownerGuildName || '无';
     const windowInfo = sabakWindowInfo();
     const registrationWindowInfo = sabakRegistrationWindowInfo();
-    const registrations = await listSabakRegistrations(realmId);
+      const registrations = await listSabakRegistrations(realmId);
+      const hasAnyRegistrationToday = await hasAnySabakRegistrationToday(realmId);
     const today = new Date();
     const todaysRegistrations = (registrations || []).filter((r) => isSabakRegistrationToday(r, today));
 
@@ -6810,7 +6811,6 @@ io.on('connection', (socket) => {
     const hasRegisteredToday = player.guild
       ? await hasSabakRegistrationToday(player.guild.id, realmId)
       : false;
-    const hasAnyRegistrationToday = (todaysRegistrations || []).length >= 1;
     const canRegister =
       isLeaderOrVice &&
       !isOwner &&
@@ -8991,9 +8991,8 @@ async function sabakTick(realmId) {
 
   // 自动开始攻城战
   if (!sabakState.active && isSabakActive(nowDate) && sabakState.ownerGuildId) {
-    // 检查是否有行会报名（使用应用侧日期判断，避免DB时区/类型差异）
-    const registrations = await listSabakRegistrations(realmId);
-    const hasRegistration = registrations.some((r) => isSabakRegistrationToday(r, nowDate));
+      // 检查是否有行会报名（使用DB判断避免时区差异）
+      const hasRegistration = await hasAnySabakRegistrationToday(realmId);
     if (!hasRegistration) {
       // 没有行会报名，直接判定守城方胜利（每日仅公告一次）
       const todayKey = nowDate.toDateString();
