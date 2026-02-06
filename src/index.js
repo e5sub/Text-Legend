@@ -5296,7 +5296,11 @@ function applyDamageToMob(mob, dmg, attackerName, realmId = null) {
 }
 
 function retaliateMobAgainstPlayer(mob, player, online) {
-  if (!mob || isMobInactive(mob)) return;
+  if (!mob) return;
+  if (isMobInactive(mob)) {
+    logInactiveMobAttack(mob, 'retaliate');
+    return;
+  }
   if (mob.status && mob.status.stunTurns > 0) return;
   const primarySummon = getPrimarySummon(player);
   const summonAlive = Boolean(primarySummon);
@@ -5802,6 +5806,16 @@ function isMobInactive(mob) {
   if (mob.status?.processed) return true;
   if (mob.respawnAt && Number(mob.respawnAt) > Date.now()) return true;
   return false;
+}
+
+function logInactiveMobAttack(mob, context) {
+  if (!mob || mob.templateId !== 'world_boss') return;
+  if (!mob.status) mob.status = {};
+  if (mob.status.inactiveLogged) return;
+  mob.status.inactiveLogged = true;
+  console.warn(
+    `[world_boss][inactive] context=${context} mobId=${mob.id} hp=${mob.hp} respawnAt=${mob.respawnAt} zone=${mob.zoneId} room=${mob.roomId}`
+  );
 }
 
 function calcTaoistDamage(powerStat, target, skillPower = 1) {
@@ -8472,6 +8486,7 @@ async function combatTick() {
     const mobRoomId = mob.roomId || player.position.room;
     // BOSS刷新中/已处理/已死亡时，不应继续对玩家造成伤害
     if (isMobInactive(mob)) {
+      logInactiveMobAttack(mob, 'combat');
       continue;
     }
     const mobSkill = pickMobSkill(mob);
