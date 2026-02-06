@@ -4218,7 +4218,7 @@ function renderSabakModal(payload) {
       </div>
       <div class="sabak-info-section">
         <div class="sabak-info-title">报名</div>
-        <div class="sabak-info-content">0:00-19:50 · ${isOwner ? '守城免费' : '500万金币'}</div>
+        <div class="sabak-info-content">0:00-19:50 · ${isOwner ? '守城免费' : '100万金币'}</div>
       </div>
     `;
   }
@@ -4247,7 +4247,7 @@ function renderSabakModal(payload) {
   }
   if (sabakUi.confirm) {
     sabakUi.confirm.classList.toggle('hidden', !canRegister);
-    sabakUi.confirm.textContent = isOwner ? '守城行会无需报名' : '确认报名（500万金币）';
+    sabakUi.confirm.textContent = isOwner ? '守城行会无需报名' : '确认报名（100万金币）';
   }
   sabakUi.modal.classList.remove('hidden');
 }

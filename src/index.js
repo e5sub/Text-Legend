@@ -6607,13 +6607,12 @@ io.on('connection', (socket) => {
     const windowInfo = sabakWindowInfo();
     const registrations = await listSabakRegistrations(player.realmId || 1);
     const today = new Date();
-    const start = new Date(today);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+    const todayKey = today.toDateString();
     const todaysRegistrations = (registrations || []).filter((r) => {
       if (!r.registered_at) return false;
-      const regTime = new Date(r.registered_at).getTime();
-      return regTime >= start.getTime() && regTime < end.getTime();
+      const regDate = new Date(r.registered_at);
+      if (Number.isNaN(regDate.getTime())) return true;
+      return regDate.toDateString() === todayKey;
     });
 
     // 将守城方行会添加到报名列表中显示
@@ -6629,7 +6628,8 @@ io.on('connection', (socket) => {
     }
 
     const isOwner = player.guild && String(player.guild.id) === String(sabakState.ownerGuildId);
-    const canRegister = player.guild && player.guild.role === 'leader' && !isOwner;
+    const isLeaderOrVice = player.guild && (player.guild.role === 'leader' || player.guild.role === 'vice');
+    const canRegister = isLeaderOrVice && !isOwner;
 
     socket.emit('sabak_info', {
       windowInfo,
