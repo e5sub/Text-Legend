@@ -635,6 +635,36 @@ app.post('/admin/worldboss-settings/update', async (req, res) => {
   });
 });
 
+app.get('/admin/worldboss-killcount', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const realmId = Number(req.query?.realmId);
+  if (Number.isFinite(realmId)) {
+    const count = await getWorldBossKillCount(realmId);
+    return res.json({ ok: true, realmId, count });
+  }
+  const data = [];
+  for (const id of getRealmIds()) {
+    const count = await getWorldBossKillCount(id);
+    data.push({ realmId: id, count });
+  }
+  return res.json({ ok: true, data });
+});
+
+app.post('/admin/worldboss-killcount/update', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const { realmId, count } = req.body || {};
+  const targetRealmId = Number(realmId);
+  if (!Number.isFinite(targetRealmId)) {
+    return res.status(400).json({ error: 'realmId参数无效' });
+  }
+  const normalized = Math.max(0, Math.floor(Number(count) || 0));
+  await setWorldBossKillCount(normalized, targetRealmId);
+  setWorldBossKillCountState(normalized, targetRealmId);
+  return res.json({ ok: true, realmId: targetRealmId, count: normalized });
+});
+
 app.post('/admin/worldboss-respawn', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
@@ -1237,6 +1267,36 @@ app.post('/admin/specialboss-settings/update', async (req, res) => {
   await applySpecialBossSettings();
 
   res.json({ ok: true });
+});
+
+app.get('/admin/specialboss-killcount', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const realmId = Number(req.query?.realmId);
+  if (Number.isFinite(realmId)) {
+    const count = await getSpecialBossKillCount(realmId);
+    return res.json({ ok: true, realmId, count });
+  }
+  const data = [];
+  for (const id of getRealmIds()) {
+    const count = await getSpecialBossKillCount(id);
+    data.push({ realmId: id, count });
+  }
+  return res.json({ ok: true, data });
+});
+
+app.post('/admin/specialboss-killcount/update', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const { realmId, count } = req.body || {};
+  const targetRealmId = Number(realmId);
+  if (!Number.isFinite(targetRealmId)) {
+    return res.status(400).json({ error: 'realmId参数无效' });
+  }
+  const normalized = Math.max(0, Math.floor(Number(count) || 0));
+  await setSpecialBossKillCount(normalized, targetRealmId);
+  setSpecialBossKillCountState(normalized, targetRealmId);
+  return res.json({ ok: true, realmId: targetRealmId, count: normalized });
 });
 
 app.get('/admin/realms', async (req, res) => {

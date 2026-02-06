@@ -84,10 +84,16 @@ const effectResetSaveBtn = document.getElementById('effect-reset-save-btn');
 // 世界BOSS相关
 const wbMsg = document.getElementById('wb-msg');
 const wbPlayerBonusList = document.getElementById('wb-player-bonus-list');
+const wbKillRealmInput = document.getElementById('wb-kill-realm');
+const wbKillCountInput = document.getElementById('wb-kill-count');
+const wbKillMsg = document.getElementById('wb-kill-msg');
 
 // 特殊BOSS相关
 const sbMsg = document.getElementById('sb-msg');
 const sbPlayerBonusList = document.getElementById('sb-player-bonus-list');
+const sbKillRealmInput = document.getElementById('sb-kill-realm');
+const sbKillCountInput = document.getElementById('sb-kill-count');
+const sbKillMsg = document.getElementById('sb-kill-msg');
 
 const adminPwModal = document.getElementById('admin-pw-modal');
 const adminPwTitle = document.getElementById('admin-pw-title');
@@ -95,6 +101,104 @@ const adminPwText = document.getElementById('admin-pw-text');
 const adminPwInput = document.getElementById('admin-pw-input');
 const adminPwCancel = document.getElementById('admin-pw-cancel');
 const adminPwSubmit = document.getElementById('admin-pw-submit');
+
+function getRealmIdFromInput(input, fallback = 1) {
+  const raw = input?.value;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+async function loadWorldBossKillCount() {
+  if (!wbKillCountInput) return;
+  if (wbKillMsg) wbKillMsg.textContent = '';
+  try {
+    const realmId = getRealmIdFromInput(wbKillRealmInput, 1);
+    const data = await api(`/admin/worldboss-killcount?realmId=${realmId}`, 'GET');
+    wbKillCountInput.value = data.count ?? '';
+    if (wbKillMsg) {
+      wbKillMsg.textContent = '已读取';
+      wbKillMsg.style.color = 'green';
+      setTimeout(() => {
+        wbKillMsg.textContent = '';
+      }, 1500);
+    }
+  } catch (err) {
+    if (wbKillMsg) {
+      wbKillMsg.textContent = `读取失败: ${err.message}`;
+      wbKillMsg.style.color = 'red';
+    }
+  }
+}
+
+async function saveWorldBossKillCount(countOverride = null) {
+  if (!wbKillCountInput) return;
+  if (wbKillMsg) wbKillMsg.textContent = '';
+  try {
+    const realmId = getRealmIdFromInput(wbKillRealmInput, 1);
+    const countValue = countOverride !== null ? countOverride : Number(wbKillCountInput.value);
+    const normalized = Math.max(0, Math.floor(Number(countValue) || 0));
+    await api('/admin/worldboss-killcount/update', 'POST', { realmId, count: normalized });
+    wbKillCountInput.value = normalized;
+    if (wbKillMsg) {
+      wbKillMsg.textContent = '已保存';
+      wbKillMsg.style.color = 'green';
+      setTimeout(() => {
+        wbKillMsg.textContent = '';
+      }, 1500);
+    }
+  } catch (err) {
+    if (wbKillMsg) {
+      wbKillMsg.textContent = `保存失败: ${err.message}`;
+      wbKillMsg.style.color = 'red';
+    }
+  }
+}
+
+async function loadSpecialBossKillCount() {
+  if (!sbKillCountInput) return;
+  if (sbKillMsg) sbKillMsg.textContent = '';
+  try {
+    const realmId = getRealmIdFromInput(sbKillRealmInput, 1);
+    const data = await api(`/admin/specialboss-killcount?realmId=${realmId}`, 'GET');
+    sbKillCountInput.value = data.count ?? '';
+    if (sbKillMsg) {
+      sbKillMsg.textContent = '已读取';
+      sbKillMsg.style.color = 'green';
+      setTimeout(() => {
+        sbKillMsg.textContent = '';
+      }, 1500);
+    }
+  } catch (err) {
+    if (sbKillMsg) {
+      sbKillMsg.textContent = `读取失败: ${err.message}`;
+      sbKillMsg.style.color = 'red';
+    }
+  }
+}
+
+async function saveSpecialBossKillCount(countOverride = null) {
+  if (!sbKillCountInput) return;
+  if (sbKillMsg) sbKillMsg.textContent = '';
+  try {
+    const realmId = getRealmIdFromInput(sbKillRealmInput, 1);
+    const countValue = countOverride !== null ? countOverride : Number(sbKillCountInput.value);
+    const normalized = Math.max(0, Math.floor(Number(countValue) || 0));
+    await api('/admin/specialboss-killcount/update', 'POST', { realmId, count: normalized });
+    sbKillCountInput.value = normalized;
+    if (sbKillMsg) {
+      sbKillMsg.textContent = '已保存';
+      sbKillMsg.style.color = 'green';
+      setTimeout(() => {
+        sbKillMsg.textContent = '';
+      }, 1500);
+    }
+  } catch (err) {
+    if (sbKillMsg) {
+      sbKillMsg.textContent = `保存失败: ${err.message}`;
+      sbKillMsg.style.color = 'red';
+    }
+  }
+}
 
 // 自定义模态框
 const confirmModal = document.getElementById('confirm-modal');
@@ -1358,7 +1462,8 @@ async function loadWorldBossSettings() {
     document.getElementById('wb-base-mdef').value = data.baseMdef || '';
     document.getElementById('wb-drop-bonus').value = data.dropBonus || '';
     document.getElementById('wb-respawn-mins').value = data.respawnMinutes || '';
-    renderPlayerBonusList(data.playerBonusConfig || []);
+      renderPlayerBonusList(data.playerBonusConfig || []);
+      loadWorldBossKillCount();
     msg.textContent = '加载成功';
     msg.style.color = 'green';
   } catch (err) {
@@ -4159,7 +4264,8 @@ async function loadWorldBossSettings() {
     document.getElementById('wb-drop-bonus').value = data.dropBonus || '';
     document.getElementById('wb-respawn-mins').value = data.respawnMinutes || '';
     worldBossPlayerBonusConfig = data.playerBonusConfig || [];
-    renderWorldBossPlayerBonusList();
+      renderWorldBossPlayerBonusList();
+      loadWorldBossKillCount();
   } catch (err) {
     if (wbMsg) wbMsg.textContent = `加载失败: ${err.message}`;
   }
@@ -4428,7 +4534,8 @@ async function loadSpecialBossSettings() {
     document.getElementById('sb-drop-bonus').value = data.dropBonus || '';
     document.getElementById('sb-respawn-mins').value = data.respawnMinutes || '';
     specialBossPlayerBonusConfig = data.playerBonusConfig || [];
-    renderSpecialBossPlayerBonusList();
+      renderSpecialBossPlayerBonusList();
+      loadSpecialBossKillCount();
   } catch (err) {
     if (sbMsg) sbMsg.textContent = `加载失败: ${err.message}`;
   }
@@ -4794,6 +4901,15 @@ document.getElementById('wb-save-btn').addEventListener('click', saveWorldBossSe
 if (document.getElementById('wb-add-bonus-btn')) {
   document.getElementById('wb-add-bonus-btn').addEventListener('click', addPlayerBonusConfig);
 }
+if (document.getElementById('wb-kill-load-btn')) {
+  document.getElementById('wb-kill-load-btn').addEventListener('click', loadWorldBossKillCount);
+}
+if (document.getElementById('wb-kill-save-btn')) {
+  document.getElementById('wb-kill-save-btn').addEventListener('click', () => saveWorldBossKillCount());
+}
+if (document.getElementById('wb-kill-reset-btn')) {
+  document.getElementById('wb-kill-reset-btn').addEventListener('click', () => saveWorldBossKillCount(0));
+}
 document.getElementById('vip-create-btn').addEventListener('click', createVipCodes);
 document.getElementById('vip-list-btn').addEventListener('click', listVipCodes);
 if (vipSelfClaimToggle) {
@@ -4875,6 +4991,15 @@ if (document.getElementById('sb-add-bonus-btn')) {
 }
 if (document.getElementById('sb-save-btn')) {
   document.getElementById('sb-save-btn').addEventListener('click', saveSpecialBossSettings);
+}
+if (document.getElementById('sb-kill-load-btn')) {
+  document.getElementById('sb-kill-load-btn').addEventListener('click', loadSpecialBossKillCount);
+}
+if (document.getElementById('sb-kill-save-btn')) {
+  document.getElementById('sb-kill-save-btn').addEventListener('click', () => saveSpecialBossKillCount());
+}
+if (document.getElementById('sb-kill-reset-btn')) {
+  document.getElementById('sb-kill-reset-btn').addEventListener('click', () => saveSpecialBossKillCount(0));
 }
 
 // 修炼果配置事件

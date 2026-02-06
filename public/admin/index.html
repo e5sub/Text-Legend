@@ -123,10 +123,20 @@
               <label style="min-width: 40px;">掉落加成:</label>
               <input id="wb-drop-bonus" type="number" min="1" step="0.1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
             </div>
-            <div class="row" style="margin-bottom: 6px; font-size: 13px; gap: 4px;">
-              <label style="min-width: 40px;">刷新时间(分钟):</label>
-              <input id="wb-respawn-mins" type="number" min="1" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-            </div>
+              <div class="row" style="margin-bottom: 6px; font-size: 13px; gap: 4px;">
+                <label style="min-width: 40px;">刷新时间(分钟):</label>
+                <input id="wb-respawn-mins" type="number" min="1" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+              </div>
+              <div class="row" style="margin-bottom: 6px; font-size: 13px; gap: 4px; align-items: center;">
+                <label style="min-width: 40px;">区服ID:</label>
+                <input id="wb-kill-realm" type="number" min="0" step="1" placeholder="1" style="width: 70px; font-size: 13px; padding: 4px 6px;">
+                <label style="min-width: 60px;">击杀次数:</label>
+                <input id="wb-kill-count" type="number" min="0" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+                <button id="wb-kill-load-btn" class="btn-small">读取</button>
+                <button id="wb-kill-save-btn" class="btn-small">保存</button>
+                <button id="wb-kill-reset-btn" class="btn-small">清零</button>
+              </div>
+              <div id="wb-kill-msg" class="msg"></div>
 
             <p style="color: #666; margin: 10px 0 6px; font-size: 13px;">人数加成配置</p>
             <div class="table-container">
@@ -179,10 +189,20 @@
               <label style="min-width: 40px;">掉落加成:</label>
               <input id="sb-drop-bonus" type="number" min="1" step="0.1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
             </div>
-            <div class="row" style="margin-bottom: 6px; font-size: 13px; gap: 4px;">
-              <label style="min-width: 40px;">刷新时间(分钟):</label>
-              <input id="sb-respawn-mins" type="number" min="1" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-            </div>
+              <div class="row" style="margin-bottom: 6px; font-size: 13px; gap: 4px;">
+                <label style="min-width: 40px;">刷新时间(分钟):</label>
+                <input id="sb-respawn-mins" type="number" min="1" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+              </div>
+              <div class="row" style="margin-bottom: 6px; font-size: 13px; gap: 4px; align-items: center;">
+                <label style="min-width: 40px;">区服ID:</label>
+                <input id="sb-kill-realm" type="number" min="0" step="1" placeholder="1" style="width: 70px; font-size: 13px; padding: 4px 6px;">
+                <label style="min-width: 60px;">击杀次数:</label>
+                <input id="sb-kill-count" type="number" min="0" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+                <button id="sb-kill-load-btn" class="btn-small">读取</button>
+                <button id="sb-kill-save-btn" class="btn-small">保存</button>
+                <button id="sb-kill-reset-btn" class="btn-small">清零</button>
+              </div>
+              <div id="sb-kill-msg" class="msg"></div>
 
             <p style="color: #666; margin: 10px 0 6px; font-size: 13px;">人数加成配置</p>
             <div class="table-container">
