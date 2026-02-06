@@ -4948,9 +4948,7 @@ async function buildState(player) {
         pk: p.pk || 0
       }));
   }
-  if (isCrossRankRoom(player.position.zone, player.position.room)) {
     crossRank = getCrossRankSnapshot(10);
-  }
   const summonList = getAliveSummons(player);
   const summonPayloads = summonList.map((summon) => ({
     id: summon.id,
