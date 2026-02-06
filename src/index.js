@@ -6787,7 +6787,6 @@ io.on('connection', (socket) => {
     const ownerGuildName = sabakState.ownerGuildName || '无';
     const windowInfo = sabakWindowInfo();
     const registrationWindowInfo = sabakRegistrationWindowInfo();
-    const registrationWindowInfo = sabakRegistrationWindowInfo();
     const registrations = await listSabakRegistrations(realmId);
     const today = new Date();
     const todaysRegistrations = (registrations || []).filter((r) => isSabakRegistrationToday(r, today));
