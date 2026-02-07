@@ -2311,10 +2311,16 @@ private fun <T> paginate(items: List<T>, page: Int, pageSize: Int): PageInfo<T> 
 
 @Composable
 private fun PagerControls(info: PageInfo<*>, onPrev: () -> Unit, onNext: () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        TextButton(onClick = onPrev, enabled = info.page > 0) { Text("上一页") }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        OutlinedButton(onClick = onPrev, enabled = info.page > 0) { Text("上一页") }
+        Spacer(modifier = Modifier.width(12.dp))
         Text("第 ${info.page + 1}/${info.totalPages} 页")
-        TextButton(onClick = onNext, enabled = info.page < info.totalPages - 1) { Text("下一页") }
+        Spacer(modifier = Modifier.width(12.dp))
+        OutlinedButton(onClick = onNext, enabled = info.page < info.totalPages - 1) { Text("下一页") }
     }
 }
 
