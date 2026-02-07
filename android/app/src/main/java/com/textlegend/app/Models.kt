@@ -2,6 +2,7 @@
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 @Serializable
 data class CaptchaResponse(
@@ -145,19 +146,11 @@ data class ItemInfo(
     val durability: Int? = null,
     val max_durability: Int? = null,
     val refine_level: Int = 0,
-    val effects: List<EffectInfo>? = null,
+    val effects: JsonObject? = null,
     val is_shop_item: Boolean = false
 )
 
 @Serializable
-data class EffectInfo(
-    val id: String? = null,
-    val name: String? = null,
-    val value: Double? = null,
-    val ratio: Double? = null,
-    val duration: Int? = null
-)
-
 @Serializable
 data class EquipmentInfo(
     val slot: String = "",
@@ -250,7 +243,7 @@ data class TradeInfo(
 data class TradeItem(
     val id: String = "",
     val qty: Int = 1,
-    val effects: List<EffectInfo>? = null
+    val effects: JsonObject? = null
 )
 
 @Serializable
@@ -419,7 +412,7 @@ data class ConsignItem(
     val price: Int = 0,
     val created_at: String? = null,
     val expires_at: String? = null,
-    val effects: List<EffectInfo>? = null,
+    val effects: JsonObject? = null,
     val refine_level: Int = 0,
     val item: ItemInfo? = null
 )
@@ -439,7 +432,7 @@ data class ConsignHistoryItem(
     val qty: Int = 1,
     val price: Int = 0,
     val created_at: String? = null,
-    val effects: List<EffectInfo>? = null,
+    val effects: JsonObject? = null,
     val refine_level: Int = 0,
     val total: Int = 0,
     val soldAt: String? = null,
