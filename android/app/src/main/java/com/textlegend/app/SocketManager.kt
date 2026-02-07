@@ -67,9 +67,15 @@ class SocketManager(private val json: Json) {
                 onAuthError(msg)
             }
             on("state") { args ->
-                val payload = args.firstOrNull() as? JSONObject ?: return@on
+                val raw = args.firstOrNull() ?: return@on
+                val payloadText = when (raw) {
+                    is JSONObject -> raw.toString()
+                    is String -> raw
+                    is Map<*, *> -> JSONObject(raw).toString()
+                    else -> raw.toString()
+                }
                 runCatching {
-                    val state = json.decodeFromString(GameState.serializer(), payload.toString())
+                    val state = json.decodeFromString(GameState.serializer(), payloadText)
                     onState(state)
                 }.onFailure {
                     onAuthError("状态解析失败")
