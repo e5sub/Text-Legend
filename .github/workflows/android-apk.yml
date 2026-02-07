@@ -17,11 +17,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Strip BOM from Gradle/Properties
+      - name: Strip BOM from Gradle/Properties/Kotlin
         shell: bash
         run: |
           set -e
-          find android -type f \( -name "*.gradle" -o -name "*.properties" \) -print0 | while IFS= read -r -d '' file; do
+          find android -type f \( -name "*.gradle" -o -name "*.properties" -o -name "*.kt" \) -print0 | while IFS= read -r -d '' file; do
             if [ -f "$file" ]; then
               first=$(head -c 3 "$file" | xxd -p)
               if [ "$first" = "efbbbf" ]; then
