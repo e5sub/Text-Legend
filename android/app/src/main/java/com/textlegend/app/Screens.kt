@@ -393,6 +393,7 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                                     "mail" -> innerNav.navigate("mail")
                                 }
                             },
+                            onJumpToBattle = { tabIndex = 0 },
                             input = chatInput,
                             onInputChange = { chatInput = it },
                             onSend = {
@@ -1185,6 +1186,7 @@ private fun ChatTab(
     outputs: List<OutputPayload>,
     onCommand: (String) -> Unit,
     onOpenModule: (String, String?) -> Unit,
+    onJumpToBattle: () -> Unit,
     input: String,
     onInputChange: (String) -> Unit,
     onSend: () -> Unit
@@ -1202,8 +1204,10 @@ private fun ChatTab(
                         val zoneId = location.zoneId?.trim().orEmpty()
                         val roomId = location.roomId?.trim().orEmpty()
                         if (zoneId.isNotBlank() && roomId.isNotBlank()) {
+                            onJumpToBattle()
                             onCommand("loc $zoneId:$roomId")
                         } else if (location.label.isNotBlank()) {
+                            onJumpToBattle()
                             onCommand("loc ${location.label}")
                         }
                     }
