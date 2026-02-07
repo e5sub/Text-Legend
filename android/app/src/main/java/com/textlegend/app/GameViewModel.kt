@@ -76,6 +76,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     private val _toast = MutableStateFlow<String?>(null)
     val toast: StateFlow<String?> = _toast
 
+    private val _socketStatus = MutableStateFlow<String?>(null)
+    val socketStatus: StateFlow<String?> = _socketStatus
+
     private val _selectedRealmId = MutableStateFlow(prefs.getRealmId())
     val selectedRealmId: StateFlow<Int> = _selectedRealmId
 
@@ -212,6 +215,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 parseShopItems(output.text)
             },
             onAuthError = { msg -> _toast.value = msg },
+            onStatus = { status -> _socketStatus.value = status },
             onTradeInvite = { from -> _toast.value = "交易邀请：$from" },
             onMailList = { data -> _mailList.value = data },
             onMailSendResult = { res -> _toast.value = res.msg },
@@ -235,6 +239,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     fun disconnectSocket() {
         socket.disconnect()
+        _socketStatus.value = "disconnected"
     }
 
     fun sendCmd(text: String) {

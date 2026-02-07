@@ -20,6 +20,7 @@ class SocketManager(private val json: Json) {
         onState: (GameState) -> Unit,
         onOutput: (OutputPayload) -> Unit,
         onAuthError: (String) -> Unit,
+        onStatus: (String) -> Unit,
         onTradeInvite: (String) -> Unit,
         onMailList: (MailListResponse) -> Unit,
         onMailSendResult: (SimpleResult) -> Unit,
@@ -43,6 +44,7 @@ class SocketManager(private val json: Json) {
             .build()
         socket = IO.socket(socketBase, options).apply {
             on(Socket.EVENT_CONNECT) {
+                onStatus("connected")
                 emit("auth", JSONObject().apply {
                     put("token", token)
                     put("name", charName)
@@ -52,6 +54,12 @@ class SocketManager(private val json: Json) {
                 })
                 emit("cmd", JSONObject().apply { put("text", "stats") })
                 emit("state_request", JSONObject().apply { put("reason", "client_init") })
+            }
+            on(Socket.EVENT_CONNECT_ERROR) { args ->
+                onStatus("connect_error: ${args.firstOrNull()?.toString() ?: "unknown"}")
+            }
+            on(Socket.EVENT_DISCONNECT) { args ->
+                onStatus("disconnected: ${args.firstOrNull()?.toString() ?: "unknown"}")
             }
             on("auth_error") { args ->
                 val msg = (args.firstOrNull() as? JSONObject)?.optString("error")
