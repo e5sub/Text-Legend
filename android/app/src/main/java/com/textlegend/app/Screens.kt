@@ -250,6 +250,7 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
     val outputs by vm.outputLog.collectAsState()
     val toast by vm.toast.collectAsState()
     val socketStatus by vm.socketStatus.collectAsState()
+    val lastStateAt by vm.lastStateAt.collectAsState()
 
     var tabIndex by remember { mutableStateOf(0) }
     var chatInput by remember { mutableStateOf("") }
@@ -324,6 +325,9 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                                 Text("正在连接服务器…")
                                 if (!socketStatus.isNullOrBlank()) {
                                     Text("连接状态: ${socketStatus}")
+                                }
+                                if (lastStateAt != null) {
+                                    Text("最近状态: ${((System.currentTimeMillis() - (lastStateAt ?: 0)) / 1000)} 秒前")
                                 }
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Button(onClick = { vm.requestState("ui_manual") }) { Text("刷新状态") }

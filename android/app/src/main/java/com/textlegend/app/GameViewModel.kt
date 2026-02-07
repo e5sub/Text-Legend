@@ -40,6 +40,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     private val _gameState = MutableStateFlow<GameState?>(null)
     val gameState: StateFlow<GameState?> = _gameState
 
+    private val _lastStateAt = MutableStateFlow<Long?>(null)
+    val lastStateAt: StateFlow<Long?> = _lastStateAt
+
     private val _outputLog = MutableStateFlow<List<OutputPayload>>(emptyList())
     val outputLog: StateFlow<List<OutputPayload>> = _outputLog
 
@@ -209,7 +212,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             realmId = selectedRealmId.value,
             deviceId = deviceId,
             deviceFingerprint = fingerprint,
-            onState = { state -> _gameState.value = state },
+            onState = { state ->
+                _gameState.value = state
+                _lastStateAt.value = System.currentTimeMillis()
+            },
             onOutput = { output ->
                 _outputLog.value = (listOf(output) + _outputLog.value).take(400)
                 parseShopItems(output.text)
