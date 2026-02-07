@@ -1,6 +1,7 @@
 ﻿package com.textlegend.app
 
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -19,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -574,10 +576,10 @@ private fun InventoryTab(state: GameState?, onUse: (ItemInfo) -> Unit) {
             Text(text = "背包", style = MaterialTheme.typography.titleSmall)
         }
         items(state?.items.orEmpty()) { item ->
-            ListItem(
-                headlineContent = { Text("${item.name} x${item.qty}") },
-                supportingContent = { Text(item.type) },
-                modifier = Modifier.clickable { onUse(item) }
+            ClickableListItem(
+                headline = { Text("${item.name} x${item.qty}") },
+                supporting = { Text(item.type) },
+                onClick = { onUse(item) }
             )
         }
     }
@@ -761,6 +763,61 @@ private fun CartoonGrid(items: List<ActionItem>, onClick: (String) -> Unit) {
             if (rowItems.size == 2) Spacer(modifier = Modifier.weight(1f))
         }
         Spacer(modifier = Modifier.height(8.dp))
+    }
+}
+
+@Composable
+private fun ClickableListItem(
+    headline: @Composable () -> Unit,
+    supporting: @Composable (() -> Unit)? = null,
+    selected: Boolean = false,
+    onClick: () -> Unit
+) {
+    val bg = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant
+    val border = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.7f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(8.dp),
+        color = bg,
+        border = BorderStroke(1.dp, border),
+        tonalElevation = if (selected) 2.dp else 0.dp
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+            headline()
+            if (supporting != null) {
+                Spacer(modifier = Modifier.height(2.dp))
+                supporting()
+            }
+        }
+    }
+}
+
+@Composable
+private fun ClickableTextRow(
+    text: String,
+    selected: Boolean = false,
+    onClick: () -> Unit
+) {
+    val bg = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant
+    val border = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.7f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(8.dp),
+        color = bg,
+        border = BorderStroke(1.dp, border),
+        tonalElevation = if (selected) 2.dp else 0.dp
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
+        )
     }
 }
 
@@ -1159,9 +1216,10 @@ private fun ShopDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Un
         Spacer(modifier = Modifier.height(8.dp))
         Text("商品列表")
         pageInfo.slice.forEach { item ->
-            Text(
+            ClickableTextRow(
                 text = "${item.name} (${item.price}金)",
-                modifier = Modifier.clickable { selectedShop = item }
+                selected = selectedShop?.name == item.name,
+                onClick = { selectedShop = item }
             )
         }
         PagerControls(pageInfo, onPrev = { page -= 1 }, onNext = { page += 1 })
@@ -1181,9 +1239,10 @@ private fun ShopDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Un
         val sellPageInfo = paginate(sellables, sellPage, 9)
         sellPage = sellPageInfo.page
         sellPageInfo.slice.forEach { item ->
-            Text(
+            ClickableTextRow(
                 text = "${item.name} x${item.qty}",
-                modifier = Modifier.clickable { sellItem = item }
+                selected = sellItem?.id == item.id && sellItem?.key == item.key,
+                onClick = { sellItem = item }
             )
         }
         PagerControls(sellPageInfo, onPrev = { sellPage -= 1 }, onNext = { sellPage += 1 })
