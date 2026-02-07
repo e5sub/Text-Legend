@@ -702,12 +702,24 @@ export function removeItem(player, itemId, qty = 1, effects = null, durability =
   return true;
 }
 
-export function equipItem(player, itemId, effects = null) {
+export function equipItem(player, itemId, effects = null, durability = null, max_durability = null, refine_level = null) {
   const item = ITEM_TEMPLATES[itemId];
   if (!item || !item.slot) return { ok: false, msg: '\u8BE5\u7269\u54C1\u65E0\u6CD5\u88C5\u5907\u3002' };
-  const has = effects
-    ? player.inventory.find((i) => i.id === itemId && sameEffects(i.effects, effects))
-    : player.inventory.find((i) => i.id === itemId);
+  const normalized = normalizeEffects(effects);
+  const needsMeta = durability != null || max_durability != null || refine_level != null;
+  let has = player.inventory.find((i) => {
+    if (!i || i.id !== itemId) return false;
+    if (normalized && !sameEffects(i.effects, normalized)) return false;
+    if (needsMeta) {
+      if (durability != null && i.durability !== durability) return false;
+      if (max_durability != null && i.max_durability !== max_durability) return false;
+      if (refine_level != null && (i.refine_level ?? 0) !== refine_level) return false;
+    }
+    return true;
+  });
+  if (!has && !normalized && !needsMeta) {
+    has = player.inventory.find((i) => i.id === itemId);
+  }
   if (!has) return { ok: false, msg: '\u80CC\u5305\u91CC\u6CA1\u6709\u8BE5\u7269\u54C1\u3002' };
 
   normalizeEquipment(player);
@@ -722,7 +734,7 @@ export function equipItem(player, itemId, effects = null) {
   const itemMaxDur = has.max_durability != null ? has.max_durability : maxDur;
   const itemRefineLevel = has.refine_level != null ? has.refine_level : 0;
   player.equipment[slot] = { id: itemId, durability: itemDur, max_durability: itemMaxDur, effects: has.effects || null, refine_level: itemRefineLevel };
-  removeItem(player, itemId, 1, has.effects);
+  removeItem(player, itemId, 1, has.effects, itemDur, itemMaxDur, itemRefineLevel);
   computeDerived(player);
   return { ok: true, msg: `\u5DF2\u88C5\u5907${item.name}\u3002` };
 }

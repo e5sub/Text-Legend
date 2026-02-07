@@ -1138,7 +1138,14 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       if (!args) return send('要装备哪件物品？');
       const resolved = resolveInventoryItem(player, args);
       if (!resolved.slot || !resolved.item) return send('背包里没有该物品。');
-      const res = equipItem(player, resolved.slot.id, resolved.slot.effects || null);
+      const res = equipItem(
+        player,
+        resolved.slot.id,
+        resolved.slot.effects || null,
+        resolved.slot.durability ?? null,
+        resolved.slot.max_durability ?? null,
+        resolved.slot.refine_level ?? null
+      );
       if (res.ok) player.forceStateRefresh = true;
       send(res.msg);
       return;

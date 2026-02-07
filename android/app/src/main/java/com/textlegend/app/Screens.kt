@@ -892,7 +892,18 @@ private fun InventoryTab(state: GameState?, onUse: (ItemInfo) -> Unit) {
                                 ) {
                                     Column(modifier = Modifier.padding(10.dp)) {
                                         if (item != null) {
-                                            Text("${slotLabel(eq.slot)}：${item.name}")
+                                            Text(
+                                                text = "${slotLabel(eq.slot)}：${item.name}",
+                                                color = rarityColor(item.rarity)
+                                            )
+                                            val refine = eq.refine_level ?: 0
+                                            if (refine > 0) {
+                                                Text("锻造 +$refine")
+                                            }
+                                            val effectText = formatEffectText(item.effects)
+                                            if (effectText.isNotBlank()) {
+                                                Text(effectText)
+                                            }
                                             Text("耐久 ${eq.durability ?: 0}/${eq.max_durability ?: 0}")
                                         } else {
                                             Text("${slotLabel(eq.slot)}：无")
@@ -912,14 +923,40 @@ private fun InventoryTab(state: GameState?, onUse: (ItemInfo) -> Unit) {
             Text(text = "背包", style = MaterialTheme.typography.titleSmall)
         }
         val bagItems = state?.items.orEmpty()
+            .sortedWith(
+                compareByDescending<ItemInfo> { rarityRank(it.rarity) }
+                    .thenBy { it.name }
+            )
         val bagPageInfo = paginate(bagItems, bagPage, bagPageSize)
         bagPage = bagPageInfo.page
-        items(bagPageInfo.slice) { item ->
-            ClickableListItem(
-                headline = { Text("${item.name} x${item.qty}") },
-                supporting = { Text(itemTypeLabel(item.type)) },
-                onClick = { onUse(item) }
-            )
+        item {
+            val rows = bagPageInfo.slice.chunked(2)
+            Column {
+                rows.forEach { row ->
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        row.forEach { item ->
+                            Surface(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { onUse(item) },
+                                shape = RoundedCornerShape(10.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+                            ) {
+                                Column(modifier = Modifier.padding(10.dp)) {
+                                    Text(
+                                        text = "${item.name} x${item.qty}",
+                                        color = rarityColor(item.rarity)
+                                    )
+                                    Text(itemTypeLabel(item.type))
+                                }
+                            }
+                        }
+                        if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
         }
         item {
             if (bagPageInfo.totalPages > 1) {
@@ -931,6 +968,28 @@ private fun InventoryTab(state: GameState?, onUse: (ItemInfo) -> Unit) {
             }
         }
     }
+}
+
+private fun rarityRank(rarity: String?): Int = when (rarity) {
+    "ultimate" -> 6
+    "supreme" -> 5
+    "legendary" -> 4
+    "epic" -> 3
+    "rare" -> 2
+    "uncommon" -> 1
+    "common" -> 0
+    else -> 0
+}
+
+private fun rarityColor(rarity: String?): Color = when (rarity) {
+    "common" -> Color(0xFFE0D7C8)
+    "uncommon" -> Color(0xFF9FD39F)
+    "rare" -> Color(0xFF6CB6FF)
+    "epic" -> Color(0xFFB082FF)
+    "legendary" -> Color(0xFFFFC266)
+    "supreme" -> Color(0xFFFF8A65)
+    "ultimate" -> Color(0xFFFF5252)
+    else -> Color(0xFFE0D7C8)
 }
 
 private fun slotLabel(slot: String?): String = when (slot) {
@@ -957,6 +1016,29 @@ private fun itemTypeLabel(type: String?): String = when (type) {
     "accessory" -> "饰品"
     "currency" -> "货币"
     else -> type ?: ""
+}
+
+private fun formatEffectText(effects: JsonObject?): String {
+    if (effects == null) return ""
+    val parts = mutableListOf<String>()
+    val elementAtk = effects["elementAtk"]?.jsonPrimitive?.doubleOrNull ?: 0.0
+    if (elementAtk > 0) parts.add("元素 +${elementAtk.toInt()}")
+    val keys = effects.keys.filter { it != "elementAtk" }
+    if (keys.isNotEmpty()) {
+        parts.add("特效 ${keys.joinToString("、") { effectLabel(it) }}")
+    }
+    return parts.joinToString(" | ")
+}
+
+private fun effectLabel(key: String): String = when (key) {
+    "combo" -> "连击"
+    "fury" -> "狂攻"
+    "unbreakable" -> "不磨"
+    "defense" -> "守护"
+    "dodge" -> "闪避"
+    "poison" -> "毒"
+    "healblock" -> "禁疗"
+    else -> key
 }
 
 @Composable
