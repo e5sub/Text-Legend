@@ -72,13 +72,21 @@ jobs:
           KEY_ALIAS: ${{ env.KEY_ALIAS_CLEAN }}
           KEY_PASSWORD: ${{ env.KEY_PASSWORD_CLEAN }}
         run: |
-          gradle :app:assembleRelease --stacktrace --info
+          set -o pipefail
+          gradle :app:assembleRelease --stacktrace --info --console=plain 2>&1 | tee $GITHUB_WORKSPACE/android-build.log
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
           path: android/app/build/outputs/apk/release/app-release.apk
+      
+      - name: Upload Build Log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-build-log
+          path: android-build.log
 
       - name: Publish Release
         uses: softprops/action-gh-release@v2
