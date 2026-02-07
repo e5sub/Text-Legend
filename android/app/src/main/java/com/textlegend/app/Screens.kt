@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -25,22 +26,27 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.delay
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
 
 @Composable
 fun ServerScreen(initialUrl: String, onSave: (String) -> Unit) {
     var url by remember { mutableStateOf(initialUrl) }
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center) {
-        Text(text = "服务器地址", style = MaterialTheme.typography.titleLarge)
-        Spacer(modifier = Modifier.height(12.dp))
-        OutlinedTextField(
-            value = url,
-            onValueChange = { url = it },
-            label = { Text("例如 http://192.168.1.10:3000/") },
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        Button(onClick = { onSave(url) }, modifier = Modifier.fillMaxWidth()) {
-            Text("保存")
+    CartoonBackground {
+        Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center) {
+            Text(text = "服务器地址", style = MaterialTheme.typography.titleLarge)
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = url,
+                onValueChange = { url = it },
+                label = { Text("例如 http://192.168.1.10:3000/") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(onClick = { onSave(url) }, modifier = Modifier.fillMaxWidth()) {
+                Text("保存")
+            }
         }
     }
 }
@@ -63,11 +69,12 @@ fun AuthScreen(vm: GameViewModel, onServerClick: () -> Unit, onAuthed: () -> Uni
         vm.refreshCaptcha()
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-            Text(text = "文字传奇", style = MaterialTheme.typography.headlineSmall)
-            TextButton(onClick = onServerClick) { Text("服务器") }
-        }
+    CartoonBackground {
+        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                Text(text = "文字传奇", style = MaterialTheme.typography.headlineSmall)
+                TextButton(onClick = onServerClick) { Text("服务器") }
+            }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -104,12 +111,25 @@ fun AuthScreen(vm: GameViewModel, onServerClick: () -> Unit, onAuthed: () -> Uni
             Spacer(modifier = Modifier.width(12.dp))
             val bitmap = remember(captcha?.svg) { captcha?.svg?.let { svgToImageBitmap(it) } }
             if (bitmap != null) {
-                Box(modifier = Modifier.height(48.dp).width(140.dp).clickable { vm.refreshCaptcha() }) {
-                    androidx.compose.foundation.Image(bitmap = bitmap, contentDescription = "captcha")
+                Box(
+                    modifier = Modifier
+                        .height(64.dp)
+                        .width(200.dp)
+                        .clickable { vm.refreshCaptcha() }
+                ) {
+                    androidx.compose.foundation.Image(
+                        bitmap = bitmap,
+                        contentDescription = "captcha",
+                        modifier = Modifier.fillMaxSize()
+                    )
                 }
             } else {
                 Box(
-                    modifier = Modifier.height(48.dp).width(140.dp).background(Color(0xFFEDEDED)).clickable { vm.refreshCaptcha() },
+                    modifier = Modifier
+                        .height(64.dp)
+                        .width(200.dp)
+                        .background(Color(0xFFEDEDED))
+                        .clickable { vm.refreshCaptcha() },
                     contentAlignment = Alignment.Center
                 ) {
                     Text("刷新")
@@ -138,10 +158,11 @@ fun AuthScreen(vm: GameViewModel, onServerClick: () -> Unit, onAuthed: () -> Uni
             Text(text = msg ?: "", color = Color(0xFFCC3333))
         }
 
-        if (!toast.isNullOrBlank()) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = toast ?: "", color = Color(0xFF2E7D32))
-            LaunchedEffect(toast) { vm.clearToast() }
+            if (!toast.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = toast ?: "", color = Color(0xFF2E7D32))
+                LaunchedEffect(toast) { vm.clearToast() }
+            }
         }
     }
 }
@@ -161,11 +182,12 @@ fun CharacterScreen(vm: GameViewModel, onEnter: (String) -> Unit, onLogout: () -
         vm.loadCharacters()
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(text = "角色选择", style = MaterialTheme.typography.headlineSmall)
-            TextButton(onClick = onLogout) { Text("退出账号") }
-        }
+    CartoonBackground {
+        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(text = "角色选择", style = MaterialTheme.typography.headlineSmall)
+                TextButton(onClick = onLogout) { Text("退出账号") }
+            }
 
         RealmSelector(realms = realms, selectedRealm = selectedRealm, onSelect = {
             vm.selectRealm(it)
@@ -213,10 +235,11 @@ fun CharacterScreen(vm: GameViewModel, onEnter: (String) -> Unit, onLogout: () -
         Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = { vm.createCharacter(name, classId) }, modifier = Modifier.fillMaxWidth()) { Text("创建") }
 
-        if (!toast.isNullOrBlank()) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = toast ?: "", color = Color(0xFF2E7D32))
-            LaunchedEffect(toast) { vm.clearToast() }
+            if (!toast.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = toast ?: "", color = Color(0xFF2E7D32))
+                LaunchedEffect(toast) { vm.clearToast() }
+            }
         }
     }
 }
@@ -236,6 +259,14 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
     LaunchedEffect(Unit) {
         vm.requestState("ui_enter")
     }
+    LaunchedEffect(Unit) {
+        repeat(8) {
+            if (state == null) {
+                vm.requestState("ui_retry")
+            }
+            delay(1500)
+        }
+    }
 
     LaunchedEffect(state?.mobs) {
         if (selectedMob != null && state?.mobs?.none { it.id == selectedMob?.id } == true) {
@@ -245,43 +276,57 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
+            NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceVariant) {
                 NavigationBarItem(
                     selected = tabIndex == 0,
                     onClick = { tabIndex = 0 },
                     label = { Text("战斗") },
-                    icon = {}
+                    icon = { Image(painter = painterResource(R.drawable.ic_battle), contentDescription = "战斗", modifier = Modifier.size(18.dp)) }
                 )
                 NavigationBarItem(
                     selected = tabIndex == 1,
                     onClick = { tabIndex = 1 },
                     label = { Text("背包") },
-                    icon = {}
+                    icon = { Image(painter = painterResource(R.drawable.ic_bag), contentDescription = "背包", modifier = Modifier.size(18.dp)) }
                 )
                 NavigationBarItem(
                     selected = tabIndex == 2,
                     onClick = { tabIndex = 2 },
                     label = { Text("聊天") },
-                    icon = {}
+                    icon = { Image(painter = painterResource(R.drawable.ic_chat), contentDescription = "聊天", modifier = Modifier.size(18.dp)) }
                 )
                 NavigationBarItem(
                     selected = tabIndex == 3,
                     onClick = { tabIndex = 3 },
                     label = { Text("功能") },
-                    icon = {}
+                    icon = { Image(painter = painterResource(R.drawable.ic_menu), contentDescription = "功能", modifier = Modifier.size(18.dp)) }
                 )
             }
         }
     ) { innerPadding ->
-        NavHost(
-            navController = innerNav,
-            startDestination = "main",
-            modifier = Modifier.fillMaxSize().padding(innerPadding)
-        ) {
+        CartoonBackground {
+            NavHost(
+                navController = innerNav,
+                startDestination = "main",
+                modifier = Modifier.fillMaxSize().padding(innerPadding)
+            ) {
             composable("main") {
                 Column(modifier = Modifier.fillMaxSize().padding(12.dp)) {
                     TopStatus(state = state)
                     Spacer(modifier = Modifier.height(8.dp))
+                    if (state == null) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiary)
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text("正在连接服务器…")
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Button(onClick = { vm.requestState("ui_manual") }) { Text("刷新状态") }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
 
                     when (tabIndex) {
                         0 -> BattleTab(state = state, selectedMob = selectedMob, onSelectMob = { selectedMob = it }, onGo = { dir -> vm.sendCmd("go $dir") }, onAttack = { mobName -> vm.sendCmd("attack $mobName") }, onCast = { skill, target ->
@@ -374,6 +419,7 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
             composable("afk") { AfkDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
             composable("settings") { SettingsScreen(vm = vm, onDismiss = { innerNav.popBackStack() }) }
         }
+        }
     }
 }
 
@@ -423,26 +469,42 @@ private fun classLabel(id: String): String = when (id) {
 private fun TopStatus(state: GameState?) {
     val stats = state?.stats
     val player = state?.player
-    Column {
-        Text(text = player?.name ?: "未连接", style = MaterialTheme.typography.titleMedium)
-        Text(text = "${classLabel(player?.classId ?: "")} Lv${player?.level ?: 0} | 金币 ${stats?.gold ?: 0}")
-        LinearProgressIndicator(
-            progress = if (stats != null && stats.maxHp > 0) stats.hp.toFloat() / stats.maxHp else 0f,
-            modifier = Modifier.fillMaxWidth()
-        )
-        Text(text = "HP ${stats?.hp ?: 0}/${stats?.maxHp ?: 0}")
-        LinearProgressIndicator(
-            progress = if (stats != null && stats.maxMp > 0) stats.mp.toFloat() / stats.maxMp else 0f,
-            modifier = Modifier.fillMaxWidth()
-        )
-        Text(text = "MP ${stats?.mp ?: 0}/${stats?.maxMp ?: 0}")
-        LinearProgressIndicator(
-            progress = if (stats != null && stats.expNext > 0) stats.exp.toFloat() / stats.expNext else 0f,
-            modifier = Modifier.fillMaxWidth()
-        )
-        Text(text = "EXP ${stats?.exp ?: 0}/${stats?.expNext ?: 0}")
-        if (state?.room != null) {
-            Text(text = "${state.room.zone} - ${state.room.name}")
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(text = player?.name ?: "未连接", style = MaterialTheme.typography.titleMedium)
+            Text(text = "${classLabel(player?.classId ?: "")} Lv${player?.level ?: 0} | 金币 ${stats?.gold ?: 0}")
+            Spacer(modifier = Modifier.height(6.dp))
+            LinearProgressIndicator(
+                progress = if (stats != null && stats.maxHp > 0) stats.hp.toFloat() / stats.maxHp else 0f,
+                modifier = Modifier.fillMaxWidth().height(8.dp),
+                color = Color(0xFFE06B6B),
+                trackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+            Text(text = "HP ${stats?.hp ?: 0}/${stats?.maxHp ?: 0}")
+            Spacer(modifier = Modifier.height(4.dp))
+            LinearProgressIndicator(
+                progress = if (stats != null && stats.maxMp > 0) stats.mp.toFloat() / stats.maxMp else 0f,
+                modifier = Modifier.fillMaxWidth().height(8.dp),
+                color = Color(0xFF6CA8E0),
+                trackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+            Text(text = "MP ${stats?.mp ?: 0}/${stats?.maxMp ?: 0}")
+            Spacer(modifier = Modifier.height(4.dp))
+            LinearProgressIndicator(
+                progress = if (stats != null && stats.expNext > 0) stats.exp.toFloat() / stats.expNext else 0f,
+                modifier = Modifier.fillMaxWidth().height(8.dp),
+                color = Color(0xFFE0B25C),
+                trackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+            Text(text = "EXP ${stats?.exp ?: 0}/${stats?.expNext ?: 0}")
+            if (state?.room != null) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(text = "${state.room.zone} - ${state.room.name}")
+            }
         }
     }
 }
@@ -529,75 +591,78 @@ private fun ActionsTab(
     onAction: (String) -> Unit
 ) {
     val general = mutableListOf(
-        "角色状态" to "stats",
-        "背包管理" to "bag",
-        "队伍" to "party",
-        "行会" to "guild",
-        "邮件" to "mail",
-        "交易" to "trade"
+        ActionItem("角色状态", "stats", R.drawable.ic_status),
+        ActionItem("背包管理", "bag", R.drawable.ic_bag),
+        ActionItem("队伍", "party", R.drawable.ic_party),
+        ActionItem("行会", "guild", R.drawable.ic_guild),
+        ActionItem("邮件", "mail", R.drawable.ic_mail),
+        ActionItem("交易", "trade", R.drawable.ic_trade)
     )
     val economy = mutableListOf(
-        "商店" to "shop",
-        "修理装备" to "repair",
-        "寄售" to "consign"
+        ActionItem("商店", "shop", R.drawable.ic_shop),
+        ActionItem("修理装备", "repair", R.drawable.ic_repair),
+        ActionItem("寄售", "consign", R.drawable.ic_consign)
     )
     val growth = mutableListOf(
-        "转职" to "changeclass",
-        "装备合成" to "forge",
-        "装备锻造" to "refine",
-        "特效重置" to "effect",
-        "套装掉落" to "drops",
-        "修炼" to "train"
+        ActionItem("转职", "changeclass", R.drawable.ic_hat),
+        ActionItem("装备合成", "forge", R.drawable.ic_forge),
+        ActionItem("装备锻造", "refine", R.drawable.ic_refine),
+        ActionItem("特效重置", "effect", R.drawable.ic_magic),
+        ActionItem("套装掉落", "drops", R.drawable.ic_drops),
+        ActionItem("修炼", "train", R.drawable.ic_train)
     )
     val events = mutableListOf(
-        "玩家排行" to "rank",
-        "沙巴克" to "sabak"
+        ActionItem("玩家排行", "rank", R.drawable.ic_rank),
+        ActionItem("沙巴克", "sabak", R.drawable.ic_castle)
     )
     val system = mutableListOf(
-        "设置" to "settings",
-        "切换角色" to "switch",
-        "退出游戏" to "logout"
+        ActionItem("设置", "settings", R.drawable.ic_settings),
+        ActionItem("切换角色", "switch", R.drawable.ic_switch),
+        ActionItem("退出游戏", "logout", R.drawable.ic_logout)
     )
-    val vip = mutableListOf<Pair<String, String>>()
+    val vip = mutableListOf<ActionItem>()
     if (state?.stats?.vip == false && state.vip_self_claim_enabled) {
-        vip.add("VIP领取" to "vip claim")
+        vip.add(ActionItem("VIP领取", "vip claim", R.drawable.ic_vip))
     }
     if (state?.stats?.vip == false) {
-        vip.add("VIP激活" to "vip activate")
+        vip.add(ActionItem("VIP激活", "vip activate", R.drawable.ic_vip))
     }
     val afk = listOf(
-        if (state?.stats?.autoSkillId != null) ("停止挂机" to "autoskill off") else ("挂机" to "afk")
+        if (state?.stats?.autoSkillId != null)
+            ActionItem("停止挂机", "autoskill off", R.drawable.ic_afk)
+        else
+            ActionItem("挂机", "afk", R.drawable.ic_afk)
     )
 
     Column(modifier = Modifier.fillMaxSize()) {
         Text(text = "常用功能", style = MaterialTheme.typography.titleSmall)
-        FlowRow(items = general, onClick = { onAction(it) })
+        CartoonGrid(items = general, onClick = { onAction(it) })
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(text = "经济系统", style = MaterialTheme.typography.titleSmall)
-        FlowRow(items = economy, onClick = { onAction(it) })
+        CartoonGrid(items = economy, onClick = { onAction(it) })
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(text = "成长锻造", style = MaterialTheme.typography.titleSmall)
-        FlowRow(items = growth, onClick = { onAction(it) })
+        CartoonGrid(items = growth, onClick = { onAction(it) })
         Spacer(modifier = Modifier.height(8.dp))
 
         if (vip.isNotEmpty()) {
             Text(text = "VIP", style = MaterialTheme.typography.titleSmall)
-            FlowRow(items = vip, onClick = { onAction(it) })
+            CartoonGrid(items = vip, onClick = { onAction(it) })
             Spacer(modifier = Modifier.height(8.dp))
         }
 
         Text(text = "活动排行", style = MaterialTheme.typography.titleSmall)
-        FlowRow(items = events, onClick = { onAction(it) })
+        CartoonGrid(items = events, onClick = { onAction(it) })
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(text = "系统", style = MaterialTheme.typography.titleSmall)
-        FlowRow(items = system, onClick = { onAction(it) })
+        CartoonGrid(items = system, onClick = { onAction(it) })
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(text = "挂机", style = MaterialTheme.typography.titleSmall)
-        FlowRow(items = afk, onClick = { onAction(it) })
+        CartoonGrid(items = afk, onClick = { onAction(it) })
     }
 }
 
@@ -619,7 +684,68 @@ private fun ScreenScaffold(
     ) { innerPadding ->
         val base = Modifier.fillMaxSize().padding(innerPadding).padding(12.dp)
         val modifier = if (scrollable) base.verticalScroll(rememberScrollState()) else base
-        Column(modifier = modifier, content = content)
+        CartoonBackground {
+            Column(modifier = modifier, content = content)
+        }
+    }
+}
+
+@Composable
+private fun CartoonBackground(content: @Composable BoxScope.() -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        MaterialTheme.colorScheme.background,
+                        MaterialTheme.colorScheme.surface
+                    )
+                )
+            ),
+        content = content
+    )
+}
+
+@Composable
+private data class ActionItem(val label: String, val action: String, val iconRes: Int)
+
+@Composable
+private fun CartoonGrid(items: List<ActionItem>, onClick: (String) -> Unit) {
+    if (items.isEmpty()) {
+        Text("暂无")
+        return
+    }
+    items.chunked(3).forEach { rowItems ->
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            rowItems.forEach { entry ->
+                Card(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(58.dp)
+                        .clickable { onClick(entry.action) },
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = entry.iconRes),
+                            contentDescription = entry.label,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(entry.label, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+            if (rowItems.size == 1) Spacer(modifier = Modifier.weight(2f))
+            if (rowItems.size == 2) Spacer(modifier = Modifier.weight(1f))
+        }
+        Spacer(modifier = Modifier.height(8.dp))
     }
 }
 
