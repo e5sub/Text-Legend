@@ -35,8 +35,14 @@ import kotlinx.coroutines.delay
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.doubleOrNull
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun ServerScreen(initialUrl: String, onSave: (String) -> Unit) {
@@ -564,6 +570,22 @@ private fun TopStatus(state: GameState?) {
                     Text(text = "魔御 ${stats?.mdef ?: 0}")
                     Text(text = "闪避 ${stats?.dodge ?: 0}%")
                 }
+                Spacer(modifier = Modifier.height(6.dp))
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(text = vipStatusText(stats), style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = "沙巴克加成 ${if (stats?.sabak_bonus == true) "有" else "无"}",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "套装加成 ${if (stats?.set_bonus == true) "有" else "无"}",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "在线人数 ${state?.online?.count ?: 0}",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             }
         }
     }
@@ -1039,6 +1061,18 @@ private fun effectLabel(key: String): String = when (key) {
     "poison" -> "毒"
     "healblock" -> "禁疗"
     else -> key
+}
+
+private fun vipStatusText(stats: StatsInfo?): String {
+    if (stats == null) return "VIP 未知"
+    if (!stats.vip) return "VIP 未激活"
+    val ts = stats.vip_expires_at ?: 0L
+    return if (ts <= 0L) "VIP 永久" else "VIP 到期 ${formatTime(ts)}"
+}
+
+private fun formatTime(ts: Long): String {
+    val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+    return sdf.format(Date(ts))
 }
 
 @Composable
