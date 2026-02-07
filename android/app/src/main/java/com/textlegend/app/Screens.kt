@@ -251,6 +251,7 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
     val toast by vm.toast.collectAsState()
     val socketStatus by vm.socketStatus.collectAsState()
     val lastStateAt by vm.lastStateAt.collectAsState()
+    val lastStateRaw by vm.lastStateRaw.collectAsState()
 
     var tabIndex by remember { mutableStateOf(0) }
     var chatInput by remember { mutableStateOf("") }
@@ -328,6 +329,10 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                                 }
                                 if (lastStateAt != null) {
                                     Text("最近状态: ${((System.currentTimeMillis() - (lastStateAt ?: 0)) / 1000)} 秒前")
+                                }
+                                if (!lastStateRaw.isNullOrBlank()) {
+                                    val preview = lastStateRaw!!.take(120).replace("\n", " ")
+                                    Text("状态预览: $preview")
                                 }
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Button(onClick = { vm.requestState("ui_manual") }) { Text("刷新状态") }

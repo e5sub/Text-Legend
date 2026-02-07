@@ -21,6 +21,7 @@ class SocketManager(private val json: Json) {
         onOutput: (OutputPayload) -> Unit,
         onAuthError: (String) -> Unit,
         onStatus: (String) -> Unit,
+        onRawState: (String) -> Unit,
         onTradeInvite: (String) -> Unit,
         onMailList: (MailListResponse) -> Unit,
         onMailSendResult: (SimpleResult) -> Unit,
@@ -74,11 +75,16 @@ class SocketManager(private val json: Json) {
                     is Map<*, *> -> JSONObject(raw).toString()
                     else -> raw.toString()
                 }
+                onStatus("state_received")
+                onRawState(payloadText)
                 runCatching {
                     val stateJson = runCatching {
                         val obj = JSONObject(payloadText)
                         if (obj.has("state")) {
                             val inner = obj.opt("state")
+                            if (inner is JSONObject) inner.toString() else payloadText
+                        } else if (obj.has("data")) {
+                            val inner = obj.opt("data")
                             if (inner is JSONObject) inner.toString() else payloadText
                         } else {
                             payloadText
@@ -87,6 +93,7 @@ class SocketManager(private val json: Json) {
                     val state = json.decodeFromString(GameState.serializer(), stateJson)
                     onState(state)
                 }.onFailure {
+                    onStatus("state_parse_failed")
                     onAuthError("状态解析失败")
                 }
             }

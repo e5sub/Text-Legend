@@ -17,6 +17,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         ignoreUnknownKeys = true
         isLenient = true
         coerceInputValues = true
+        explicitNulls = false
     }
     private val api = ApiService(json)
     private val socket = SocketManager(json)
@@ -42,6 +43,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _lastStateAt = MutableStateFlow<Long?>(null)
     val lastStateAt: StateFlow<Long?> = _lastStateAt
+
+    private val _lastStateRaw = MutableStateFlow<String?>(null)
+    val lastStateRaw: StateFlow<String?> = _lastStateRaw
 
     private val _outputLog = MutableStateFlow<List<OutputPayload>>(emptyList())
     val outputLog: StateFlow<List<OutputPayload>> = _outputLog
@@ -222,6 +226,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             },
             onAuthError = { msg -> _toast.value = msg },
             onStatus = { status -> _socketStatus.value = status },
+            onRawState = { raw -> _lastStateRaw.value = raw },
             onTradeInvite = { from -> _toast.value = "交易邀请：$from" },
             onMailList = { data -> _mailList.value = data },
             onMailSendResult = { res -> _toast.value = res.msg },
