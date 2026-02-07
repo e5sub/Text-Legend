@@ -1150,6 +1150,56 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       send(res.msg);
       return;
     }
+    case 'loc': {
+      if (!args) {
+        send('用法: loc <区域 - 房间> 或 loc <zoneId:roomId>');
+        return;
+      }
+      const raw = args.trim();
+      let zoneId = '';
+      let roomId = '';
+      if (raw.includes(':')) {
+        const parts = raw.split(':').map(s => s.trim());
+        zoneId = parts[0] || '';
+        roomId = parts[1] || '';
+      } else if (raw.includes(' - ')) {
+        const [zoneNameRaw, roomNameRaw] = raw.split(' - ').map(s => s.trim());
+        const zoneEntry = Object.entries(WORLD).find(([, z]) => z?.name === zoneNameRaw);
+        if (zoneEntry) {
+          const [zid, z] = zoneEntry;
+          const roomEntry = Object.entries(z.rooms || {}).find(([, r]) => r?.name === roomNameRaw);
+          if (roomEntry) {
+            zoneId = zid;
+            roomId = roomEntry[0];
+          }
+        }
+      } else {
+        // 尝试按房间名全局匹配
+        for (const [zid, z] of Object.entries(WORLD)) {
+          const roomEntry = Object.entries(z.rooms || {}).find(([, r]) => r?.name === raw);
+          if (roomEntry) {
+            zoneId = zid;
+            roomId = roomEntry[0];
+            break;
+          }
+        }
+      }
+      if (!zoneId || !roomId || !WORLD[zoneId] || !WORLD[zoneId].rooms?.[roomId]) {
+        send('位置无效。');
+        return;
+      }
+      const fromRoom = { zone: player.position.zone, room: player.position.room };
+      player.position.zone = zoneId;
+      player.position.room = roomId;
+      player.forceStateRefresh = true;
+      send(`你前往 ${WORLD[zoneId].name} - ${WORLD[zoneId].rooms[roomId].name}。`);
+      sendRoomDescription(player, send);
+      if (onMove) {
+        const toRoom = { zone: zoneId, room: roomId };
+        onMove({ from: fromRoom, to: toRoom });
+      }
+      return;
+    }
     case 'unequip': {
       if (!args) return send('要卸下哪个部位？');
       const res = unequipItem(player, args);

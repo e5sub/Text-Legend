@@ -1197,8 +1197,15 @@ private fun ChatTab(
                 ChatLine(
                     output = line,
                     onNameClick = { name -> selectedName = name },
-                    onLocationClick = { label ->
-                        if (label.isNotBlank()) onCommand("move $label")
+                    onLocationClick = { location ->
+                        if (location == null) return@ChatLine
+                        val zoneId = location.zoneId?.trim().orEmpty()
+                        val roomId = location.roomId?.trim().orEmpty()
+                        if (zoneId.isNotBlank() && roomId.isNotBlank()) {
+                            onCommand("loc $zoneId:$roomId")
+                        } else if (location.label.isNotBlank()) {
+                            onCommand("loc ${location.label}")
+                        }
                     }
                 )
                 Divider()
@@ -1240,7 +1247,7 @@ private fun ChatTab(
 private fun ChatLine(
     output: OutputPayload,
     onNameClick: (String) -> Unit,
-    onLocationClick: (String) -> Unit
+    onLocationClick: (ChatLocation?) -> Unit
 ) {
     val prefix = output.prefix?.trim().orEmpty()
     val prefixColor = output.prefixColor?.trim().orEmpty()
@@ -1254,7 +1261,7 @@ private fun ChatLine(
                 Text(text = text, color = Color(0xFFE0B25C), fontWeight = FontWeight.SemiBold)
                 Spacer(modifier = Modifier.width(6.dp))
                 LocationChip(label = output.location.label) {
-                    onLocationClick(output.location.label)
+                    onLocationClick(output.location)
                 }
             }
         } else {
@@ -1281,7 +1288,7 @@ private fun ChatLine(
             if (output.location?.label?.isNotBlank() == true) {
                 Spacer(modifier = Modifier.width(6.dp))
                 LocationChip(label = output.location.label) {
-                    onLocationClick(output.location.label)
+                    onLocationClick(output.location)
                 }
             }
         }
@@ -1302,7 +1309,7 @@ private fun ChatLine(
             if (output.location?.label?.isNotBlank() == true) {
                 Spacer(modifier = Modifier.width(6.dp))
                 LocationChip(label = output.location.label) {
-                    onLocationClick(output.location.label)
+                    onLocationClick(output.location)
                 }
             }
         }
@@ -1314,7 +1321,7 @@ private fun ChatLine(
             Text(text)
             Spacer(modifier = Modifier.width(6.dp))
             LocationChip(label = output.location.label) {
-                onLocationClick(output.location.label)
+                onLocationClick(output.location)
             }
         }
     } else {

@@ -4167,7 +4167,46 @@ async function finishSabakSiege(realmId) {
     }
   });
   if (entries.length === 0 || tie) {
-    emitAnnouncement('沙巴克攻城战结束，守城方继续守城。', 'announce', null, realmId);
+    // 击杀为0或平局时，根据皇宫内人数判定
+    const palacePlayers = listOnlinePlayers(realmId).filter(p =>
+      isSabakPalace(p.position.zone, p.position.room) && p.guild
+    );
+    if (palacePlayers.length > 0) {
+      const countMap = new Map();
+      palacePlayers.forEach(p => {
+        const gid = String(p.guild.id);
+        countMap.set(gid, (countMap.get(gid) || 0) + 1);
+      });
+      let maxCount = -1;
+      let maxGuildId = null;
+      let maxGuildName = null;
+      let countTie = false;
+      for (const [gid, count] of countMap.entries()) {
+        if (count > maxCount) {
+          maxCount = count;
+          maxGuildId = gid;
+          const sample = palacePlayers.find(p => String(p.guild.id) === gid);
+          maxGuildName = sample?.guild?.name || winnerName;
+          countTie = false;
+        } else if (count === maxCount) {
+          countTie = true;
+        }
+      }
+      if (!countTie && maxGuildId) {
+        if (String(maxGuildId) !== String(sabakState.ownerGuildId)) {
+          sabakState.ownerGuildId = maxGuildId;
+          sabakState.ownerGuildName = maxGuildName;
+          await setSabakOwner(realmId, maxGuildId, maxGuildName || '未知行会');
+          emitAnnouncement(`沙巴克被 ${maxGuildName} 占领！`, 'announce', null, realmId);
+        } else {
+          emitAnnouncement('沙巴克攻城战结束，守城方成功守住。', 'announce', null, realmId);
+        }
+      } else {
+        emitAnnouncement('沙巴克攻城战结束，守城方继续守城。', 'announce', null, realmId);
+      }
+    } else {
+      emitAnnouncement('沙巴克攻城战结束，守城方继续守城。', 'announce', null, realmId);
+    }
   } else if (winnerId && winnerId !== sabakState.ownerGuildId) {
     sabakState.ownerGuildId = winnerId;
     sabakState.ownerGuildName = winnerName;
@@ -4177,6 +4216,7 @@ async function finishSabakSiege(realmId) {
     emitAnnouncement('沙巴克攻城战结束，守城方成功守住。', 'announce', null, realmId);
   }
   sabakState.killStats = {};
+  await clearSabakRegistrations(realmId);
 }
 
 function recordSabakKill(attacker, target) {
@@ -9022,15 +9062,10 @@ async function sabakTick(realmId) {
     let controllingGuildId = null;
     let controllingGuildName = null;
 
-    // 如果皇宫内只有守城方成员
-    if (palacePlayers.length > 0 && palacePlayers.every(p => String(p.guild.id) === String(ownerGuildId))) {
-      controllingGuildId = ownerGuildId;
-      controllingGuildName = sabakState.ownerGuildName;
-    }
-    // 如果皇宫内只有攻城方成员（同一行会）
-    else if (palacePlayers.length > 0) {
+    // 如果皇宫内只有单一行会成员（攻城方或守城方）
+    if (palacePlayers.length > 0) {
       const firstGuildId = String(palacePlayers[0].guild.id);
-      if (firstGuildId !== String(ownerGuildId) && palacePlayers.every(p => String(p.guild.id) === firstGuildId)) {
+      if (palacePlayers.every(p => String(p.guild.id) === firstGuildId)) {
         controllingGuildId = firstGuildId;
         controllingGuildName = palacePlayers[0].guild.name;
       }
@@ -9054,16 +9089,22 @@ async function sabakTick(realmId) {
 
       if (captureDuration >= 占领所需分钟 * 60 * 1000) {
         // 占领成功，立即结束攻城
+        const isDefenderHold = String(sabakState.captureGuildId) === String(ownerGuildId);
         sabakState.ownerGuildId = sabakState.captureGuildId;
         sabakState.ownerGuildName = sabakState.captureGuildName;
         await setSabakOwner(realmId, sabakState.captureGuildId, sabakState.captureGuildName);
-        emitAnnouncement(`${sabakState.captureGuildName} 占领沙城皇宫5分钟，成功夺取沙巴克！`, 'announce', null, realmId);
+        if (isDefenderHold) {
+          emitAnnouncement(`守城方占领沙城皇宫5分钟，成功守住沙巴克！`, 'announce', null, realmId);
+        } else {
+          emitAnnouncement(`${sabakState.captureGuildName} 占领沙城皇宫5分钟，成功夺取沙巴克！`, 'announce', null, realmId);
+        }
         sabakState.active = false;
         sabakState.siegeEndsAt = null;
         sabakState.captureGuildId = null;
         sabakState.captureGuildName = null;
         sabakState.captureStart = null;
         sabakState.killStats = {};
+        await clearSabakRegistrations(realmId);
       } else if (Math.floor(captureDuration / 1000) % 30 === 0 && captureDuration > 0) {
         // 每30秒提醒一次占领时间
         const remainingMinutes = Math.ceil((占领所需分钟 * 60 * 1000 - captureDuration) / 60000);
