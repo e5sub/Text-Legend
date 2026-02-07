@@ -2,6 +2,8 @@
 
 import io.socket.client.IO
 import io.socket.client.Socket
+import io.socket.engineio.client.transports.Polling
+import io.socket.engineio.client.transports.WebSocket
 import kotlinx.serialization.json.Json
 import org.json.JSONObject
 
@@ -32,11 +34,14 @@ class SocketManager(private val json: Json) {
         onConsignHistory: (ConsignHistoryPayload) -> Unit
     ) {
         disconnect()
+        val socketBase = baseUrl.trim().removeSuffix("/")
         val options = IO.Options.builder()
             .setForceNew(true)
             .setReconnection(true)
+            .setPath("/socket.io")
+            .setTransports(arrayOf(WebSocket.NAME, Polling.NAME))
             .build()
-        socket = IO.socket(baseUrl, options).apply {
+        socket = IO.socket(socketBase, options).apply {
             on(Socket.EVENT_CONNECT) {
                 emit("auth", JSONObject().apply {
                     put("token", token)
@@ -58,6 +63,8 @@ class SocketManager(private val json: Json) {
                 runCatching {
                     val state = json.decodeFromString(GameState.serializer(), payload.toString())
                     onState(state)
+                }.onFailure {
+                    onAuthError("状态解析失败")
                 }
             }
             on("output") { args ->

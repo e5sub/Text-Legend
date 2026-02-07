@@ -13,7 +13,11 @@ import kotlinx.serialization.json.Json
 
 class GameViewModel(application: Application) : AndroidViewModel(application) {
     private val prefs = AppPreferences(application)
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json {
+        ignoreUnknownKeys = true
+        isLenient = true
+        coerceInputValues = true
+    }
     private val api = ApiService(json)
     private val socket = SocketManager(json)
     private val updateManager = UpdateManager(application)
