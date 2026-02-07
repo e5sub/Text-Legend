@@ -796,28 +796,96 @@ private fun BattleMobCard(
 
 @Composable
 private fun InventoryTab(state: GameState?, onUse: (ItemInfo) -> Unit) {
+    var bagPage by remember { mutableStateOf(0) }
+    val bagPageSize = 12
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         item {
             Text(text = "装备", style = MaterialTheme.typography.titleSmall)
         }
-        items(state?.equipment.orEmpty()) { eq ->
-            val item = eq.item
-            if (item != null) {
-                ListItem(headlineContent = { Text("${eq.slot}: ${item.name}") }, supportingContent = { Text("耐久 ${eq.durability ?: 0}/${eq.max_durability ?: 0}") })
+        item {
+            val equipment = state?.equipment.orEmpty()
+            if (equipment.isEmpty()) {
+                Text("暂无装备")
+            } else {
+                val rows = equipment.chunked(2)
+                Column {
+                    rows.forEach { row ->
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            row.forEach { eq ->
+                                val item = eq.item
+                                Surface(
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+                                ) {
+                                    Column(modifier = Modifier.padding(10.dp)) {
+                                        if (item != null) {
+                                            Text("${slotLabel(eq.slot)}：${item.name}")
+                                            Text("耐久 ${eq.durability ?: 0}/${eq.max_durability ?: 0}")
+                                        } else {
+                                            Text("${slotLabel(eq.slot)}：无")
+                                        }
+                                    }
+                                }
+                            }
+                            if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                }
             }
         }
         item {
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = "背包", style = MaterialTheme.typography.titleSmall)
         }
-        items(state?.items.orEmpty()) { item ->
+        val bagItems = state?.items.orEmpty()
+        val bagPageInfo = paginate(bagItems, bagPage, bagPageSize)
+        bagPage = bagPageInfo.page
+        items(bagPageInfo.slice) { item ->
             ClickableListItem(
                 headline = { Text("${item.name} x${item.qty}") },
-                supporting = { Text(item.type) },
+                supporting = { Text(itemTypeLabel(item.type)) },
                 onClick = { onUse(item) }
             )
         }
+        item {
+            if (bagPageInfo.totalPages > 1) {
+                PagerControls(
+                    info = bagPageInfo,
+                    onPrev = { bagPage -= 1 },
+                    onNext = { bagPage += 1 }
+                )
+            }
+        }
     }
+}
+
+private fun slotLabel(slot: String?): String = when (slot) {
+    "weapon" -> "武器"
+    "chest" -> "衣服"
+    "head" -> "头盔"
+    "feet" -> "鞋子"
+    "waist" -> "腰带"
+    "bracelet" -> "手镯"
+    "neck" -> "项链"
+    "ring_left" -> "左戒"
+    "ring_right" -> "右戒"
+    "ring" -> "戒指"
+    "shield" -> "盾牌"
+    else -> slot ?: "未知"
+}
+
+private fun itemTypeLabel(type: String?): String = when (type) {
+    "book" -> "技能书"
+    "material" -> "材料"
+    "consumable" -> "消耗品"
+    "weapon" -> "武器"
+    "armor" -> "防具"
+    "accessory" -> "饰品"
+    "currency" -> "货币"
+    else -> type ?: ""
 }
 
 @Composable
