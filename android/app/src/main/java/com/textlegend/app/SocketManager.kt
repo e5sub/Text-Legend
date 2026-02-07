@@ -46,6 +46,7 @@ class SocketManager(private val json: Json) {
                     put("deviceFingerprint", deviceFingerprint)
                 })
                 emit("cmd", JSONObject().apply { put("text", "stats") })
+                emit("state_request", JSONObject().apply { put("reason", "client_init") })
             }
             on("auth_error") { args ->
                 val msg = (args.firstOrNull() as? JSONObject)?.optString("error")

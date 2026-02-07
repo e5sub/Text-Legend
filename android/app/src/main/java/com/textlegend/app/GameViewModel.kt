@@ -78,6 +78,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     private val _updateInfo = MutableStateFlow<UpdateManager.UpdateInfo?>(null)
     val updateInfo: StateFlow<UpdateManager.UpdateInfo?> = _updateInfo
 
+    private val _themeMode = MutableStateFlow(prefs.getThemeMode())
+    val themeMode: StateFlow<String> = _themeMode
+
     private var token: String? = prefs.getToken()
     private var username: String? = prefs.getUsername()
 
@@ -295,6 +298,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     fun dismissUpdate() {
         _updateInfo.value = null
+    }
+
+    fun setThemeMode(mode: String) {
+        _themeMode.value = mode
+        prefs.setThemeMode(mode)
     }
 
     private fun normalizeBaseUrl(url: String): String {

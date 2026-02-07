@@ -44,6 +44,12 @@ class AppPreferences(private val context: Context) {
 
     fun getPendingDownloadId(): Long = prefs.getLong(KEY_PENDING_DOWNLOAD_ID, 0L)
 
+    fun getThemeMode(): String = prefs.getString(KEY_THEME_MODE, "dark") ?: "dark"
+
+    fun setThemeMode(mode: String) {
+        prefs.edit().putString(KEY_THEME_MODE, mode).apply()
+    }
+
     companion object {
         private const val KEY_SERVER_URL = "server_url"
         private const val KEY_TOKEN = "token"
@@ -51,5 +57,6 @@ class AppPreferences(private val context: Context) {
         private const val KEY_REALM_ID = "realm_id"
         private const val KEY_DEVICE_ID = "device_id"
         private const val KEY_PENDING_DOWNLOAD_ID = "pending_download_id"
+        private const val KEY_THEME_MODE = "theme_mode"
     }
 }
