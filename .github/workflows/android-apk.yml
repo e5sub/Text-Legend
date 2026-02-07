@@ -17,6 +17,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Strip BOM from Gradle/Properties
+        shell: bash
+        run: |
+          set -e
+          find android -type f \( -name "*.gradle" -o -name "*.properties" \) -print0 | while IFS= read -r -d '' file; do
+            if [ -f "$file" ]; then
+              first=$(head -c 3 "$file" | xxd -p)
+              if [ "$first" = "efbbbf" ]; then
+                tail -c +4 "$file" > "$file.nobom"
+                mv "$file.nobom" "$file"
+              fi
+            fi
+          done
+
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
