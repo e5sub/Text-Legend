@@ -151,7 +151,6 @@ data class ItemInfo(
 )
 
 @Serializable
-@Serializable
 data class EquipmentInfo(
     val slot: String = "",
     val durability: Int? = null,
