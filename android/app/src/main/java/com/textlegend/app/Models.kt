@@ -68,7 +68,7 @@ data class GameState(
     val worldBossRank: List<RankInfo> = emptyList(),
     val worldBossClassRank: List<RankInfo>? = null,
     val worldBossNextRespawn: Long? = null,
-    val crossRank: List<RankInfo>? = null,
+    val crossRank: CrossRankInfo? = null,
     val players: List<PlayerBrief> = emptyList(),
     val bossRespawn: Long? = null,
     val server_time: Long? = null,
@@ -268,6 +268,20 @@ data class RankInfo(
     val name: String = "",
     val value: Int = 0,
     val attr: String? = null
+)
+
+@Serializable
+data class CrossRankInfo(
+    val active: Boolean = false,
+    val startsAt: Long? = null,
+    val endsAt: Long? = null,
+    val entries: List<CrossRankEntry> = emptyList()
+)
+
+@Serializable
+data class CrossRankEntry(
+    val name: String = "",
+    val kills: Int = 0
 )
 
 @Serializable
