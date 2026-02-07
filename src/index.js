@@ -4123,7 +4123,7 @@ async function autoCaptureSabak(player) {
   return true;
 }
 
-function startSabakSiege(attackerGuild, realmId) {
+async function startSabakSiege(attackerGuild, realmId) {
   const sabakState = getSabakState(realmId);
   if (sabakState.active || !sabakState.ownerGuildId) return;
   if (!isSabakActive()) return;
@@ -4137,11 +4137,23 @@ function startSabakSiege(attackerGuild, realmId) {
       kills: 0
     };
   }
-  if (attackerGuild && attackerGuild.id) {
-    sabakState.killStats[attackerGuild.id] = {
-      name: attackerGuild.name || '攻城行会',
+  const registrations = await listSabakRegistrations(realmId);
+  registrations.forEach((r) => {
+    if (!r.guild_id) return;
+    if (String(r.guild_id) === String(sabakState.ownerGuildId)) return;
+    sabakState.killStats[r.guild_id] = {
+      name: r.guild_name || '攻城行会',
       kills: 0
     };
+  });
+  if (attackerGuild && attackerGuild.id) {
+    const gid = attackerGuild.id;
+    if (!sabakState.killStats[gid]) {
+      sabakState.killStats[gid] = {
+        name: attackerGuild.name || '攻城行会',
+        kills: 0
+      };
+    }
   }
   emitAnnouncement(`沙巴克攻城战开始！时长 ${sabakConfig.siegeMinutes} 分钟。`, 'announce', null, realmId);
 }
@@ -4260,7 +4272,7 @@ async function handleSabakEntry(player) {
     if (!hasRegisteredToday) {
       return;
     }
-    startSabakSiege(player.guild, realmId);
+    await startSabakSiege(player.guild, realmId);
   }
 }
 
@@ -9045,7 +9057,7 @@ async function sabakTick(realmId) {
     } else {
       sabakState.noRegAnnounceDate = null;
       // 有行会报名，正常开始攻城战
-      startSabakSiege(null, realmId);
+      await startSabakSiege(null, realmId);
     }
   }
 
