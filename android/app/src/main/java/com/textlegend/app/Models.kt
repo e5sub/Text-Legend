@@ -148,7 +148,9 @@ data class ItemInfo(
     val max_durability: Int? = null,
     val refine_level: Int = 0,
     val effects: JsonObject? = null,
-    val is_shop_item: Boolean = false
+    val is_shop_item: Boolean = false,
+    val untradable: Boolean = false,
+    val unconsignable: Boolean = false
 )
 
 @Serializable

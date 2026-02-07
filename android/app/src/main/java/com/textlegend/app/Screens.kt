@@ -302,25 +302,25 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                     selected = tabIndex == 0,
                     onClick = { tabIndex = 0 },
                     label = { Text("战斗") },
-                    icon = { Image(painter = painterResource(R.drawable.ic_battle), contentDescription = "战斗", modifier = Modifier.size(18.dp)) }
+                    icon = { Image(painter = painterResource(R.drawable.ic_battle), contentDescription = "战斗", modifier = Modifier.size(24.dp)) }
                 )
                 NavigationBarItem(
                     selected = tabIndex == 1,
                     onClick = { tabIndex = 1 },
                     label = { Text("背包") },
-                    icon = { Image(painter = painterResource(R.drawable.ic_bag), contentDescription = "背包", modifier = Modifier.size(18.dp)) }
+                    icon = { Image(painter = painterResource(R.drawable.ic_bag), contentDescription = "背包", modifier = Modifier.size(24.dp)) }
                 )
                 NavigationBarItem(
                     selected = tabIndex == 2,
                     onClick = { tabIndex = 2 },
                     label = { Text("聊天") },
-                    icon = { Image(painter = painterResource(R.drawable.ic_chat), contentDescription = "聊天", modifier = Modifier.size(18.dp)) }
+                    icon = { Image(painter = painterResource(R.drawable.ic_chat), contentDescription = "聊天", modifier = Modifier.size(24.dp)) }
                 )
                 NavigationBarItem(
                     selected = tabIndex == 3,
                     onClick = { tabIndex = 3 },
                     label = { Text("功能") },
-                    icon = { Image(painter = painterResource(R.drawable.ic_menu), contentDescription = "功能", modifier = Modifier.size(18.dp)) }
+                    icon = { Image(painter = painterResource(R.drawable.ic_menu), contentDescription = "功能", modifier = Modifier.size(24.dp)) }
                 )
             }
         }
@@ -1528,11 +1528,20 @@ private fun ScreenScaffold(
     scrollable: Boolean = true,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    var backLocked by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(title) },
-                navigationIcon = { TextButton(onClick = onBack) { Text("返回") } }
+                navigationIcon = {
+                    OutlinedButton(
+                        onClick = {
+                            if (backLocked) return@OutlinedButton
+                            backLocked = true
+                            onBack()
+                        }
+                    ) { Text("返回") }
+                }
             )
         }
     ) { innerPadding ->
@@ -1778,12 +1787,22 @@ private fun GuildDialog(vm: GameViewModel, prefillName: String?, onDismiss: () -
 @Composable
 private fun MailDialog(vm: GameViewModel, prefillName: String?, onDismiss: () -> Unit) {
     val mailList by vm.mailList.collectAsState()
+    val state by vm.gameState.collectAsState()
     var toName by remember { mutableStateOf(prefillName ?: "") }
     var title by remember { mutableStateOf("") }
     var body by remember { mutableStateOf("") }
     var itemKey by remember { mutableStateOf("") }
     var itemQty by remember { mutableStateOf("1") }
     var gold by remember { mutableStateOf("0") }
+    var search by remember { mutableStateOf("") }
+    var page by remember { mutableStateOf(0) }
+    val pageSize = 9
+    val inventory = state?.items.orEmpty().filter {
+        it.type != "currency" && !it.untradable && !it.unconsignable
+    }
+    val filtered = inventory.filter { it.name.contains(search, ignoreCase = true) }
+    val pageInfo = paginate(filtered, page, pageSize)
+    page = pageInfo.page
 
     LaunchedEffect(Unit) {
         vm.mailListInbox()
@@ -1815,6 +1834,36 @@ private fun MailDialog(vm: GameViewModel, prefillName: String?, onDismiss: () ->
         OutlinedTextField(value = toName, onValueChange = { toName = it }, label = { Text("收件人") })
         OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("标题") })
         OutlinedTextField(value = body, onValueChange = { body = it }, label = { Text("内容") })
+        Text("从背包选择附件")
+        OutlinedTextField(value = search, onValueChange = { search = it }, label = { Text("搜索背包物品") })
+        Spacer(modifier = Modifier.height(6.dp))
+        pageInfo.slice.chunked(2).forEach { row ->
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { item ->
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable {
+                                itemKey = item.key.ifBlank { item.id }
+                                itemQty = "1"
+                            },
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+                    ) {
+                        Column(modifier = Modifier.padding(8.dp)) {
+                            Text(text = item.name, color = rarityColor(item.rarity))
+                            Text("x${item.qty}")
+                        }
+                    }
+                }
+                if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
+            }
+            Spacer(modifier = Modifier.height(6.dp))
+        }
+        if (pageInfo.totalPages > 1) {
+            PagerControls(info = pageInfo, onPrev = { page -= 1 }, onNext = { page += 1 })
+        }
         OutlinedTextField(value = itemKey, onValueChange = { itemKey = it }, label = { Text("附件Key(可选)") })
         OutlinedTextField(value = itemQty, onValueChange = { itemQty = it }, label = { Text("附件数量") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
         OutlinedTextField(value = gold, onValueChange = { gold = it }, label = { Text("金币") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
@@ -1837,7 +1886,9 @@ private fun TradeDialog(vm: GameViewModel, state: GameState?, prefillName: Strin
     var search by remember { mutableStateOf("") }
     var page by remember { mutableStateOf(0) }
     val pageSize = 9
-    val inventory = state?.items.orEmpty().filter { it.type != "currency" }
+    val inventory = state?.items.orEmpty().filter {
+        it.type != "currency" && !it.untradable && !it.unconsignable
+    }
     val filtered = inventory.filter { it.name.contains(search, ignoreCase = true) }
     val pageInfo = paginate(filtered, page, pageSize)
     page = pageInfo.page

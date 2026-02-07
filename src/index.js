@@ -5075,7 +5075,9 @@ async function buildState(player) {
       max_durability: i.max_durability ?? null,
       refine_level: i.refine_level || 0,
       effects,
-      is_shop_item: isShopItem
+      is_shop_item: isShopItem,
+      untradable: Boolean(item.untradable),
+      unconsignable: Boolean(item.unconsignable)
     };
   });
   const equipment = Object.entries(player.equipment || {})
