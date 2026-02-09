@@ -36,6 +36,7 @@ import { getRealmById } from '../db/realms.js';
 const ALLOWED_EFFECTS = ['combo', 'fury', 'unbreakable', 'defense', 'dodge', 'poison', 'healblock'];
 
 const CULTIVATION_RANKS = [
+  '筑基',
   '灵虚',
   '和合',
   '元婴',

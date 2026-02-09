@@ -2633,20 +2633,19 @@ const COMBO_PROC_CHANCE = 0.1;
 const ASSASSINATE_SECONDARY_DAMAGE_RATE = 0.3;
 const SABAK_TAX_RATE = 0.2;
 const GUILD_BONUS_MULT = 2;
-const CULTIVATION_REWARD_BONUS_PER_LEVEL = 100;
+const CULTIVATION_REWARD_MULT_PER_LEVEL = 1;
 
-function cultivationRewardBonusPct(player) {
+function cultivationRewardMultiplier(player) {
   const level = Math.floor(Number(player?.flags?.cultivationLevel ?? -1));
-  if (Number.isNaN(level) || level < 0) return 0;
-  // 从100%开始，每级增加100%：0级=+100%，1级=+200%
-  return (level + 1) * CULTIVATION_REWARD_BONUS_PER_LEVEL;
+  if (Number.isNaN(level) || level < 0) return 1;
+  // 从100%开始，每级增加100%：0级=2倍，1级=3倍
+  return 1 + (level + 1) * CULTIVATION_REWARD_MULT_PER_LEVEL;
 }
 
-function totalRewardMultiplier({ vipActive, guildActive, cultivationLevelBonusPct = 0, partyBonusPct = 0 }) {
-  const vipPct = vipActive ? 100 : 0;
-  const guildPct = guildActive ? 100 : 0;
-  const totalPct = vipPct + guildPct + cultivationLevelBonusPct + partyBonusPct;
-  return 1 + totalPct / 100;
+function totalRewardMultiplier({ vipActive, guildActive, cultivationMult = 1, partyMult = 1 }) {
+  const vipMult = vipActive ? 2 : 1;
+  const guildMult = guildActive ? 2 : 1;
+  return vipMult * guildMult * cultivationMult * partyMult;
 }
 
 function buildItemView(itemId, effects = null, durability = null, max_durability = null, refine_level = 0) {
@@ -4675,12 +4674,12 @@ function applyOfflineRewards(player) {
   const offlineMinutes = Math.min(Math.floor((Date.now() - offlineAt) / 60000), maxHours * 60);
   if (offlineMinutes <= 0) return;
   const offlineMultiplier = 2;
-  const cultivationPct = cultivationRewardBonusPct(player);
+  const cultivationMult = cultivationRewardMultiplier(player);
   const rewardMult = totalRewardMultiplier({
     vipActive: isVipActive(player),
     guildActive: Boolean(player.guild),
-    cultivationLevelBonusPct: cultivationPct,
-    partyBonusPct: 0
+    cultivationMult,
+    partyMult: 1
   });
   const expGain = Math.floor(offlineMinutes * player.level * offlineMultiplier * rewardMult);
   const goldGain = Math.floor(offlineMinutes * player.level * offlineMultiplier * rewardMult);
@@ -7645,13 +7644,13 @@ async function processMobDeath(player, mob, online) {
   let ultimateDropCount = 0;
 
     partyMembersForReward.forEach((member) => {
-      const partyBonusPct = totalPartyCount > 1 ? Math.min(0.2 * totalPartyCount, 1.0) * 100 : 0;
-      const cultivationPct = cultivationRewardBonusPct(member);
+      const partyMult = totalPartyCount > 1 ? (1 + Math.min(0.2 * totalPartyCount, 1.0)) : 1;
+      const cultivationMult = cultivationRewardMultiplier(member);
       const rewardMult = totalRewardMultiplier({
         vipActive: isVipActive(member),
         guildActive: Boolean(member.guild),
-        cultivationLevelBonusPct: cultivationPct,
-        partyBonusPct
+        cultivationMult,
+        partyMult
       });
       const finalExp = Math.floor(shareExp * rewardMult);
       const finalGold = Math.floor(shareGold * rewardMult);
