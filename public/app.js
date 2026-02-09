@@ -4740,7 +4740,7 @@ function renderState(state) {
       const partySize = Math.max(0, Number(state.party?.size || 0));
       const partyPct = partySize > 1 ? Math.min(0.2 * partySize, 1.0) * 100 : 0;
       const bonusPct = Math.max(0, Math.round(vipPct + guildPct + cultivationPct + partyPct));
-      ui.bonusLine.textContent = `行会加成：${guildText} | 套装加成：${setText} | 经验/金币加成：+${bonusPct}%`;
+      ui.bonusLine.textContent = `行会加成：${guildText} | 套装加成：${setText} | 经验/金币加成：${bonusPct}%`;
     }
     if (ui.online) {
       ui.online.textContent = state.online ? String(state.online.count || 0) : '0';
@@ -7475,7 +7475,6 @@ if (logThrottleNormal) {
     }
   });
 }
-
 
 
 
