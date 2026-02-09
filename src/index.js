@@ -2160,14 +2160,27 @@ function setupRankUpdate() {
 }
 
 function setupDailyLucky() {
-  cron.schedule('0 0 * * *', async () => {
-    await refreshDailyLucky();
-  });
-  console.log('[DailyLucky] 已设置每日0点抽取幸运玩家');
+  console.log('[DailyLucky] setupDailyLucky() 函数开始执行');
+  try {
+    cron.schedule('0 0 * * *', async () => {
+      await refreshDailyLucky();
+    });
+    console.log('[DailyLucky] 已设置每日0点抽取幸运玩家');
 
-  refreshDailyLucky().catch(err => {
-    console.error('[DailyLucky] 服务器启动时抽取失败:', err);
-  });
+    console.log('[DailyLucky] 准备调用 refreshDailyLucky()');
+    refreshDailyLucky()
+      .then(() => {
+        console.log('[DailyLucky] 服务器启动时刷新成功');
+      })
+      .catch(err => {
+        console.error('[DailyLucky] 服务器启动时抽取失败:', err);
+        console.error('[DailyLucky] 错误堆栈:', err.stack);
+      });
+    console.log('[DailyLucky] setupDailyLucky() 函数执行完毕');
+  } catch (err) {
+    console.error('[DailyLucky] setupDailyLucky() 执行出错:', err);
+    console.error('[DailyLucky] 错误堆栈:', err.stack);
+  }
 }
 
 app.get('/admin/backup', async (req, res) => {
@@ -9516,7 +9529,9 @@ async function start() {
   scheduleAutoBackup();
 
   // 启动排行榜自动更新定时任务
+  console.log('[DailyLucky] 准备启动排行榜自动更新定时任务');
   setupRankUpdate();
+  console.log('[DailyLucky] 排行榜自动更新定时任务已启动');
 
   // 启动每日幸运玩家定时任务
   console.log('[DailyLucky] 即将执行 setupDailyLucky()');
