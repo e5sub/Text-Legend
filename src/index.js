@@ -113,7 +113,7 @@ import { MOB_TEMPLATES } from './game/mobs.js';
 import { ITEM_TEMPLATES, SHOP_STOCKS } from './game/items.js';
 import { WORLD, expandRoomVariants, shrinkRoomVariants } from './game/world.js';
 import { getRoomMobs, getAliveMobs, spawnMobs, removeMob, seedRespawnCache, setRespawnStore, getAllAliveMobs, incrementWorldBossKills, setWorldBossKillCount as setWorldBossKillCountState, incrementSpecialBossKills, setSpecialBossKillCount as setSpecialBossKillCountState, incrementCultivationBossKills, setCultivationBossKillCount as setCultivationBossKillCountState } from './game/state.js';
-import { calcHitChance, calcDamage, applyDamage, applyHealing, applyPoison, tickStatus, getDefenseMultiplier } from './game/combat.js';
+import { calcHitChance, calcDamage, applyDamage, applyHealing, applyPoison, tickStatus, getDefenseMultiplier, consumeFirestrikeCrit } from './game/combat.js';
 import { randInt, clamp } from './game/utils.js';
 import { expForLevel, setRoomVariantCount as applyRoomVariantCount } from './game/constants.js';
 import {

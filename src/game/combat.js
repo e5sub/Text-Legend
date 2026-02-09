@@ -85,6 +85,21 @@ export function applyHealing(target, amount) {
   target.hp = clamp(target.hp + amount, 0, target.max_hp);
 }
 
+// 消耗火刀暴击状态：检查是否有firestrikeCrit状态，如果有则返回暴击倍率并消耗该状态
+export function consumeFirestrikeCrit(attacker, type = 'player', isNormal = false) {
+  if (!attacker || !attacker.status || !attacker.status.firestrikeCrit) {
+    return 1;
+  }
+  // 消耗暴击状态
+  delete attacker.status.firestrikeCrit;
+  // 暴击倍率：2.5倍
+  const critMultiplier = 2.5;
+  if (type === 'player') {
+    attacker.send('烈火剑法暴击！');
+  }
+  return critMultiplier;
+}
+
 // 施加中毒：特殊BOSS允许多层叠加并按玩家分别冷却
 export function applyPoison(target, turns, tickDamage, sourceName = null) {
   if (!target) return false;
