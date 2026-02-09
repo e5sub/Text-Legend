@@ -131,9 +131,13 @@ const adminPwSubmit = document.getElementById('admin-pw-submit');
 
 function getRealmIdFromInput(input, fallback = 1) {
   const raw = input?.value;
+  if (!raw) return fallback;
   const parsed = Number(raw);
   return Number.isFinite(parsed) ? parsed : fallback;
 }
+
+// 存储区服数据用于后续使用
+let realmsCache = [];
 
 async function loadEventTimeSettings() {
   if (!eventTimeMsg) return;
@@ -191,7 +195,7 @@ async function saveEventTimeSettings() {
 }
 
 async function loadWorldBossKillCount() {
-  if (!wbKillCountInput) return;
+  if (!wbKillCountInput || !wbKillRealmInput) return;
   if (wbKillMsg) wbKillMsg.textContent = '';
   try {
     const realmId = getRealmIdFromInput(wbKillRealmInput, 1);
@@ -237,7 +241,7 @@ async function saveWorldBossKillCount(countOverride = null) {
 }
 
 async function loadSpecialBossKillCount() {
-  if (!sbKillCountInput) return;
+  if (!sbKillCountInput || !sbKillRealmInput) return;
   if (sbKillMsg) sbKillMsg.textContent = '';
   try {
     const realmId = getRealmIdFromInput(sbKillRealmInput, 1);
@@ -283,7 +287,7 @@ async function saveSpecialBossKillCount(countOverride = null) {
 }
 
 async function loadCultivationBossKillCount() {
-  if (!cbKillCountInput) return;
+  if (!cbKillCountInput || !cbKillRealmInput) return;
   if (cbKillMsg) cbKillMsg.textContent = '';
   try {
     const realmId = getRealmIdFromInput(cbKillRealmInput, 1);
@@ -1157,6 +1161,7 @@ async function login() {
     await refreshStateThrottleStatus();
     await refreshConsignExpireStatus();
     await refreshRoomVariantStatus();
+    await refreshRealms();
     await loadWorldBossSettings();
     await loadSpecialBossSettings();
     await loadCultivationBossSettings();
@@ -3003,6 +3008,9 @@ async function refreshRealms() {
     const data = await api('/admin/realms', 'GET');
     const realms = data.realms || [];
     
+    // 保存区服数据到缓存
+    realmsCache = realms;
+    
     realmsList.innerHTML = '';
     if (!realms || realms.length === 0) {
       realmsList.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #999;">暂无区服</td></tr>';
@@ -3057,8 +3065,9 @@ async function refreshRealms() {
       realmsList.appendChild(tr);
     });
     
-    // 更新合区下拉框
+    // 更新合区下拉框和BOSS区服选择框
     updateMergeSelects(realms);
+    updateBossRealmSelects(realms);
   } catch (err) {
     realmsList.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #dc3545;">${err.message}</td></tr>`;
   }
@@ -3124,21 +3133,72 @@ async function saveTrainingSettings() {
 
 function updateMergeSelects(realms) {
   if (!mergeSourceSelect || !mergeTargetSelect) return;
-  
+
   mergeSourceSelect.innerHTML = '';
   mergeTargetSelect.innerHTML = '';
-  
+
   realms.forEach((r) => {
     const option1 = document.createElement('option');
     option1.value = r.id;
     option1.textContent = `${r.id} - ${r.name}`;
     mergeSourceSelect.appendChild(option1);
-    
+
     const option2 = document.createElement('option');
     option2.value = r.id;
     option2.textContent = `${r.id} - ${r.name}`;
     mergeTargetSelect.appendChild(option2);
   });
+}
+
+function updateBossRealmSelects(realms) {
+  // 保存区服数据
+  realmsCache = realms;
+
+  // 更新世界BOSS区服选择框
+  if (wbKillRealmInput) {
+    const currentValue = wbKillRealmInput.value;
+    wbKillRealmInput.innerHTML = '';
+    realms.forEach((r) => {
+      const option = document.createElement('option');
+      option.value = r.id;
+      option.textContent = r.name;
+      wbKillRealmInput.appendChild(option);
+    });
+    // 恢复选中值
+    if (currentValue) {
+      wbKillRealmInput.value = currentValue;
+    }
+  }
+
+  // 更新特殊BOSS区服选择框
+  if (sbKillRealmInput) {
+    const currentValue = sbKillRealmInput.value;
+    sbKillRealmInput.innerHTML = '';
+    realms.forEach((r) => {
+      const option = document.createElement('option');
+      option.value = r.id;
+      option.textContent = r.name;
+      sbKillRealmInput.appendChild(option);
+    });
+    if (currentValue) {
+      sbKillRealmInput.value = currentValue;
+    }
+  }
+
+  // 更新修真BOSS区服选择框
+  if (cbKillRealmInput) {
+    const currentValue = cbKillRealmInput.value;
+    cbKillRealmInput.innerHTML = '';
+    realms.forEach((r) => {
+      const option = document.createElement('option');
+      option.value = r.id;
+      option.textContent = r.name;
+      cbKillRealmInput.appendChild(option);
+    });
+    if (currentValue) {
+      cbKillRealmInput.value = currentValue;
+    }
+  }
 }
 
 async function createRealm() {
@@ -4979,27 +5039,30 @@ async function saveTrainingSettings() {
   }
 }
 
-if (adminToken) {
-  showDashboard();
-  refreshUsers();
-  refreshVipSelfClaimStatus();
-  refreshLootLogStatus();
-  refreshStateThrottleStatus();
-  refreshConsignExpireStatus();
-  refreshRoomVariantStatus();
-  refreshRealms();
-  listSponsors();
-  loadWorldBossSettings();
-  loadSpecialBossSettings();
-  loadCultivationBossSettings();
-  loadEventTimeSettings();
-  loadClassBonusConfig();
-  loadTrainingFruitSettings();
-  loadTrainingSettings();
-  loadRefineSettings();
-  loadEffectResetSettings();
+async function initDashboard() {
+  if (adminToken) {
+    showDashboard();
+    refreshUsers();
+    refreshVipSelfClaimStatus();
+    refreshLootLogStatus();
+    refreshStateThrottleStatus();
+    refreshConsignExpireStatus();
+    refreshRoomVariantStatus();
+    await refreshRealms();
+    listSponsors();
+    loadWorldBossSettings();
+    loadSpecialBossSettings();
+    loadCultivationBossSettings();
+    loadEventTimeSettings();
+    loadClassBonusConfig();
+    loadTrainingFruitSettings();
+    loadTrainingSettings();
+    loadRefineSettings();
+    loadEffectResetSettings();
+  }
 }
 
+initDashboard();
 applyTheme(localStorage.getItem('adminTheme') || 'light');
 initCollapsibleBlocks();
 
@@ -5149,8 +5212,8 @@ document.getElementById('wb-save-btn').addEventListener('click', saveWorldBossSe
 if (document.getElementById('wb-add-bonus-btn')) {
   document.getElementById('wb-add-bonus-btn').addEventListener('click', addPlayerBonusConfig);
 }
-if (document.getElementById('wb-kill-load-btn')) {
-  document.getElementById('wb-kill-load-btn').addEventListener('click', loadWorldBossKillCount);
+if (wbKillRealmInput) {
+  wbKillRealmInput.addEventListener('change', loadWorldBossKillCount);
 }
 if (document.getElementById('wb-kill-save-btn')) {
   document.getElementById('wb-kill-save-btn').addEventListener('click', () => saveWorldBossKillCount());
@@ -5249,8 +5312,8 @@ if (document.getElementById('cb-save-btn')) {
 if (document.getElementById('event-time-save-btn')) {
   document.getElementById('event-time-save-btn').addEventListener('click', saveEventTimeSettings);
 }
-if (document.getElementById('sb-kill-load-btn')) {
-  document.getElementById('sb-kill-load-btn').addEventListener('click', loadSpecialBossKillCount);
+if (sbKillRealmInput) {
+  sbKillRealmInput.addEventListener('change', loadSpecialBossKillCount);
 }
 if (document.getElementById('sb-kill-save-btn')) {
   document.getElementById('sb-kill-save-btn').addEventListener('click', () => saveSpecialBossKillCount());
@@ -5258,8 +5321,8 @@ if (document.getElementById('sb-kill-save-btn')) {
 if (document.getElementById('sb-kill-reset-btn')) {
   document.getElementById('sb-kill-reset-btn').addEventListener('click', () => saveSpecialBossKillCount(0));
 }
-if (document.getElementById('cb-kill-load-btn')) {
-  document.getElementById('cb-kill-load-btn').addEventListener('click', loadCultivationBossKillCount);
+if (cbKillRealmInput) {
+  cbKillRealmInput.addEventListener('change', loadCultivationBossKillCount);
 }
 if (document.getElementById('cb-kill-save-btn')) {
   document.getElementById('cb-kill-save-btn').addEventListener('click', () => saveCultivationBossKillCount());
