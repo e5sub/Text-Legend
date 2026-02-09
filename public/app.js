@@ -4747,7 +4747,8 @@ function renderState(state) {
     }
     if (ui.luckyLine) {
       const lucky = state.daily_lucky;
-      const luckyText = lucky && lucky.name
+      console.log('[DailyLucky] state.daily_lucky =', JSON.stringify(lucky), 'type:', typeof lucky);
+      const luckyText = lucky && typeof lucky === 'object' && lucky.name
         ? `每日幸运玩家：${lucky.name}${lucky.attr ? `（${lucky.attr}+100%）` : ''}`
         : '每日幸运玩家：无';
       ui.luckyLine.textContent = luckyText;

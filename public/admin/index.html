@@ -349,6 +349,36 @@
 
         <div class="block" data-collapsible>
           <div class="block-title">
+            <h2>每日幸运玩家</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <p style="color: #666; margin-bottom: 8px; font-size: 13px;">
+              每日0点自动抽取幸运玩家，获得称号"欧皇"和100%属性加成。
+            </p>
+            <div class="row" style="margin-bottom: 8px;">
+              <button id="daily-lucky-refresh-btn" class="btn-small">立即刷新</button>
+              <button id="daily-lucky-info-btn" class="btn-small">查看当前状态</button>
+            </div>
+            <div id="daily-lucky-msg" class="msg"></div>
+            <div class="table-container" id="daily-lucky-table-container" style="display: none;">
+              <table style="font-size: 12px;">
+                <thead>
+                  <tr>
+                    <th>区服</th>
+                    <th>日期</th>
+                    <th>幸运玩家</th>
+                    <th>加成属性</th>
+                  </tr>
+                </thead>
+                <tbody id="daily-lucky-list"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="block" data-collapsible>
+          <div class="block-title">
             <h2>VIP 设置</h2>
             <button class="btn-small block-toggle">折叠</button>
           </div>

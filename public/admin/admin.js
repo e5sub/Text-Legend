@@ -122,6 +122,11 @@ const crossRankStartMinuteInput = document.getElementById('cross-rank-start-minu
 const crossRankDurationInput = document.getElementById('cross-rank-duration');
 const eventTimeMsg = document.getElementById('event-time-msg');
 
+// 每日幸运玩家相关
+const dailyLuckyMsg = document.getElementById('daily-lucky-msg');
+const dailyLuckyTableContainer = document.getElementById('daily-lucky-table-container');
+const dailyLuckyList = document.getElementById('daily-lucky-list');
+
 const adminPwModal = document.getElementById('admin-pw-modal');
 const adminPwTitle = document.getElementById('admin-pw-title');
 const adminPwText = document.getElementById('admin-pw-text');
@@ -191,6 +196,63 @@ async function saveEventTimeSettings() {
   } catch (err) {
     eventTimeMsg.textContent = `保存失败: ${err.message}`;
     eventTimeMsg.style.color = 'red';
+  }
+}
+
+// 每日幸运玩家管理
+async function refreshDailyLucky() {
+  if (!dailyLuckyMsg) return;
+  dailyLuckyMsg.textContent = '';
+  try {
+    await api('/admin/daily-lucky/refresh', 'POST');
+    dailyLuckyMsg.textContent = '刷新成功';
+    dailyLuckyMsg.style.color = 'green';
+    setTimeout(() => {
+      dailyLuckyMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    dailyLuckyMsg.textContent = `刷新失败: ${err.message}`;
+    dailyLuckyMsg.style.color = 'red';
+  }
+}
+
+async function showDailyLuckyInfo() {
+  if (!dailyLuckyList) return;
+  try {
+    const data = await api('/admin/daily-lucky-info', 'GET');
+    const items = data.data || [];
+    
+    dailyLuckyList.innerHTML = '';
+    if (!items.length) {
+      dailyLuckyList.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #999;">暂无数据</td></tr>';
+      return;
+    }
+    
+    items.forEach(item => {
+      const tr = document.createElement('tr');
+      
+      const tdRealm = document.createElement('td');
+      tdRealm.textContent = `${item.realmId} - ${item.realmName}`;
+      tr.appendChild(tdRealm);
+      
+      const tdDate = document.createElement('td');
+      tdDate.textContent = item.date || '无';
+      tr.appendChild(tdDate);
+      
+      const tdName = document.createElement('td');
+      tdName.textContent = item.lucky?.name || '无';
+      tr.appendChild(tdName);
+      
+      const tdAttr = document.createElement('td');
+      tdAttr.textContent = item.lucky?.attr || '无';
+      tr.appendChild(tdAttr);
+      
+      dailyLuckyList.appendChild(tr);
+    });
+    
+    dailyLuckyTableContainer.style.display = 'block';
+  } catch (err) {
+    dailyLuckyList.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #dc3545;">加载失败: ${err.message}</td></tr>`;
   }
 }
 
@@ -5311,6 +5373,12 @@ if (document.getElementById('cb-save-btn')) {
 }
 if (document.getElementById('event-time-save-btn')) {
   document.getElementById('event-time-save-btn').addEventListener('click', saveEventTimeSettings);
+if (document.getElementById('daily-lucky-refresh-btn')) {
+  document.getElementById('daily-lucky-refresh-btn').addEventListener('click', refreshDailyLucky);
+}
+if (document.getElementById('daily-lucky-info-btn')) {
+  document.getElementById('daily-lucky-info-btn').addEventListener('click', showDailyLuckyInfo);
+}
 }
 if (sbKillRealmInput) {
   sbKillRealmInput.addEventListener('change', loadSpecialBossKillCount);

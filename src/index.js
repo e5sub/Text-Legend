@@ -917,6 +917,45 @@ app.post('/admin/event-time-settings/update', async (req, res) => {
   res.json({ ok: true });
 });
 
+// 每日幸运玩家管理
+app.get('/admin/daily-lucky-info', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  try {
+    const realms = await listRealms();
+    const realmList = realms.length ? realms : [{ id: 1, name: '默认' }];
+    const results = [];
+    for (const realm of realmList) {
+      const luckyInfo = await getDailyLuckyInfoCached(realm.id);
+      const dateKey = await getSetting(`daily_lucky_date_${realm.id}`, '');
+      results.push({
+        realmId: realm.id,
+        realmName: realm.name,
+        date: dateKey,
+        lucky: luckyInfo
+      });
+    }
+    res.json({ ok: true, data: results });
+  } catch (err) {
+    console.error('[DailyLucky] 获取信息失败:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/admin/daily-lucky/refresh', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  try {
+    await refreshDailyLucky();
+    // 清除缓存以便立即获取最新数据
+    dailyLuckyCache.clear();
+    res.json({ ok: true, message: '每日幸运玩家已刷新' });
+  } catch (err) {
+    console.error('[DailyLucky] 刷新失败:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 职业升级属性配置
 app.get('/admin/class-level-bonus', async (req, res) => {
   const admin = await requireAdmin(req);
@@ -2032,7 +2071,10 @@ async function clearDailyLuckyForRealm(realmId) {
 
 async function assignDailyLuckyForRealm(realmId, realmName = '') {
   const allCharacters = await listAllCharacters(realmId);
-  if (!allCharacters.length) return null;
+  if (!allCharacters.length) {
+    console.log(`[DailyLucky] realmId=${realmId}, 没有可用的角色`);
+    return null;
+  }
   const target = allCharacters[randInt(0, allCharacters.length - 1)];
   const attr = pickDailyLuckyAttr();
   const payload = { attr: attr.key, multiplier: 2, assignedAt: Date.now() };
@@ -2060,10 +2102,13 @@ async function refreshDailyLucky() {
   const realms = await listRealms();
   const realmList = realms.length ? realms : [{ id: 1, name: '默认' }];
   const todayKey = getLocalDateKey();
+  console.log(`[DailyLucky] 开始更新，todayKey=${todayKey}, realmList=${JSON.stringify(realmList)}`);
   for (const realm of realmList) {
     try {
       const lastKey = await getSetting(`daily_lucky_date_${realm.id}`, '');
+      console.log(`[DailyLucky] realmId=${realm.id}, lastKey=${lastKey}, todayKey=${todayKey}`);
       if (lastKey === todayKey) {
+        console.log(`[DailyLucky] realmId=${realm.id} 今天已经更新过，跳过`);
         continue;
       }
       await clearDailyLuckyForRealm(realm.id);
@@ -5009,6 +5054,7 @@ async function getDailyLuckyInfoCached(realmId) {
   const attr = String(await getSetting(`daily_lucky_attr_${realmId}`, '') || '').trim();
   const value = name ? { name, attr: attr || null } : null;
   dailyLuckyCache.set(realmId, { at: now, value });
+  console.log(`[DailyLucky] realmId=${realmId}, name=${name}, attr=${attr}, value=${JSON.stringify(value)}`);
   return value;
 }
 
