@@ -227,7 +227,6 @@ body.theme-dark .admin-switch input:checked + .admin-switch-slider {
 }
 
 .table-container {
-  overflow-x: auto;
   margin: 12px 0;
 }
 
