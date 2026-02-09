@@ -332,9 +332,9 @@ const CULTIVATION_RANKS = [
 ];
 
 function getCultivationInfo(levelValue) {
-  const level = Number(levelValue);
-  if (Number.isNaN(level) || level == null) return { name: '-', bonus: 0 };
-  const idx = Math.min(CULTIVATION_RANKS.length - 1, Math.max(0, Math.floor(level)));
+  const level = Math.floor(Number(levelValue ?? -1));
+  if (Number.isNaN(level) || level < 0) return { name: '无', bonus: 0 };
+  const idx = Math.min(CULTIVATION_RANKS.length - 1, level);
   const name = CULTIVATION_RANKS[idx] || CULTIVATION_RANKS[0];
   const bonus = (idx + 1) * 50;
   return { name, bonus };
@@ -4692,12 +4692,12 @@ function renderState(state) {
 
     ui.gold.textContent = state.stats.gold;
     if (ui.cultivation) {
-      const levelValue = state.stats?.cultivation_level ?? state.player?.cultivation_level ?? 0;
+      const levelValue = state.stats?.cultivation_level ?? state.player?.cultivation_level ?? -1;
       const info = getCultivationInfo(levelValue);
       ui.cultivation.textContent = info.bonus > 0 ? `${info.name} +${info.bonus}` : info.name;
     }
     if (ui.cultivationUpgrade) {
-      const cultivationLevel = Math.max(0, Math.floor(Number(state.stats?.cultivation_level || 0)));
+      const cultivationLevel = Math.floor(Number(state.stats?.cultivation_level ?? -1));
       const canUpgrade = (state.player?.level || 0) > 200 && cultivationLevel < CULTIVATION_RANKS.length - 1;
       ui.cultivationUpgrade.classList.toggle('hidden', !canUpgrade);
       if (canUpgrade) {

@@ -50,7 +50,8 @@ const CULTIVATION_RANKS = [
 ];
 
 function getCultivationInfo(levelValue) {
-  const level = Math.max(0, Math.floor(Number(levelValue) || 0));
+  const level = Math.floor(Number(levelValue ?? -1));
+  if (Number.isNaN(level) || level < 0) return { name: '无', bonus: 0, idx: -1 };
   const idx = Math.min(CULTIVATION_RANKS.length - 1, level);
   const name = CULTIVATION_RANKS[idx] || CULTIVATION_RANKS[0];
   const bonus = (idx + 1) * 50;
@@ -460,7 +461,7 @@ function formatStats(player, partyApi) {
   const vip = vipActive
     ? (vipExpiresAt ? `是(剩余${Math.ceil((vipExpiresAt - Date.now()) / (24 * 60 * 60 * 1000))}天)` : '是(永久)')
     : '否';
-  const cultivationLevel = player.flags?.cultivationLevel || 0;
+  const cultivationLevel = player.flags?.cultivationLevel ?? -1;
   const cultivationInfo = getCultivationInfo(cultivationLevel);
   return [
     `职业: ${className}`,
@@ -469,7 +470,9 @@ function formatStats(player, partyApi) {
     `魔法: ${Math.floor(player.mp)}/${Math.floor(player.max_mp)}`,
     `攻击: ${Math.floor(player.atk)} 防御: ${Math.floor(player.def)} 魔法: ${Math.floor(player.mag)}`,
     `金币: ${player.gold}`,
-    `修真: ${cultivationInfo.name} (+${cultivationInfo.bonus})`,
+    cultivationInfo.bonus > 0
+      ? `修真: ${cultivationInfo.name} (+${cultivationInfo.bonus})`
+      : '修真: 无',
     `PK值: ${pkValue} (${isRedName(player) ? '红名' : '正常'})`,
     `VIP: ${vip}`,
     `行会: ${player.guild ? player.guild.name : '无'}`,
@@ -2527,7 +2530,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
     case '修真': {
       if (!player.flags) player.flags = {};
       if (player.flags.cultivationLevel == null) player.flags.cultivationLevel = 0;
-      const current = Math.max(0, Math.floor(Number(player.flags.cultivationLevel || 0)));
+      const current = Math.floor(Number(player.flags.cultivationLevel ?? -1));
       const currentInfo = getCultivationInfo(current);
       const maxLevel = CULTIVATION_RANKS.length - 1;
       const costLevels = 200;
