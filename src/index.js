@@ -17,7 +17,7 @@ import { addGuildMember, createGuild, getGuildByName, getGuildByNameInRealm, get
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
 import { sendMail, listMail, listSentMail, markMailRead, markMailClaimed, deleteMail } from './db/mail.js';
 import { createVipCodes, listVipCodes, useVipCode } from './db/vip.js';
-import { getSetting, setSetting, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb } from './db/settings.js';
+import { getSetting, setSetting, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb } from './db/settings.js';
 import { listRealms, getRealmById, updateRealmName, createRealm } from './db/realms.js';
 import {
   listMobRespawns,
@@ -1303,6 +1303,7 @@ app.post('/admin/specialboss-settings/update', async (req, res) => {
 
   // 应用新设置到特殊BOSS模板
   await applySpecialBossSettings();
+  await applyWorldBossSettings();
   await applyCultivationBossSettings();
 
   res.json({ ok: true });
@@ -1312,50 +1313,85 @@ app.post('/admin/specialboss-settings/update', async (req, res) => {
 app.get('/admin/cultivationboss-settings', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
-  const baseHp = await getCultivationBossBaseHp();
-  const baseAtk = await getCultivationBossBaseAtk();
-  const baseDef = await getCultivationBossBaseDef();
-  const baseMdef = await getCultivationBossBaseMdef();
-  const baseExp = await getCultivationBossBaseExp();
-  const baseGold = await getCultivationBossBaseGold();
-  const respawnMinutes = await getCultivationBossRespawnMinutes();
+  const dropBonus = await getCultivationBossDropBonus();
+  const baseHp = await getWorldBossBaseHp();
+  const baseAtk = await getWorldBossBaseAtk();
+  const baseDef = await getWorldBossBaseDef();
+  const baseMdef = await getWorldBossBaseMdef();
+  const baseExp = await getWorldBossBaseExp();
+  const baseGold = await getWorldBossBaseGold();
+  const respawnMinutes = await getWorldBossRespawnMinutes();
+  const playerBonusConfig = await getCultivationBossPlayerBonusConfig();
   res.json({
     ok: true,
+    dropBonus,
     baseHp,
     baseAtk,
     baseDef,
     baseMdef,
     baseExp,
     baseGold,
-    respawnMinutes
+    respawnMinutes,
+    playerBonusConfig
   });
 });
 
 app.post('/admin/cultivationboss-settings/update', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
-  const { baseHp, baseAtk, baseDef, baseMdef, baseExp, baseGold, respawnMinutes } = req.body || {};
+  const { dropBonus, baseHp, baseAtk, baseDef, baseMdef, baseExp, baseGold, respawnMinutes, playerBonusConfig } = req.body || {};
 
+  if (dropBonus !== undefined) {
+    await setCultivationBossDropBonus(Math.max(1, Math.floor(Number(dropBonus) || 1.5)));
+  }
   if (baseHp !== undefined) {
-    await setCultivationBossBaseHp(Math.max(1, Math.floor(Number(baseHp) || 12000)));
+    const normalized = Math.max(1, Math.floor(Number(baseHp) || 600000));
+    await setWorldBossBaseHp(normalized);
+    await setCultivationBossBaseHp(normalized);
   }
   if (baseAtk !== undefined) {
-    await setCultivationBossBaseAtk(Math.max(1, Math.floor(Number(baseAtk) || 180)));
+    const normalized = Math.max(1, Math.floor(Number(baseAtk) || 180));
+    await setWorldBossBaseAtk(normalized);
+    await setCultivationBossBaseAtk(normalized);
   }
   if (baseDef !== undefined) {
-    await setCultivationBossBaseDef(Math.max(0, Math.floor(Number(baseDef) || 80)));
+    const normalized = Math.max(0, Math.floor(Number(baseDef) || 210));
+    await setWorldBossBaseDef(normalized);
+    await setCultivationBossBaseDef(normalized);
   }
   if (baseMdef !== undefined) {
-    await setCultivationBossBaseMdef(Math.max(0, Math.floor(Number(baseMdef) || 80)));
+    const normalized = Math.max(0, Math.floor(Number(baseMdef) || 210));
+    await setWorldBossBaseMdef(normalized);
+    await setCultivationBossBaseMdef(normalized);
   }
   if (baseExp !== undefined) {
-    await setCultivationBossBaseExp(Math.max(1, Math.floor(Number(baseExp) || 6000)));
+    const normalized = Math.max(1, Math.floor(Number(baseExp) || 9000));
+    await setWorldBossBaseExp(normalized);
+    await setCultivationBossBaseExp(normalized);
   }
   if (baseGold !== undefined) {
-    await setCultivationBossBaseGold(Math.max(0, Math.floor(Number(baseGold) || 1000)));
+    const normalized = Math.max(0, Math.floor(Number(baseGold) || 2000));
+    await setWorldBossBaseGold(normalized);
+    await setCultivationBossBaseGold(normalized);
   }
   if (respawnMinutes !== undefined) {
-    await setCultivationBossRespawnMinutes(Math.max(1, Math.floor(Number(respawnMinutes) || 30)));
+    const normalized = Math.max(1, Math.floor(Number(respawnMinutes) || 60));
+    await setWorldBossRespawnMinutes(normalized);
+    await setCultivationBossRespawnMinutes(normalized);
+  }
+
+  if (playerBonusConfig !== undefined) {
+    if (!Array.isArray(playerBonusConfig)) {
+      return res.status(400).json({ error: 'playerBonusConfig格式错误' });
+    }
+    const validConfig = playerBonusConfig.map((config) => ({
+      min: Math.max(1, Math.floor(Number(config.min) || 1)),
+      hp: Math.max(0, Math.floor(Number(config.hp) || 0)),
+      atk: Math.max(0, Math.floor(Number(config.atk) || 0)),
+      def: Math.max(0, Math.floor(Number(config.def) || 0)),
+      mdef: Math.max(0, Math.floor(Number(config.mdef) || 0))
+    }));
+    await setCultivationBossPlayerBonusConfig(validConfig);
   }
 
   await applyCultivationBossSettings();
@@ -3148,7 +3184,7 @@ const SPLASH_BOSS_IDS = new Set([
 
 function isSplashBossTemplate(mobTemplate) {
   if (!mobTemplate?.specialBoss) return false;
-  return SPLASH_BOSS_IDS.has(mobTemplate.id);
+  return SPLASH_BOSS_IDS.has(mobTemplate.id) || isCultivationBoss(mobTemplate);
 }
 
 function isEquipmentItem(item) {
@@ -3216,6 +3252,8 @@ function rollRarityEquipmentDrop(mobTemplate, bonus = 1) {
 }
 
 let WORLD_BOSS_DROP_BONUS = 1.5;
+let SPECIAL_BOSS_DROP_BONUS = 1.5;
+let CULTIVATION_BOSS_DROP_BONUS = 1.5;
 const bossClassFirstDamageRewardGiven = new Map(); // 追踪特殊BOSS各职业伤害第一奖励是否已发放
 const bossClassFirstDamageRewardProcessed = new Set(); // 防止同一只BOSS重复发放职业第一奖励
 
@@ -3271,6 +3309,7 @@ async function applyWorldBossSettings() {
 
 async function applySpecialBossSettings() {
   // 从数据库加载特殊BOSS设置并应用到所有特殊BOSS模板
+  SPECIAL_BOSS_DROP_BONUS = await getSpecialBossDropBonus();
   const baseHp = await getSpecialBossBaseHp();
   const baseAtk = await getSpecialBossBaseAtk();
   const baseDef = await getSpecialBossBaseDef();
@@ -3311,19 +3350,22 @@ async function applySpecialBossSettings() {
 }
 
 async function applyCultivationBossSettings() {
-  const baseHp = await getCultivationBossBaseHp();
-  const baseAtk = await getCultivationBossBaseAtk();
-  const baseDef = await getCultivationBossBaseDef();
-  const baseMdef = await getCultivationBossBaseMdef();
-  const baseExp = await getCultivationBossBaseExp();
-  const baseGold = await getCultivationBossBaseGold();
-  const respawnMinutes = await getCultivationBossRespawnMinutes();
+  CULTIVATION_BOSS_DROP_BONUS = await getCultivationBossDropBonus();
+  // 修真BOSS属性同步跨服BOSS（跨服BOSS与世界BOSS共用配置）
+  const baseHp = await getWorldBossBaseHp();
+  const baseAtk = await getWorldBossBaseAtk();
+  const baseDef = await getWorldBossBaseDef();
+  const baseMdef = await getWorldBossBaseMdef();
+  const baseExp = await getWorldBossBaseExp();
+  const baseGold = await getWorldBossBaseGold();
+  const respawnMinutes = await getWorldBossRespawnMinutes();
   const respawnMs = Math.max(1, respawnMinutes) * 60 * 1000;
 
   const bossIds = Object.keys(MOB_TEMPLATES).filter((id) => id.startsWith('cultivation_boss_'));
   for (const bossId of bossIds) {
     const bossTemplate = MOB_TEMPLATES[bossId];
     if (!bossTemplate) continue;
+    bossTemplate.specialBoss = true;
     bossTemplate.hp = Math.max(1, Math.floor(baseHp));
     bossTemplate.atk = Math.max(1, Math.floor(baseAtk));
     bossTemplate.def = Math.max(0, Math.floor(baseDef));
@@ -3332,6 +3374,8 @@ async function applyCultivationBossSettings() {
     bossTemplate.gold = [Math.max(0, Math.floor(baseGold)), Math.max(0, Math.floor(baseGold * 1.6))];
     bossTemplate.respawnMs = respawnMs;
   }
+
+  await loadCultivationBossSettingsCache();
 }
 
 // 根据房间内玩家数量调整世界BOSS属性（按人数分段加成）
@@ -3415,10 +3459,30 @@ function getSpecialBossPlayerBonusConfigSync() {
   return specialBossSettingsCache.playerBonusConfig;
 }
 
+// 修真BOSS设置缓存
+let cultivationBossSettingsCache = {
+  playerBonusConfig: []
+};
+
+async function loadCultivationBossSettingsCache() {
+  cultivationBossSettingsCache.playerBonusConfig = await getCultivationBossPlayerBonusConfig();
+}
+
+function getCultivationBossPlayerBonusConfigSync() {
+  return cultivationBossSettingsCache.playerBonusConfig;
+}
+
 function dropLoot(mobTemplate, bonus = 1) {
   const loot = [];
   const sabakBonus = mobTemplate.sabakBoss ? 3.0 : 1.0;
-  const finalBonus = (isWorldBossDropMob(mobTemplate) ? bonus * WORLD_BOSS_DROP_BONUS : bonus) * sabakBonus;
+  let finalBonus = bonus * sabakBonus;
+  if (isWorldBossDropMob(mobTemplate)) {
+    finalBonus *= WORLD_BOSS_DROP_BONUS;
+  } else if (isCultivationBoss(mobTemplate)) {
+    finalBonus *= CULTIVATION_BOSS_DROP_BONUS;
+  } else if (mobTemplate?.specialBoss) {
+    finalBonus *= SPECIAL_BOSS_DROP_BONUS;
+  }
   if (mobTemplate.drops) {
     mobTemplate.drops.forEach((drop) => {
       const dropItem = ITEM_TEMPLATES[drop.id];
@@ -8152,7 +8216,7 @@ function updateSpecialBossStatsBasedOnPlayers() {
         const roomMobs = getAliveMobs(zoneId, roomId, effectiveRealmId);
         const specialBoss = roomMobs.find((m) => {
           const tpl = MOB_TEMPLATES[m.templateId];
-          return tpl && tpl.specialBoss;
+          return tpl && (tpl.specialBoss || isCultivationBoss(tpl));
         });
 
         if (!specialBoss) return;
@@ -8171,9 +8235,10 @@ function updateSpecialBossStatsBasedOnPlayers() {
 
         // 根据BOSS类型选择配置
         const isWorldBoss = specialBoss.templateId === 'world_boss';
+        const isCultivation = isCultivationBoss(tpl);
         const playerBonusConfig = isWorldBoss
           ? getWorldBossPlayerBonusConfigSync()
-          : getSpecialBossPlayerBonusConfigSync();
+          : (isCultivation ? getCultivationBossPlayerBonusConfigSync() : getSpecialBossPlayerBonusConfigSync());
 
         // 找到适用的人数加成配置（取最大满足档位）
         const bonusConfig = pickPlayerBonusConfig(playerBonusConfig, playersInRoom);
@@ -9374,7 +9439,9 @@ async function start() {
   setupRankUpdate();
 
   // 启动每日幸运玩家定时任务
+  console.log('[DailyLucky] 即将执行 setupDailyLucky()');
   setupDailyLucky();
+  console.log('[DailyLucky] 已执行 setupDailyLucky()');
 
   setRespawnStore({
     set: (realmId, zoneId, roomId, slotIndex, templateId, respawnAt) =>

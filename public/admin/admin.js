@@ -87,6 +87,8 @@ const wbPlayerBonusList = document.getElementById('wb-player-bonus-list');
 const wbKillRealmInput = document.getElementById('wb-kill-realm');
 const wbKillCountInput = document.getElementById('wb-kill-count');
 const wbKillMsg = document.getElementById('wb-kill-msg');
+const wbBaseExpInput = document.getElementById('wb-base-exp');
+const wbBaseGoldInput = document.getElementById('wb-base-gold');
 
 // 特殊BOSS相关
 const sbMsg = document.getElementById('sb-msg');
@@ -94,6 +96,8 @@ const sbPlayerBonusList = document.getElementById('sb-player-bonus-list');
 const sbKillRealmInput = document.getElementById('sb-kill-realm');
 const sbKillCountInput = document.getElementById('sb-kill-count');
 const sbKillMsg = document.getElementById('sb-kill-msg');
+const sbBaseExpInput = document.getElementById('sb-base-exp');
+const sbBaseGoldInput = document.getElementById('sb-base-gold');
 
 // 修真BOSS相关
 const cbMsg = document.getElementById('cb-msg');
@@ -104,6 +108,8 @@ const cbBaseMdefInput = document.getElementById('cb-base-mdef');
 const cbBaseExpInput = document.getElementById('cb-base-exp');
 const cbBaseGoldInput = document.getElementById('cb-base-gold');
 const cbRespawnMinsInput = document.getElementById('cb-respawn-mins');
+const cbDropBonusInput = document.getElementById('cb-drop-bonus');
+const cbPlayerBonusList = document.getElementById('cb-player-bonus-list');
 const cbKillRealmInput = document.getElementById('cb-kill-realm');
 const cbKillCountInput = document.getElementById('cb-kill-count');
 const cbKillMsg = document.getElementById('cb-kill-msg');
@@ -1665,6 +1671,8 @@ async function saveWorldBossSettings() {
       baseAtk: Number(document.getElementById('wb-base-atk').value),
       baseDef: Number(document.getElementById('wb-base-def').value),
       baseMdef: Number(document.getElementById('wb-base-mdef').value),
+      baseExp: Number(wbBaseExpInput?.value),
+      baseGold: Number(wbBaseGoldInput?.value),
       dropBonus: Number(document.getElementById('wb-drop-bonus').value),
       respawnMinutes: Number(document.getElementById('wb-respawn-mins').value),
       playerBonusConfig
@@ -4385,6 +4393,8 @@ async function loadWorldBossSettings() {
     document.getElementById('wb-base-atk').value = data.baseAtk || '';
     document.getElementById('wb-base-def').value = data.baseDef || '';
     document.getElementById('wb-base-mdef').value = data.baseMdef || '';
+    if (wbBaseExpInput) wbBaseExpInput.value = data.baseExp ?? '';
+    if (wbBaseGoldInput) wbBaseGoldInput.value = data.baseGold ?? '';
     document.getElementById('wb-drop-bonus').value = data.dropBonus || '';
     document.getElementById('wb-respawn-mins').value = data.respawnMinutes || '';
     worldBossPlayerBonusConfig = data.playerBonusConfig || [];
@@ -4516,6 +4526,8 @@ async function saveWorldBossSettings() {
       baseAtk: document.getElementById('wb-base-atk').value,
       baseDef: document.getElementById('wb-base-def').value,
       baseMdef: document.getElementById('wb-base-mdef').value,
+      baseExp: wbBaseExpInput?.value,
+      baseGold: wbBaseGoldInput?.value,
       dropBonus: document.getElementById('wb-drop-bonus').value,
       respawnMinutes: document.getElementById('wb-respawn-mins').value,
       playerBonusConfig
@@ -4655,6 +4667,8 @@ async function loadSpecialBossSettings() {
     document.getElementById('sb-base-atk').value = data.baseAtk || '';
     document.getElementById('sb-base-def').value = data.baseDef || '';
     document.getElementById('sb-base-mdef').value = data.baseMdef || '';
+    if (sbBaseExpInput) sbBaseExpInput.value = data.baseExp ?? '';
+    if (sbBaseGoldInput) sbBaseGoldInput.value = data.baseGold ?? '';
     document.getElementById('sb-drop-bonus').value = data.dropBonus || '';
     document.getElementById('sb-respawn-mins').value = data.respawnMinutes || '';
     specialBossPlayerBonusConfig = data.playerBonusConfig || [];
@@ -4666,6 +4680,7 @@ async function loadSpecialBossSettings() {
 }
 
 // 修真BOSS配置
+let cultivationBossPlayerBonusConfig = [];
 async function loadCultivationBossSettings() {
   if (!cbMsg) return;
   cbMsg.textContent = '';
@@ -4677,7 +4692,11 @@ async function loadCultivationBossSettings() {
     if (cbBaseMdefInput) cbBaseMdefInput.value = data.baseMdef ?? '';
     if (cbBaseExpInput) cbBaseExpInput.value = data.baseExp ?? '';
     if (cbBaseGoldInput) cbBaseGoldInput.value = data.baseGold ?? '';
+    if (cbDropBonusInput) cbDropBonusInput.value = data.dropBonus ?? '';
     if (cbRespawnMinsInput) cbRespawnMinsInput.value = data.respawnMinutes ?? '';
+    cultivationBossPlayerBonusConfig = data.playerBonusConfig || [];
+    renderCultivationBossPlayerBonusList();
+    loadCultivationBossKillCount();
     cbMsg.textContent = '加载成功';
     cbMsg.style.color = 'green';
     setTimeout(() => {
@@ -4693,6 +4712,25 @@ async function saveCultivationBossSettings() {
   if (!cbMsg) return;
   cbMsg.textContent = '';
   try {
+    const rows = cbPlayerBonusList?.querySelectorAll('tr') || [];
+    const playerBonusConfig = [];
+    rows.forEach(tr => {
+      const minInput = tr.querySelector('[data-type="cultivation"][data-field="min"]');
+      const hpInput = tr.querySelector('[data-type="cultivation"][data-field="hp"]');
+      const atkInput = tr.querySelector('[data-type="cultivation"][data-field="atk"]');
+      const defInput = tr.querySelector('[data-type="cultivation"][data-field="def"]');
+      const mdefInput = tr.querySelector('[data-type="cultivation"][data-field="mdef"]');
+
+      if (minInput) {
+        playerBonusConfig.push({
+          min: parseInt(minInput.value) || 1,
+          hp: hpInput ? parseInt(hpInput.value) || 0 : 0,
+          atk: atkInput ? parseInt(atkInput.value) || 0 : 0,
+          def: defInput ? parseInt(defInput.value) || 0 : 0,
+          mdef: mdefInput ? parseInt(mdefInput.value) || 0 : 0
+        });
+      }
+    });
     await api('/admin/cultivationboss-settings/update', 'POST', {
       baseHp: cbBaseHpInput?.value,
       baseAtk: cbBaseAtkInput?.value,
@@ -4700,7 +4738,9 @@ async function saveCultivationBossSettings() {
       baseMdef: cbBaseMdefInput?.value,
       baseExp: cbBaseExpInput?.value,
       baseGold: cbBaseGoldInput?.value,
-      respawnMinutes: cbRespawnMinsInput?.value
+      dropBonus: cbDropBonusInput?.value,
+      respawnMinutes: cbRespawnMinsInput?.value,
+      playerBonusConfig
     });
     cbMsg.textContent = '保存成功';
     cbMsg.style.color = 'green';
@@ -4712,6 +4752,38 @@ async function saveCultivationBossSettings() {
     cbMsg.style.color = 'red';
   }
 }
+
+function renderCultivationBossPlayerBonusList() {
+  if (!cbPlayerBonusList) return;
+  cbPlayerBonusList.innerHTML = '';
+  if (!cultivationBossPlayerBonusConfig || cultivationBossPlayerBonusConfig.length === 0) {
+    cbPlayerBonusList.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #999;">暂无配置</td></tr>';
+    return;
+  }
+
+  cultivationBossPlayerBonusConfig.forEach((config, index) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="number" min="1" value="${config.min || 1}" style="width: 60px;" data-field="min" data-index="${index}" data-type="cultivation"></td>
+      <td><input type="number" value="${config.hp || 0}" style="width: 60px;" data-field="hp" data-index="${index}" data-type="cultivation"></td>
+      <td><input type="number" value="${config.atk || 0}" style="width: 60px;" data-field="atk" data-index="${index}" data-type="cultivation"></td>
+      <td><input type="number" value="${config.def || 0}" style="width: 60px;" data-field="def" data-index="${index}" data-type="cultivation"></td>
+      <td><input type="number" value="${config.mdef || 0}" style="width: 60px;" data-field="mdef" data-index="${index}" data-type="cultivation"></td>
+      <td><button class="btn-small" style="background: #c00;" onclick="deleteCultivationBossPlayerBonus(${index})">删除</button></td>
+    `;
+    cbPlayerBonusList.appendChild(tr);
+  });
+}
+
+function addCultivationBossPlayerBonusConfig() {
+  cultivationBossPlayerBonusConfig.push({ min: 1, hp: 0, atk: 0, def: 0, mdef: 0 });
+  renderCultivationBossPlayerBonusList();
+}
+
+window.deleteCultivationBossPlayerBonus = function(index) {
+  cultivationBossPlayerBonusConfig.splice(index, 1);
+  renderCultivationBossPlayerBonusList();
+};
 
 // 修炼系统配置
 async function loadTrainingSettings() {
@@ -4834,6 +4906,8 @@ async function saveSpecialBossSettings() {
       baseAtk: document.getElementById('sb-base-atk').value,
       baseDef: document.getElementById('sb-base-def').value,
       baseMdef: document.getElementById('sb-base-mdef').value,
+      baseExp: sbBaseExpInput?.value,
+      baseGold: sbBaseGoldInput?.value,
       dropBonus: document.getElementById('sb-drop-bonus').value,
       respawnMinutes: document.getElementById('sb-respawn-mins').value,
       playerBonusConfig
@@ -5165,6 +5239,9 @@ if (document.getElementById('sb-add-bonus-btn')) {
 }
 if (document.getElementById('sb-save-btn')) {
   document.getElementById('sb-save-btn').addEventListener('click', saveSpecialBossSettings);
+}
+if (document.getElementById('cb-add-bonus-btn')) {
+  document.getElementById('cb-add-bonus-btn').addEventListener('click', addCultivationBossPlayerBonusConfig);
 }
 if (document.getElementById('cb-save-btn')) {
   document.getElementById('cb-save-btn').addEventListener('click', saveCultivationBossSettings);

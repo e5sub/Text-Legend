@@ -119,6 +119,12 @@
               <label style="min-width: 40px;">魔御:</label>
               <input id="wb-base-mdef" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
             </div>
+            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
+              <label style="min-width: 40px;">经验:</label>
+              <input id="wb-base-exp" type="number" min="1" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+              <label style="min-width: 40px;">金币:</label>
+              <input id="wb-base-gold" type="number" min="0" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+            </div>
             <div class="row" style="margin-bottom: 6px; font-size: 13px; gap: 4px;">
               <label style="min-width: 40px;">掉落加成:</label>
               <input id="wb-drop-bonus" type="number" min="1" step="0.1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
@@ -185,6 +191,12 @@
               <label style="min-width: 40px;">魔御:</label>
               <input id="sb-base-mdef" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
             </div>
+            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
+              <label style="min-width: 40px;">经验:</label>
+              <input id="sb-base-exp" type="number" min="1" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+              <label style="min-width: 40px;">金币:</label>
+              <input id="sb-base-gold" type="number" min="0" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+            </div>
             <div class="row" style="margin-bottom: 6px; font-size: 13px; gap: 4px;">
               <label style="min-width: 40px;">掉落加成:</label>
               <input id="sb-drop-bonus" type="number" min="1" step="0.1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
@@ -238,31 +250,35 @@
             <button class="btn-small block-toggle">折叠</button>
           </div>
           <div class="block-body">
-            <p style="color: #666; margin-bottom: 6px; font-size: 13px;">固定数值（将统一应用到所有修真BOSS）</p>
+            <p style="color: #666; margin-bottom: 6px; font-size: 13px;">基础属性</p>
             <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
-              <label style="min-width: 60px;">生命:</label>
+              <label style="min-width: 40px;">生命:</label>
               <input id="cb-base-hp" type="number" min="1" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-              <label style="min-width: 60px;">攻击:</label>
+              <label style="min-width: 40px;">攻击:</label>
               <input id="cb-base-atk" type="number" min="1" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
             </div>
             <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
-              <label style="min-width: 60px;">防御:</label>
+              <label style="min-width: 40px;">防御:</label>
               <input id="cb-base-def" type="number" min="0" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-              <label style="min-width: 60px;">魔御:</label>
+              <label style="min-width: 40px;">魔御:</label>
               <input id="cb-base-mdef" type="number" min="0" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
             </div>
             <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
-              <label style="min-width: 60px;">经验:</label>
+              <label style="min-width: 40px;">经验:</label>
               <input id="cb-base-exp" type="number" min="1" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-              <label style="min-width: 60px;">金币:</label>
+              <label style="min-width: 40px;">金币:</label>
               <input id="cb-base-gold" type="number" min="0" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
             </div>
             <div class="row" style="margin-bottom: 6px; font-size: 13px; gap: 4px;">
-              <label style="min-width: 90px;">刷新时间(分钟):</label>
+              <label style="min-width: 40px;">掉落加成:</label>
+              <input id="cb-drop-bonus" type="number" min="1" step="0.1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+            </div>
+            <div class="row" style="margin-bottom: 6px; font-size: 13px; gap: 4px;">
+              <label style="min-width: 40px;">刷新时间(分钟):</label>
               <input id="cb-respawn-mins" type="number" min="1" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
             </div>
             <div class="row" style="margin-bottom: 6px; font-size: 13px; gap: 6px; align-items: center; justify-content: flex-start; flex-wrap: wrap;">
-              <label style="min-width: 60px;">区服ID:</label>
+              <label style="min-width: 40px;">区服ID:</label>
               <input id="cb-kill-realm" type="number" min="0" step="1" placeholder="1" style="width: 70px; font-size: 13px; padding: 4px 6px;">
               <label style="min-width: 60px;">击杀次数:</label>
               <input id="cb-kill-count" type="number" min="0" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
@@ -271,7 +287,28 @@
               <button id="cb-kill-reset-btn" class="btn-small">清零</button>
             </div>
             <div id="cb-kill-msg" class="msg"></div>
+            <p style="color: #666; margin: 10px 0 6px; font-size: 13px;">人数加成配置</p>
+            <div class="table-container">
+              <table style="font-size: 12px;">
+                <thead>
+                  <tr>
+                    <th style="padding: 6px 8px;">最小人数</th>
+                    <th style="padding: 6px 8px;">生命加成</th>
+                    <th style="padding: 6px 8px;">攻击加成</th>
+                    <th style="padding: 6px 8px;">防御加成</th>
+                    <th style="padding: 6px 8px;">魔御加成</th>
+                    <th style="padding: 6px 8px;">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="cb-player-bonus-list">
+                  <tr>
+                    <td colspan="6" style="text-align: center; color: #999;">点击加载获取数据</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
             <div class="row" style="margin-top: 8px;">
+              <button id="cb-add-bonus-btn" class="btn-small">+ 添加配置</button>
               <button id="cb-save-btn" class="btn-small">保存</button>
             </div>
             <div id="cb-msg" class="msg"></div>

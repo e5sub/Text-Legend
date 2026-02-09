@@ -473,6 +473,33 @@ export async function setSpecialBossPlayerBonusConfig(config) {
   await setSetting('special_boss_player_bonus', normalized);
 }
 
+// 修真BOSS配置
+export async function getCultivationBossDropBonus() {
+  const value = await getSetting('cultivation_boss_drop_bonus', '1.5');
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 1.5;
+}
+
+export async function setCultivationBossDropBonus(bonus) {
+  const normalized = Math.max(1, Math.floor(Number(bonus || 1.5) * 100) / 100);
+  await setSetting('cultivation_boss_drop_bonus', String(normalized));
+}
+
+export async function getCultivationBossPlayerBonusConfig() {
+  const value = await getSetting('cultivation_boss_player_bonus', '[{"min":1,"hp":0,"atk":1000,"def":5000,"mdef":5000},{"min":2,"hp":0,"atk":1000,"def":0,"mdef":0}]');
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [{"min":1,"hp":0,"atk":1000,"def":5000,"mdef":5000},{"min":2,"hp":0,"atk":1000,"def":0,"mdef":0}];
+  } catch {
+    return [{"min":1,"hp":0,"atk":1000,"def":5000,"mdef":5000},{"min":2,"hp":0,"atk":1000,"def":0,"mdef":0}];
+  }
+}
+
+export async function setCultivationBossPlayerBonusConfig(config) {
+  const normalized = JSON.stringify(config || []);
+  await setSetting('cultivation_boss_player_bonus', normalized);
+}
+
 // 修真BOSS配置（按倍率调整，保持各阶层差异）
 export async function getCultivationBossBaseHp() {
   const value = await getSetting('cultivation_boss_base_hp', '12000');
