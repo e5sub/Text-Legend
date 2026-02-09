@@ -2633,6 +2633,14 @@ const COMBO_PROC_CHANCE = 0.1;
 const ASSASSINATE_SECONDARY_DAMAGE_RATE = 0.3;
 const SABAK_TAX_RATE = 0.2;
 const GUILD_BONUS_MULT = 2;
+const CULTIVATION_REWARD_MULT_PER_LEVEL = 1;
+
+function cultivationRewardMultiplier(player) {
+  const level = Math.floor(Number(player?.flags?.cultivationLevel ?? -1));
+  if (Number.isNaN(level) || level < 0) return 1;
+  // 从100%开始，每级增加100%：0级=2倍，1级=3倍
+  return 1 + (level + 1) * CULTIVATION_REWARD_MULT_PER_LEVEL;
+}
 
 function buildItemView(itemId, effects = null, durability = null, max_durability = null, refine_level = 0) {
   const item = ITEM_TEMPLATES[itemId] || { id: itemId, name: itemId, type: 'unknown' };
@@ -4660,8 +4668,9 @@ function applyOfflineRewards(player) {
   const offlineMinutes = Math.min(Math.floor((Date.now() - offlineAt) / 60000), maxHours * 60);
   if (offlineMinutes <= 0) return;
   const offlineMultiplier = 2;
-  const expGain = Math.floor(offlineMinutes * player.level * offlineMultiplier);
-  const goldGain = Math.floor(offlineMinutes * player.level * offlineMultiplier);
+  const offlineCultivationMult = cultivationRewardMultiplier(player);
+  const expGain = Math.floor(offlineMinutes * player.level * offlineMultiplier * offlineCultivationMult);
+  const goldGain = Math.floor(offlineMinutes * player.level * offlineMultiplier * offlineCultivationMult);
   let fruitGain = 0;
   const fruitDropRate = getTrainingFruitDropRate();
   for (let i = 0; i < offlineMinutes; i += 1) {
@@ -7625,8 +7634,9 @@ async function processMobDeath(player, mob, online) {
     partyMembersForReward.forEach((member) => {
       const guildBonus = member.guild ? GUILD_BONUS_MULT : 1;
       const vipBonus = isVipActive(member) ? 2 : 1;
-      const finalExp = Math.floor(shareExp * guildBonus * vipBonus);
-      const finalGold = Math.floor(shareGold * guildBonus * vipBonus);
+      const cultivationBonus = cultivationRewardMultiplier(member);
+      const finalExp = Math.floor(shareExp * guildBonus * vipBonus * cultivationBonus);
+      const finalGold = Math.floor(shareGold * guildBonus * vipBonus * cultivationBonus);
       member.gold += finalGold;
       const leveled = gainExp(member, finalExp);
       awardKill(member, mob.templateId);

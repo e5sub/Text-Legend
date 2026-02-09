@@ -19,15 +19,23 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.tween
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.platform.LocalContext
@@ -980,9 +988,9 @@ private fun InventoryTab(state: GameState?, onUse: (ItemInfo) -> Unit) {
                                     Column(modifier = Modifier.padding(10.dp)) {
                                         if (item != null) {
                                             val effectInline = formatEffectInline(item.effects)
-                                            Text(
+                                            RarityText(
                                                 text = "${slotLabel(eq.slot)}：${item.name}${if (effectInline.isNotBlank()) "（$effectInline）" else ""}",
-                                                color = rarityColor(item.rarity)
+                                                rarity = item.rarity
                                             )
                                             val refine = eq.refine_level ?: 0
                                             val element = elementAtkFromEffects(item.effects)
@@ -1042,9 +1050,9 @@ private fun InventoryTab(state: GameState?, onUse: (ItemInfo) -> Unit) {
                                     val nameSuffix = if (nameSuffixParts.isNotEmpty()) {
                                         "（" + nameSuffixParts.joinToString(" | ") + "）"
                                     } else ""
-                                    Text(
+                                    RarityText(
                                         text = "${item.name} x${item.qty}$nameSuffix",
-                                        color = rarityColor(item.rarity)
+                                        rarity = item.rarity
                                     )
                                     if (isEquip) {
                                         val element = elementAtkFromEffects(item.effects)
@@ -1073,7 +1081,9 @@ private fun InventoryTab(state: GameState?, onUse: (ItemInfo) -> Unit) {
     }
 }
 
-private fun rarityRank(rarity: String?): Int = when (rarity) {
+private fun normalizeRarityKey(rarity: String?): String? = rarity?.trim()?.lowercase()
+
+private fun rarityRank(rarity: String?): Int = when (normalizeRarityKey(rarity)) {
     "ultimate" -> 6
     "supreme" -> 5
     "legendary" -> 4
@@ -1084,15 +1094,72 @@ private fun rarityRank(rarity: String?): Int = when (rarity) {
     else -> 0
 }
 
-private fun rarityColor(rarity: String?): Color = when (rarity) {
-    "common" -> Color(0xFFE0D7C8)
-    "uncommon" -> Color(0xFF9FD39F)
-    "rare" -> Color(0xFF6CB6FF)
-    "epic" -> Color(0xFFB082FF)
-    "legendary" -> Color(0xFFFFC266)
-    "supreme" -> Color(0xFFFF8A65)
-    "ultimate" -> Color(0xFFFF5252)
-    else -> Color(0xFFE0D7C8)
+private fun rarityColor(rarity: String?): Color = when (normalizeRarityKey(rarity)) {
+    "common" -> Color(0xFF6B4A2A)
+    "uncommon" -> Color(0xFF2F6B3B)
+    "rare" -> Color(0xFF2F6AA6)
+    "epic" -> Color(0xFF8A2C7A)
+    "legendary" -> Color(0xFF8F5A12)
+    "supreme" -> Color(0xFFB63C3C)
+    "ultimate" -> Color(0xFFD64545)
+    else -> Color(0xFF6B4A2A)
+}
+
+@Composable
+private fun RarityText(
+    text: String,
+    rarity: String?,
+    modifier: Modifier = Modifier,
+    maxLines: Int = Int.MAX_VALUE,
+    overflow: TextOverflow = TextOverflow.Clip
+) {
+    val key = normalizeRarityKey(rarity)
+    if (key == "ultimate") {
+        val transition = rememberInfiniteTransition(label = "ultimateFlow")
+        val shift by transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(tween(3500), RepeatMode.Restart),
+            label = "ultimateShift"
+        )
+        val brush = Brush.linearGradient(
+            colors = listOf(
+                Color(0xFF7A1010),
+                Color(0xFFD64545),
+                Color(0xFFFF6B6B),
+                Color(0xFFFF9A9A),
+                Color(0xFFD64545)
+            ),
+            start = Offset(-100f + 200f * shift, 0f),
+            end = Offset(200f + 200f * shift, 0f)
+        )
+        val baseStyle = LocalTextStyle.current
+        Box(modifier = modifier) {
+            Text(
+                text = text,
+                style = baseStyle.copy(color = Color(0xFF7A1010), drawStyle = Stroke(width = 2f)),
+                maxLines = maxLines,
+                overflow = overflow
+            )
+            Text(
+                text = text,
+                style = baseStyle.copy(
+                    brush = brush,
+                    shadow = Shadow(color = Color(0x66D64545), offset = Offset.Zero, blurRadius = 8f)
+                ),
+                maxLines = maxLines,
+                overflow = overflow
+            )
+        }
+    } else {
+        Text(
+            text = text,
+            color = rarityColor(rarity),
+            modifier = modifier,
+            maxLines = maxLines,
+            overflow = overflow
+        )
+    }
 }
 
 private fun slotLabel(slot: String?): String = when (slot) {
@@ -1856,7 +1923,7 @@ private fun MailDialog(vm: GameViewModel, prefillName: String?, onDismiss: () ->
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
                     ) {
                         Column(modifier = Modifier.padding(8.dp)) {
-                            Text(text = item.name, color = rarityColor(item.rarity))
+                            RarityText(text = item.name, rarity = item.rarity)
                             Text("x${item.qty}")
                         }
                     }
