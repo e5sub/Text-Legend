@@ -2406,6 +2406,30 @@ body.dark .chat-name-btn.sponsor-player-name:hover {
     overflow-x: hidden;
   }
 
+  /* 强制游戏布局为单列，防止左右分栏导致右侧内容被遮挡 */
+  .game-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .game-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* 战斗面板改为垂直布局，防止横向溢出 */
+  .battle-panel {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 12px;
+  }
+
+  .battle-column {
+    min-height: auto;
+  }
+
+  .battle-skill-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+
   header {
     margin-bottom: 16px;
   }
@@ -2524,6 +2548,8 @@ body.dark .chat-name-btn.sponsor-player-name:hover {
   .chip-grid {
     gap: 6px;
     flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
   }
 
   .modal-card {
@@ -2728,6 +2754,11 @@ body.dark .chat-name-btn.sponsor-player-name:hover {
   .chip {
     padding: 5px 8px;
     font-size: 0.75rem;
+  }
+
+  .chip-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
   }
 
   .modal-card {
@@ -3275,6 +3306,30 @@ body.dark .mail-tab.active {
     overflow-x: hidden;
   }
 
+  /* 强制游戏布局为单列，防止左右分栏导致右侧内容被遮挡 */
+  .game-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .game-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* 战斗面板改为垂直布局，防止横向溢出 */
+  .battle-panel {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 12px;
+  }
+
+  .battle-column {
+    min-height: auto;
+  }
+
+  .battle-skill-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+
   header {
     margin-bottom: 16px;
   }
@@ -3393,6 +3448,8 @@ body.dark .mail-tab.active {
   .chip-grid {
     gap: 6px;
     flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
   }
 
   .modal-card {
@@ -3597,6 +3654,11 @@ body.dark .mail-tab.active {
   .chip {
     padding: 5px 8px;
     font-size: 0.75rem;
+  }
+
+  .chip-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
   }
 
   .modal-card {
@@ -3756,6 +3818,30 @@ body.dark .mail-tab.active {
     overflow-x: hidden;
   }
 
+  /* 强制游戏布局为单列，防止左右分栏导致右侧内容被遮挡 */
+  .game-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .game-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* 战斗面板改为垂直布局，防止横向溢出 */
+  .battle-panel {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 12px;
+  }
+
+  .battle-column {
+    min-height: auto;
+  }
+
+  .battle-skill-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+
   header {
     margin-bottom: 16px;
   }
@@ -3874,6 +3960,8 @@ body.dark .mail-tab.active {
   .chip-grid {
     gap: 6px;
     flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
   }
 
   .modal-card {
@@ -4078,6 +4166,11 @@ body.dark .mail-tab.active {
   .chip {
     padding: 5px 8px;
     font-size: 0.75rem;
+  }
+
+  .chip-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
   }
 
   .modal-card {
@@ -5854,8 +5947,20 @@ body.dark .sponsor-markdown .sponsor-tip {
     overflow-x: hidden;
   }
 
+  /* 战斗面板改为垂直布局，防止横向溢出 */
   .battle-panel {
     overflow-x: hidden;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 12px;
+  }
+
+  .battle-column {
+    min-height: auto;
+  }
+
+  .battle-skill-grid {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
   }
 
   .battle-list {
@@ -5877,6 +5982,12 @@ body.dark .sponsor-markdown .sponsor-tip {
   .chip-grid {
     overflow-wrap: break-word;
     word-wrap: break-word;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  }
+
+  .chip {
+    font-size: 0.75rem;
+    padding: 4px 8px;
   }
 
   /* 确保状态行内容不溢出 */

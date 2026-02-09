@@ -8812,8 +8812,9 @@ async function combatTick() {
         dmg = calcDamage(player, mob, 1);
       }
 
+
       if (skill && skill.type === 'aoe') {
-        const hasFalloff = skill.id === 'earth_spike' || skill.id === 'thunderstorm';
+        const hasFalloff = skill.id === 'earth_spike' || skill.id === 'thunder' || skill.id === 'thunderstorm';
         mobs.forEach((target) => {
           // AOE伤害应该对每个目标独立计算，而不是使用主目标的伤害
           let aoeDmg = 0;
