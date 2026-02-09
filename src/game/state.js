@@ -28,7 +28,7 @@ function isBossTemplate(tpl) {
   );
 }
 
-function scaledStats(tpl, realmId = 1) {
+function scaledStats(tpl, realmId = 1, zoneId, roomId) {
   if (!tpl) return { hp: 0, atk: 0, def: 0, mdef: 0 };
 
   // 特殊BOSS：不进行任何属性缩放，直接使用GM设置的值（房间人数加成由外部函数处理）
@@ -69,10 +69,19 @@ function scaledStats(tpl, realmId = 1) {
 
   // 普通怪物
   if (!isBossTemplate(tpl)) {
-    const def = Math.floor(tpl.def * MOB_STAT_SCALE * MOB_DEF_SCALE);
+    let cultivationLevelScale = 1;
+    // 修真普通怪物：根据地图等级成长（每级 +50%）
+    if (tpl.id && tpl.id.startsWith('cultivation_') && zoneId === 'cultivation' && roomId) {
+      const room = getRoom(zoneId, roomId);
+      if (room && typeof room.minCultivationLevel === 'number') {
+        cultivationLevelScale = 1 + room.minCultivationLevel * 0.5;
+      }
+    }
+
+    const def = Math.floor(tpl.def * MOB_STAT_SCALE * MOB_DEF_SCALE * cultivationLevelScale);
     return {
-      hp: Math.floor(tpl.hp * MOB_HP_SCALE * MOB_STAT_SCALE),
-      atk: Math.floor(tpl.atk * MOB_STAT_SCALE),
+      hp: Math.floor(tpl.hp * MOB_HP_SCALE * MOB_STAT_SCALE * cultivationLevelScale),
+      atk: Math.floor(tpl.atk * MOB_STAT_SCALE * cultivationLevelScale),
       def,
       mdef: Math.floor(def * 0.5)
     };
@@ -176,7 +185,7 @@ export function spawnMobs(zoneId, roomId, realmId = 1) {
   spawnList.forEach((templateId, index) => {
     let mob = mobList.find((m) => m.slotIndex === index);
     const tpl = MOB_TEMPLATES[templateId];
-    const scaled = scaledStats(tpl, realmId);
+    const scaled = scaledStats(tpl, realmId, zoneId, roomId);
     const cached = RESPAWN_CACHE.get(respawnKey(realmId, zoneId, roomId, index));
     if (mob && mob.hp <= 0 && !mob.respawnAt) {
       mob.respawnAt = now;

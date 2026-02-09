@@ -3544,8 +3544,8 @@ function dropLoot(mobTemplate, bonus = 1) {
       }
     });
   }
-  // 全地图怪物都有概率掉落修炼果（爆率可从后台配置）
-  const trainingChance = Math.min(1, getTrainingFruitDropRate() * bonus);
+  // 全地图怪物都有概率掉落修炼果（爆率可从后台配置，VIP不加成）
+  const trainingChance = Math.min(1, getTrainingFruitDropRate());
   if (Math.random() <= trainingChance) {
     loot.push({ id: 'training_fruit', effects: null });
   }
@@ -4251,8 +4251,7 @@ function distributeLootWithBonus(party, partyMembers, mobTemplate, bonusResolver
   }
 
   const trainingTarget = partyMembers[randInt(0, partyMembers.length - 1)];
-  const trainingBonus = typeof bonusResolver === 'function' ? bonusResolver(trainingTarget) : 1;
-  const trainingChance = Math.min(1, getTrainingFruitDropRate() * trainingBonus);
+  const trainingChance = Math.min(1, getTrainingFruitDropRate());
   if (Math.random() <= trainingChance) {
     addItem(trainingTarget, 'training_fruit', 1, null);
     logLoot(`[loot][party] ${trainingTarget.name} <- training_fruit`);
