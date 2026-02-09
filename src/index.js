@@ -2162,10 +2162,12 @@ function setupRankUpdate() {
 function setupDailyLucky() {
   console.log('[DailyLucky] setupDailyLucky() 函数开始执行');
   try {
-    cron.schedule('0 0 * * *', async () => {
+    console.log('[DailyLucky] 准备设置定时任务');
+    const task = cron.schedule('0 0 * * *', async () => {
+      console.log('[DailyLucky] 定时任务触发，开始刷新每日幸运玩家');
       await refreshDailyLucky();
-    });
-    console.log('[DailyLucky] 已设置每日0点抽取幸运玩家');
+    }, { scheduled: true });
+    console.log('[DailyLucky] 已设置每日0点抽取幸运玩家，task =', task);
 
     console.log('[DailyLucky] 准备调用 refreshDailyLucky()');
     refreshDailyLucky()
