@@ -2046,9 +2046,13 @@ async function updateCharacterFlagsInRealm(name, realmId, flags) {
 }
 
 async function clearDailyLuckyForRealm(realmId) {
+  console.log(`[DailyLucky] 开始清理 realmId=${realmId} 的幸运数据`);
   const allCharacters = await listAllCharacters(realmId);
+  console.log(`[DailyLucky] realmId=${realmId}, 找到 ${allCharacters.length} 个角色`);
+  let clearedCount = 0;
   for (const character of allCharacters) {
     if (!character.flags?.dailyLucky && !character.flags?.dailyLuckyTitle) continue;
+    console.log(`[DailyLucky] realmId=${realmId}, 清理角色: ${character.name}`);
     const online = playersByName(character.name, realmId);
     if (online) {
       if (!online.flags) online.flags = {};
@@ -2058,27 +2062,38 @@ async function clearDailyLuckyForRealm(realmId) {
       await sendState(online);
       await savePlayer(online);
       online.send('每日幸运加成已清除。');
-      continue;
+      console.log(`[DailyLucky] realmId=${realmId}, 角色 ${character.name} 在线，已清除并通知`);
+    } else {
+      const flags = { ...(character.flags || {}) };
+      delete flags.dailyLucky;
+      delete flags.dailyLuckyTitle;
+      await updateCharacterFlagsInRealm(character.name, realmId, flags);
+      console.log(`[DailyLucky] realmId=${realmId}, 角色 ${character.name} 离线，已清除数据库`);
     }
-    const flags = { ...(character.flags || {}) };
-    delete flags.dailyLucky;
-    delete flags.dailyLuckyTitle;
-    await updateCharacterFlagsInRealm(character.name, realmId, flags);
+    clearedCount++;
   }
+  console.log(`[DailyLucky] realmId=${realmId}, 共清理 ${clearedCount} 个角色`);
   await setSetting(`daily_lucky_player_${realmId}`, '');
   await setSetting(`daily_lucky_attr_${realmId}`, '');
+  console.log(`[DailyLucky] realmId=${realmId}, 已清除数据库设置`);
 }
 
 async function assignDailyLuckyForRealm(realmId, realmName = '') {
+  console.log(`[DailyLucky] 开始分配 realmId=${realmId}, realmName=${realmName}`);
   const allCharacters = await listAllCharacters(realmId);
+  console.log(`[DailyLucky] realmId=${realmId}, 找到 ${allCharacters.length} 个角色`);
   if (!allCharacters.length) {
     console.log(`[DailyLucky] realmId=${realmId}, 没有可用的角色`);
     return null;
   }
+  console.log(`[DailyLucky] realmId=${realmId}, 角色列表: ${allCharacters.map(c => c.name).join(', ')}`);
   const target = allCharacters[randInt(0, allCharacters.length - 1)];
+  console.log(`[DailyLucky] realmId=${realmId}, 选中角色: ${target.name}`);
   const attr = pickDailyLuckyAttr();
+  console.log(`[DailyLucky] realmId=${realmId}, 选中属性: ${attr.label} (${attr.key})`);
   const payload = { attr: attr.key, multiplier: 2, assignedAt: Date.now() };
   const online = playersByName(target.name, realmId);
+  console.log(`[DailyLucky] realmId=${realmId}, 角色 ${target.name} 是否在线: ${!!online}`);
   if (online) {
     if (!online.flags) online.flags = {};
     online.flags.dailyLucky = payload;
@@ -2087,37 +2102,48 @@ async function assignDailyLuckyForRealm(realmId, realmName = '') {
     await sendState(online);
     await savePlayer(online);
     online.send(`你被选为今日幸运玩家，${attr.label}提升100%，称号：欧皇！`);
+    console.log(`[DailyLucky] realmId=${realmId}, 已为在线角色 ${target.name} 设置幸运状态`);
   } else {
     const flags = { ...(target.flags || {}), dailyLucky: payload, dailyLuckyTitle: '欧皇' };
     await updateCharacterFlagsInRealm(target.name, realmId, flags);
+    console.log(`[DailyLucky] realmId=${realmId}, 已为离线角色 ${target.name} 设置幸运状态`);
   }
   const realmTag = realmName ? `(${realmName})` : '';
   console.log(`[DailyLucky] ${realmTag} 幸运玩家: ${target.name}, 属性: ${attr.label}`);
   await setSetting(`daily_lucky_player_${realmId}`, target.name);
   await setSetting(`daily_lucky_attr_${realmId}`, attr.label);
+  console.log(`[DailyLucky] realmId=${realmId}, 已保存设置到数据库`);
   return { name: target.name, attr: attr.label };
 }
 
 async function refreshDailyLucky() {
+  console.log(`[DailyLucky] ========== 开始刷新每日幸运玩家 ==========`);
   const realms = await listRealms();
+  console.log(`[DailyLucky] 获取 realm 列表: ${JSON.stringify(realms)}`);
   const realmList = realms.length ? realms : [{ id: 1, name: '默认' }];
   const todayKey = getLocalDateKey();
   console.log(`[DailyLucky] 开始更新，todayKey=${todayKey}, realmList=${JSON.stringify(realmList)}`);
   for (const realm of realmList) {
     try {
-      const lastKey = await getSetting(`daily_lucky_date_${realm.id}`, '');
-      console.log(`[DailyLucky] realmId=${realm.id}, lastKey=${lastKey}, todayKey=${todayKey}`);
+      const dateKey = `daily_lucky_date_${realm.id}`;
+      const lastKey = await getSetting(dateKey, '');
+      console.log(`[DailyLucky] realmId=${realm.id}, lastKey="${lastKey}", todayKey="${todayKey}", 相等=${lastKey === todayKey}`);
       if (lastKey === todayKey) {
         console.log(`[DailyLucky] realmId=${realm.id} 今天已经更新过，跳过`);
         continue;
       }
+      console.log(`[DailyLucky] realmId=${realm.id} 需要更新，开始清理旧数据`);
       await clearDailyLuckyForRealm(realm.id);
-      await assignDailyLuckyForRealm(realm.id, realm.name);
+      console.log(`[DailyLucky] realmId=${realm.id} 旧数据已清理，开始分配新幸运玩家`);
+      const result = await assignDailyLuckyForRealm(realm.id, realm.name);
+      console.log(`[DailyLucky] realmId=${realm.id} 分配结果: ${JSON.stringify(result)}`);
       await setSetting(`daily_lucky_date_${realm.id}`, todayKey);
+      console.log(`[DailyLucky] realmId=${realm.id} 日期标记已更新为: ${todayKey}`);
     } catch (err) {
       console.error(`[DailyLucky] 更新失败: realm=${realm.id}`, err);
     }
   }
+  console.log(`[DailyLucky] ========== 刷新完成 ==========`);
 }
 
 // 设置排行榜自动更新
@@ -5049,12 +5075,19 @@ async function getConsignExpireHoursCached() {
 async function getDailyLuckyInfoCached(realmId) {
   const now = Date.now();
   const cached = dailyLuckyCache.get(realmId);
-  if (cached && now - cached.at < DAILY_LUCKY_CACHE_TTL) return cached.value;
-  const name = String(await getSetting(`daily_lucky_player_${realmId}`, '') || '').trim();
-  const attr = String(await getSetting(`daily_lucky_attr_${realmId}`, '') || '').trim();
+  if (cached && now - cached.at < DAILY_LUCKY_CACHE_TTL) {
+    console.log(`[DailyLucky] realmId=${realmId}, 使用缓存: ${JSON.stringify(cached.value)}`);
+    return cached.value;
+  }
+  const playerKey = `daily_lucky_player_${realmId}`;
+  const attrKey = `daily_lucky_attr_${realmId}`;
+  console.log(`[DailyLucky] realmId=${realmId}, 开始读取设置: playerKey=${playerKey}, attrKey=${attrKey}`);
+  const name = String(await getSetting(playerKey, '') || '').trim();
+  const attr = String(await getSetting(attrKey, '') || '').trim();
+  console.log(`[DailyLucky] realmId=${realmId}, 读取结果: name="${name}", attr="${attr}"`);
   const value = name ? { name, attr: attr || null } : null;
   dailyLuckyCache.set(realmId, { at: now, value });
-  console.log(`[DailyLucky] realmId=${realmId}, name=${name}, attr=${attr}, value=${JSON.stringify(value)}`);
+  console.log(`[DailyLucky] realmId=${realmId}, 缓存结果: value=${JSON.stringify(value)}`);
   return value;
 }
 
