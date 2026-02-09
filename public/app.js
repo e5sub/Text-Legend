@@ -274,6 +274,7 @@ const ui = {
   pk: document.getElementById('ui-pk'),
   vip: document.getElementById('ui-vip'),
   bonusLine: document.getElementById('ui-bonus-line'),
+  luckyLine: document.getElementById('ui-lucky-line'),
   online: document.getElementById('ui-online'),
   serverTime: document.getElementById('ui-server-time'),
   party: document.getElementById('ui-party'),
@@ -4743,6 +4744,13 @@ function renderState(state) {
       const totalMult = vipMult * guildMult * cultivationMult * partyMult;
       const bonusPct = Math.max(0, Math.round((totalMult - 1) * 100));
       ui.bonusLine.textContent = `行会加成：${guildText} | 套装加成：${setText} | 经验/金币加成：${bonusPct}%`;
+    }
+    if (ui.luckyLine) {
+      const lucky = state.daily_lucky;
+      const luckyText = lucky && lucky.name
+        ? `每日幸运玩家：${lucky.name}${lucky.attr ? `（${lucky.attr}+100%）` : ''}`
+        : '每日幸运玩家：无';
+      ui.luckyLine.textContent = luckyText;
     }
     if (ui.online) {
       ui.online.textContent = state.online ? String(state.online.count || 0) : '0';

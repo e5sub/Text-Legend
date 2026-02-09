@@ -1990,6 +1990,8 @@ async function clearDailyLuckyForRealm(realmId) {
     delete flags.dailyLuckyTitle;
     await updateCharacterFlagsInRealm(character.name, realmId, flags);
   }
+  await setSetting(`daily_lucky_player_${realmId}`, '');
+  await setSetting(`daily_lucky_attr_${realmId}`, '');
 }
 
 async function assignDailyLuckyForRealm(realmId, realmName = '') {
@@ -2013,6 +2015,8 @@ async function assignDailyLuckyForRealm(realmId, realmName = '') {
   }
   const realmTag = realmName ? `(${realmName})` : '';
   console.log(`[DailyLucky] ${realmTag} 幸运玩家: ${target.name}, 属性: ${attr.label}`);
+  await setSetting(`daily_lucky_player_${realmId}`, target.name);
+  await setSetting(`daily_lucky_attr_${realmId}`, attr.label);
   return { name: target.name, attr: attr.label };
 }
 
@@ -4865,6 +4869,7 @@ let roomStateCachedData = null;
 const ROOM_STATE_TTL = 100; // 100ms缓存时间
 const VIP_SELF_CLAIM_CACHE_TTL = 10000; // VIP自领缓存10秒
 const STATE_THROTTLE_CACHE_TTL = 10000; // 状态节流缓存10秒
+const DAILY_LUCKY_CACHE_TTL = 30000; // 每日幸运玩家缓存30秒
 let vipSelfClaimCachedValue = null;
 let vipSelfClaimLastUpdate = 0;
 let stateThrottleCachedValue = null;
@@ -4876,6 +4881,7 @@ let stateThrottleOverrideAllowedLastUpdate = 0;
 let consignExpireHoursCachedValue = null;
 let consignExpireHoursLastUpdate = 0;
 let lootLogEnabled = false;
+const dailyLuckyCache = new Map();
 const stateThrottleLastSent = new Map();
 const stateThrottleLastExits = new Map();
 const stateThrottleLastRoom = new Map();
@@ -4929,6 +4935,17 @@ async function getConsignExpireHoursCached() {
   }
   const parsed = parseInt(consignExpireHoursCachedValue, 10);
   return Number.isFinite(parsed) ? Math.max(0, parsed) : 48;
+}
+
+async function getDailyLuckyInfoCached(realmId) {
+  const now = Date.now();
+  const cached = dailyLuckyCache.get(realmId);
+  if (cached && now - cached.at < DAILY_LUCKY_CACHE_TTL) return cached.value;
+  const name = String(await getSetting(`daily_lucky_player_${realmId}`, '') || '').trim();
+  const attr = String(await getSetting(`daily_lucky_attr_${realmId}`, '') || '').trim();
+  const value = name ? { name, attr: attr || null } : null;
+  dailyLuckyCache.set(realmId, { at: now, value });
+  return value;
 }
 
 function logLoot(message) {
@@ -5281,6 +5298,7 @@ async function buildState(player) {
     : null;
   const guildBonus = Boolean(player.guild);
   const onlineCount = listOnlinePlayers(realmId).length;
+  const dailyLuckyInfo = await getDailyLuckyInfoCached(realmId);
   
   // VIP自领状态缓存
   let vipSelfClaimEnabled;
@@ -5357,6 +5375,7 @@ async function buildState(player) {
     party: party ? { size: party.members.length, leader: party.leader, members: partyMembers } : null,
     training: player.flags?.training || { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 },
     online: { count: onlineCount },
+    daily_lucky: dailyLuckyInfo,
     trade: getTradeByPlayerAny(player.name, realmId).trade ? (() => {
       const trade = getTradeByPlayerAny(player.name, realmId).trade;
       const myOffer = trade.offers[player.name];
