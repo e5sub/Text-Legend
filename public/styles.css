@@ -4579,7 +4579,9 @@ body.dark .sabak-empty {
 }
 
 .bag-item.ultimate-text,
-body.dark .bag-item.ultimate-text {
+body.dark .bag-item.ultimate-text,
+.mail-attach-item.ultimate-text,
+body.dark .mail-attach-item.ultimate-text {
   background: none;
   -webkit-text-fill-color: currentColor;
 }

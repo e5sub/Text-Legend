@@ -2632,6 +2632,7 @@ const EFFECT_DOUBLE_CHANCE_DEFAULT = 0.001;
 const COMBO_PROC_CHANCE = 0.1;
 const ASSASSINATE_SECONDARY_DAMAGE_RATE = 0.3;
 const SABAK_TAX_RATE = 0.2;
+const GUILD_BONUS_MULT = 2;
 
 function buildItemView(itemId, effects = null, durability = null, max_durability = null, refine_level = 0) {
   const item = ITEM_TEMPLATES[itemId] || { id: itemId, name: itemId, type: 'unknown' };
@@ -5096,10 +5097,7 @@ async function buildState(player) {
         online: Boolean(playersByName(name, realmId))
       }))
     : null;
-  const sabakBonus = Boolean(
-    player.guild && getRealmState(realmId).sabakState.ownerGuildId &&
-      String(player.guild.id) === String(getRealmState(realmId).sabakState.ownerGuildId)
-  );
+  const guildBonus = Boolean(player.guild);
   const onlineCount = listOnlinePlayers(realmId).length;
   
   // VIP自领状态缓存
@@ -5166,7 +5164,7 @@ async function buildState(player) {
         ? (Math.floor(Number(player.flags?.cultivationLevel ?? -1)) + 1) * 100
         : 0,
       autoSkillId: player.flags?.autoSkillId || null,
-      sabak_bonus: sabakBonus,
+      guild_bonus: guildBonus,
       set_bonus: Boolean(player.flags?.setBonusActive)
     },
     summon: summonPayloads[0] || null,
@@ -7624,43 +7622,17 @@ async function processMobDeath(player, mob, online) {
   let supremeDropCount = 0;
   let ultimateDropCount = 0;
 
-    let sabakTaxExp = 0;
-    let sabakTaxGold = 0;
-    const sabakMembers = roomRealmId === CROSS_REALM_REALM_ID ? [] : listSabakMembersOnline(realmId);
     partyMembersForReward.forEach((member) => {
-      const sabakState = roomRealmId === CROSS_REALM_REALM_ID ? null : getSabakState(realmId);
-      const isSabakMember = sabakState && member.guild && sabakState.ownerGuildId && String(member.guild.id) === String(sabakState.ownerGuildId);
-      const sabakBonus = isSabakMember ? 2 : 1;
+      const guildBonus = member.guild ? GUILD_BONUS_MULT : 1;
       const vipBonus = isVipActive(member) ? 2 : 1;
-      let finalExp = Math.floor(shareExp * sabakBonus * vipBonus);
-      let finalGold = Math.floor(shareGold * sabakBonus * vipBonus);
-      if (sabakState && sabakState.ownerGuildId && !isSabakMember) {
-        const taxExp = Math.floor(finalExp * SABAK_TAX_RATE);
-        const taxGold = Math.floor(finalGold * SABAK_TAX_RATE);
-        finalExp -= taxExp;
-        finalGold -= taxGold;
-        sabakTaxExp += taxExp;
-        sabakTaxGold += taxGold;
-      }
+      const finalExp = Math.floor(shareExp * guildBonus * vipBonus);
+      const finalGold = Math.floor(shareGold * guildBonus * vipBonus);
       member.gold += finalGold;
       const leveled = gainExp(member, finalExp);
       awardKill(member, mob.templateId);
       member.send(`队伍分配: 获得 ${finalExp} 经验和 ${finalGold} 金币。`);
       if (leveled) member.send('你升级了！');
     });
-    if (sabakMembers.length && (sabakTaxExp > 0 || sabakTaxGold > 0)) {
-      const expShare = Math.floor(sabakTaxExp / sabakMembers.length);
-      const goldShare = Math.floor(sabakTaxGold / sabakMembers.length);
-      if (expShare > 0 || goldShare > 0) {
-        sabakMembers.forEach((member) => {
-          member.gold += goldShare;
-          if (expShare > 0) {
-            const leveled = gainExp(member, expShare);
-            if (leveled) member.send('你升级了！');
-          }
-        });
-      }
-    }
 
   const dropTargets = [];
   let classRanks = null;

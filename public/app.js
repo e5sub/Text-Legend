@@ -1,4 +1,4 @@
-let token = null;
+﻿let token = null;
 let socket = null;
 let activeChar = null;
 const classNames = { warrior: '战士', mage: '法师', taoist: '道士' };
@@ -3271,7 +3271,7 @@ function renderBagModal() {
       `生命: ${stats.hp || 0}/${stats.max_hp || 0}  魔法: ${stats.mp || 0}/${stats.max_mp || 0}`,
       `攻击: ${stats.atk || 0}  防御: ${stats.def || 0}  魔法: ${stats.mag || 0}`,
       `道术: ${stats.spirit || 0}  魔御: ${stats.mdef || 0}  金币: ${stats.gold || 0}`,
-      `PK值: ${stats.pk || 0}  VIP: ${formatVipDisplay(stats)}  沙巴克加成: ${stats.sabak_bonus ? '已生效' : '无'}  套装加成: ${stats.set_bonus ? '已激活' : '无'}`
+      `PK值: ${stats.pk || 0}  VIP: ${formatVipDisplay(stats)}  行会加成: ${stats.guild_bonus ? '已生效' : '无'}  套装加成: ${stats.set_bonus ? '已激活' : '无'}`
     ];
     if (statsUi.summary) statsUi.summary.textContent = summaryLines.join('\n');
 
@@ -4026,7 +4026,7 @@ function sortByRarityDesc(a, b) {
     if (!item || missing <= 0) return 0;
     let cost = Math.max(1, Math.floor(repairBase(item.type) * repairMultiplier(item.rarity) * missing));
     cost = Math.min(50000, cost);
-    if (lastState && lastState.stats && lastState.stats.sabak_bonus) {
+    if (lastState && lastState.stats && lastState.stats.guild_bonus) {
       cost = Math.max(1, Math.floor(cost * 0.8));
     }
     if (lastState && lastState.stats && lastState.stats.vip) {
@@ -4532,7 +4532,7 @@ function isPotionName(name) {
 
 function shopDisplayPrice(item) {
   let price = item.price || 0;
-  if (lastState?.stats?.sabak_bonus && isPotionName(item.name)) {
+  if (lastState?.stats?.guild_bonus && isPotionName(item.name)) {
     price = Math.max(1, Math.floor(price * 0.8));
   }
   return price;
@@ -4731,9 +4731,9 @@ function renderState(state) {
     ui.pk.textContent = `${state.stats.pk} (${state.stats.pk >= 100 ? '红名' : '正常'})`;
     ui.vip.textContent = formatVipDisplay(state.stats);
     if (ui.bonusLine) {
-      const sabakText = state.stats.sabak_bonus ? '已生效' : '无';
+      const guildText = state.stats.guild_bonus ? '已生效' : '无';
       const setText = state.stats.set_bonus ? '已激活' : '无';
-      ui.bonusLine.textContent = `沙巴克加成：${sabakText} | 套装加成：${setText}`;
+      ui.bonusLine.textContent = `行会加成：${guildText} | 套装加成：${setText}`;
     }
     if (ui.online) {
       ui.online.textContent = state.online ? String(state.online.count || 0) : '0';
@@ -4851,12 +4851,12 @@ function renderState(state) {
     }
   }
   if (state.stats) {
-    const hasSabakBonus = Boolean(state.stats.sabak_bonus);
-    const prevSabakBonus = Boolean(prevState && prevState.stats && prevState.stats.sabak_bonus);
-    if (hasSabakBonus && !prevSabakBonus) {
-      appendLine('沙巴克加成已生效。');
-    } else if (!hasSabakBonus && prevSabakBonus) {
-      appendLine('沙巴克加成已结束。');
+    const hasGuildBonus = Boolean(state.stats.guild_bonus);
+    const prevGuildBonus = Boolean(prevState && prevState.stats && prevState.stats.guild_bonus);
+    if (hasGuildBonus && !prevGuildBonus) {
+      appendLine('行会加成已生效。');
+    } else if (!hasGuildBonus && prevGuildBonus) {
+      appendLine('行会加成已结束。');
     }
   }
   if (chat.partyToggleBtn) {
@@ -7468,7 +7468,6 @@ if (logThrottleNormal) {
     }
   });
 }
-
 
 
 
