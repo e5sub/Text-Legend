@@ -5161,6 +5161,8 @@ async function buildState(player) {
       vip: isVipActive(player),
       vip_expires_at: player.flags?.vipExpiresAt || null,
       dodge: Math.round((player.evadeChance || 0) * 100),
+      cultivation_level: Math.max(0, Math.floor(Number(player.flags?.cultivationLevel || 0))),
+      cultivation_bonus: (Math.max(0, Math.floor(Number(player.flags?.cultivationLevel || 0))) + 1) * 50,
       autoSkillId: player.flags?.autoSkillId || null,
       sabak_bonus: sabakBonus,
       set_bonus: Boolean(player.flags?.setBonusActive)

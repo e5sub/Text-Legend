@@ -35,6 +35,28 @@ import { getRealmById } from '../db/realms.js';
 // 特效重置：生成随机特效（不包含elementAtk，因为元素攻击只能通过装备合成获得）
 const ALLOWED_EFFECTS = ['combo', 'fury', 'unbreakable', 'defense', 'dodge', 'poison', 'healblock'];
 
+const CULTIVATION_RANKS = [
+  '灵虚',
+  '和合',
+  '元婴',
+  '空冥',
+  '履霜',
+  '渡劫',
+  '寂灭',
+  '大乘',
+  '上仙',
+  '真仙',
+  '天仙'
+];
+
+function getCultivationInfo(levelValue) {
+  const level = Math.max(0, Math.floor(Number(levelValue) || 0));
+  const idx = Math.min(CULTIVATION_RANKS.length - 1, level);
+  const name = CULTIVATION_RANKS[idx] || CULTIVATION_RANKS[0];
+  const bonus = (idx + 1) * 50;
+  return { name, bonus, idx };
+}
+
 function generateRandomEffects(count) {
   const effects = {};
   const available = [...ALLOWED_EFFECTS];
@@ -438,6 +460,8 @@ function formatStats(player, partyApi) {
   const vip = vipActive
     ? (vipExpiresAt ? `是(剩余${Math.ceil((vipExpiresAt - Date.now()) / (24 * 60 * 60 * 1000))}天)` : '是(永久)')
     : '否';
+  const cultivationLevel = player.flags?.cultivationLevel || 0;
+  const cultivationInfo = getCultivationInfo(cultivationLevel);
   return [
     `职业: ${className}`,
     `等级: ${player.level} (${player.exp}/${expForLevel(player.level)} EXP)`,
@@ -445,6 +469,7 @@ function formatStats(player, partyApi) {
     `魔法: ${Math.floor(player.mp)}/${Math.floor(player.max_mp)}`,
     `攻击: ${Math.floor(player.atk)} 防御: ${Math.floor(player.def)} 魔法: ${Math.floor(player.mag)}`,
     `金币: ${player.gold}`,
+    `修真: ${cultivationInfo.name} (+${cultivationInfo.bonus})`,
     `PK值: ${pkValue} (${isRedName(player) ? '红名' : '正常'})`,
     `VIP: ${vip}`,
     `行会: ${player.guild ? player.guild.name : '无'}`,
@@ -2495,6 +2520,33 @@ export async function handleCommand({ player, players, allCharacters, playersByN
 
       send(`批量修炼成功: ${TRAINING_OPTIONS[key].label} 从 Lv${currentLevel} 升至 Lv${newLevel} (属性+${totalBonus.toFixed(2)})。`);
       send(`共 ${trainCount} 次修炼，消耗 ${totalCost} 金币。`);
+      return;
+    }
+    case 'cultivate':
+    case 'xiuzhen':
+    case '修真': {
+      if (!player.flags) player.flags = {};
+      if (player.flags.cultivationLevel == null) player.flags.cultivationLevel = 0;
+      const current = Math.max(0, Math.floor(Number(player.flags.cultivationLevel || 0)));
+      const currentInfo = getCultivationInfo(current);
+      const maxLevel = CULTIVATION_RANKS.length - 1;
+      const costLevels = 200;
+      if (current >= maxLevel) {
+        send(`修真已达最高：${currentInfo.name} (+${currentInfo.bonus})。`);
+        return;
+      }
+      if (player.level <= costLevels) {
+        send(`等级不足。提升修真需要扣除 ${costLevels} 级，当前等级 ${player.level}。`);
+        return;
+      }
+      player.level -= costLevels;
+      if (player.level < 1) player.level = 1;
+      player.exp = Math.min(player.exp, expForLevel(player.level) - 1);
+      player.flags.cultivationLevel = current + 1;
+      const nextInfo = getCultivationInfo(player.flags.cultivationLevel);
+      computeDerived(player);
+      player.forceStateRefresh = true;
+      send(`修真提升至 ${nextInfo.name} (+${nextInfo.bonus})，消耗等级 ${costLevels}，当前等级 ${player.level}。`);
       return;
     }
     case 'party': {

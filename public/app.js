@@ -278,6 +278,8 @@ const ui = {
   serverTime: document.getElementById('ui-server-time'),
   party: document.getElementById('ui-party'),
   gold: document.getElementById('ui-gold'),
+  cultivation: document.getElementById('ui-cultivation'),
+  cultivationUpgrade: document.getElementById('ui-cultivation-upgrade'),
   hpValue: document.getElementById('ui-hp'),
   mpValue: document.getElementById('ui-mp'),
   expValue: document.getElementById('ui-exp'),
@@ -314,6 +316,29 @@ const SKILL_NAME_OVERRIDES = {
   earth_spike: '彻地钉',
   thunderstorm: '雷霆万钧'
 };
+
+const CULTIVATION_RANKS = [
+  '灵虚',
+  '和合',
+  '元婴',
+  '空冥',
+  '履霜',
+  '渡劫',
+  '寂灭',
+  '大乘',
+  '上仙',
+  '真仙',
+  '天仙'
+];
+
+function getCultivationInfo(levelValue) {
+  const level = Number(levelValue);
+  if (Number.isNaN(level) || level == null) return { name: '-', bonus: 0 };
+  const idx = Math.min(CULTIVATION_RANKS.length - 1, Math.max(0, Math.floor(level)));
+  const name = CULTIVATION_RANKS[idx] || CULTIVATION_RANKS[0];
+  const bonus = (idx + 1) * 50;
+  return { name, bonus };
+}
 
 function getSkillDisplayName(skill) {
   if (!skill) return '';
@@ -4666,6 +4691,19 @@ function renderState(state) {
     }
 
     ui.gold.textContent = state.stats.gold;
+    if (ui.cultivation) {
+      const levelValue = state.stats?.cultivation_level ?? state.player?.cultivation_level ?? 0;
+      const info = getCultivationInfo(levelValue);
+      ui.cultivation.textContent = info.bonus > 0 ? `${info.name} +${info.bonus}` : info.name;
+    }
+    if (ui.cultivationUpgrade) {
+      const cultivationLevel = Math.max(0, Math.floor(Number(state.stats?.cultivation_level || 0)));
+      const canUpgrade = (state.player?.level || 0) > 200 && cultivationLevel < CULTIVATION_RANKS.length - 1;
+      ui.cultivationUpgrade.classList.toggle('hidden', !canUpgrade);
+      if (canUpgrade) {
+        ui.cultivationUpgrade.title = `消耗 200 级，当前等级 ${state.player?.level || 0}`;
+      }
+    }
     if (ui.hpValue) ui.hpValue.textContent = `${Math.round(state.stats.hp)}/${Math.round(state.stats.max_hp)}`;
     if (ui.mpValue) ui.mpValue.textContent = `${Math.round(state.stats.mp)}/${Math.round(state.stats.max_mp)}`;
     if (ui.expValue) {
@@ -6088,6 +6126,8 @@ function enterGame(name) {
   ui.pk.textContent = '-';
   ui.vip.textContent = '-';
   ui.gold.textContent = '0';
+  if (ui.cultivation) ui.cultivation.textContent = '-';
+  if (ui.cultivationUpgrade) ui.cultivationUpgrade.classList.add('hidden');
   setBar(ui.hp, 0, 1);
   setBar(ui.mp, 0, 1);
   setBar(ui.exp, 0, 1);
@@ -6692,6 +6732,13 @@ if (mailUi.modal) {
     if (e.target === mailUi.modal) {
       mailUi.modal.classList.add('hidden');
     }
+  });
+}
+
+if (ui.cultivationUpgrade) {
+  ui.cultivationUpgrade.addEventListener('click', () => {
+    if (!socket) return;
+    socket.emit('cmd', { text: '修真' });
   });
 }
 if (mailUi.refresh) {

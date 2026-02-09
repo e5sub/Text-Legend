@@ -156,7 +156,8 @@ export function newCharacter(name, classId) {
       autoSkillId: null,
       autoHpPct: null,
       autoMpPct: null,
-      training: { hp: 0, mp: 0, atk: 0, mag: 0, spirit: 0, dex: 0 }
+      training: { hp: 0, mp: 0, atk: 0, mag: 0, spirit: 0, dex: 0 },
+      cultivationLevel: 0
     },
     status: {}
   };
@@ -359,6 +360,13 @@ export function computeDerived(player) {
     .filter((entry) => entry.item);
 
   const stats = { ...base };
+  const cultivationLevel = Math.max(0, Math.floor(Number(player.flags?.cultivationLevel || 0)));
+  const cultivationBonus = (cultivationLevel + 1) * 50;
+  stats.str += cultivationBonus;
+  stats.dex += cultivationBonus;
+  stats.int += cultivationBonus;
+  stats.con += cultivationBonus;
+  stats.spirit += cultivationBonus;
   let mdefBonus = 0;
   let evadeChance = 0;
   let elementAtk = 0;

@@ -1235,6 +1235,35 @@ body.log-collapsed .game-layout {
   white-space: nowrap;
 }
 
+.status-row.cultivation-row {
+  margin: 4px 0;
+  gap: 10px;
+}
+
+.status-row.cultivation-row strong {
+  flex: 1;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-row.cultivation-row .mini-btn {
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  cursor: pointer;
+}
+
+.status-row.cultivation-row .mini-btn:hover {
+  filter: brightness(1.1);
+}
+
 .status-grid-3 {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
