@@ -4737,7 +4737,10 @@ function renderState(state) {
       const guildMult = state.stats.guild_bonus ? 2 : 1;
       const cultivationLevel = Math.floor(Number(state.stats.cultivation_level ?? -1));
       const cultivationMult = cultivationLevel >= 0 ? (cultivationLevel + 2) : 1;
-      const totalMult = vipMult * guildMult * cultivationMult;
+      const partySize = Math.max(0, Number(state.party?.size || 0));
+      const partyBonus = partySize > 1 ? Math.min(0.2 * partySize, 1.0) : 0;
+      const partyMult = 1 + partyBonus;
+      const totalMult = vipMult * guildMult * cultivationMult * partyMult;
       const bonusPct = Math.max(0, Math.round((totalMult - 1) * 100));
       ui.bonusLine.textContent = `行会加成：${guildText} | 套装加成：${setText} | 经验/金币加成：+${bonusPct}%`;
     }
@@ -7474,7 +7477,6 @@ if (logThrottleNormal) {
     }
   });
 }
-
 
 
 

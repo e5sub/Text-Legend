@@ -1302,6 +1302,11 @@ body.log-collapsed .game-layout {
   white-space: nowrap;
 }
 
+.status-grid-3 .status-row.wide .bonus-line {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
 .status-grid-3 .status-row.wide span::after {
   content: '';
 }

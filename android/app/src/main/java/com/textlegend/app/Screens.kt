@@ -19,6 +19,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.RepeatMode
@@ -1122,7 +1123,7 @@ private fun RarityText(
             animationSpec = infiniteRepeatable(tween(3500), RepeatMode.Restart),
             label = "ultimateShift"
         )
-        val brush = Brush.linearGradient(
+        val brush = Brush.horizontalGradient(
             colors = listOf(
                 Color(0xFF7A1010),
                 Color(0xFFD64545),
@@ -1130,8 +1131,8 @@ private fun RarityText(
                 Color(0xFFFF9A9A),
                 Color(0xFFD64545)
             ),
-            start = Offset(-100f + 200f * shift, 0f),
-            end = Offset(200f + 200f * shift, 0f)
+            startX = -100f + 200f * shift,
+            endX = 200f + 200f * shift
         )
         val baseStyle = LocalTextStyle.current
         Box(modifier = modifier) {
