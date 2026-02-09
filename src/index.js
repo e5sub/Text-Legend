@@ -5163,7 +5163,7 @@ async function buildState(player) {
       dodge: Math.round((player.evadeChance || 0) * 100),
       cultivation_level: Math.floor(Number(player.flags?.cultivationLevel ?? -1)),
       cultivation_bonus: Math.floor(Number(player.flags?.cultivationLevel ?? -1)) >= 0
-        ? (Math.floor(Number(player.flags?.cultivationLevel ?? -1)) + 1) * 50
+        ? (Math.floor(Number(player.flags?.cultivationLevel ?? -1)) + 1) * 100
         : 0,
       autoSkillId: player.flags?.autoSkillId || null,
       sabak_bonus: sabakBonus,

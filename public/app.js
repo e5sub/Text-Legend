@@ -336,7 +336,7 @@ function getCultivationInfo(levelValue) {
   if (Number.isNaN(level) || level < 0) return { name: '无', bonus: 0 };
   const idx = Math.min(CULTIVATION_RANKS.length - 1, level);
   const name = CULTIVATION_RANKS[idx] || CULTIVATION_RANKS[0];
-  const bonus = (idx + 1) * 50;
+  const bonus = (idx + 1) * 100;
   return { name, bonus };
 }
 
@@ -4700,7 +4700,9 @@ function renderState(state) {
     if (ui.cultivation) {
       const levelValue = state.stats?.cultivation_level ?? state.player?.cultivation_level ?? -1;
       const info = getCultivationInfo(levelValue);
-      ui.cultivation.textContent = info.bonus > 0 ? `${info.name} +${info.bonus}` : info.name;
+      ui.cultivation.textContent = info.bonus > 0
+        ? `${info.name}（所有属性+${info.bonus}）`
+        : info.name;
     }
     if (ui.cultivationUpgrade) {
       const cultivationLevel = Math.floor(Number(state.stats?.cultivation_level ?? -1));

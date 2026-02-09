@@ -361,7 +361,7 @@ export function computeDerived(player) {
 
   const stats = { ...base };
   const cultivationLevel = Math.floor(Number(player.flags?.cultivationLevel ?? -1));
-  const cultivationBonus = cultivationLevel >= 0 ? (cultivationLevel + 1) * 50 : 0;
+  const cultivationBonus = cultivationLevel >= 0 ? (cultivationLevel + 1) * 100 : 0;
   if (cultivationBonus > 0) {
     stats.str += cultivationBonus;
     stats.dex += cultivationBonus;

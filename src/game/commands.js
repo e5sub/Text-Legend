@@ -54,7 +54,7 @@ function getCultivationInfo(levelValue) {
   if (Number.isNaN(level) || level < 0) return { name: '无', bonus: 0, idx: -1 };
   const idx = Math.min(CULTIVATION_RANKS.length - 1, level);
   const name = CULTIVATION_RANKS[idx] || CULTIVATION_RANKS[0];
-  const bonus = (idx + 1) * 50;
+  const bonus = (idx + 1) * 100;
   return { name, bonus, idx };
 }
 
@@ -471,7 +471,7 @@ function formatStats(player, partyApi) {
     `攻击: ${Math.floor(player.atk)} 防御: ${Math.floor(player.def)} 魔法: ${Math.floor(player.mag)}`,
     `金币: ${player.gold}`,
     cultivationInfo.bonus > 0
-      ? `修真: ${cultivationInfo.name} (+${cultivationInfo.bonus})`
+      ? `修真: ${cultivationInfo.name}（所有属性+${cultivationInfo.bonus}）`
       : '修真: 无',
     `PK值: ${pkValue} (${isRedName(player) ? '红名' : '正常'})`,
     `VIP: ${vip}`,
