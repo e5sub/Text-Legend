@@ -3910,6 +3910,7 @@ body.dark .mail-tab.active {
   cursor: pointer;
   font-size: 0.85rem;
   line-height: 1.3;
+  color: #2b1909;
 }
 
 .forge-item:hover {

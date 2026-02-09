@@ -3968,6 +3968,11 @@ const RARITY_LABELS = {
   common: '\u666e\u901a'
 };
 
+function normalizeRarityKey(value) {
+  if (value == null) return '';
+  return String(value).trim().toLowerCase();
+}
+
 const RARITY_ORDER = {
   common: 0,
   uncommon: 1,
@@ -3980,7 +3985,7 @@ const RARITY_ORDER = {
 
 function rarityRank(item) {
   if (!item || !item.rarity) return 0;
-  const key = typeof item.rarity === 'string' ? item.rarity.toLowerCase() : item.rarity;
+  const key = normalizeRarityKey(item.rarity);
   return RARITY_ORDER[key] ?? 0;
 }
 
@@ -4061,7 +4066,7 @@ function formatItemTooltip(item) {
   lines.push(item.name || '');
   if (item.is_set) lines.push('\u5957\u88c5');
   if (item.rarity) {
-    const rarityKey = typeof item.rarity === 'string' ? item.rarity.toLowerCase() : item.rarity;
+    const rarityKey = normalizeRarityKey(item.rarity);
     lines.push(`\u7a00\u6709\u5ea6: ${RARITY_LABELS[rarityKey] || item.rarity}`);
   }
   if (item.effects && item.effects.combo) {
@@ -4444,7 +4449,8 @@ function formatItemName(item) {
 
 function applyRarityClass(el, item) {
   if (!el || !item || !item.rarity) return;
-  const rarityKey = typeof item.rarity === 'string' ? item.rarity.toLowerCase() : item.rarity;
+  const rarityKey = normalizeRarityKey(item.rarity);
+  if (!rarityKey) return;
   el.classList.add(`rarity-${rarityKey}`);
   if (rarityKey === 'ultimate') {
     el.classList.add('highlight-marquee', 'ultimate-text');
@@ -5419,7 +5425,7 @@ function renderState(state) {
       label: `${formatItemName(i)} x${i.qty}`,
       raw: i,
       tooltip: formatItemTooltip(i),
-      className: `${i.rarity ? `rarity-${i.rarity}` : ''}${i.is_set ? ' item-set' : ''}`.trim()
+      className: `${i.rarity ? `rarity-${normalizeRarityKey(i.rarity)}` : ''}${i.is_set ? ' item-set' : ''}`.trim()
     }));
   bagItems = allItems
     .map((i) => ({ ...i, tooltip: formatItemTooltip(i) }))
