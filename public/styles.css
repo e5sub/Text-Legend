@@ -4581,7 +4581,17 @@ body.dark .sabak-empty {
 .bag-item.ultimate-text,
 body.dark .bag-item.ultimate-text,
 .mail-attach-item.ultimate-text,
-body.dark .mail-attach-item.ultimate-text {
+body.dark .mail-attach-item.ultimate-text,
+.forge-item.ultimate-text,
+body.dark .forge-item.ultimate-text,
+.trade-item.ultimate-text,
+body.dark .trade-item.ultimate-text,
+.repair-item.ultimate-text,
+body.dark .repair-item.ultimate-text,
+.consign-item.ultimate-text,
+body.dark .consign-item.ultimate-text,
+.consign-history-item.ultimate-text,
+body.dark .consign-history-item.ultimate-text {
   background: none;
   -webkit-text-fill-color: currentColor;
 }
