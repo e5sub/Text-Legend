@@ -4733,15 +4733,13 @@ function renderState(state) {
     if (ui.bonusLine) {
       const guildText = state.stats.guild_bonus ? '已生效' : '无';
       const setText = state.stats.set_bonus ? '已激活' : '无';
-      const vipMult = state.stats.vip ? 2 : 1;
-      const guildMult = state.stats.guild_bonus ? 2 : 1;
+      const vipPct = state.stats.vip ? 100 : 0;
+      const guildPct = state.stats.guild_bonus ? 100 : 0;
       const cultivationLevel = Math.floor(Number(state.stats.cultivation_level ?? -1));
-      const cultivationMult = cultivationLevel >= 0 ? (cultivationLevel + 2) : 1;
+      const cultivationPct = cultivationLevel >= 0 ? (cultivationLevel + 1) * 100 : 0;
       const partySize = Math.max(0, Number(state.party?.size || 0));
-      const partyBonus = partySize > 1 ? Math.min(0.2 * partySize, 1.0) : 0;
-      const partyMult = 1 + partyBonus;
-      const totalMult = vipMult * guildMult * cultivationMult * partyMult;
-      const bonusPct = Math.max(0, Math.round((totalMult - 1) * 100));
+      const partyPct = partySize > 1 ? Math.min(0.2 * partySize, 1.0) * 100 : 0;
+      const bonusPct = Math.max(0, Math.round(vipPct + guildPct + cultivationPct + partyPct));
       ui.bonusLine.textContent = `行会加成：${guildText} | 套装加成：${setText} | 经验/金币加成：+${bonusPct}%`;
     }
     if (ui.online) {
@@ -7477,7 +7475,6 @@ if (logThrottleNormal) {
     }
   });
 }
-
 
 
 
