@@ -398,8 +398,8 @@ body.dark .repair-item.rarity-ultimate,
 body.dark .forge-item.rarity-ultimate,
 body.dark .trade-item.rarity-ultimate,
 body.dark .mail-attach-item.rarity-ultimate {
-  border-color: #ff7bd1;
-  color: #ff7bd1;
+  border-color: #f6c453;
+  color: #f6c453;
 }
 
 body.dark .mail-item {
@@ -631,7 +631,7 @@ body.dark .chip.rarity-rare { border-color: rgba(72, 140, 210, 0.6); color: #7fb
 body.dark .chip.rarity-epic { border-color: rgba(196, 94, 178, 0.6); color: #e08bd3; }
 body.dark .chip.rarity-legendary { border-color: rgba(212, 152, 68, 0.7); color: #f2c464; }
 body.dark .chip.rarity-supreme { border-color: rgba(214, 92, 92, 0.7); color: #ff8c8c; }
-body.dark .chip.rarity-ultimate { border-color: rgba(255, 123, 209, 0.75); color: #ff7bd1; }
+body.dark .chip.rarity-ultimate { border-color: rgba(246, 196, 83, 0.8); color: #f6c453; }
 
 body.dark .chip.active {
   background: #c86b2a;
@@ -4548,8 +4548,8 @@ body.dark .sabak-empty {
 .line-announce { color: #d8792f; }
 .announce-line.line-legendary .line-text { color: #f2c464; }
 .announce-line.line-supreme .line-text { color: #ff8c8c; }
-.line-ultimate { color: #ff7bd1; }
-.announce-line.line-ultimate .line-text { color: #ff7bd1; }
+.line-ultimate { color: #f6c453; }
+.announce-line.line-ultimate .line-text { color: #f6c453; }
 
 .chip.rarity-common { border-color: rgba(118, 70, 22, 0.25); }
 .chip.rarity-uncommon { border-color: rgba(60, 130, 70, 0.45); color: #2f6b3b; }
@@ -4557,7 +4557,7 @@ body.dark .sabak-empty {
 .chip.rarity-epic { border-color: rgba(196, 94, 178, 0.55); color: #8a2c7a; }
 .chip.rarity-legendary { border-color: rgba(212, 152, 68, 0.6); color: #8f5a12; }
 .chip.rarity-supreme { border-color: rgba(214, 92, 92, 0.6); color: #b63c3c; }
-.chip.rarity-ultimate { border-color: rgba(196, 75, 154, 0.6); color: #c44b9a; }
+.chip.rarity-ultimate { border-color: rgba(246, 196, 83, 0.7); color: #f6c453; }
 .chip.item-set { box-shadow: 0 0 0 1px rgba(214, 145, 64, 0.4); }
 
 .rarity-common { color: #6b4a2a; }
@@ -4566,11 +4566,11 @@ body.dark .sabak-empty {
 .rarity-epic { color: #8a2c7a; }
 .rarity-legendary { color: #8f5a12; }
 .rarity-supreme { color: #b63c3c; }
-.rarity-ultimate { color: #c44b9a; }
+.rarity-ultimate { color: #f6c453; }
 
 .ultimate-text {
-  color: #c44b9a;
-  background: linear-gradient(120deg, #ff6fb0, #ffb86b, #ffe17d, #7ce6b8, #6bb7ff, #b875ff, #ff6fb0);
+  color: #f6c453;
+  background: linear-gradient(120deg, #ffb642, #ffe17d, #ffd166, #ffea99, #ffb642);
   background-size: 240% 240%;
   -webkit-background-clip: text;
   background-clip: text;
@@ -4598,49 +4598,49 @@ body.dark .bag-item.ultimate-text {
 .bag-item.rarity-epic { border-color: #8a2c7a; color: #8a2c7a; }
 .bag-item.rarity-legendary { border-color: #8f5a12; color: #8f5a12; }
 .bag-item.rarity-supreme { border-color: #b63c3c; color: #b63c3c; }
-.bag-item.rarity-ultimate { border-color: #c44b9a; color: #c44b9a; }
+.bag-item.rarity-ultimate { border-color: #f6c453; color: #f6c453; }
 .shop-sell-item.rarity-uncommon { border-color: #2f6b3b; color: #2f6b3b; }
 .shop-sell-item.rarity-rare { border-color: #2f6aa6; color: #2f6aa6; }
 .shop-sell-item.rarity-epic { border-color: #8a2c7a; color: #8a2c7a; }
 .shop-sell-item.rarity-legendary { border-color: #8f5a12; color: #8f5a12; }
 .shop-sell-item.rarity-supreme { border-color: #b63c3c; color: #b63c3c; }
-.shop-sell-item.rarity-ultimate { border-color: #c44b9a; color: #c44b9a; }
+.shop-sell-item.rarity-ultimate { border-color: #f6c453; color: #f6c453; }
 .consign-item.rarity-uncommon { border-color: #2f6b3b; color: #2f6b3b; }
 .consign-item.rarity-rare { border-color: #2f6aa6; color: #2f6aa6; }
 .consign-item.rarity-epic { border-color: #8a2c7a; color: #8a2c7a; }
 .consign-item.rarity-legendary { border-color: #8f5a12; color: #8f5a12; }
 .consign-item.rarity-supreme { border-color: #b63c3c; color: #b63c3c; }
-.consign-item.rarity-ultimate { border-color: #c44b9a; color: #c44b9a; }
+.consign-item.rarity-ultimate { border-color: #f6c453; color: #f6c453; }
 .consign-history-item.rarity-uncommon { border-color: #2f6b3b; color: #2f6b3b; }
 .consign-history-item.rarity-rare { border-color: #2f6aa6; color: #2f6aa6; }
 .consign-history-item.rarity-epic { border-color: #8a2c7a; color: #8a2c7a; }
 .consign-history-item.rarity-legendary { border-color: #8f5a12; color: #8f5a12; }
 .consign-history-item.rarity-supreme { border-color: #b63c3c; color: #b63c3c; }
-.consign-history-item.rarity-ultimate { border-color: #c44b9a; color: #c44b9a; }
+.consign-history-item.rarity-ultimate { border-color: #f6c453; color: #f6c453; }
 .repair-item.rarity-uncommon { border-color: #2f6b3b; color: #2f6b3b; }
 .repair-item.rarity-rare { border-color: #2f6aa6; color: #2f6aa6; }
 .repair-item.rarity-epic { border-color: #8a2c7a; color: #8a2c7a; }
 .repair-item.rarity-legendary { border-color: #8f5a12; color: #8f5a12; }
 .repair-item.rarity-supreme { border-color: #b63c3c; color: #b63c3c; }
-.repair-item.rarity-ultimate { border-color: #c44b9a; color: #c44b9a; }
+.repair-item.rarity-ultimate { border-color: #f6c453; color: #f6c453; }
 .forge-item.rarity-uncommon { border-color: #2f6b3b; color: #2f6b3b; }
 .forge-item.rarity-rare { border-color: #2f6aa6; color: #2f6aa6; }
 .forge-item.rarity-epic { border-color: #8a2c7a; color: #8a2c7a; }
 .forge-item.rarity-legendary { border-color: #8f5a12; color: #8f5a12; }
 .forge-item.rarity-supreme { border-color: #b63c3c; color: #b63c3c; }
-.forge-item.rarity-ultimate { border-color: #c44b9a; color: #c44b9a; }
+.forge-item.rarity-ultimate { border-color: #f6c453; color: #f6c453; }
 .trade-item.rarity-uncommon { border-color: #2f6b3b; color: #2f6b3b; }
 .trade-item.rarity-rare { border-color: #2f6aa6; color: #2f6aa6; }
 .trade-item.rarity-epic { border-color: #8a2c7a; color: #8a2c7a; }
 .trade-item.rarity-legendary { border-color: #8f5a12; color: #8f5a12; }
 .trade-item.rarity-supreme { border-color: #b63c3c; color: #b63c3c; }
-.trade-item.rarity-ultimate { border-color: #c44b9a; color: #c44b9a; }
+.trade-item.rarity-ultimate { border-color: #f6c453; color: #f6c453; }
 .mail-attach-item.rarity-uncommon { border-color: #2f6b3b; color: #2f6b3b; }
 .mail-attach-item.rarity-rare { border-color: #2f6aa6; color: #2f6aa6; }
 .mail-attach-item.rarity-epic { border-color: #8a2c7a; color: #8a2c7a; }
 .mail-attach-item.rarity-legendary { border-color: #8f5a12; color: #8f5a12; }
 .mail-attach-item.rarity-supreme { border-color: #b63c3c; color: #b63c3c; }
-.mail-attach-item.rarity-ultimate { border-color: #c44b9a; color: #c44b9a; }
+.mail-attach-item.rarity-ultimate { border-color: #f6c453; color: #f6c453; }
 
 .side {
   background: #fffdf7;
