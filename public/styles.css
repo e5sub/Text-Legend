@@ -690,6 +690,8 @@ body {
     radial-gradient(circle at top, #fff7ea 0%, #f1e1c9 45%, #e3c6a4 100%),
     repeating-linear-gradient(120deg, rgba(255, 255, 255, 0.05) 0 10px, rgba(0, 0, 0, 0.02) 10px 20px);
   color: var(--ink);
+  overflow-x: hidden;
+}
   font-family: var(--font-body);
   min-height: 100vh;
   position: relative;
@@ -734,6 +736,7 @@ body::after {
   padding: 32px 20px 60px;
   position: relative;
   z-index: 1;
+  overflow-x: hidden;
 }
 
 header {
@@ -2400,6 +2403,7 @@ body.dark .chat-name-btn.sponsor-player-name:hover {
 @media (max-width: 640px) {
   #app {
     padding: 16px 8px 24px;
+    overflow-x: hidden;
   }
 
   header {
@@ -2418,6 +2422,7 @@ body.dark .chat-name-btn.sponsor-player-name:hover {
   .panel {
     padding: 16px;
     border-radius: 12px;
+    overflow-x: hidden;
   }
 
   .status-card {
@@ -2457,8 +2462,14 @@ body.dark .chat-name-btn.sponsor-player-name:hover {
     font-size: 0.85rem;
   }
 
+  .battle-wrap {
+    border-radius: 12px;
+    overflow-x: hidden;
+  }
+
   .chat-wrap {
     border-radius: 12px;
+    overflow-x: hidden;
   }
 
   .chat-header {
@@ -2471,6 +2482,9 @@ body.dark .chat-name-btn.sponsor-player-name:hover {
     min-height: 140px;
     max-height: 200px;
     font-size: 0.85rem;
+    overflow-x: hidden;
+    overflow-wrap: break-word;
+    word-break: break-all;
   }
 
   .chat-actions {
@@ -2504,10 +2518,12 @@ body.dark .chat-name-btn.sponsor-player-name:hover {
   .chip {
     padding: 6px 10px;
     font-size: 0.8rem;
+    flex-shrink: 0;
   }
 
   .chip-grid {
     gap: 6px;
+    flex-wrap: wrap;
   }
 
   .modal-card {
@@ -2587,11 +2603,84 @@ body.dark .chat-name-btn.sponsor-player-name:hover {
     max-height: 55vh;
     overflow-y: auto;
   }
+
+  /* 防止战斗面板横向溢出 */
+  .battle-wrap {
+    overflow-x: hidden;
+  }
+
+  .battle-panel {
+    overflow-x: hidden;
+  }
+
+  .battle-list {
+    overflow-x: hidden;
+  }
+
+  /* 防止行动面板横向溢出 */
+  .side {
+    overflow-x: hidden;
+  }
+
+  .side-body {
+    overflow-x: hidden;
+  }
+
+  .action-group {
+    overflow-x: hidden;
+  }
+
+  /* 确保按钮网格自适应 */
+  .chat-actions {
+    overflow-x: hidden;
+  }
+
+  .chat-btn {
+    flex-shrink: 0;
+  }
+
+  /* 状态行防止溢出 */
+  .status-row {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* 模态框内容防止溢出 */
+  .modal-list-wrapper {
+    overflow-x: hidden;
+  }
+
+  .shop-list,
+  .shop-sell-list {
+    overflow-x: hidden;
+  }
+
+  .consign-list {
+    overflow-x: hidden;
+  }
+
+  .rank-list {
+    overflow-x: hidden;
+  }
+
+  .mail-list {
+    overflow-x: hidden;
+  }
+
+  .forge-list {
+    overflow-x: hidden;
+  }
+
+  .repair-list {
+    overflow-x: hidden;
+  }
 }
 
 @media (max-width: 480px) {
   #app {
     padding: 12px 4px 20px;
+    overflow-x: hidden;
   }
 
   header h1 {
@@ -2600,6 +2689,7 @@ body.dark .chat-name-btn.sponsor-player-name:hover {
 
   .panel {
     padding: 12px 8px;
+    overflow-x: hidden;
   }
 
   .status-grid-3 {
@@ -2611,7 +2701,7 @@ body.dark .chat-name-btn.sponsor-player-name:hover {
   }
 
   .status-row span {
-    min-width: 50px;
+    min-width: 40px;
   }
 
   .log {
@@ -3161,11 +3251,28 @@ body.dark .mail-tab.active {
   .log {
     min-height: 300px;
   }
+
+  /* 防止横向溢出 */
+  #app {
+    overflow-x: hidden;
+  }
+
+  .battle-wrap,
+  .battle-panel,
+  .side,
+  .chat-wrap {
+    overflow-x: hidden;
+  }
+
+  .chat-log {
+    overflow-wrap: break-word;
+  }
 }
 
 @media (max-width: 640px) {
   #app {
     padding: 16px 8px 24px;
+    overflow-x: hidden;
   }
 
   header {
@@ -3184,6 +3291,7 @@ body.dark .mail-tab.active {
   .panel {
     padding: 16px;
     border-radius: 12px;
+    overflow-x: hidden;
   }
 
   .status-card {
@@ -3223,8 +3331,14 @@ body.dark .mail-tab.active {
     font-size: 0.85rem;
   }
 
+  .battle-wrap {
+    border-radius: 12px;
+    overflow-x: hidden;
+  }
+
   .chat-wrap {
     border-radius: 12px;
+    overflow-x: hidden;
   }
 
   .chat-header {
@@ -3237,6 +3351,9 @@ body.dark .mail-tab.active {
     min-height: 140px;
     max-height: 200px;
     font-size: 0.85rem;
+    overflow-x: hidden;
+    overflow-wrap: break-word;
+    word-break: break-all;
   }
 
   .chat-actions {
@@ -3270,10 +3387,12 @@ body.dark .mail-tab.active {
   .chip {
     padding: 6px 10px;
     font-size: 0.8rem;
+    flex-shrink: 0;
   }
 
   .chip-grid {
     gap: 6px;
+    flex-wrap: wrap;
   }
 
   .modal-card {
@@ -3353,11 +3472,84 @@ body.dark .mail-tab.active {
     max-height: 55vh;
     overflow-y: auto;
   }
+
+  /* 防止战斗面板横向溢出 */
+  .battle-wrap {
+    overflow-x: hidden;
+  }
+
+  .battle-panel {
+    overflow-x: hidden;
+  }
+
+  .battle-list {
+    overflow-x: hidden;
+  }
+
+  /* 防止行动面板横向溢出 */
+  .side {
+    overflow-x: hidden;
+  }
+
+  .side-body {
+    overflow-x: hidden;
+  }
+
+  .action-group {
+    overflow-x: hidden;
+  }
+
+  /* 确保按钮网格自适应 */
+  .chat-actions {
+    overflow-x: hidden;
+  }
+
+  .chat-btn {
+    flex-shrink: 0;
+  }
+
+  /* 状态行防止溢出 */
+  .status-row {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* 模态框内容防止溢出 */
+  .modal-list-wrapper {
+    overflow-x: hidden;
+  }
+
+  .shop-list,
+  .shop-sell-list {
+    overflow-x: hidden;
+  }
+
+  .consign-list {
+    overflow-x: hidden;
+  }
+
+  .rank-list {
+    overflow-x: hidden;
+  }
+
+  .mail-list {
+    overflow-x: hidden;
+  }
+
+  .forge-list {
+    overflow-x: hidden;
+  }
+
+  .repair-list {
+    overflow-x: hidden;
+  }
 }
 
 @media (max-width: 480px) {
   #app {
     padding: 12px 4px 20px;
+    overflow-x: hidden;
   }
 
   header h1 {
@@ -3366,6 +3558,7 @@ body.dark .mail-tab.active {
 
   .panel {
     padding: 12px 8px;
+    overflow-x: hidden;
   }
 
   .status-grid-3 {
@@ -3377,7 +3570,7 @@ body.dark .mail-tab.active {
   }
 
   .status-row span {
-    min-width: 50px;
+    min-width: 40px;
   }
 
   .log {
@@ -3539,11 +3732,28 @@ body.dark .mail-tab.active {
   .log {
     min-height: 300px;
   }
+
+  /* 防止横向溢出 */
+  #app {
+    overflow-x: hidden;
+  }
+
+  .battle-wrap,
+  .battle-panel,
+  .side,
+  .chat-wrap {
+    overflow-x: hidden;
+  }
+
+  .chat-log {
+    overflow-wrap: break-word;
+  }
 }
 
 @media (max-width: 640px) {
   #app {
     padding: 16px 8px 24px;
+    overflow-x: hidden;
   }
 
   header {
@@ -3562,6 +3772,7 @@ body.dark .mail-tab.active {
   .panel {
     padding: 16px;
     border-radius: 12px;
+    overflow-x: hidden;
   }
 
   .status-card {
@@ -3601,8 +3812,14 @@ body.dark .mail-tab.active {
     font-size: 0.85rem;
   }
 
+  .battle-wrap {
+    border-radius: 12px;
+    overflow-x: hidden;
+  }
+
   .chat-wrap {
     border-radius: 12px;
+    overflow-x: hidden;
   }
 
   .chat-header {
@@ -3615,6 +3832,9 @@ body.dark .mail-tab.active {
     min-height: 140px;
     max-height: 200px;
     font-size: 0.85rem;
+    overflow-x: hidden;
+    overflow-wrap: break-word;
+    word-break: break-all;
   }
 
   .chat-actions {
@@ -3648,10 +3868,12 @@ body.dark .mail-tab.active {
   .chip {
     padding: 6px 10px;
     font-size: 0.8rem;
+    flex-shrink: 0;
   }
 
   .chip-grid {
     gap: 6px;
+    flex-wrap: wrap;
   }
 
   .modal-card {
@@ -3731,11 +3953,84 @@ body.dark .mail-tab.active {
     max-height: 55vh;
     overflow-y: auto;
   }
+
+  /* 防止战斗面板横向溢出 */
+  .battle-wrap {
+    overflow-x: hidden;
+  }
+
+  .battle-panel {
+    overflow-x: hidden;
+  }
+
+  .battle-list {
+    overflow-x: hidden;
+  }
+
+  /* 防止行动面板横向溢出 */
+  .side {
+    overflow-x: hidden;
+  }
+
+  .side-body {
+    overflow-x: hidden;
+  }
+
+  .action-group {
+    overflow-x: hidden;
+  }
+
+  /* 确保按钮网格自适应 */
+  .chat-actions {
+    overflow-x: hidden;
+  }
+
+  .chat-btn {
+    flex-shrink: 0;
+  }
+
+  /* 状态行防止溢出 */
+  .status-row {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* 模态框内容防止溢出 */
+  .modal-list-wrapper {
+    overflow-x: hidden;
+  }
+
+  .shop-list,
+  .shop-sell-list {
+    overflow-x: hidden;
+  }
+
+  .consign-list {
+    overflow-x: hidden;
+  }
+
+  .rank-list {
+    overflow-x: hidden;
+  }
+
+  .mail-list {
+    overflow-x: hidden;
+  }
+
+  .forge-list {
+    overflow-x: hidden;
+  }
+
+  .repair-list {
+    overflow-x: hidden;
+  }
 }
 
 @media (max-width: 480px) {
   #app {
     padding: 12px 4px 20px;
+    overflow-x: hidden;
   }
 
   header h1 {
@@ -3744,6 +4039,7 @@ body.dark .mail-tab.active {
 
   .panel {
     padding: 12px 8px;
+    overflow-x: hidden;
   }
 
   .status-grid-3 {
@@ -3755,7 +4051,7 @@ body.dark .mail-tab.active {
   }
 
   .status-row span {
-    min-width: 50px;
+    min-width: 40px;
   }
 
   .log {
@@ -5086,6 +5382,22 @@ li {
   .log {
     min-height: 300px;
   }
+
+  /* 防止横向溢出 */
+  #app {
+    overflow-x: hidden;
+  }
+
+  .battle-wrap,
+  .battle-panel,
+  .side,
+  .chat-wrap {
+    overflow-x: hidden;
+  }
+
+  .chat-log {
+    overflow-wrap: break-word;
+  }
 }
 
 /* 套装掉落表样式 */
@@ -5535,6 +5847,79 @@ body.dark .sponsor-markdown .sponsor-tip {
   .sponsor-name,
   .sponsor-amount {
     font-size: 0.85rem;
+  }
+
+  /* 防止所有组件横向溢出 */
+  .battle-wrap {
+    overflow-x: hidden;
+  }
+
+  .battle-panel {
+    overflow-x: hidden;
+  }
+
+  .battle-list {
+    overflow-x: hidden;
+  }
+
+  .side {
+    overflow-x: hidden;
+  }
+
+  .side-body {
+    overflow-x: hidden;
+  }
+
+  .action-group {
+    overflow-x: hidden;
+  }
+
+  .chip-grid {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+  }
+
+  /* 确保状态行内容不溢出 */
+  .status-row {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* 模态框内容不溢出 */
+  .modal-list-wrapper {
+    overflow-x: hidden;
+  }
+
+  /* 商店列表 */
+  .shop-list,
+  .shop-sell-list {
+    overflow-x: hidden;
+  }
+
+  /* 寄售列表 */
+  .consign-list {
+    overflow-x: hidden;
+  }
+
+  /* 排行榜列表 */
+  .rank-list {
+    overflow-x: hidden;
+  }
+
+  /* 邮件列表 */
+  .mail-list {
+    overflow-x: hidden;
+  }
+
+  /* 锻造列表 */
+  .forge-list {
+    overflow-x: hidden;
+  }
+
+  /* 修理列表 */
+  .repair-list {
+    overflow-x: hidden;
   }
 }
 
