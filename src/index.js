@@ -5099,7 +5099,8 @@ function buildRoomExits(zoneId, roomId, player = null) {
     if (!destRoom) return null;
     if (player && destRoom.minCultivationLevel != null) {
       const cultivationLevel = getCultivationLevel(player);
-      if (Number.isNaN(cultivationLevel) || cultivationLevel < destRoom.minCultivationLevel) {
+      // 严格匹配：修真等级必须完全相等才能进入
+      if (Number.isNaN(cultivationLevel) || cultivationLevel !== destRoom.minCultivationLevel) {
         return null;
       }
     }

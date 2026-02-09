@@ -1650,6 +1650,8 @@ export function expandRoomVariants(world) {
     baseMap.forEach((templateId, baseId) => {
       const template = zone.rooms[templateId];
       if (!template) return;
+      // 跳过修真BOSS房间的变种创建（BOSS房间保持唯一）
+      if (baseId.startsWith('boss_')) return;
       extraSuffixes.forEach((suffix) => {
         const newRoomId = `${baseId}${suffix}`;
         if (zone.rooms[newRoomId]) return;
@@ -1660,7 +1662,10 @@ export function expandRoomVariants(world) {
           Object.keys(cloned.exits).forEach((dir) => {
             const dest = cloned.exits[dir];
             if (typeof dest !== 'string') return;
-            if (dest.includes(':')) {
+            // 修真练级地图的BOSS出口保持指向唯一的BOSS房间，不加后缀
+            if (dest.startsWith('boss_')) {
+              cloned.exits[dir] = dest;
+            } else if (dest.includes(':')) {
               const [destZone, destRoom] = dest.split(':');
               cloned.exits[dir] = `${destZone}:${replaceSuffix(destRoom, suffix)}`;
             } else {
@@ -1705,6 +1710,61 @@ export function expandRoomVariants(world) {
       room.exits = nextExits;
     });
   });
+
+  // 特殊处理：为修真BOSS房间添加所有变种练级地图的出口
+  const cultivationZone = world['cultivation'];
+  if (cultivationZone && cultivationZone.rooms) {
+    const bossRoomIds = [
+      'boss_zhuji', 'boss_lingxu', 'boss_hehe', 'boss_yuanying',
+      'boss_kongming', 'boss_lvshuang', 'boss_dujie', 'boss_jimie',
+      'boss_dacheng', 'boss_shangxian', 'boss_zhenxian', 'boss_tianxian'
+    ];
+
+    bossRoomIds.forEach(bossRoomId => {
+      const bossRoom = cultivationZone.rooms[bossRoomId];
+      if (!bossRoom || !bossRoom.exits) return;
+
+      // 找到BOSS房间对应的练级地图基础ID
+      const baseFieldId = bossRoomId.replace('boss_', 'field_');
+      if (!cultivationZone.rooms[baseFieldId]) return;
+
+      // 为BOSS房间添加所有变种练级地图的出口
+      const exits = { ...bossRoom.exits };
+      // 添加所有变种的south出口（south1, south2, south3等）
+      for (let i = 1; i <= ROOM_VARIANT_COUNT; i++) {
+        const variantFieldId = `${baseFieldId}${i}`;
+        if (cultivationZone.rooms[variantFieldId]) {
+          exits[`south${i}`] = variantFieldId;
+        }
+      }
+      bossRoom.exits = exits;
+    });
+
+    // 特殊处理：为修真入口添加所有变种练级地图和BOSS房间的出口
+    const entryRoom = cultivationZone.rooms['entry'];
+    if (entryRoom && entryRoom.exits) {
+      const exits = { ...entryRoom.exits };
+
+      // 为每个练级地图添加变种出口
+      const fieldIds = [
+        'field_zhuji', 'field_lingxu', 'field_hehe', 'field_yuanying',
+        'field_kongming', 'field_lvshuang', 'field_dujie', 'field_jimie',
+        'field_dacheng', 'field_shangxian', 'field_zhenxian', 'field_tianxian'
+      ];
+
+      fieldIds.forEach(fieldId => {
+        if (!cultivationZone.rooms[fieldId]) return;
+        for (let i = 1; i <= ROOM_VARIANT_COUNT; i++) {
+          const variantFieldId = `${fieldId}${i}`;
+          if (cultivationZone.rooms[variantFieldId]) {
+            exits[variantFieldId] = variantFieldId;
+          }
+        }
+      });
+
+      entryRoom.exits = exits;
+    }
+  }
 }
 
 export function shrinkRoomVariants(world, maxCount) {
@@ -1765,6 +1825,50 @@ export function shrinkRoomVariants(world, maxCount) {
       room.exits = nextExits;
     });
   });
+
+  // 特殊处理：从修真BOSS房间中删除已移除变种练级地图的出口
+  const cultivationZone = world['cultivation'];
+  if (cultivationZone && cultivationZone.rooms) {
+    const bossRoomIds = [
+      'boss_zhuji', 'boss_lingxu', 'boss_hehe', 'boss_yuanying',
+      'boss_kongming', 'boss_lvshuang', 'boss_dujie', 'boss_jimie',
+      'boss_dacheng', 'boss_shangxian', 'boss_zhenxian', 'boss_tianxian'
+    ];
+
+    bossRoomIds.forEach(bossRoomId => {
+      const bossRoom = cultivationZone.rooms[bossRoomId];
+      if (!bossRoom || !bossRoom.exits) return;
+
+      // 移除超过限制的变种出口
+      const exits = { ...bossRoom.exits };
+      for (let i = limit + 1; i <= ROOM_VARIANT_COUNT; i++) {
+        delete exits[`south${i}`];
+      }
+      bossRoom.exits = exits;
+    });
+
+    // 特殊处理：从修真入口中删除已移除变种练级地图的出口
+    const entryRoom = cultivationZone.rooms['entry'];
+    if (entryRoom && entryRoom.exits) {
+      const exits = { ...entryRoom.exits };
+
+      // 移除超过限制的变种出口
+      const fieldIds = [
+        'field_zhuji', 'field_lingxu', 'field_hehe', 'field_yuanying',
+        'field_kongming', 'field_lvshuang', 'field_dujie', 'field_jimie',
+        'field_dacheng', 'field_shangxian', 'field_zhenxian', 'field_tianxian'
+      ];
+
+      fieldIds.forEach(fieldId => {
+        for (let i = limit + 1; i <= ROOM_VARIANT_COUNT; i++) {
+          const variantFieldId = `${fieldId}${i}`;
+          delete exits[variantFieldId];
+        }
+      });
+
+      entryRoom.exits = exits;
+    }
+  }
 }
 
 expandRoomVariants(WORLD);
