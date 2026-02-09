@@ -4578,6 +4578,12 @@ body.dark .sabak-empty {
   animation: ultimate-text-flow 3.5s linear infinite;
 }
 
+.bag-item.ultimate-text,
+body.dark .bag-item.ultimate-text {
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+
 @keyframes ultimate-text-flow {
   0% {
     background-position: 0% 50%;

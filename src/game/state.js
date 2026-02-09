@@ -165,6 +165,9 @@ export function spawnMobs(zoneId, roomId, realmId = 1) {
     const tpl = MOB_TEMPLATES[templateId];
     const scaled = scaledStats(tpl, realmId);
     const cached = RESPAWN_CACHE.get(respawnKey(realmId, zoneId, roomId, index));
+    if (mob && mob.hp <= 0 && !mob.respawnAt) {
+      mob.respawnAt = now;
+    }
     if (!mob) {
       if (cached && cached.respawnAt > now) {
         // 检查缓存的怪物类型是否匹配当前配置
