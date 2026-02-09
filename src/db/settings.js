@@ -63,6 +63,17 @@ export async function setSpecialBossKillCount(count, realmId = 1) {
   await setSetting(`special_boss_kill_count_${realmId}`, String(normalized));
 }
 
+export async function getCultivationBossKillCount(realmId = 1) {
+  const count = await getSetting(`cultivation_boss_kill_count_${realmId}`, '0');
+  const parsed = parseInt(count, 10);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+export async function setCultivationBossKillCount(count, realmId = 1) {
+  const normalized = Math.max(0, Math.floor(Number(count) || 0));
+  await setSetting(`cultivation_boss_kill_count_${realmId}`, String(normalized));
+}
+
 /**
  * 设置掉落日志开关
  */
@@ -460,6 +471,84 @@ export async function getSpecialBossPlayerBonusConfig() {
 export async function setSpecialBossPlayerBonusConfig(config) {
   const normalized = JSON.stringify(config || []);
   await setSetting('special_boss_player_bonus', normalized);
+}
+
+// 修真BOSS配置（按倍率调整，保持各阶层差异）
+export async function getCultivationBossBaseHp() {
+  const value = await getSetting('cultivation_boss_base_hp', '12000');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 12000;
+}
+
+export async function setCultivationBossBaseHp(hp) {
+  const normalized = Math.max(1, Math.floor(Number(hp) || 12000));
+  await setSetting('cultivation_boss_base_hp', String(normalized));
+}
+
+export async function getCultivationBossBaseAtk() {
+  const value = await getSetting('cultivation_boss_base_atk', '180');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 180;
+}
+
+export async function setCultivationBossBaseAtk(atk) {
+  const normalized = Math.max(1, Math.floor(Number(atk) || 180));
+  await setSetting('cultivation_boss_base_atk', String(normalized));
+}
+
+export async function getCultivationBossBaseDef() {
+  const value = await getSetting('cultivation_boss_base_def', '80');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 80;
+}
+
+export async function setCultivationBossBaseDef(def) {
+  const normalized = Math.max(0, Math.floor(Number(def) || 80));
+  await setSetting('cultivation_boss_base_def', String(normalized));
+}
+
+export async function getCultivationBossBaseMdef() {
+  const value = await getSetting('cultivation_boss_base_mdef', '80');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 80;
+}
+
+export async function setCultivationBossBaseMdef(mdef) {
+  const normalized = Math.max(0, Math.floor(Number(mdef) || 80));
+  await setSetting('cultivation_boss_base_mdef', String(normalized));
+}
+
+export async function getCultivationBossBaseExp() {
+  const value = await getSetting('cultivation_boss_base_exp', '6000');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 6000;
+}
+
+export async function setCultivationBossBaseExp(exp) {
+  const normalized = Math.max(1, Math.floor(Number(exp) || 6000));
+  await setSetting('cultivation_boss_base_exp', String(normalized));
+}
+
+export async function getCultivationBossBaseGold() {
+  const value = await getSetting('cultivation_boss_base_gold', '1000');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 1000;
+}
+
+export async function setCultivationBossBaseGold(gold) {
+  const normalized = Math.max(0, Math.floor(Number(gold) || 1000));
+  await setSetting('cultivation_boss_base_gold', String(normalized));
+}
+
+export async function getCultivationBossRespawnMinutes() {
+  const value = await getSetting('cultivation_boss_respawn_minutes', '30');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 30;
+}
+
+export async function setCultivationBossRespawnMinutes(minutes) {
+  const normalized = Math.max(1, Math.floor(Number(minutes) || 30));
+  await setSetting('cultivation_boss_respawn_minutes', String(normalized));
 }
 
 // 职业升级属性配置

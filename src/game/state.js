@@ -7,6 +7,7 @@ const RESPAWN_CACHE = new Map();
 let respawnStore = null;
 const worldBossKillCounts = new Map();
 const specialBossKillCounts = new Map();
+const cultivationBossKillCounts = new Map();
 const BOSS_SCALE = { hp: 1.25, atk: 1.42, def: 1.77 };
 const MOB_HP_SCALE = 2;
 const MOB_STAT_SCALE = 1.69;
@@ -45,6 +46,18 @@ function scaledStats(tpl, realmId = 1) {
   // 世界BOSS：只保留击杀成长机制（每击杀5次提升1%），不进行其他缩放（房间人数加成由外部函数处理）
   if (tpl.worldBoss) {
     const count = worldBossKillCounts.get(realmId) || 0;
+    const growth = 1 + Math.floor(count / 5) * 0.01;
+    return {
+      hp: Math.floor((tpl.hp || 0) * growth),
+      atk: Math.floor((tpl.atk || 0) * growth),
+      def: Math.floor((tpl.def || 0) * growth),
+      mdef: Math.floor((tpl.mdef || 0) * growth)
+    };
+  }
+
+  // 修真BOSS：按击杀次数成长（每5次 +1%）
+  if (tpl.id && tpl.id.startsWith('cultivation_boss_')) {
+    const count = cultivationBossKillCounts.get(realmId) || 0;
     const growth = 1 + Math.floor(count / 5) * 0.01;
     return {
       hp: Math.floor((tpl.hp || 0) * growth),
@@ -327,6 +340,20 @@ export function incrementSpecialBossKills(amount = 1, realmId = 1) {
 export function setSpecialBossKillCount(count, realmId = 1) {
   const next = Math.max(0, Math.floor(Number(count) || 0));
   specialBossKillCounts.set(realmId, next);
+  return next;
+}
+
+export function incrementCultivationBossKills(amount = 1, realmId = 1) {
+  const delta = Number(amount) || 0;
+  const current = cultivationBossKillCounts.get(realmId) || 0;
+  const next = Math.max(0, current + delta);
+  cultivationBossKillCounts.set(realmId, next);
+  return next;
+}
+
+export function setCultivationBossKillCount(count, realmId = 1) {
+  const next = Math.max(0, Math.floor(Number(count) || 0));
+  cultivationBossKillCounts.set(realmId, next);
   return next;
 }
 

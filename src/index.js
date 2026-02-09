@@ -17,7 +17,7 @@ import { addGuildMember, createGuild, getGuildByName, getGuildByNameInRealm, get
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
 import { sendMail, listMail, listSentMail, markMailRead, markMailClaimed, deleteMail } from './db/mail.js';
 import { createVipCodes, listVipCodes, useVipCode } from './db/vip.js';
-import { getSetting, setSetting, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb } from './db/settings.js';
+import { getSetting, setSetting, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb } from './db/settings.js';
 import { listRealms, getRealmById, updateRealmName, createRealm } from './db/realms.js';
 import {
   listMobRespawns,
@@ -112,7 +112,7 @@ import {
 import { MOB_TEMPLATES } from './game/mobs.js';
 import { ITEM_TEMPLATES, SHOP_STOCKS } from './game/items.js';
 import { WORLD, expandRoomVariants, shrinkRoomVariants } from './game/world.js';
-import { getRoomMobs, getAliveMobs, spawnMobs, removeMob, seedRespawnCache, setRespawnStore, getAllAliveMobs, incrementWorldBossKills, setWorldBossKillCount as setWorldBossKillCountState, incrementSpecialBossKills, setSpecialBossKillCount as setSpecialBossKillCountState } from './game/state.js';
+import { getRoomMobs, getAliveMobs, spawnMobs, removeMob, seedRespawnCache, setRespawnStore, getAllAliveMobs, incrementWorldBossKills, setWorldBossKillCount as setWorldBossKillCountState, incrementSpecialBossKills, setSpecialBossKillCount as setSpecialBossKillCountState, incrementCultivationBossKills, setCultivationBossKillCount as setCultivationBossKillCountState } from './game/state.js';
 import { calcHitChance, calcDamage, applyDamage, applyHealing, applyPoison, tickStatus, getDefenseMultiplier } from './game/combat.js';
 import { randInt, clamp } from './game/utils.js';
 import { expForLevel, setRoomVariantCount as applyRoomVariantCount } from './game/constants.js';
@@ -1303,6 +1303,62 @@ app.post('/admin/specialboss-settings/update', async (req, res) => {
 
   // 应用新设置到特殊BOSS模板
   await applySpecialBossSettings();
+  await applyCultivationBossSettings();
+
+  res.json({ ok: true });
+});
+
+// 修真BOSS配置（按倍率调整）
+app.get('/admin/cultivationboss-settings', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const baseHp = await getCultivationBossBaseHp();
+  const baseAtk = await getCultivationBossBaseAtk();
+  const baseDef = await getCultivationBossBaseDef();
+  const baseMdef = await getCultivationBossBaseMdef();
+  const baseExp = await getCultivationBossBaseExp();
+  const baseGold = await getCultivationBossBaseGold();
+  const respawnMinutes = await getCultivationBossRespawnMinutes();
+  res.json({
+    ok: true,
+    baseHp,
+    baseAtk,
+    baseDef,
+    baseMdef,
+    baseExp,
+    baseGold,
+    respawnMinutes
+  });
+});
+
+app.post('/admin/cultivationboss-settings/update', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const { baseHp, baseAtk, baseDef, baseMdef, baseExp, baseGold, respawnMinutes } = req.body || {};
+
+  if (baseHp !== undefined) {
+    await setCultivationBossBaseHp(Math.max(1, Math.floor(Number(baseHp) || 12000)));
+  }
+  if (baseAtk !== undefined) {
+    await setCultivationBossBaseAtk(Math.max(1, Math.floor(Number(baseAtk) || 180)));
+  }
+  if (baseDef !== undefined) {
+    await setCultivationBossBaseDef(Math.max(0, Math.floor(Number(baseDef) || 80)));
+  }
+  if (baseMdef !== undefined) {
+    await setCultivationBossBaseMdef(Math.max(0, Math.floor(Number(baseMdef) || 80)));
+  }
+  if (baseExp !== undefined) {
+    await setCultivationBossBaseExp(Math.max(1, Math.floor(Number(baseExp) || 6000)));
+  }
+  if (baseGold !== undefined) {
+    await setCultivationBossBaseGold(Math.max(0, Math.floor(Number(baseGold) || 1000)));
+  }
+  if (respawnMinutes !== undefined) {
+    await setCultivationBossRespawnMinutes(Math.max(1, Math.floor(Number(respawnMinutes) || 30)));
+  }
+
+  await applyCultivationBossSettings();
 
   res.json({ ok: true });
 });
@@ -1334,6 +1390,36 @@ app.post('/admin/specialboss-killcount/update', async (req, res) => {
   const normalized = Math.max(0, Math.floor(Number(count) || 0));
   await setSpecialBossKillCount(normalized, targetRealmId);
   setSpecialBossKillCountState(normalized, targetRealmId);
+  return res.json({ ok: true, realmId: targetRealmId, count: normalized });
+});
+
+app.get('/admin/cultivationboss-killcount', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const realmId = Number(req.query?.realmId);
+  if (Number.isFinite(realmId)) {
+    const count = await getCultivationBossKillCount(realmId);
+    return res.json({ ok: true, realmId, count });
+  }
+  const data = [];
+  for (const id of getRealmIds()) {
+    const count = await getCultivationBossKillCount(id);
+    data.push({ realmId: id, count });
+  }
+  return res.json({ ok: true, data });
+});
+
+app.post('/admin/cultivationboss-killcount/update', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const { realmId, count } = req.body || {};
+  const targetRealmId = Number(realmId);
+  if (!Number.isFinite(targetRealmId)) {
+    return res.status(400).json({ error: 'realmId参数无效' });
+  }
+  const normalized = Math.max(0, Math.floor(Number(count) || 0));
+  await setCultivationBossKillCount(normalized, targetRealmId);
+  setCultivationBossKillCountState(normalized, targetRealmId);
   return res.json({ ok: true, realmId: targetRealmId, count: normalized });
 });
 
@@ -2497,6 +2583,8 @@ const CROSS_RANK_ZONE_ID = 'crr';
 const CROSS_RANK_ROOM_ID = 'arena';
 const CROSS_REALM_REALM_ID = 0;
 const CROSS_REALM_ZONES = new Set([CROSS_REALM_ZONE_ID, CROSS_RANK_ZONE_ID]);
+const CULTIVATION_ZONE_ID = 'cultivation';
+const CULTIVATION_BOSS_ROOM_PREFIX = 'boss_';
 
 const CROSS_RANK_EVENT_STATE = {
   active: false,
@@ -2518,6 +2606,9 @@ async function loadEventTimeSettings() {
 
 function getRoomRealmId(zoneId, roomId, realmId = 1) {
   if (CROSS_REALM_ZONES.has(zoneId)) return CROSS_REALM_REALM_ID;
+  if (zoneId === CULTIVATION_ZONE_ID && typeof roomId === 'string' && roomId.startsWith(CULTIVATION_BOSS_ROOM_PREFIX)) {
+    return CROSS_REALM_REALM_ID;
+  }
   return Number(realmId) || 1;
 }
 
@@ -2643,9 +2734,11 @@ function cultivationRewardMultiplier(player) {
 }
 
 function totalRewardMultiplier({ vipActive, guildActive, cultivationMult = 1, partyMult = 1 }) {
-  const vipMult = vipActive ? 2 : 1;
-  const guildMult = guildActive ? 2 : 1;
-  return vipMult * guildMult * cultivationMult * partyMult;
+  const vipBonus = vipActive ? 1 : 0;
+  const guildBonus = guildActive ? 1 : 0;
+  const cultivationBonus = Math.max(0, (Number(cultivationMult) || 1) - 1);
+  const partyBonus = Math.max(0, (Number(partyMult) || 1) - 1);
+  return 1 + vipBonus + guildBonus + cultivationBonus + partyBonus;
 }
 
 function buildItemView(itemId, effects = null, durability = null, max_durability = null, refine_level = 0) {
@@ -2806,6 +2899,10 @@ function formatLegendaryAnnouncement(text, rarity) {
 
 function isCrossRankRoom(zoneId, roomId) {
   return zoneId === CROSS_RANK_ZONE_ID && roomId === CROSS_RANK_ROOM_ID;
+}
+
+function isCultivationRoom(zoneId) {
+  return zoneId === 'cultivation';
 }
 
 function pickEquipmentByRarity(targetRarity) {
@@ -3020,8 +3117,16 @@ function isBossMob(mobTemplate) {
   );
 }
 
+function isCultivationBoss(mobTemplate) {
+  return Boolean(mobTemplate?.id && mobTemplate.id.startsWith('cultivation_boss_'));
+}
+
 function isSpecialBoss(mobTemplate) {
-  return Boolean(mobTemplate?.specialBoss);
+  return Boolean(mobTemplate?.specialBoss || isCultivationBoss(mobTemplate));
+}
+
+function isWorldBossDropMob(mobTemplate) {
+  return Boolean(mobTemplate?.worldBoss || isCultivationBoss(mobTemplate));
 }
 
 const SPLASH_BOSS_IDS = new Set([
@@ -3055,7 +3160,7 @@ function rollRarityDrop(mobTemplate, bonus = 1) {
   const table = RARITY_BOSS;
   const allowSet = true;
   for (const rarity of RARITY_ORDER) {
-    if (!mobTemplate?.worldBoss && (rarity === 'supreme' || rarity === 'ultimate')) continue;
+    if (!isWorldBossDropMob(mobTemplate) && (rarity === 'supreme' || rarity === 'ultimate')) continue;
     if (rarity === 'ultimate' && mobTemplate?.id !== 'cross_world_boss') continue;
     if (Math.random() <= Math.min(1, table[rarity] * bonus)) {
       const pool = allowSet
@@ -3065,7 +3170,7 @@ function rollRarityDrop(mobTemplate, bonus = 1) {
       const filteredPool = pool.filter((id) => {
         const item = ITEM_TEMPLATES[id];
         if (item?.bossOnly) return false;
-        if (item?.worldBossOnly && !mobTemplate.worldBoss) return false;
+        if (item?.worldBossOnly && !isWorldBossDropMob(mobTemplate)) return false;
         if (item?.crossWorldBossOnly && mobTemplate?.id !== 'cross_world_boss') return false;
         return true;
       });
@@ -3081,7 +3186,7 @@ function rollRarityEquipmentDrop(mobTemplate, bonus = 1) {
   const table = RARITY_BOSS;
   const allowSet = true;
   for (const rarity of RARITY_ORDER) {
-    if (!mobTemplate?.worldBoss && (rarity === 'supreme' || rarity === 'ultimate')) continue;
+    if (!isWorldBossDropMob(mobTemplate) && (rarity === 'supreme' || rarity === 'ultimate')) continue;
     if (rarity === 'ultimate' && mobTemplate?.id !== 'cross_world_boss') continue;
     if (Math.random() <= Math.min(1, table[rarity] * bonus)) {
       const pool = allowSet
@@ -3095,7 +3200,7 @@ function rollRarityEquipmentDrop(mobTemplate, bonus = 1) {
       const filteredPool = equipPool.filter((id) => {
         const item = ITEM_TEMPLATES[id];
         if (item?.bossOnly) return false;
-        if (item?.worldBossOnly && !mobTemplate.worldBoss) return false;
+        if (item?.worldBossOnly && !isWorldBossDropMob(mobTemplate)) return false;
         if (item?.crossWorldBossOnly && mobTemplate?.id !== 'cross_world_boss') return false;
         return true;
       });
@@ -3201,6 +3306,30 @@ async function applySpecialBossSettings() {
   await loadSpecialBossSettingsCache();
 }
 
+async function applyCultivationBossSettings() {
+  const baseHp = await getCultivationBossBaseHp();
+  const baseAtk = await getCultivationBossBaseAtk();
+  const baseDef = await getCultivationBossBaseDef();
+  const baseMdef = await getCultivationBossBaseMdef();
+  const baseExp = await getCultivationBossBaseExp();
+  const baseGold = await getCultivationBossBaseGold();
+  const respawnMinutes = await getCultivationBossRespawnMinutes();
+  const respawnMs = Math.max(1, respawnMinutes) * 60 * 1000;
+
+  const bossIds = Object.keys(MOB_TEMPLATES).filter((id) => id.startsWith('cultivation_boss_'));
+  for (const bossId of bossIds) {
+    const bossTemplate = MOB_TEMPLATES[bossId];
+    if (!bossTemplate) continue;
+    bossTemplate.hp = Math.max(1, Math.floor(baseHp));
+    bossTemplate.atk = Math.max(1, Math.floor(baseAtk));
+    bossTemplate.def = Math.max(0, Math.floor(baseDef));
+    bossTemplate.mdef = Math.max(0, Math.floor(baseMdef));
+    bossTemplate.exp = Math.max(1, Math.floor(baseExp));
+    bossTemplate.gold = [Math.max(0, Math.floor(baseGold)), Math.max(0, Math.floor(baseGold * 1.6))];
+    bossTemplate.respawnMs = respawnMs;
+  }
+}
+
 // 根据房间内玩家数量调整世界BOSS属性（按人数分段加成）
 function adjustWorldBossStatsByPlayerCount(zoneId, roomId, realmId) {
   const effectiveRealmId = getRoomRealmId(zoneId, roomId, realmId);
@@ -3285,12 +3414,12 @@ function getSpecialBossPlayerBonusConfigSync() {
 function dropLoot(mobTemplate, bonus = 1) {
   const loot = [];
   const sabakBonus = mobTemplate.sabakBoss ? 3.0 : 1.0;
-  const finalBonus = (mobTemplate.worldBoss ? bonus * WORLD_BOSS_DROP_BONUS : bonus) * sabakBonus;
+  const finalBonus = (isWorldBossDropMob(mobTemplate) ? bonus * WORLD_BOSS_DROP_BONUS : bonus) * sabakBonus;
   if (mobTemplate.drops) {
     mobTemplate.drops.forEach((drop) => {
       const dropItem = ITEM_TEMPLATES[drop.id];
       if (dropItem?.bossOnly && !isBossMob(mobTemplate)) return;
-      if (dropItem?.worldBossOnly && !mobTemplate.worldBoss) return;
+      if (dropItem?.worldBossOnly && !isWorldBossDropMob(mobTemplate)) return;
       if (dropItem?.crossWorldBossOnly && mobTemplate?.id !== 'cross_world_boss') return;
       // 史诗和传说级别的bossOnly装备只能在魔龙教主、世界BOSS、沙巴克BOSS掉落
       if (dropItem?.bossOnly) {
@@ -3533,6 +3662,7 @@ const tradeApi = {
     const realmId = getRoomRealmId(player.position.zone, player.position.room, player.realmId || 1);
     const state = getRealmState(realmId);
     if (getTradeByPlayer(player.name, realmId)) return { ok: false, msg: '你正在交易中。' };
+    if (isCultivationRoom(player.position.zone)) return { ok: false, msg: '修真房间内无法交易。' };
     const target = playersByName(targetName, realmId);
     if (!target) return { ok: false, msg: '玩家不在线。' };
     if (CROSS_REALM_ZONES.has(player.position.zone)) return { ok: false, msg: '跨服房间内无法交易。' };
@@ -3556,6 +3686,7 @@ const tradeApi = {
     const invite = state.tradeInvites.get(player.name);
     if (!invite || invite.from !== fromName) return { ok: false, msg: '没有该交易请求。' };
     if (getTradeByPlayer(player.name, realmId)) return { ok: false, msg: '你正在交易中。' };
+    if (isCultivationRoom(player.position.zone)) return { ok: false, msg: '修真房间内无法交易。' };
     const inviter = playersByName(fromName, realmId);
     if (!inviter) return { ok: false, msg: '对方不在线。' };
     if (CROSS_REALM_ZONES.has(player.position.zone)) return { ok: false, msg: '跨服房间内无法交易。' };
@@ -3570,6 +3701,7 @@ const tradeApi = {
   addItem(player, itemId, qty, effects = null) {
     const { trade } = getTradeByPlayerAny(player.name, player.realmId || 1);
     if (!trade) return { ok: false, msg: '你不在交易中。' };
+    if (isCultivationRoom(player.position.zone)) return { ok: false, msg: '修真房间内无法交易。' };
     if (trade.locked[player.name] || trade.locked[trade.a.name === player.name ? trade.b.name : trade.a.name]) {
       return { ok: false, msg: '交易已锁定，无法修改。' };
     }
@@ -3603,6 +3735,7 @@ const tradeApi = {
   addGold(player, amount) {
     const { trade } = getTradeByPlayerAny(player.name, player.realmId || 1);
     if (!trade) return { ok: false, msg: '你不在交易中。' };
+    if (isCultivationRoom(player.position.zone)) return { ok: false, msg: '修真房间内无法交易。' };
     if (trade.locked[player.name] || trade.locked[trade.a.name === player.name ? trade.b.name : trade.a.name]) {
       return { ok: false, msg: '交易已锁定，无法修改。' };
     }
@@ -3622,12 +3755,14 @@ const tradeApi = {
   lock(player) {
     const { trade } = getTradeByPlayerAny(player.name, player.realmId || 1);
     if (!trade) return { ok: false, msg: '你不在交易中。' };
+    if (isCultivationRoom(player.position.zone)) return { ok: false, msg: '修真房间内无法交易。' };
     trade.locked[player.name] = true;
     return { ok: true, trade };
   },
   confirm(player) {
     const { trade } = getTradeByPlayerAny(player.name, player.realmId || 1);
     if (!trade) return { ok: false, msg: '你不在交易中。' };
+    if (isCultivationRoom(player.position.zone)) return { ok: false, msg: '修真房间内无法交易。' };
     if (!trade.locked[trade.a.name] || !trade.locked[trade.b.name]) {
       return { ok: false, msg: '双方都锁定后才能确认。' };
     }
@@ -3969,7 +4104,7 @@ function distributeLootWithBonus(party, partyMembers, mobTemplate, bonusResolver
   if (!party || partyMembers.length === 0 || !mobTemplate) return [];
   const results = [];
   const sabakBonus = mobTemplate.sabakBoss ? 3.0 : 1.0;
-  const worldBossBonus = mobTemplate.worldBoss ? WORLD_BOSS_DROP_BONUS : 1;
+  const worldBossBonus = isWorldBossDropMob(mobTemplate) ? WORLD_BOSS_DROP_BONUS : 1;
   const resolveFinalBonus = (target) => {
     const baseBonus = typeof bonusResolver === 'function' ? bonusResolver(target) : 1;
     return baseBonus * worldBossBonus * sabakBonus;
@@ -3984,7 +4119,7 @@ function distributeLootWithBonus(party, partyMembers, mobTemplate, bonusResolver
     mobTemplate.drops.forEach((drop) => {
       const dropItem = ITEM_TEMPLATES[drop.id];
       if (dropItem?.bossOnly && !isBossMob(mobTemplate)) return;
-      if (dropItem?.worldBossOnly && !mobTemplate.worldBoss) return;
+      if (dropItem?.worldBossOnly && !isWorldBossDropMob(mobTemplate)) return;
       if (dropItem?.crossWorldBossOnly && mobTemplate?.id !== 'cross_world_boss') return;
       if (dropItem?.bossOnly) {
         const rarity = rarityByPrice(dropItem);
@@ -4813,11 +4948,15 @@ function isBossRoom(zoneId, roomId, realmId = 1) {
   const mobs = getRoomMobs(zoneId, roomId, effectiveRealmId);
   return mobs.some(m => {
     const tpl = MOB_TEMPLATES[m.templateId];
-    return tpl && tpl.specialBoss;
+    return tpl && isSpecialBoss(tpl);
   });
 }
 
-function buildRoomExits(zoneId, roomId) {
+function getCultivationLevel(player) {
+  return Math.floor(Number(player?.flags?.cultivationLevel ?? -1));
+}
+
+function buildRoomExits(zoneId, roomId, player = null) {
   const zone = WORLD[zoneId];
   const room = zone?.rooms?.[roomId];
   if (!room) return [];
@@ -4831,6 +4970,12 @@ function buildRoomExits(zoneId, roomId) {
     const destRoom = destZone?.rooms?.[destRoomId];
     // 只添加目标房间存在的出口,过滤掉无效的变种出口
     if (!destRoom) return null;
+    if (player && destRoom.minCultivationLevel != null) {
+      const cultivationLevel = getCultivationLevel(player);
+      if (Number.isNaN(cultivationLevel) || cultivationLevel < destRoom.minCultivationLevel) {
+        return null;
+      }
+    }
     const fullLabel = destRoom
       ? (destZoneId === zoneId ? destRoom.name : `${destZone.name} - ${destRoom.name}`)
       : dest;
@@ -4905,6 +5050,22 @@ function buildRoomExits(zoneId, roomId) {
   }));
 }
 
+function roomHasCultivationExits(zoneId, roomId) {
+  const zone = WORLD[zoneId];
+  const room = zone?.rooms?.[roomId];
+  if (!room || !room.exits) return false;
+  return Object.values(room.exits).some((dest) => {
+    if (typeof dest !== 'string') return false;
+    let destZoneId = zoneId;
+    let destRoomId = dest;
+    if (dest.includes(':')) {
+      [destZoneId, destRoomId] = dest.split(':');
+    }
+    const destRoom = WORLD[destZoneId]?.rooms?.[destRoomId];
+    return destRoom?.minCultivationLevel != null;
+  });
+}
+
 function getRoomCommonState(zoneId, roomId, realmId = 1) {
   const effectiveRealmId = getRoomRealmId(zoneId, roomId, realmId);
   const cacheKey = `${effectiveRealmId}:${zoneId}:${roomId}`;
@@ -4940,7 +5101,7 @@ function getRoomCommonState(zoneId, roomId, realmId = 1) {
   let bossNextRespawn = null;
   const deadSpecialBosses = deadBosses.filter((m) => {
     const tpl = MOB_TEMPLATES[m.templateId];
-    return tpl && tpl.specialBoss;
+    return tpl && isSpecialBoss(tpl);
   });
   if (deadSpecialBosses.length > 0) {
     bossNextRespawn = deadSpecialBosses
@@ -4948,7 +5109,7 @@ function getRoomCommonState(zoneId, roomId, realmId = 1) {
   }
   const bossMob = getAliveMobs(zoneId, roomId, realmId).find((m) => {
     const tpl = MOB_TEMPLATES[m.templateId];
-    return tpl && tpl.specialBoss;
+    return tpl && isSpecialBoss(tpl);
   });
   if (bossMob) {
     const { entries } = buildDamageRankMap(bossMob);
@@ -5002,7 +5163,7 @@ async function buildState(player) {
   if (isBoss) {
     const cached = getRoomCommonState(player.position.zone, player.position.room, roomRealmId);
     mobs = cached.mobs;
-    exits = cached.exits;
+    exits = buildRoomExits(player.position.zone, player.position.room, player);
     nextRespawn = cached.nextRespawn;
     roomPlayers = cached.roomPlayers;
     bossRank = cached.bossRank;
@@ -5027,7 +5188,7 @@ async function buildState(player) {
     nextRespawn = deadBosses.length > 0
       ? deadBosses.sort((a, b) => (a.respawnAt || Infinity) - (b.respawnAt || Infinity))[0]?.respawnAt
       : null;
-    exits = buildRoomExits(player.position.zone, player.position.room);
+    exits = buildRoomExits(player.position.zone, player.position.room, player);
     roomPlayers = listOnlinePlayers(roomRealmId)
       .filter((p) => p.position.zone === player.position.zone && p.position.room === player.position.room)
       .map((p) => ({
@@ -5266,7 +5427,7 @@ async function sendState(player) {
     }
     if (player.position) {
       roomKey = `${player.position.zone}:${player.position.room}`;
-      const exits = buildRoomExits(player.position.zone, player.position.room);
+      const exits = buildRoomExits(player.position.zone, player.position.room, player);
       exitsHash = JSON.stringify(exits);
       const lastRoom = stateThrottleLastRoom.get(key);
       const lastHash = stateThrottleLastExits.get(key);
@@ -6521,6 +6682,9 @@ io.on('connection', (socket) => {
   socket.on('mail_send', async (payload) => {
     const player = players.get(socket.id);
     if (!player) return;
+    if (isCultivationRoom(player.position.zone)) {
+      return socket.emit('mail_send_result', { ok: false, msg: '修真房间内无法使用邮件。' });
+    }
     const { clean } = sanitizePayload(payload, ['toName', 'title', 'body', 'items', 'gold'], 'mail_send');
     const toName = String(clean?.toName || '').trim();
     const title = String(clean?.title || '').trim();
@@ -6606,6 +6770,9 @@ io.on('connection', (socket) => {
   socket.on('mail_claim', async (payload) => {
     const player = players.get(socket.id);
     if (!player) return;
+    if (isCultivationRoom(player.position.zone)) {
+      return socket.emit('mail_claim_result', { ok: false, msg: '修真房间内无法使用邮件。' });
+    }
     const { clean } = sanitizePayload(payload, ['mailId'], 'mail_claim');
     const mailId = Number(clean?.mailId || 0);
     if (!mailId) return socket.emit('mail_claim_result', { ok: false, msg: '邮件ID无效。' });
@@ -6665,6 +6832,9 @@ io.on('connection', (socket) => {
   socket.on('mail_delete', async (payload) => {
     const player = players.get(socket.id);
     if (!player) return;
+    if (isCultivationRoom(player.position.zone)) {
+      return socket.emit('mail_delete_result', { ok: false, msg: '修真房间内无法使用邮件。' });
+    }
     const { clean } = sanitizePayload(payload, ['mailId', 'folder'], 'mail_delete');
     const mailId = Number(clean?.mailId || 0);
     const folder = clean?.folder || 'inbox';
@@ -7606,6 +7776,12 @@ async function processMobDeath(player, mob, online) {
       console.warn('Failed to persist special boss kill count:', err);
     });
   }
+  if (template.id && template.id.startsWith('cultivation_boss_')) {
+    const nextKills = incrementCultivationBossKills(1, roomRealmId);
+    void setCultivationBossKillCount(nextKills, roomRealmId).catch((err) => {
+      console.warn('Failed to persist cultivation boss kill count:', err);
+    });
+  }
   if (isSpecialBoss) {
     // 清理特殊BOSS职业伤害第一奖励标记
     bossClassFirstDamageRewardGiven.delete(`${roomRealmId}:${mob.id}`);
@@ -8116,8 +8292,14 @@ async function combatTick() {
           player.send('目标已消失。');
           continue;
         }
+        const inCultivationRoom = isCultivationRoom(player.position.zone);
         const inCrossBossRoom = player.position.zone === 'crb' && player.position.room === 'arena';
         const inCrossRankRoom = isCrossRankRoom(player.position.zone, player.position.room);
+        if (inCultivationRoom && (target.realmId || 1) === (player.realmId || 1)) {
+          player.combat = null;
+          player.send('修真房间不能攻击同区服玩家。');
+          continue;
+        }
         if (inCrossBossRoom && (target.realmId || 1) === (player.realmId || 1)) {
           player.combat = null;
           player.send('跨服房间不能攻击同区服玩家。');
@@ -8280,8 +8462,11 @@ async function combatTick() {
             (!isSabakZone(player.position.zone) ||
               !(player.guild && p.guild && player.guild.id === p.guild.id))
         );
-        if (extraTargets.length) {
-          const extraTarget = extraTargets[randInt(0, extraTargets.length - 1)];
+        const validExtraTargets = inCultivationRoom
+          ? extraTargets.filter((p) => (p.realmId || 1) !== (player.realmId || 1))
+          : extraTargets;
+        if (validExtraTargets.length) {
+          const extraTarget = validExtraTargets[randInt(0, validExtraTargets.length - 1)];
           const extraDmg = Math.max(1, Math.floor(dmg * ASSASSINATE_SECONDARY_DAMAGE_RATE));
           const extraDealt = applyDamageToPlayer(extraTarget, extraDmg);
           extraTarget.flags.lastCombatAt = Date.now();
@@ -8301,7 +8486,8 @@ async function combatTick() {
           if (extraTarget.hp <= 0 && !tryRevive(extraTarget)) {
             const wasRed = isRedName(extraTarget);
             if (!player.flags) player.flags = {};
-            if (!wasRed && !isSabakZone(player.position.zone) && !isCrossRankRoom(player.position.zone, player.position.room)) {
+            const cultivationCrossKill = inCultivationRoom && (extraTarget.realmId || 1) !== (player.realmId || 1);
+            if (!wasRed && !isSabakZone(player.position.zone) && !isCrossRankRoom(player.position.zone, player.position.room) && !cultivationCrossKill) {
               player.flags.pkValue = (player.flags.pkValue || 0) + 50;
               savePlayer(player);
             }
@@ -8382,7 +8568,8 @@ async function combatTick() {
         const inCrossRankRoom = isCrossRankRoom(player.position.zone, player.position.room);
         const inCrossRankEvent = inCrossRankRoom && CROSS_RANK_EVENT_STATE.active;
         const crossRealmKill = inCrossBossRoom && (target.realmId || 1) !== (player.realmId || 1);
-        if (!wasRed && !isSabakZone(player.position.zone) && !crossRealmKill && !inCrossRankEvent) {
+        const cultivationCrossKill = inCultivationRoom && (target.realmId || 1) !== (player.realmId || 1);
+        if (!wasRed && !isSabakZone(player.position.zone) && !crossRealmKill && !inCrossRankEvent && !cultivationCrossKill) {
           player.flags.pkValue = (player.flags.pkValue || 0) + 50;
           savePlayer(player);
         }
@@ -9145,6 +9332,7 @@ async function start() {
   }
   await runMigrations();
   await applyWorldBossSettings();
+  await applyCultivationBossSettings();
   await applySpecialBossSettings();
   await loadEventTimeSettings();
   await refreshRealmCache();
@@ -9271,6 +9459,8 @@ async function start() {
     setWorldBossKillCountState(worldBossKillCount, realmId);
     const specialBossKillCount = await getSpecialBossKillCount(realmId);
     setSpecialBossKillCountState(specialBossKillCount, realmId);
+    const cultivationBossKillCount = await getCultivationBossKillCount(realmId);
+    setCultivationBossKillCountState(cultivationBossKillCount, realmId);
   }
   const roomVariantCount = await getRoomVariantCount();
   applyRoomVariantCount(roomVariantCount);

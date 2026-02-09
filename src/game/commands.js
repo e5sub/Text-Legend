@@ -337,6 +337,13 @@ function normalizeDirection(input) {
   return DIR_ALIASES[trimmed] || trimmed.toLowerCase();
 }
 
+function canEnterCultivationRoom(player, zoneId, roomId) {
+  const room = WORLD[zoneId]?.rooms?.[roomId];
+  if (!room || room.minCultivationLevel == null) return true;
+  const cultivationLevel = Math.floor(Number(player.flags?.cultivationLevel ?? -1));
+  return Number.isFinite(cultivationLevel) && cultivationLevel >= room.minCultivationLevel;
+}
+
 function roomLabel(player) {
   const zone = WORLD[player.position.zone];
   const room = zone.rooms[player.position.room];
@@ -836,6 +843,10 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         }
 
         const targetRoom = WORLD[zoneId]?.rooms?.[roomId];
+        if (!canEnterCultivationRoom(player, zoneId, roomId)) {
+          send('修真等级不足，无法进入该区域。');
+          return;
+        }
         if (targetRoom?.sabakOnly) {
           if (!player.guild || !guildApi?.sabakState?.ownerGuildId || String(player.guild.id) !== String(guildApi.sabakState.ownerGuildId)) {
             send('只有沙巴克城主行会成员可以进入该区域。');
@@ -863,6 +874,10 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           }
         }
         const targetRoom = WORLD[zoneId]?.rooms?.[roomId];
+        if (!canEnterCultivationRoom(player, zoneId, roomId)) {
+          send('修真等级不足，无法进入该区域。');
+          return;
+        }
         if (targetRoom?.sabakOnly) {
           if (!player.guild || !guildApi?.sabakState?.ownerGuildId || String(player.guild.id) !== String(guildApi.sabakState.ownerGuildId)) {
             send('只有沙巴克城主行会成员可以进入该区域。');
@@ -914,6 +929,9 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         }
       }
 
+      if (!canEnterCultivationRoom(player, zoneId, targetRoomId)) {
+        return send('修真等级不足，无法进入该区域。');
+      }
       if (isSabakBossRoom(zoneId, targetRoomId)) {
         // 检查是否是沙巴克行会成员
         const sabakOwner = guildApi.sabakState.ownerGuildId;
@@ -940,6 +958,10 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         }
       }
 
+      if (!canEnterCultivationRoom(player, zoneId, targetRoomId)) {
+        return send('修真等级不足，无法进入该区域。');
+      }
+
       player.position.zone = zoneId;
       player.position.room = targetRoomId;
       player.forceStateRefresh = true;
@@ -963,6 +985,9 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       const target = players.find((p) => p.name === args);
       console.log('Target player found:', target ? target.name : 'null');
       if (!target) return send('玩家不在线。');
+      if (!canEnterCultivationRoom(player, target.position.zone, target.position.room)) {
+        return send('修真等级不足，无法进入该区域。');
+      }
       player.position.zone = target.position.zone;
       player.position.room = target.position.room;
       player.forceStateRefresh = true;
@@ -1218,6 +1243,10 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         return;
       }
       const fromRoom = { zone: player.position.zone, room: player.position.room };
+      if (!canEnterCultivationRoom(player, zoneId, roomId)) {
+        send('修真等级不足，无法进入该区域。');
+        return;
+      }
       player.position.zone = zoneId;
       player.position.room = roomId;
       player.forceStateRefresh = true;
@@ -1345,11 +1374,14 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       }
       if (item.teleport && !item.hp && !item.mp) {
         // 如果回城到比奇城，改为随机传送到平原变体
-        if (item.teleport.zone === 'bq_town' && item.teleport.room === 'gate') {
-          player.position = { ...getStartPosition() };
-        } else {
-          player.position = { ...item.teleport };
+        const targetPos = (item.teleport.zone === 'bq_town' && item.teleport.room === 'gate')
+          ? { ...getStartPosition() }
+          : { ...item.teleport };
+        if (!canEnterCultivationRoom(player, targetPos.zone, targetPos.room)) {
+          addItem(player, item.id, 1);
+          return send('修真等级不足，无法进入该区域。');
         }
+        player.position = targetPos;
         player.forceStateRefresh = true;
         send(`使用了 ${item.name}。`);
         return;
@@ -2653,6 +2685,9 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           if (!invite || (leaderName && invite.from !== leaderName)) return send('没有跟随邀请。');
           const leader = players.find((p) => p.name === invite.from);
           if (!leader) return send('队长不在线。');
+          if (!canEnterCultivationRoom(player, leader.position.zone, leader.position.room)) {
+            return send('修真等级不足，无法跟随进入该区域。');
+          }
           player.position.zone = leader.position.zone;
           player.position.room = leader.position.room;
           send(`已跟随队长前往 ${leader.name} 的位置。`);
@@ -2665,6 +2700,9 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           const leader = players.find((p) => p.name === targetName);
           if (!leader) return send('队长不在线。');
           if (!party.members.includes(player.name)) return send('你不在队伍中。');
+          if (!canEnterCultivationRoom(player, leader.position.zone, leader.position.room)) {
+            return send('修真等级不足，无法跟随进入该区域。');
+          }
           player.position.zone = leader.position.zone;
           player.position.room = leader.position.room;
           send(`已跟随队长前往 ${leader.name} 的位置。`);

@@ -95,6 +95,19 @@ const sbKillRealmInput = document.getElementById('sb-kill-realm');
 const sbKillCountInput = document.getElementById('sb-kill-count');
 const sbKillMsg = document.getElementById('sb-kill-msg');
 
+// 修真BOSS相关
+const cbMsg = document.getElementById('cb-msg');
+const cbBaseHpInput = document.getElementById('cb-base-hp');
+const cbBaseAtkInput = document.getElementById('cb-base-atk');
+const cbBaseDefInput = document.getElementById('cb-base-def');
+const cbBaseMdefInput = document.getElementById('cb-base-mdef');
+const cbBaseExpInput = document.getElementById('cb-base-exp');
+const cbBaseGoldInput = document.getElementById('cb-base-gold');
+const cbRespawnMinsInput = document.getElementById('cb-respawn-mins');
+const cbKillRealmInput = document.getElementById('cb-kill-realm');
+const cbKillCountInput = document.getElementById('cb-kill-count');
+const cbKillMsg = document.getElementById('cb-kill-msg');
+
 const sabakTimeStartHourInput = document.getElementById('sabak-time-start-hour');
 const sabakTimeStartMinuteInput = document.getElementById('sabak-time-start-minute');
 const sabakTimeDurationInput = document.getElementById('sabak-time-duration');
@@ -259,6 +272,52 @@ async function saveSpecialBossKillCount(countOverride = null) {
     if (sbKillMsg) {
       sbKillMsg.textContent = `保存失败: ${err.message}`;
       sbKillMsg.style.color = 'red';
+    }
+  }
+}
+
+async function loadCultivationBossKillCount() {
+  if (!cbKillCountInput) return;
+  if (cbKillMsg) cbKillMsg.textContent = '';
+  try {
+    const realmId = getRealmIdFromInput(cbKillRealmInput, 1);
+    const data = await api(`/admin/cultivationboss-killcount?realmId=${realmId}`, 'GET');
+    cbKillCountInput.value = data.count ?? '';
+    if (cbKillMsg) {
+      cbKillMsg.textContent = '已读取';
+      cbKillMsg.style.color = 'green';
+      setTimeout(() => {
+        cbKillMsg.textContent = '';
+      }, 1500);
+    }
+  } catch (err) {
+    if (cbKillMsg) {
+      cbKillMsg.textContent = `读取失败: ${err.message}`;
+      cbKillMsg.style.color = 'red';
+    }
+  }
+}
+
+async function saveCultivationBossKillCount(countOverride = null) {
+  if (!cbKillCountInput) return;
+  if (cbKillMsg) cbKillMsg.textContent = '';
+  try {
+    const realmId = getRealmIdFromInput(cbKillRealmInput, 1);
+    const countValue = countOverride !== null ? countOverride : Number(cbKillCountInput.value);
+    const normalized = Math.max(0, Math.floor(Number(countValue) || 0));
+    await api('/admin/cultivationboss-killcount/update', 'POST', { realmId, count: normalized });
+    cbKillCountInput.value = normalized;
+    if (cbKillMsg) {
+      cbKillMsg.textContent = '已保存';
+      cbKillMsg.style.color = 'green';
+      setTimeout(() => {
+        cbKillMsg.textContent = '';
+      }, 1500);
+    }
+  } catch (err) {
+    if (cbKillMsg) {
+      cbKillMsg.textContent = `保存失败: ${err.message}`;
+      cbKillMsg.style.color = 'red';
     }
   }
 }
@@ -1093,6 +1152,8 @@ async function login() {
     await refreshConsignExpireStatus();
     await refreshRoomVariantStatus();
     await loadWorldBossSettings();
+    await loadSpecialBossSettings();
+    await loadCultivationBossSettings();
   } catch (err) {
     loginMsg.textContent = err.message;
   }
@@ -4604,6 +4665,54 @@ async function loadSpecialBossSettings() {
   }
 }
 
+// 修真BOSS配置
+async function loadCultivationBossSettings() {
+  if (!cbMsg) return;
+  cbMsg.textContent = '';
+  try {
+    const data = await api('/admin/cultivationboss-settings', 'GET');
+    if (cbBaseHpInput) cbBaseHpInput.value = data.baseHp ?? '';
+    if (cbBaseAtkInput) cbBaseAtkInput.value = data.baseAtk ?? '';
+    if (cbBaseDefInput) cbBaseDefInput.value = data.baseDef ?? '';
+    if (cbBaseMdefInput) cbBaseMdefInput.value = data.baseMdef ?? '';
+    if (cbBaseExpInput) cbBaseExpInput.value = data.baseExp ?? '';
+    if (cbBaseGoldInput) cbBaseGoldInput.value = data.baseGold ?? '';
+    if (cbRespawnMinsInput) cbRespawnMinsInput.value = data.respawnMinutes ?? '';
+    cbMsg.textContent = '加载成功';
+    cbMsg.style.color = 'green';
+    setTimeout(() => {
+      cbMsg.textContent = '';
+    }, 1500);
+  } catch (err) {
+    cbMsg.textContent = `加载失败: ${err.message}`;
+    cbMsg.style.color = 'red';
+  }
+}
+
+async function saveCultivationBossSettings() {
+  if (!cbMsg) return;
+  cbMsg.textContent = '';
+  try {
+    await api('/admin/cultivationboss-settings/update', 'POST', {
+      baseHp: cbBaseHpInput?.value,
+      baseAtk: cbBaseAtkInput?.value,
+      baseDef: cbBaseDefInput?.value,
+      baseMdef: cbBaseMdefInput?.value,
+      baseExp: cbBaseExpInput?.value,
+      baseGold: cbBaseGoldInput?.value,
+      respawnMinutes: cbRespawnMinsInput?.value
+    });
+    cbMsg.textContent = '保存成功';
+    cbMsg.style.color = 'green';
+    setTimeout(() => {
+      cbMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    cbMsg.textContent = `保存失败: ${err.message}`;
+    cbMsg.style.color = 'red';
+  }
+}
+
 // 修炼系统配置
 async function loadTrainingSettings() {
   if (!trainingMsg) return;
@@ -4808,6 +4917,7 @@ if (adminToken) {
   listSponsors();
   loadWorldBossSettings();
   loadSpecialBossSettings();
+  loadCultivationBossSettings();
   loadEventTimeSettings();
   loadClassBonusConfig();
   loadTrainingFruitSettings();
@@ -5056,6 +5166,9 @@ if (document.getElementById('sb-add-bonus-btn')) {
 if (document.getElementById('sb-save-btn')) {
   document.getElementById('sb-save-btn').addEventListener('click', saveSpecialBossSettings);
 }
+if (document.getElementById('cb-save-btn')) {
+  document.getElementById('cb-save-btn').addEventListener('click', saveCultivationBossSettings);
+}
 if (document.getElementById('event-time-save-btn')) {
   document.getElementById('event-time-save-btn').addEventListener('click', saveEventTimeSettings);
 }
@@ -5067,6 +5180,15 @@ if (document.getElementById('sb-kill-save-btn')) {
 }
 if (document.getElementById('sb-kill-reset-btn')) {
   document.getElementById('sb-kill-reset-btn').addEventListener('click', () => saveSpecialBossKillCount(0));
+}
+if (document.getElementById('cb-kill-load-btn')) {
+  document.getElementById('cb-kill-load-btn').addEventListener('click', loadCultivationBossKillCount);
+}
+if (document.getElementById('cb-kill-save-btn')) {
+  document.getElementById('cb-kill-save-btn').addEventListener('click', () => saveCultivationBossKillCount());
+}
+if (document.getElementById('cb-kill-reset-btn')) {
+  document.getElementById('cb-kill-reset-btn').addEventListener('click', () => saveCultivationBossKillCount(0));
 }
 
 // 修炼果配置事件

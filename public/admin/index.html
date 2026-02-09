@@ -234,6 +234,52 @@
 
         <div class="block" data-collapsible>
           <div class="block-title">
+            <h2>修真BOSS设置</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <p style="color: #666; margin-bottom: 6px; font-size: 13px;">固定数值（将统一应用到所有修真BOSS）</p>
+            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
+              <label style="min-width: 60px;">生命:</label>
+              <input id="cb-base-hp" type="number" min="1" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+              <label style="min-width: 60px;">攻击:</label>
+              <input id="cb-base-atk" type="number" min="1" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+            </div>
+            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
+              <label style="min-width: 60px;">防御:</label>
+              <input id="cb-base-def" type="number" min="0" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+              <label style="min-width: 60px;">魔御:</label>
+              <input id="cb-base-mdef" type="number" min="0" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+            </div>
+            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
+              <label style="min-width: 60px;">经验:</label>
+              <input id="cb-base-exp" type="number" min="1" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+              <label style="min-width: 60px;">金币:</label>
+              <input id="cb-base-gold" type="number" min="0" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+            </div>
+            <div class="row" style="margin-bottom: 6px; font-size: 13px; gap: 4px;">
+              <label style="min-width: 90px;">刷新时间(分钟):</label>
+              <input id="cb-respawn-mins" type="number" min="1" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+            </div>
+            <div class="row" style="margin-bottom: 6px; font-size: 13px; gap: 6px; align-items: center; justify-content: flex-start; flex-wrap: wrap;">
+              <label style="min-width: 60px;">区服ID:</label>
+              <input id="cb-kill-realm" type="number" min="0" step="1" placeholder="1" style="width: 70px; font-size: 13px; padding: 4px 6px;">
+              <label style="min-width: 60px;">击杀次数:</label>
+              <input id="cb-kill-count" type="number" min="0" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+              <button id="cb-kill-load-btn" class="btn-small">读取</button>
+              <button id="cb-kill-save-btn" class="btn-small">保存</button>
+              <button id="cb-kill-reset-btn" class="btn-small">清零</button>
+            </div>
+            <div id="cb-kill-msg" class="msg"></div>
+            <div class="row" style="margin-top: 8px;">
+              <button id="cb-save-btn" class="btn-small">保存</button>
+            </div>
+            <div id="cb-msg" class="msg"></div>
+          </div>
+        </div>
+
+        <div class="block" data-collapsible>
+          <div class="block-title">
             <h2>活动时间设置</h2>
             <button class="btn-small block-toggle">折叠</button>
           </div>

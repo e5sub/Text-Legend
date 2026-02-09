@@ -1,4 +1,4 @@
-import { ROOM_VARIANT_COUNT } from './constants.js';
+﻿import { ROOM_VARIANT_COUNT } from './constants.js';
 
 export const WORLD = {
   bq_town: {
@@ -367,28 +367,28 @@ export const WORLD = {
         id: 'gate',
         name: '盟重入口',
         desc: '黄沙漫天，通往各大地图。',
-        exits: { south: 'wgc:deep', north: 'mg_town:gate', west: 'sm:entrance', east: 'fm:gate', northwest: 'brm:gate', northeast: 'sb_town:gate' },
+        exits: { south: 'wgc:deep', north: 'mg_town:gate', west: 'sm:entrance', east: 'fm:gate', northwest: 'brm:gate', northeast: 'sb_town:gate', cultivation: 'cultivation:entry' },
         spawns: ['half_orc', 'half_orc', 'half_orc', 'half_orc_warrior', 'half_orc_warrior']
       },
       gate1: {
         id: 'gate1',
         name: '盟重入口1',
         desc: '黄沙漫天，通往各大地图。',
-        exits: { south: 'wgc:deep1', north: 'mg_town:gate', west: 'sm:entrance1', east: 'fm:gate1', northwest: 'brm:gate1', northeast: 'sb_town:gate' },
+        exits: { south: 'wgc:deep1', north: 'mg_town:gate', west: 'sm:entrance1', east: 'fm:gate1', northwest: 'brm:gate1', northeast: 'sb_town:gate', cultivation: 'cultivation:entry' },
         spawns: ['half_orc', 'half_orc', 'half_orc', 'half_orc_warrior', 'half_orc_warrior']
       },
       gate2: {
         id: 'gate2',
         name: '盟重入口2',
         desc: '黄沙漫天，通往各大地图。',
-        exits: { south: 'wgc:deep2', north: 'mg_town:gate', west: 'sm:entrance2', east: 'fm:gate2', northwest: 'brm:gate2', northeast: 'sb_town:gate' },
+        exits: { south: 'wgc:deep2', north: 'mg_town:gate', west: 'sm:entrance2', east: 'fm:gate2', northwest: 'brm:gate2', northeast: 'sb_town:gate', cultivation: 'cultivation:entry' },
         spawns: ['half_orc', 'half_orc', 'half_orc', 'half_orc_warrior', 'half_orc_warrior']
       },
       gate3: {
         id: 'gate3',
         name: '盟重入口3',
         desc: '黄沙漫天，通往各大地图。',
-        exits: { south: 'wgc:deep3', north: 'mg_town:gate', west: 'sm:entrance3', east: 'fm:gate3', northwest: 'brm:gate3', northeast: 'sb_town:gate' },
+        exits: { south: 'wgc:deep3', north: 'mg_town:gate', west: 'sm:entrance3', east: 'fm:gate3', northwest: 'brm:gate3', northeast: 'sb_town:gate', cultivation: 'cultivation:entry' },
         spawns: ['half_orc', 'half_orc', 'half_orc', 'half_orc_warrior', 'half_orc_warrior']
       }
     }
@@ -1092,6 +1092,526 @@ export const WORLD = {
         desc: '暗之骷髅精灵在此守望。',
         exits: { northeast: 'mg_town:gate' },
         spawns: ['dark_skeleton_boss']
+      }
+    }
+  },
+
+  cultivation: {
+    id: 'cultivation',
+    name: '修真秘境',
+    rooms: {
+      entry: {
+        id: 'entry',
+        name: '修真入口',
+        desc: '通往各阶修真地图的入口。',
+        exits: {
+          south: 'mg_plains:gate',
+          field_zhuji: 'field_zhuji',
+          boss_zhuji: 'boss_zhuji',
+          field_lingxu: 'field_lingxu',
+          boss_lingxu: 'boss_lingxu',
+          field_hehe: 'field_hehe',
+          boss_hehe: 'boss_hehe',
+          field_yuanying: 'field_yuanying',
+          boss_yuanying: 'boss_yuanying',
+          field_kongming: 'field_kongming',
+          boss_kongming: 'boss_kongming',
+          field_lvshuang: 'field_lvshuang',
+          boss_lvshuang: 'boss_lvshuang',
+          field_dujie: 'field_dujie',
+          boss_dujie: 'boss_dujie',
+          field_jimie: 'field_jimie',
+          boss_jimie: 'boss_jimie',
+          field_dacheng: 'field_dacheng',
+          boss_dacheng: 'boss_dacheng',
+          field_shangxian: 'field_shangxian',
+          boss_shangxian: 'boss_shangxian',
+          field_zhenxian: 'field_zhenxian',
+          boss_zhenxian: 'boss_zhenxian',
+          field_tianxian: 'field_tianxian',
+          boss_tianxian: 'boss_tianxian'
+        },
+        spawns: []
+      },
+      field_zhuji: {
+        id: 'field_zhuji',
+        name: '筑基修真境',
+        desc: '筑基修士历练之地。',
+        exits: { south: 'entry', north: 'boss_zhuji' },
+        spawns: ['cultivation_zhuji_1', 'cultivation_zhuji_2', 'cultivation_zhuji_3', 'cultivation_zhuji_4', 'cultivation_zhuji_5'],
+        minCultivationLevel: 0
+      },
+      field_zhuji1: {
+        id: 'field_zhuji1',
+        name: '筑基修真境1',
+        desc: '筑基修士历练之地。',
+        exits: { south: 'entry', north: 'boss_zhuji' },
+        spawns: ['cultivation_zhuji_1', 'cultivation_zhuji_2', 'cultivation_zhuji_3', 'cultivation_zhuji_4', 'cultivation_zhuji_5'],
+        minCultivationLevel: 0
+      },
+      field_zhuji2: {
+        id: 'field_zhuji2',
+        name: '筑基修真境2',
+        desc: '筑基修士历练之地。',
+        exits: { south: 'entry', north: 'boss_zhuji' },
+        spawns: ['cultivation_zhuji_1', 'cultivation_zhuji_2', 'cultivation_zhuji_3', 'cultivation_zhuji_4', 'cultivation_zhuji_5'],
+        minCultivationLevel: 0
+      },
+      field_zhuji3: {
+        id: 'field_zhuji3',
+        name: '筑基修真境3',
+        desc: '筑基修士历练之地。',
+        exits: { south: 'entry', north: 'boss_zhuji' },
+        spawns: ['cultivation_zhuji_1', 'cultivation_zhuji_2', 'cultivation_zhuji_3', 'cultivation_zhuji_4', 'cultivation_zhuji_5'],
+        minCultivationLevel: 0
+      },
+      boss_zhuji: {
+        id: 'boss_zhuji',
+        name: '筑基魔宫',
+        desc: '筑基魔君盘踞于此。',
+        exits: { south: 'field_zhuji' },
+        spawns: ['cultivation_boss_zhuji'],
+        minCultivationLevel: 0
+      },
+      field_lingxu: {
+        id: 'field_lingxu',
+        name: '灵虚修真境',
+        desc: '灵虚之境，灵气翻涌。',
+        exits: { south: 'entry', north: 'boss_lingxu' },
+        spawns: ['cultivation_lingxu_1', 'cultivation_lingxu_2', 'cultivation_lingxu_3', 'cultivation_lingxu_4', 'cultivation_lingxu_5'],
+        minCultivationLevel: 1
+      },
+      field_lingxu1: {
+        id: 'field_lingxu1',
+        name: '灵虚修真境1',
+        desc: '灵虚之境，灵气翻涌。',
+        exits: { south: 'entry', north: 'boss_lingxu' },
+        spawns: ['cultivation_lingxu_1', 'cultivation_lingxu_2', 'cultivation_lingxu_3', 'cultivation_lingxu_4', 'cultivation_lingxu_5'],
+        minCultivationLevel: 1
+      },
+      field_lingxu2: {
+        id: 'field_lingxu2',
+        name: '灵虚修真境2',
+        desc: '灵虚之境，灵气翻涌。',
+        exits: { south: 'entry', north: 'boss_lingxu' },
+        spawns: ['cultivation_lingxu_1', 'cultivation_lingxu_2', 'cultivation_lingxu_3', 'cultivation_lingxu_4', 'cultivation_lingxu_5'],
+        minCultivationLevel: 1
+      },
+      field_lingxu3: {
+        id: 'field_lingxu3',
+        name: '灵虚修真境3',
+        desc: '灵虚之境，灵气翻涌。',
+        exits: { south: 'entry', north: 'boss_lingxu' },
+        spawns: ['cultivation_lingxu_1', 'cultivation_lingxu_2', 'cultivation_lingxu_3', 'cultivation_lingxu_4', 'cultivation_lingxu_5'],
+        minCultivationLevel: 1
+      },
+      boss_lingxu: {
+        id: 'boss_lingxu',
+        name: '灵虚魔宫',
+        desc: '灵虚魔君镇守此地。',
+        exits: { south: 'field_lingxu' },
+        spawns: ['cultivation_boss_lingxu'],
+        minCultivationLevel: 1
+      },
+      field_hehe: {
+        id: 'field_hehe',
+        name: '和合修真境',
+        desc: '和合之境，阴阳相生。',
+        exits: { south: 'entry', north: 'boss_hehe' },
+        spawns: ['cultivation_hehe_1', 'cultivation_hehe_2', 'cultivation_hehe_3', 'cultivation_hehe_4', 'cultivation_hehe_5'],
+        minCultivationLevel: 2
+      },
+      field_hehe1: {
+        id: 'field_hehe1',
+        name: '和合修真境1',
+        desc: '和合之境，阴阳相生。',
+        exits: { south: 'entry', north: 'boss_hehe' },
+        spawns: ['cultivation_hehe_1', 'cultivation_hehe_2', 'cultivation_hehe_3', 'cultivation_hehe_4', 'cultivation_hehe_5'],
+        minCultivationLevel: 2
+      },
+      field_hehe2: {
+        id: 'field_hehe2',
+        name: '和合修真境2',
+        desc: '和合之境，阴阳相生。',
+        exits: { south: 'entry', north: 'boss_hehe' },
+        spawns: ['cultivation_hehe_1', 'cultivation_hehe_2', 'cultivation_hehe_3', 'cultivation_hehe_4', 'cultivation_hehe_5'],
+        minCultivationLevel: 2
+      },
+      field_hehe3: {
+        id: 'field_hehe3',
+        name: '和合修真境3',
+        desc: '和合之境，阴阳相生。',
+        exits: { south: 'entry', north: 'boss_hehe' },
+        spawns: ['cultivation_hehe_1', 'cultivation_hehe_2', 'cultivation_hehe_3', 'cultivation_hehe_4', 'cultivation_hehe_5'],
+        minCultivationLevel: 2
+      },
+      boss_hehe: {
+        id: 'boss_hehe',
+        name: '和合魔宫',
+        desc: '和合魔君坐镇。',
+        exits: { south: 'field_hehe' },
+        spawns: ['cultivation_boss_hehe'],
+        minCultivationLevel: 2
+      },
+      field_yuanying: {
+        id: 'field_yuanying',
+        name: '元婴修真境',
+        desc: '元婴之境，气势恢宏。',
+        exits: { south: 'entry', north: 'boss_yuanying' },
+        spawns: ['cultivation_yuanying_1', 'cultivation_yuanying_2', 'cultivation_yuanying_3', 'cultivation_yuanying_4', 'cultivation_yuanying_5'],
+        minCultivationLevel: 3
+      },
+      field_yuanying1: {
+        id: 'field_yuanying1',
+        name: '元婴修真境1',
+        desc: '元婴之境，气势恢宏。',
+        exits: { south: 'entry', north: 'boss_yuanying' },
+        spawns: ['cultivation_yuanying_1', 'cultivation_yuanying_2', 'cultivation_yuanying_3', 'cultivation_yuanying_4', 'cultivation_yuanying_5'],
+        minCultivationLevel: 3
+      },
+      field_yuanying2: {
+        id: 'field_yuanying2',
+        name: '元婴修真境2',
+        desc: '元婴之境，气势恢宏。',
+        exits: { south: 'entry', north: 'boss_yuanying' },
+        spawns: ['cultivation_yuanying_1', 'cultivation_yuanying_2', 'cultivation_yuanying_3', 'cultivation_yuanying_4', 'cultivation_yuanying_5'],
+        minCultivationLevel: 3
+      },
+      field_yuanying3: {
+        id: 'field_yuanying3',
+        name: '元婴修真境3',
+        desc: '元婴之境，气势恢宏。',
+        exits: { south: 'entry', north: 'boss_yuanying' },
+        spawns: ['cultivation_yuanying_1', 'cultivation_yuanying_2', 'cultivation_yuanying_3', 'cultivation_yuanying_4', 'cultivation_yuanying_5'],
+        minCultivationLevel: 3
+      },
+      boss_yuanying: {
+        id: 'boss_yuanying',
+        name: '元婴魔宫',
+        desc: '元婴魔君在此。',
+        exits: { south: 'field_yuanying' },
+        spawns: ['cultivation_boss_yuanying'],
+        minCultivationLevel: 3
+      },
+      field_kongming: {
+        id: 'field_kongming',
+        name: '空冥修真境',
+        desc: '空冥之境，万籁俱寂。',
+        exits: { south: 'entry', north: 'boss_kongming' },
+        spawns: ['cultivation_kongming_1', 'cultivation_kongming_2', 'cultivation_kongming_3', 'cultivation_kongming_4', 'cultivation_kongming_5'],
+        minCultivationLevel: 4
+      },
+      field_kongming1: {
+        id: 'field_kongming1',
+        name: '空冥修真境1',
+        desc: '空冥之境，万籁俱寂。',
+        exits: { south: 'entry', north: 'boss_kongming' },
+        spawns: ['cultivation_kongming_1', 'cultivation_kongming_2', 'cultivation_kongming_3', 'cultivation_kongming_4', 'cultivation_kongming_5'],
+        minCultivationLevel: 4
+      },
+      field_kongming2: {
+        id: 'field_kongming2',
+        name: '空冥修真境2',
+        desc: '空冥之境，万籁俱寂。',
+        exits: { south: 'entry', north: 'boss_kongming' },
+        spawns: ['cultivation_kongming_1', 'cultivation_kongming_2', 'cultivation_kongming_3', 'cultivation_kongming_4', 'cultivation_kongming_5'],
+        minCultivationLevel: 4
+      },
+      field_kongming3: {
+        id: 'field_kongming3',
+        name: '空冥修真境3',
+        desc: '空冥之境，万籁俱寂。',
+        exits: { south: 'entry', north: 'boss_kongming' },
+        spawns: ['cultivation_kongming_1', 'cultivation_kongming_2', 'cultivation_kongming_3', 'cultivation_kongming_4', 'cultivation_kongming_5'],
+        minCultivationLevel: 4
+      },
+      boss_kongming: {
+        id: 'boss_kongming',
+        name: '空冥魔宫',
+        desc: '空冥魔君镇压一方。',
+        exits: { south: 'field_kongming' },
+        spawns: ['cultivation_boss_kongming'],
+        minCultivationLevel: 4
+      },
+      field_lvshuang: {
+        id: 'field_lvshuang',
+        name: '履霜修真境',
+        desc: '履霜之境，寒意凛冽。',
+        exits: { south: 'entry', north: 'boss_lvshuang' },
+        spawns: ['cultivation_lvshuang_1', 'cultivation_lvshuang_2', 'cultivation_lvshuang_3', 'cultivation_lvshuang_4', 'cultivation_lvshuang_5'],
+        minCultivationLevel: 5
+      },
+      field_lvshuang1: {
+        id: 'field_lvshuang1',
+        name: '履霜修真境1',
+        desc: '履霜之境，寒意凛冽。',
+        exits: { south: 'entry', north: 'boss_lvshuang' },
+        spawns: ['cultivation_lvshuang_1', 'cultivation_lvshuang_2', 'cultivation_lvshuang_3', 'cultivation_lvshuang_4', 'cultivation_lvshuang_5'],
+        minCultivationLevel: 5
+      },
+      field_lvshuang2: {
+        id: 'field_lvshuang2',
+        name: '履霜修真境2',
+        desc: '履霜之境，寒意凛冽。',
+        exits: { south: 'entry', north: 'boss_lvshuang' },
+        spawns: ['cultivation_lvshuang_1', 'cultivation_lvshuang_2', 'cultivation_lvshuang_3', 'cultivation_lvshuang_4', 'cultivation_lvshuang_5'],
+        minCultivationLevel: 5
+      },
+      field_lvshuang3: {
+        id: 'field_lvshuang3',
+        name: '履霜修真境3',
+        desc: '履霜之境，寒意凛冽。',
+        exits: { south: 'entry', north: 'boss_lvshuang' },
+        spawns: ['cultivation_lvshuang_1', 'cultivation_lvshuang_2', 'cultivation_lvshuang_3', 'cultivation_lvshuang_4', 'cultivation_lvshuang_5'],
+        minCultivationLevel: 5
+      },
+      boss_lvshuang: {
+        id: 'boss_lvshuang',
+        name: '履霜魔宫',
+        desc: '履霜魔君驻守。',
+        exits: { south: 'field_lvshuang' },
+        spawns: ['cultivation_boss_lvshuang'],
+        minCultivationLevel: 5
+      },
+      field_dujie: {
+        id: 'field_dujie',
+        name: '渡劫修真境',
+        desc: '渡劫之境，雷火交织。',
+        exits: { south: 'entry', north: 'boss_dujie' },
+        spawns: ['cultivation_dujie_1', 'cultivation_dujie_2', 'cultivation_dujie_3', 'cultivation_dujie_4', 'cultivation_dujie_5'],
+        minCultivationLevel: 6
+      },
+      field_dujie1: {
+        id: 'field_dujie1',
+        name: '渡劫修真境1',
+        desc: '渡劫之境，雷火交织。',
+        exits: { south: 'entry', north: 'boss_dujie' },
+        spawns: ['cultivation_dujie_1', 'cultivation_dujie_2', 'cultivation_dujie_3', 'cultivation_dujie_4', 'cultivation_dujie_5'],
+        minCultivationLevel: 6
+      },
+      field_dujie2: {
+        id: 'field_dujie2',
+        name: '渡劫修真境2',
+        desc: '渡劫之境，雷火交织。',
+        exits: { south: 'entry', north: 'boss_dujie' },
+        spawns: ['cultivation_dujie_1', 'cultivation_dujie_2', 'cultivation_dujie_3', 'cultivation_dujie_4', 'cultivation_dujie_5'],
+        minCultivationLevel: 6
+      },
+      field_dujie3: {
+        id: 'field_dujie3',
+        name: '渡劫修真境3',
+        desc: '渡劫之境，雷火交织。',
+        exits: { south: 'entry', north: 'boss_dujie' },
+        spawns: ['cultivation_dujie_1', 'cultivation_dujie_2', 'cultivation_dujie_3', 'cultivation_dujie_4', 'cultivation_dujie_5'],
+        minCultivationLevel: 6
+      },
+      boss_dujie: {
+        id: 'boss_dujie',
+        name: '渡劫魔宫',
+        desc: '渡劫魔君震慑四方。',
+        exits: { south: 'field_dujie' },
+        spawns: ['cultivation_boss_dujie'],
+        minCultivationLevel: 6
+      },
+      field_jimie: {
+        id: 'field_jimie',
+        name: '寂灭修真境',
+        desc: '寂灭之境，生机涌动。',
+        exits: { south: 'entry', north: 'boss_jimie' },
+        spawns: ['cultivation_jimie_1', 'cultivation_jimie_2', 'cultivation_jimie_3', 'cultivation_jimie_4', 'cultivation_jimie_5'],
+        minCultivationLevel: 7
+      },
+      field_jimie1: {
+        id: 'field_jimie1',
+        name: '寂灭修真境1',
+        desc: '寂灭之境，生机涌动。',
+        exits: { south: 'entry', north: 'boss_jimie' },
+        spawns: ['cultivation_jimie_1', 'cultivation_jimie_2', 'cultivation_jimie_3', 'cultivation_jimie_4', 'cultivation_jimie_5'],
+        minCultivationLevel: 7
+      },
+      field_jimie2: {
+        id: 'field_jimie2',
+        name: '寂灭修真境2',
+        desc: '寂灭之境，生机涌动。',
+        exits: { south: 'entry', north: 'boss_jimie' },
+        spawns: ['cultivation_jimie_1', 'cultivation_jimie_2', 'cultivation_jimie_3', 'cultivation_jimie_4', 'cultivation_jimie_5'],
+        minCultivationLevel: 7
+      },
+      field_jimie3: {
+        id: 'field_jimie3',
+        name: '寂灭修真境3',
+        desc: '寂灭之境，生机涌动。',
+        exits: { south: 'entry', north: 'boss_jimie' },
+        spawns: ['cultivation_jimie_1', 'cultivation_jimie_2', 'cultivation_jimie_3', 'cultivation_jimie_4', 'cultivation_jimie_5'],
+        minCultivationLevel: 7
+      },
+      boss_jimie: {
+        id: 'boss_jimie',
+        name: '寂灭魔宫',
+        desc: '寂灭魔君坐镇。',
+        exits: { south: 'field_jimie' },
+        spawns: ['cultivation_boss_jimie'],
+        minCultivationLevel: 7
+      },
+      field_dacheng: {
+        id: 'field_dacheng',
+        name: '大乘修真境',
+        desc: '大乘之境，万象归一。',
+        exits: { south: 'entry', north: 'boss_dacheng' },
+        spawns: ['cultivation_dacheng_1', 'cultivation_dacheng_2', 'cultivation_dacheng_3', 'cultivation_dacheng_4', 'cultivation_dacheng_5'],
+        minCultivationLevel: 8
+      },
+      field_dacheng1: {
+        id: 'field_dacheng1',
+        name: '大乘修真境1',
+        desc: '大乘之境，万象归一。',
+        exits: { south: 'entry', north: 'boss_dacheng' },
+        spawns: ['cultivation_dacheng_1', 'cultivation_dacheng_2', 'cultivation_dacheng_3', 'cultivation_dacheng_4', 'cultivation_dacheng_5'],
+        minCultivationLevel: 8
+      },
+      field_dacheng2: {
+        id: 'field_dacheng2',
+        name: '大乘修真境2',
+        desc: '大乘之境，万象归一。',
+        exits: { south: 'entry', north: 'boss_dacheng' },
+        spawns: ['cultivation_dacheng_1', 'cultivation_dacheng_2', 'cultivation_dacheng_3', 'cultivation_dacheng_4', 'cultivation_dacheng_5'],
+        minCultivationLevel: 8
+      },
+      field_dacheng3: {
+        id: 'field_dacheng3',
+        name: '大乘修真境3',
+        desc: '大乘之境，万象归一。',
+        exits: { south: 'entry', north: 'boss_dacheng' },
+        spawns: ['cultivation_dacheng_1', 'cultivation_dacheng_2', 'cultivation_dacheng_3', 'cultivation_dacheng_4', 'cultivation_dacheng_5'],
+        minCultivationLevel: 8
+      },
+      boss_dacheng: {
+        id: 'boss_dacheng',
+        name: '大乘魔宫',
+        desc: '大乘魔君盘踞。',
+        exits: { south: 'field_dacheng' },
+        spawns: ['cultivation_boss_dacheng'],
+        minCultivationLevel: 8
+      },
+      field_shangxian: {
+        id: 'field_shangxian',
+        name: '上仙修真境',
+        desc: '上仙之境，仙气缭绕。',
+        exits: { south: 'entry', north: 'boss_shangxian' },
+        spawns: ['cultivation_shangxian_1', 'cultivation_shangxian_2', 'cultivation_shangxian_3', 'cultivation_shangxian_4', 'cultivation_shangxian_5'],
+        minCultivationLevel: 9
+      },
+      field_shangxian1: {
+        id: 'field_shangxian1',
+        name: '上仙修真境1',
+        desc: '上仙之境，仙气缭绕。',
+        exits: { south: 'entry', north: 'boss_shangxian' },
+        spawns: ['cultivation_shangxian_1', 'cultivation_shangxian_2', 'cultivation_shangxian_3', 'cultivation_shangxian_4', 'cultivation_shangxian_5'],
+        minCultivationLevel: 9
+      },
+      field_shangxian2: {
+        id: 'field_shangxian2',
+        name: '上仙修真境2',
+        desc: '上仙之境，仙气缭绕。',
+        exits: { south: 'entry', north: 'boss_shangxian' },
+        spawns: ['cultivation_shangxian_1', 'cultivation_shangxian_2', 'cultivation_shangxian_3', 'cultivation_shangxian_4', 'cultivation_shangxian_5'],
+        minCultivationLevel: 9
+      },
+      field_shangxian3: {
+        id: 'field_shangxian3',
+        name: '上仙修真境3',
+        desc: '上仙之境，仙气缭绕。',
+        exits: { south: 'entry', north: 'boss_shangxian' },
+        spawns: ['cultivation_shangxian_1', 'cultivation_shangxian_2', 'cultivation_shangxian_3', 'cultivation_shangxian_4', 'cultivation_shangxian_5'],
+        minCultivationLevel: 9
+      },
+      boss_shangxian: {
+        id: 'boss_shangxian',
+        name: '上仙魔宫',
+        desc: '上仙魔君镇守。',
+        exits: { south: 'field_shangxian' },
+        spawns: ['cultivation_boss_shangxian'],
+        minCultivationLevel: 9
+      },
+      field_zhenxian: {
+        id: 'field_zhenxian',
+        name: '真仙修真境',
+        desc: '真仙之境，浩瀚无垠。',
+        exits: { south: 'entry', north: 'boss_zhenxian' },
+        spawns: ['cultivation_zhenxian_1', 'cultivation_zhenxian_2', 'cultivation_zhenxian_3', 'cultivation_zhenxian_4', 'cultivation_zhenxian_5'],
+        minCultivationLevel: 10
+      },
+      field_zhenxian1: {
+        id: 'field_zhenxian1',
+        name: '真仙修真境1',
+        desc: '真仙之境，浩瀚无垠。',
+        exits: { south: 'entry', north: 'boss_zhenxian' },
+        spawns: ['cultivation_zhenxian_1', 'cultivation_zhenxian_2', 'cultivation_zhenxian_3', 'cultivation_zhenxian_4', 'cultivation_zhenxian_5'],
+        minCultivationLevel: 10
+      },
+      field_zhenxian2: {
+        id: 'field_zhenxian2',
+        name: '真仙修真境2',
+        desc: '真仙之境，浩瀚无垠。',
+        exits: { south: 'entry', north: 'boss_zhenxian' },
+        spawns: ['cultivation_zhenxian_1', 'cultivation_zhenxian_2', 'cultivation_zhenxian_3', 'cultivation_zhenxian_4', 'cultivation_zhenxian_5'],
+        minCultivationLevel: 10
+      },
+      field_zhenxian3: {
+        id: 'field_zhenxian3',
+        name: '真仙修真境3',
+        desc: '真仙之境，浩瀚无垠。',
+        exits: { south: 'entry', north: 'boss_zhenxian' },
+        spawns: ['cultivation_zhenxian_1', 'cultivation_zhenxian_2', 'cultivation_zhenxian_3', 'cultivation_zhenxian_4', 'cultivation_zhenxian_5'],
+        minCultivationLevel: 10
+      },
+      boss_zhenxian: {
+        id: 'boss_zhenxian',
+        name: '真仙魔宫',
+        desc: '真仙魔君出没于此。',
+        exits: { south: 'field_zhenxian' },
+        spawns: ['cultivation_boss_zhenxian'],
+        minCultivationLevel: 10
+      },
+      field_tianxian: {
+        id: 'field_tianxian',
+        name: '天仙修真境',
+        desc: '天仙之境，仙光万丈。',
+        exits: { south: 'entry', north: 'boss_tianxian' },
+        spawns: ['cultivation_tianxian_1', 'cultivation_tianxian_2', 'cultivation_tianxian_3', 'cultivation_tianxian_4', 'cultivation_tianxian_5'],
+        minCultivationLevel: 11
+      },
+      field_tianxian1: {
+        id: 'field_tianxian1',
+        name: '天仙修真境1',
+        desc: '天仙之境，仙光万丈。',
+        exits: { south: 'entry', north: 'boss_tianxian' },
+        spawns: ['cultivation_tianxian_1', 'cultivation_tianxian_2', 'cultivation_tianxian_3', 'cultivation_tianxian_4', 'cultivation_tianxian_5'],
+        minCultivationLevel: 11
+      },
+      field_tianxian2: {
+        id: 'field_tianxian2',
+        name: '天仙修真境2',
+        desc: '天仙之境，仙光万丈。',
+        exits: { south: 'entry', north: 'boss_tianxian' },
+        spawns: ['cultivation_tianxian_1', 'cultivation_tianxian_2', 'cultivation_tianxian_3', 'cultivation_tianxian_4', 'cultivation_tianxian_5'],
+        minCultivationLevel: 11
+      },
+      field_tianxian3: {
+        id: 'field_tianxian3',
+        name: '天仙修真境3',
+        desc: '天仙之境，仙光万丈。',
+        exits: { south: 'entry', north: 'boss_tianxian' },
+        spawns: ['cultivation_tianxian_1', 'cultivation_tianxian_2', 'cultivation_tianxian_3', 'cultivation_tianxian_4', 'cultivation_tianxian_5'],
+        minCultivationLevel: 11
+      },
+      boss_tianxian: {
+        id: 'boss_tianxian',
+        name: '天仙魔宫',
+        desc: '天仙魔君镇压此境。',
+        exits: { south: 'field_tianxian' },
+        spawns: ['cultivation_boss_tianxian'],
+        minCultivationLevel: 11
       }
     }
   }
