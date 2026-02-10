@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -309,30 +310,42 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
     Scaffold(
         bottomBar = {
             NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceVariant) {
-                NavigationBarItem(
-                    selected = tabIndex == 0,
-                    onClick = { tabIndex = 0 },
-                    label = { Text("战斗") },
-                    icon = { Image(painter = painterResource(R.drawable.ic_battle), contentDescription = "战斗", modifier = Modifier.size(24.dp)) }
-                )
-                NavigationBarItem(
-                    selected = tabIndex == 1,
-                    onClick = { tabIndex = 1 },
-                    label = { Text("背包") },
-                    icon = { Image(painter = painterResource(R.drawable.ic_bag), contentDescription = "背包", modifier = Modifier.size(24.dp)) }
-                )
-                NavigationBarItem(
-                    selected = tabIndex == 2,
-                    onClick = { tabIndex = 2 },
-                    label = { Text("聊天") },
-                    icon = { Image(painter = painterResource(R.drawable.ic_chat), contentDescription = "聊天", modifier = Modifier.size(24.dp)) }
-                )
-                NavigationBarItem(
-                    selected = tabIndex == 3,
-                    onClick = { tabIndex = 3 },
-                    label = { Text("功能") },
-                    icon = { Image(painter = painterResource(R.drawable.ic_menu), contentDescription = "功能", modifier = Modifier.size(24.dp)) }
-                )
+            NavigationBarItem(
+                selected = tabIndex == 0,
+                onClick = {
+                    tabIndex = 0
+                    innerNav.navigate("main") { launchSingleTop = true; popUpTo("main") { inclusive = false } }
+                },
+                label = { Text("战斗") },
+                icon = { Image(painter = painterResource(R.drawable.ic_battle), contentDescription = "战斗", modifier = Modifier.size(24.dp)) }
+            )
+            NavigationBarItem(
+                selected = tabIndex == 1,
+                onClick = {
+                    tabIndex = 1
+                    innerNav.navigate("main") { launchSingleTop = true; popUpTo("main") { inclusive = false } }
+                },
+                label = { Text("背包") },
+                icon = { Image(painter = painterResource(R.drawable.ic_bag), contentDescription = "背包", modifier = Modifier.size(24.dp)) }
+            )
+            NavigationBarItem(
+                selected = tabIndex == 2,
+                onClick = {
+                    tabIndex = 2
+                    innerNav.navigate("main") { launchSingleTop = true; popUpTo("main") { inclusive = false } }
+                },
+                label = { Text("聊天") },
+                icon = { Image(painter = painterResource(R.drawable.ic_chat), contentDescription = "聊天", modifier = Modifier.size(24.dp)) }
+            )
+            NavigationBarItem(
+                selected = tabIndex == 3,
+                onClick = {
+                    tabIndex = 3
+                    innerNav.navigate("main") { launchSingleTop = true; popUpTo("main") { inclusive = false } }
+                },
+                label = { Text("功能") },
+                icon = { Image(painter = painterResource(R.drawable.ic_menu), contentDescription = "功能", modifier = Modifier.size(24.dp)) }
+            )
             }
         }
     ) { innerPadding ->
@@ -962,22 +975,25 @@ private fun BattleMobCard(
 }
 
 @Composable
-private fun InventoryTab(state: GameState?, onUse: (ItemInfo) -> Unit) {
-    var bagPage by remember { mutableStateOf(0) }
-    val bagPageSize = 12
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
-        item {
-            Text(text = "装备", style = MaterialTheme.typography.titleSmall)
-        }
-        item {
-            val equipment = state?.equipment.orEmpty()
-            if (equipment.isEmpty()) {
-                Text("暂无装备")
-            } else {
-                val rows = equipment.chunked(2)
-                Column {
-                    rows.forEach { row ->
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+  private fun InventoryTab(state: GameState?, onUse: (ItemInfo) -> Unit) {
+      var bagPage by remember { mutableStateOf(0) }
+      val bagPageSize = 12
+      val isDark = isSystemInDarkTheme()
+      val primaryText = if (isDark) Color(0xFFF4E8D6) else MaterialTheme.colorScheme.onSurface
+      val secondaryText = if (isDark) Color(0xFFE0D2C1) else MaterialTheme.colorScheme.onSurfaceVariant
+      LazyColumn(modifier = Modifier.fillMaxSize()) {
+          item {
+              Text(text = "装备", style = MaterialTheme.typography.titleSmall, color = primaryText)
+          }
+          item {
+              val equipment = state?.equipment.orEmpty()
+              if (equipment.isEmpty()) {
+                  Text("暂无装备", color = secondaryText)
+              } else {
+                  val rows = equipment.chunked(2)
+                  Column {
+                      rows.forEach { row ->
+                          Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             row.forEach { eq ->
                                 val item = eq.item
                                 Surface(
@@ -997,20 +1013,20 @@ private fun InventoryTab(state: GameState?, onUse: (ItemInfo) -> Unit) {
                                             )
                                             val refine = eq.refine_level ?: 0
                                             val element = elementAtkFromEffects(item.effects)
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween
-                                            ) {
-                                                Text("锻造 +$refine")
-                                                Text("元素 +$element")
-                                            }
-                                            Text("耐久 ${eq.durability ?: 0}/${eq.max_durability ?: 0}")
-                                        } else {
-                                            Text("${slotLabel(eq.slot)}：无")
-                                        }
-                                    }
-                                }
-                            }
+                                              Row(
+                                                  modifier = Modifier.fillMaxWidth(),
+                                                  horizontalArrangement = Arrangement.SpaceBetween
+                                              ) {
+                                                  Text("锻造 +$refine", color = secondaryText)
+                                                  Text("元素 +$element", color = secondaryText)
+                                              }
+                                              Text("耐久 ${eq.durability ?: 0}/${eq.max_durability ?: 0}", color = secondaryText)
+                                          } else {
+                                              Text("${slotLabel(eq.slot)}：无", color = secondaryText)
+                                          }
+                                      }
+                                  }
+                              }
                             if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
                         }
                         Spacer(modifier = Modifier.height(8.dp))
@@ -1018,10 +1034,10 @@ private fun InventoryTab(state: GameState?, onUse: (ItemInfo) -> Unit) {
                 }
             }
         }
-        item {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = "背包", style = MaterialTheme.typography.titleSmall)
-        }
+          item {
+              Spacer(modifier = Modifier.height(8.dp))
+              Text(text = "背包", style = MaterialTheme.typography.titleSmall, color = primaryText)
+          }
         val bagItems = state?.items.orEmpty()
             .sortedWith(
                 compareByDescending<ItemInfo> { rarityRank(it.rarity) }
@@ -1053,19 +1069,19 @@ private fun InventoryTab(state: GameState?, onUse: (ItemInfo) -> Unit) {
                                     val nameSuffix = if (nameSuffixParts.isNotEmpty()) {
                                         "（" + nameSuffixParts.joinToString(" | ") + "）"
                                     } else ""
-                                    RarityText(
-                                        text = "${item.name} x${item.qty}$nameSuffix",
-                                        rarity = item.rarity
-                                    )
-                                    if (isEquip) {
-                                        val element = elementAtkFromEffects(item.effects)
-                                        Text("${slotLabel(item.slot)}${if (element > 0) " 元素+$element" else ""}")
-                                    } else {
-                                        Text(itemTypeLabel(item.type))
-                                    }
-                                }
-                            }
-                        }
+                                      RarityText(
+                                          text = "${item.name} x${item.qty}$nameSuffix",
+                                          rarity = item.rarity
+                                      )
+                                      if (isEquip) {
+                                          val element = elementAtkFromEffects(item.effects)
+                                          Text("${slotLabel(item.slot)}${if (element > 0) " 元素+$element" else ""}", color = secondaryText)
+                                      } else {
+                                          Text(itemTypeLabel(item.type), color = secondaryText)
+                                      }
+                                  }
+                              }
+                          }
                         if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
                     }
                     Spacer(modifier = Modifier.height(8.dp))
@@ -1097,27 +1113,37 @@ private fun rarityRank(rarity: String?): Int = when (normalizeRarityKey(rarity))
     else -> 0
 }
 
-private fun rarityColor(rarity: String?): Color = when (normalizeRarityKey(rarity)) {
-    "common" -> Color(0xFF6B4A2A)
-    "uncommon" -> Color(0xFF2F6B3B)
-    "rare" -> Color(0xFF2F6AA6)
-    "epic" -> Color(0xFF8A2C7A)
-    "legendary" -> Color(0xFF8F5A12)
-    "supreme" -> Color(0xFFB63C3C)
-    "ultimate" -> Color(0xFFD64545)
-    else -> Color(0xFF6B4A2A)
-}
+  private fun rarityColor(rarity: String?): Color = when (normalizeRarityKey(rarity)) {
+      "common" -> Color(0xFFB68E66)
+      "uncommon" -> Color(0xFF5FCB7B)
+      "rare" -> Color(0xFF6EA8FF)
+      "epic" -> Color(0xFFB378FF)
+      "legendary" -> Color(0xFFFFC06A)
+      "supreme" -> Color(0xFFFF7D7D)
+      "ultimate" -> Color(0xFFD64545)
+      else -> Color(0xFFB68E66)
+  }
+
+  private fun brighten(color: Color, amount: Float): Color {
+      val clamped = amount.coerceIn(0f, 1f)
+      return Color(
+          red = color.red + (1f - color.red) * clamped,
+          green = color.green + (1f - color.green) * clamped,
+          blue = color.blue + (1f - color.blue) * clamped,
+          alpha = color.alpha
+      )
+  }
 
 @Composable
-private fun RarityText(
-    text: String,
-    rarity: String?,
-    modifier: Modifier = Modifier,
-    maxLines: Int = Int.MAX_VALUE,
-    overflow: TextOverflow = TextOverflow.Clip
-) {
-    val key = normalizeRarityKey(rarity)
-    if (key == "ultimate") {
+  private fun RarityText(
+      text: String,
+      rarity: String?,
+      modifier: Modifier = Modifier,
+      maxLines: Int = Int.MAX_VALUE,
+      overflow: TextOverflow = TextOverflow.Clip
+  ) {
+      val key = normalizeRarityKey(rarity)
+      if (key == "ultimate") {
         val transition = rememberInfiniteTransition(label = "ultimateFlow")
         val shift by transition.animateFloat(
             initialValue = 0f,
@@ -1154,16 +1180,22 @@ private fun RarityText(
                 overflow = overflow
             )
         }
-    } else {
-        Text(
-            text = text,
-            color = rarityColor(rarity),
-            modifier = modifier,
-            maxLines = maxLines,
-            overflow = overflow
-        )
-    }
-}
+      } else {
+          val base = rarityColor(rarity)
+          val color = if (isSystemInDarkTheme()) brighten(base, 0.35f) else base
+          val style = LocalTextStyle.current.copy(
+              color = color,
+              shadow = Shadow(color = Color(0x99000000), offset = Offset.Zero, blurRadius = 6f)
+          )
+          Text(
+              text = text,
+              style = style,
+              modifier = modifier,
+              maxLines = maxLines,
+              overflow = overflow
+          )
+      }
+  }
 
 private fun slotLabel(slot: String?): String = when (slot) {
     "weapon" -> "武器"
@@ -1666,23 +1698,23 @@ private fun CartoonGrid(items: List<ActionItem>, onClick: (String) -> Unit) {
                 Card(
                     modifier = Modifier
                         .weight(1f)
-                        .height(58.dp)
+                        .height(62.dp)
                         .clickable { onClick(entry.action) },
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
+                    Column(
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 6.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Image(
                             painter = painterResource(id = entry.iconRes),
                             contentDescription = entry.label,
                             modifier = Modifier.size(18.dp)
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(entry.label, fontWeight = FontWeight.SemiBold)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(entry.label, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
                     }
                 }
             }
@@ -1694,12 +1726,12 @@ private fun CartoonGrid(items: List<ActionItem>, onClick: (String) -> Unit) {
 }
 
 @Composable
-private fun ClickableListItem(
-    headline: @Composable () -> Unit,
-    supporting: @Composable (() -> Unit)? = null,
-    selected: Boolean = false,
-    onClick: () -> Unit
-) {
+  private fun ClickableListItem(
+      headline: @Composable () -> Unit,
+      supporting: @Composable (() -> Unit)? = null,
+      selected: Boolean = false,
+      onClick: () -> Unit
+  ) {
     val bg = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant
     val border = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.7f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
     Surface(
@@ -1821,20 +1853,66 @@ private fun SettingsScreen(vm: GameViewModel, onDismiss: () -> Unit) {
     }
 }
 
-@Composable
-private fun StatsDialog(state: GameState?, onDismiss: () -> Unit) {
-    ScreenScaffold(title = "角色状态", onBack = onDismiss) {
-        val stats = state?.stats
-        val player = state?.player
-        Text("${player?.name} Lv${player?.level}")
-        if (stats != null) {
-            Text("攻击 ${stats.atk} 防御 ${stats.def}")
-            Text("魔法 ${stats.mag} 道术 ${stats.spirit}")
-            Text("魔防 ${stats.mdef} 闪避 ${stats.dodge}%")
-            Text("PK ${stats.pk} VIP ${if (stats.vip) "是" else "否"}")
-        }
-    }
-}
+  @Composable
+  private fun StatsDialog(state: GameState?, onDismiss: () -> Unit) {
+      ScreenScaffold(title = "角色状态", onBack = onDismiss) {
+          val stats = state?.stats
+          val player = state?.player
+          Card(
+              modifier = Modifier.fillMaxWidth(),
+              colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+              elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+          ) {
+              Column(modifier = Modifier.padding(14.dp)) {
+                  Text(
+                      text = "${player?.name ?: "未知"}  Lv${player?.level ?: 0}",
+                      style = MaterialTheme.typography.titleMedium,
+                      fontWeight = FontWeight.SemiBold
+                  )
+                  if (stats != null) {
+                      Spacer(modifier = Modifier.height(10.dp))
+                      StatBar("生命", stats.hp, stats.maxHp, Color(0xFFE57373))
+                      Spacer(modifier = Modifier.height(8.dp))
+                      StatBar("法力", stats.mp, stats.maxMp, Color(0xFF64B5F6))
+                      Spacer(modifier = Modifier.height(8.dp))
+                      StatBar("经验", stats.exp, stats.expNext, Color(0xFFFFB74D))
+                      Spacer(modifier = Modifier.height(12.dp))
+
+                      val tiles = listOf(
+                          Triple("攻击", stats.atk.toString(), R.drawable.ic_battle),
+                          Triple("防御", stats.def.toString(), R.drawable.ic_status),
+                          Triple("魔法", stats.mag.toString(), R.drawable.ic_magic),
+                          Triple("道术", stats.spirit.toString(), R.drawable.ic_train),
+                          Triple("魔防", stats.mdef.toString(), R.drawable.ic_status),
+                          Triple("闪避", "${stats.dodge}%", R.drawable.ic_afk),
+                          Triple("PK", stats.pk.toString(), R.drawable.ic_castle),
+                          Triple("VIP", if (stats.vip) "是" else "否", R.drawable.ic_vip)
+                      )
+                      tiles.chunked(2).forEach { row ->
+                          Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                              row.forEach { (label, value, icon) ->
+                                  val tint = when (label) {
+                                      "攻击" -> Color(0xFFE06B6B)
+                                      "防御" -> Color(0xFF8D6E63)
+                                      "魔法" -> Color(0xFF5C6BC0)
+                                      "道术" -> Color(0xFF4DB6AC)
+                                      "魔防" -> Color(0xFF7E57C2)
+                                      "闪避" -> Color(0xFF26A69A)
+                                      "PK" -> Color(0xFFEF5350)
+                                      "VIP" -> Color(0xFFF9A825)
+                                      else -> MaterialTheme.colorScheme.primary
+                                  }
+                                  StatTile(label = label, value = value, iconRes = icon, tint = tint)
+                              }
+                              if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
+                          }
+                          Spacer(modifier = Modifier.height(8.dp))
+                      }
+                  }
+              }
+          }
+      }
+  }
 
 @Composable
 private fun PartyDialog(vm: GameViewModel, state: GameState?, prefillName: String?, onDismiss: () -> Unit) {
@@ -2673,9 +2751,7 @@ private fun SabakDialog(vm: GameViewModel, onDismiss: () -> Unit) {
 
       ScreenScaffold(title = "修理装备", onBack = onDismiss) {
           Column(
-              modifier = Modifier
-                  .fillMaxWidth()
-                  .verticalScroll(rememberScrollState())
+              modifier = Modifier.fillMaxWidth()
           ) {
               Text("当前装备", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
               Spacer(modifier = Modifier.height(8.dp))
@@ -2742,6 +2818,60 @@ private fun SabakDialog(vm: GameViewModel, onDismiss: () -> Unit) {
                       modifier = Modifier.weight(1f),
                       onClick = { vm.sendCmd("repair all") }
                   ) { Text("修理全部") }
+              }
+          }
+      }
+  }
+
+  @Composable
+  private fun StatBar(label: String, value: Int, maxValue: Int, color: Color) {
+      val progress = if (maxValue > 0) value.toFloat() / maxValue.toFloat() else 0f
+      Column(modifier = Modifier.fillMaxWidth()) {
+          Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+              Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+              Text("$value/$maxValue", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+          }
+          Spacer(modifier = Modifier.height(4.dp))
+          LinearProgressIndicator(
+              progress = progress.coerceIn(0f, 1f),
+              modifier = Modifier
+                  .fillMaxWidth()
+                  .height(6.dp)
+                  .clip(RoundedCornerShape(3.dp)),
+              color = color,
+              trackColor = MaterialTheme.colorScheme.surface
+          )
+      }
+  }
+
+  @Composable
+  private fun StatTile(label: String, value: String, iconRes: Int, tint: Color) {
+      Surface(
+          modifier = Modifier
+              .weight(1f)
+              .height(66.dp),
+          shape = RoundedCornerShape(10.dp),
+          color = MaterialTheme.colorScheme.surfaceVariant,
+          border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+      ) {
+          Row(
+              modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp),
+              verticalAlignment = Alignment.CenterVertically
+          ) {
+              Surface(
+                  shape = RoundedCornerShape(8.dp),
+                  color = tint.copy(alpha = 0.15f)
+              ) {
+                  Image(
+                      painter = painterResource(iconRes),
+                      contentDescription = label,
+                      modifier = Modifier.padding(6.dp).size(18.dp)
+                  )
+              }
+              Spacer(modifier = Modifier.width(8.dp))
+              Column {
+                  Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                  Text(value, fontWeight = FontWeight.SemiBold)
               }
           }
       }
@@ -2865,13 +2995,10 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
 @Composable
 private fun RankDialog(state: GameState?, vm: GameViewModel, onDismiss: () -> Unit) {
     val rankMessages by vm.rankMessages.collectAsState()
-    var lastClass by rememberSaveable { mutableStateOf("") }
+    var lastClass by rememberSaveable { mutableStateOf("warrior") }
     ScreenScaffold(title = "排行榜", onBack = onDismiss) {
         LaunchedEffect(Unit) {
-            if (lastClass.isBlank()) {
-                lastClass = "warrior"
-                vm.sendCmd("rank warrior")
-            }
+            vm.sendCmd("rank $lastClass")
         }
         Text("世界BOSS排行")
         if (state?.worldBossRank.isNullOrEmpty()) {
@@ -2883,26 +3010,51 @@ private fun RankDialog(state: GameState?, vm: GameViewModel, onDismiss: () -> Un
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text("职业排行榜")
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Button(onClick = {
-                lastClass = "warrior"
-                vm.sendCmd("rank warrior")
-            }) { Text("战士") }
-            Spacer(modifier = Modifier.width(6.dp))
-            Button(onClick = {
-                lastClass = "mage"
-                vm.sendCmd("rank mage")
-            }) { Text("法师") }
-            Spacer(modifier = Modifier.width(6.dp))
-            Button(onClick = {
-                lastClass = "taoist"
-                vm.sendCmd("rank taoist")
-            }) { Text("道士") }
-            Spacer(modifier = Modifier.width(6.dp))
-            Button(
-                enabled = lastClass.isNotBlank(),
-                onClick = { vm.sendCmd("rank $lastClass") }
-            ) { Text("刷新") }
+        val tabItems = listOf("warrior" to "战士", "mage" to "法师", "taoist" to "道士")
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            tabItems.forEach { (id, label) ->
+                val selected = lastClass == id
+                Surface(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                    border = BorderStroke(
+                        1.dp,
+                        if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                        else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
+                    )
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .clickable {
+                                lastClass = id
+                                vm.sendCmd("rank $id")
+                            }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = label,
+                            color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
+            Surface(
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .clickable { vm.sendCmd("rank $lastClass") }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("刷新")
+                }
+            }
         }
         Spacer(modifier = Modifier.height(8.dp))
         if (rankMessages.isEmpty()) {
@@ -2913,19 +3065,35 @@ private fun RankDialog(state: GameState?, vm: GameViewModel, onDismiss: () -> Un
                 if (idx <= 0) null else line.substring(0, idx) to line.substring(idx + 4).trim()
             }.groupBy({ it.first }, { it.second })
 
-            grouped.forEach { (title, lines) ->
-                Surface(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text("$title 排行榜", fontWeight = FontWeight.SemiBold)
-                        Spacer(modifier = Modifier.height(6.dp))
-                        lines.joinToString(" ").split(Regex("\\s+")).filter { it.isNotBlank() }.forEach { entry ->
-                            Text(entry)
-                        }
+            val title = when (lastClass) {
+                "warrior" -> "战士"
+                "mage" -> "法师"
+                "taoist" -> "道士"
+                else -> lastClass
+            }
+            val lines = grouped[title].orEmpty()
+            Surface(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                shape = RoundedCornerShape(14.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text("$title 排行榜", fontWeight = FontWeight.SemiBold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    if (lines.isEmpty()) {
+                        Text("暂无数据", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    } else {
+                        lines.joinToString(" ").split(Regex("\\s+"))
+                            .filter { it.isNotBlank() }
+                            .forEachIndexed { idx, entry ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("${idx + 1}. $entry")
+                                }
+                            }
                     }
                 }
             }
