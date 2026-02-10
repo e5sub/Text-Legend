@@ -1194,7 +1194,11 @@ private fun formatEffectText(effects: JsonObject?): String {
     val parts = mutableListOf<String>()
     val elementAtk = effects["elementAtk"]?.jsonPrimitive?.doubleOrNull ?: 0.0
     if (elementAtk > 0) parts.add("元素 +${elementAtk.toInt()}")
-    val keys = effects.keys.filter { it != "elementAtk" }
+    val skillId = effects["skill"]?.jsonPrimitive?.contentOrNull
+    if (!skillId.isNullOrBlank()) {
+        parts.add("附加技能:${skillId}")
+    }
+    val keys = effects.keys.filter { it != "elementAtk" && it != "skill" }
     if (keys.isNotEmpty()) {
         parts.add("特效 ${keys.joinToString("、") { effectLabel(it) }}")
     }
@@ -1204,7 +1208,11 @@ private fun formatEffectText(effects: JsonObject?): String {
 private fun formatEffectInline(effects: JsonObject?): String {
     if (effects == null) return ""
     val parts = mutableListOf<String>()
-    val keys = effects.keys.filter { it != "elementAtk" }
+    val skillId = effects["skill"]?.jsonPrimitive?.contentOrNull
+    if (!skillId.isNullOrBlank()) {
+        parts.add("附加技能:${skillId}")
+    }
+    val keys = effects.keys.filter { it != "elementAtk" && it != "skill" }
     if (keys.isNotEmpty()) {
         parts.add(keys.joinToString("、") { effectLabel(it) })
     }

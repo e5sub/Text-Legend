@@ -1,4 +1,4 @@
-﻿let token = null;
+let token = null;
 let socket = null;
 let activeChar = null;
 const classNames = { warrior: '战士', mage: '法师', taoist: '道士' };
@@ -2201,6 +2201,7 @@ function renderForgeSecondaryList(itemId) {
 
 function formatForgeMeta(item) {
   if (!item) return '';
+  const skillLabel = getEffectSkillLabel(item);
   const tags = [];
   if (item.effects && item.effects.combo) tags.push('连击');
   if (item.effects && item.effects.fury) tags.push('狂攻');
@@ -2209,7 +2210,7 @@ function formatForgeMeta(item) {
   if (item.effects && item.effects.dodge) tags.push('闪避');
   if (item.effects && item.effects.poison) tags.push('毒');
   if (item.effects && item.effects.healblock) tags.push('禁疗');
-  if (item.effects && item.effects.skill) tags.push(`附加技能:${item.effects.skill}`);
+  if (skillLabel) tags.push(`附加技能:${skillLabel}`);
   if (item.effects && item.effects.elementAtk) tags.push(`元素攻击+${Math.floor(item.effects.elementAtk)}`);
   if (!tags.length) return '特效: 无';
   return `特效: ${tags.join(' / ')}`;
@@ -4065,6 +4066,7 @@ function trainingCost(currentLevel) {
 
 function formatItemTooltip(item) {
   if (!item) return '';
+  const skillLabel = getEffectSkillLabel(item);
   const lines = [];
   lines.push(item.name || '');
   if (item.is_set) lines.push('\u5957\u88c5');
@@ -4093,8 +4095,8 @@ function formatItemTooltip(item) {
   if (item.effects && item.effects.healblock) {
     lines.push('\u7279\u6548: \u7981\u7597(20%\u6982\u7387\u51cf\u5c11\u76ee\u6807\u56de\u884090%\uff0c\u6301\u7eed5\u79d2)');
   }
-  if (item.effects && item.effects.skill) {
-    lines.push(`\u7279\u6548: \u9644\u52a0\u6280\u80fd(${item.effects.skill})`);
+  if (skillLabel) {
+    lines.push(`特效: 附加技能(${skillLabel})`);
   }
   if (item.effects && item.effects.elementAtk) {
     lines.push(`\u7279\u6548: \u5143\u7d20\u653b\u51fb+${Math.floor(item.effects.elementAtk)}(\u65e0\u89c6\u9632\u5fa1/\u9b54\u5fa1)`);
@@ -4440,6 +4442,7 @@ function showGuildModal() {
 
 function formatItemName(item) {
   if (!item) return '';
+  const skillLabel = getEffectSkillLabel(item);
   const tags = [];
   if (item.effects && item.effects.combo) tags.push('\u8fde\u51fb');
   if (item.effects && item.effects.fury) tags.push('\u72C2\u653B');
@@ -4448,10 +4451,17 @@ function formatItemName(item) {
   if (item.effects && item.effects.dodge) tags.push('\u95ea\u907f');
   if (item.effects && item.effects.poison) tags.push('\u6bd2');
   if (item.effects && item.effects.healblock) tags.push('\u7981\u7597');
-  if (item.effects && item.effects.skill) tags.push(`\u9644\u6280:${item.effects.skill}`);
+  if (skillLabel) tags.push(`附加技能:${skillLabel}`);
   if (item.effects && item.effects.elementAtk) tags.push(`\u5143\u7d20+${Math.floor(item.effects.elementAtk)}`);
   if (item.refine_level && item.refine_level > 0) tags.push(`锻造+${item.refine_level}`);
   return tags.length ? `${item.name}\u00b7${tags.join('\u00b7')}` : item.name;
+}
+
+function getEffectSkillLabel(item) {
+  if (!item) return '';
+  if (item.effectSkillName) return String(item.effectSkillName);
+  if (item.effects && item.effects.skill) return String(item.effects.skill);
+  return '';
 }
 
 function applyRarityClass(el, item) {
@@ -7496,3 +7506,14 @@ if (logThrottleNormal) {
     }
   });
 }
+
+
+
+
+
+
+
+
+
+
+

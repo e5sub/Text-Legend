@@ -2840,6 +2840,7 @@ function buildItemView(itemId, effects = null, durability = null, max_durability
   const item = ITEM_TEMPLATES[itemId] || { id: itemId, name: itemId, type: 'unknown' };
   // 优先使用装备模板中手动设置的 rarity，如果没有才使用价格计算
   const rarity = item.rarity || rarityByPrice(item);
+  const effectSkillName = effects?.skill ? getSkillNameById(effects.skill) : '';
   return {
     id: itemId,
     name: item.name,
@@ -2859,6 +2860,7 @@ function buildItemView(itemId, effects = null, durability = null, max_durability
     durability: durability ?? null,
     max_durability: max_durability ?? null,
     effects: effects || null,
+    effectSkillName,
     refine_level: refine_level || 0
   };
 }
@@ -3224,8 +3226,11 @@ function forceEquipmentEffects(itemId) {
   candidates.push('healblock');
   const pick = candidates[randInt(0, candidates.length - 1)];
   const effects = { [pick]: true };
-  const skillId = pickRandomEquipSkillId();
-  if (skillId) effects.skill = skillId;
+  const equipSkillChance = getEquipSkillDropChance() / 100;
+  if (Math.random() <= equipSkillChance) {
+    const skillId = pickRandomEquipSkillId();
+    if (skillId) effects.skill = skillId;
+  }
   return effects;
 }
 
@@ -5422,6 +5427,7 @@ async function buildState(player) {
   const items = player.inventory.map((i) => {
     const item = ITEM_TEMPLATES[i.id] || { id: i.id, name: i.id, type: 'unknown' };
     const effects = i.effects || null;
+    const effectSkillName = effects?.skill ? getSkillNameById(effects.skill) : '';
     // 检查是否为商店装备
     const isShopItem = Object.values(SHOP_STOCKS).some(stockList => stockList.includes(i.id));
     // 优先使用装备模板中手动设置的 rarity，如果没有才使用价格计算
@@ -5448,6 +5454,7 @@ async function buildState(player) {
       max_durability: i.max_durability ?? null,
       refine_level: i.refine_level || 0,
       effects,
+      effectSkillName,
       is_shop_item: isShopItem,
       untradable: Boolean(item.untradable),
       unconsignable: Boolean(item.unconsignable)
