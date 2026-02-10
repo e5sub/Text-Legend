@@ -496,8 +496,8 @@ export function computeDerived(player) {
     dex: (trainingFruit.dex || 0) * TRAINING_FRUIT_COEFFICIENT
   };
 
-  stats.spirit += trainingBonus.spirit + trainingFruitBonus.spirit;
-  stats.dex += trainingBonus.dex + trainingFruitBonus.dex;
+  // Note: keep training bonuses applied at final stat calculation (atk/mag style),
+  // so don't add them to base stats here.
 
   player.stats = stats;
   const levelUp = Math.max(0, level - 1);
