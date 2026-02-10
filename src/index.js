@@ -2823,7 +2823,9 @@ const CULTIVATION_REWARD_MULT_PER_LEVEL = 1;
 const CULTIVATION_ROOM_EXP_GOLD_RATE = 0.5;
 
 function cultivationRewardMultiplier(player) {
-  return 1;
+  const level = Math.floor(Number(player?.flags?.cultivationLevel ?? -1));
+  if (Number.isNaN(level) || level < 0) return 1;
+  return 1 + (level + 1) * 0.1;
 }
 
 function totalRewardMultiplier({ vipActive, guildActive, cultivationMult = 1, partyMult = 1 }) {
@@ -5547,7 +5549,7 @@ async function buildState(player) {
       exp_gold_bonus_pct: (() => {
         const totalPartyCount = partyMembersTotalCount(party) || 1;
         const partyMult = totalPartyCount > 1 ? (1 + Math.min(0.2 * totalPartyCount, 1.0)) : 1;
-        const cultivationMult = isCultivationRoom(player.position.zone) ? 1 : cultivationRewardMultiplier(player);
+        const cultivationMult = cultivationRewardMultiplier(player);
         const rewardMult = totalRewardMultiplier({
           vipActive: isVipActive(player),
           guildActive: Boolean(player.guild),
@@ -8034,7 +8036,7 @@ async function processMobDeath(player, mob, online) {
 
     partyMembersForReward.forEach((member) => {
       const partyMult = totalPartyCount > 1 ? (1 + Math.min(0.2 * totalPartyCount, 1.0)) : 1;
-      const cultivationMult = isCultivationRoom(mobZoneId) ? 1 : cultivationRewardMultiplier(member);
+      const cultivationMult = cultivationRewardMultiplier(member);
       const rewardMult = totalRewardMultiplier({
         vipActive: isVipActive(member),
         guildActive: Boolean(member.guild),

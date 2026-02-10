@@ -2388,6 +2388,19 @@ body.dark .chat-name-btn.sponsor-player-name:hover {
   .game-layout {
     grid-template-columns: 1fr;
   }
+  .battle-panel {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    height: auto;
+    max-height: none;
+  }
+  .battle-list {
+    height: auto;
+    max-height: none;
+  }
+  .battle-center-split {
+    height: auto;
+  }
   .side .action-group.skills-group,
   .side .action-group.targets-group {
     display: none;
@@ -2420,10 +2433,21 @@ body.dark .chat-name-btn.sponsor-player-name:hover {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto;
     gap: 12px;
+    height: auto;
+    max-height: none;
   }
 
   .battle-column {
     min-height: auto;
+  }
+
+  .battle-list {
+    height: auto;
+    max-height: none;
+  }
+
+  .battle-center-split {
+    height: auto;
   }
 
   .battle-skill-grid {
