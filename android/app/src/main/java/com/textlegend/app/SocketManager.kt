@@ -230,7 +230,13 @@ class SocketManager(private val json: Json) {
         if (!key.isNullOrBlank()) {
             val seq = antiSeq + 1
             antiSeq = seq
-            val sig = signCmd(key, seq, text)
+            val sig = runCatching { signCmd(key, seq, text) }.getOrDefault("")
+            if (sig.isBlank()) {
+                enqueueCmd(text)
+                antiKey = null
+                antiSeq = 0
+                return
+            }
             payload.put("seq", seq)
             payload.put("sig", sig)
         }
