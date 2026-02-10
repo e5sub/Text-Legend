@@ -712,7 +712,7 @@
               <h3>特效装备掉落设置</h3>
               <p style="color: #666; margin-bottom: 12px; font-size: 13px;">
                 控制怪物掉落特效装备的概率。<br>
-                默认值: 单特效概率0.9%, 双特效概率0.1%
+                默认值: 单特效概率0.9%, 双特效概率0.1%, 附加技能概率0.5%
               </p>
               <div class="table-container">
                 <table style="font-size: 12px;">
@@ -733,6 +733,11 @@
                       <td>双特效掉落概率(%)</td>
                       <td><input id="effect-drop-double-chance" type="number" step="0.001" min="0" max="100" style="width: 80px;"></td>
                       <td>掉落2条特效的概率</td>
+                    </tr>
+                    <tr>
+                      <td>附加技能掉落概率(%)</td>
+                      <td><input id="equip-skill-drop-chance" type="number" step="0.001" min="0" max="100" style="width: 80px;"></td>
+                      <td>装备附加技能出现的概率</td>
                     </tr>
                   </tbody>
                 </table>

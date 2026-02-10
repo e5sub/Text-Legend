@@ -88,7 +88,10 @@ export function validatePlayerName(name) {
 /**
  * 验证effects对象（只允许特定的效果）
  */
-const ALLOWED_EFFECTS = ['combo', 'fury', 'unbreakable', 'defense', 'dodge', 'poison', 'healblock', 'elementAtk'];
+import { SKILLS } from './skills.js';
+
+const ALLOWED_EFFECTS = ['combo', 'fury', 'unbreakable', 'defense', 'dodge', 'poison', 'healblock', 'elementAtk', 'skill'];
+const ALL_SKILL_IDS = new Set(Object.values(SKILLS).flatMap((group) => Object.values(group).map((skill) => skill.id)));
 
 export function validateEffects(effects) {
   if (effects === null || effects === undefined) {
@@ -103,6 +106,13 @@ export function validateEffects(effects) {
       const value = Number(effects[key] || 0);
       if (value > 0) {
         normalized[key] = Math.max(1, Math.floor(value));
+      }
+      continue;
+    }
+    if (key === 'skill') {
+      const value = typeof effects[key] === 'string' ? effects[key].trim() : '';
+      if (value && ALL_SKILL_IDS.has(value)) {
+        normalized[key] = value;
       }
       continue;
     }

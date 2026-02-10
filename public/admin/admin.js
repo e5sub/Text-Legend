@@ -79,6 +79,7 @@ const effectResetQuadrupleRateInput = document.getElementById('effect-reset-quad
 const effectResetQuintupleRateInput = document.getElementById('effect-reset-quintuple-rate');
 const effectDropSingleChanceInput = document.getElementById('effect-drop-single-chance');
 const effectDropDoubleChanceInput = document.getElementById('effect-drop-double-chance');
+const equipSkillDropChanceInput = document.getElementById('equip-skill-drop-chance');
 const effectResetSaveBtn = document.getElementById('effect-reset-save-btn');
 
 // 世界BOSS相关
@@ -626,6 +627,9 @@ async function loadEffectResetSettings() {
     if (data.dropDoubleChance !== undefined && effectDropDoubleChanceInput) {
       effectDropDoubleChanceInput.value = data.dropDoubleChance;
     }
+    if (data.equipSkillDropChance !== undefined && equipSkillDropChanceInput) {
+      equipSkillDropChanceInput.value = data.equipSkillDropChance;
+    }
     effectResetMsg.textContent = '加载成功';
     effectResetMsg.style.color = 'green';
     setTimeout(() => {
@@ -648,6 +652,7 @@ async function saveEffectResetSettings() {
     const quintupleRate = effectResetQuintupleRateInput ? Number(effectResetQuintupleRateInput.value) : undefined;
     const dropSingleChance = effectDropSingleChanceInput ? Number(effectDropSingleChanceInput.value) : undefined;
     const dropDoubleChance = effectDropDoubleChanceInput ? Number(effectDropDoubleChanceInput.value) : undefined;
+    const equipSkillDropChance = equipSkillDropChanceInput ? Number(equipSkillDropChanceInput.value) : undefined;
 
     if (successRate !== undefined && (isNaN(successRate) || successRate < 0 || successRate > 100)) {
       effectResetMsg.textContent = '成功率必须在0-100之间';
@@ -684,8 +689,13 @@ async function saveEffectResetSettings() {
       effectResetMsg.style.color = 'red';
       return;
     }
+    if (equipSkillDropChance !== undefined && (isNaN(equipSkillDropChance) || equipSkillDropChance < 0 || equipSkillDropChance > 100)) {
+      effectResetMsg.textContent = '附加技能掉落概率必须在0-100之间';
+      effectResetMsg.style.color = 'red';
+      return;
+    }
 
-    await api('/admin/effect-reset-settings/update', 'POST', { successRate, doubleRate, tripleRate, quadrupleRate, quintupleRate, dropSingleChance, dropDoubleChance });
+    await api('/admin/effect-reset-settings/update', 'POST', { successRate, doubleRate, tripleRate, quadrupleRate, quintupleRate, dropSingleChance, dropDoubleChance, equipSkillDropChance });
     effectResetMsg.textContent = '保存成功，立即生效';
     effectResetMsg.style.color = 'green';
     setTimeout(() => {

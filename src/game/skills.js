@@ -130,7 +130,11 @@ export function scaledSkillPower(skill, level) {
 }
 
 export function getSkill(classId, skillId) {
-  return SKILLS[classId]?.[skillId] || null;
+  if (SKILLS[classId]?.[skillId]) return SKILLS[classId][skillId];
+  for (const cls of Object.keys(SKILLS)) {
+    if (SKILLS[cls]?.[skillId]) return SKILLS[cls][skillId];
+  }
+  return null;
 }
 
 export function ensurePlayerSkills(player) {
@@ -144,10 +148,18 @@ export function ensurePlayerSkills(player) {
 
 export function hasSkill(player, skillId) {
   ensurePlayerSkills(player);
-  return player.skills.includes(skillId);
+  if (player.skills.includes(skillId)) return true;
+  const extra = player.flags?.equipSkillId;
+  if (extra && extra === skillId) return true;
+  const extras = Array.isArray(player.flags?.equipSkills) ? player.flags.equipSkills : [];
+  return extras.includes(skillId);
 }
 
 export function getLearnedSkills(player) {
   ensurePlayerSkills(player);
-  return player.skills.map((id) => getSkill(player.classId, id)).filter(Boolean);
+  const extras = [];
+  if (player.flags?.equipSkillId) extras.push(player.flags.equipSkillId);
+  if (Array.isArray(player.flags?.equipSkills)) extras.push(...player.flags.equipSkills);
+  const ids = Array.from(new Set([...player.skills, ...extras].filter(Boolean)));
+  return ids.map((id) => getSkill(player.classId, id)).filter(Boolean);
 }

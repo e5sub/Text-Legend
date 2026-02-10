@@ -2346,6 +2346,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
 
       // 保存原有的元素攻击值(通过装备合成获得)
       const originalElementAtk = Number(originalEffects?.elementAtk || 0);
+      const originalSkill = typeof originalEffects?.skill === 'string' ? originalEffects.skill : '';
 
       let newEffects = null;
 
@@ -2355,6 +2356,10 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         // 如果原有装备有元素攻击,特效重置后继续保留(因为元素攻击只能通过装备合成获得)
         if (originalElementAtk > 0) {
           newEffects.elementAtk = originalElementAtk;
+        }
+        // 保留附加技能，不因特效重置丢失
+        if (originalSkill) {
+          newEffects.skill = originalSkill;
         }
         if (effectCount === 5) {
           send(`特效重置成功！${mainItem.name} 获得5条新特效！`);

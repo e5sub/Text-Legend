@@ -17,7 +17,7 @@ import { addGuildMember, createGuild, getGuildByName, getGuildByNameInRealm, get
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
 import { sendMail, listMail, listSentMail, markMailRead, markMailClaimed, deleteMail } from './db/mail.js';
 import { createVipCodes, listVipCodes, useVipCode } from './db/vip.js';
-import { getSetting, setSetting, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb } from './db/settings.js';
+import { getSetting, setSetting, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb, getEquipSkillDropChance as getEquipSkillDropChanceDb, setEquipSkillDropChance as setEquipSkillDropChanceDb } from './db/settings.js';
 import { listRealms, getRealmById, updateRealmName, createRealm } from './db/realms.js';
 import {
   listMobRespawns,
@@ -62,7 +62,9 @@ import {
   getEffectDropSingleChance,
   setEffectDropSingleChance,
   getEffectDropDoubleChance,
-  setEffectDropDoubleChance
+  setEffectDropDoubleChance,
+  getEquipSkillDropChance,
+  setEquipSkillDropChance
 } from './game/settings.js';
 import {
   listItems,
@@ -1166,7 +1168,8 @@ app.get('/admin/effect-reset-settings', async (req, res) => {
     const quintupleRate = await getEffectResetQuintupleRateDb();
     const dropSingleChance = await getEffectDropSingleChanceDb();
     const dropDoubleChance = await getEffectDropDoubleChanceDb();
-    res.json({ ok: true, successRate, doubleRate, tripleRate, quadrupleRate, quintupleRate, dropSingleChance, dropDoubleChance });
+    const equipSkillDropChance = await getEquipSkillDropChanceDb();
+    res.json({ ok: true, successRate, doubleRate, tripleRate, quadrupleRate, quintupleRate, dropSingleChance, dropDoubleChance, equipSkillDropChance });
   } catch (err) {
     console.error('特效重置配置加载失败:', err);
     res.status(500).json({ error: err.message || '加载失败' });
@@ -1176,7 +1179,7 @@ app.get('/admin/effect-reset-settings', async (req, res) => {
 app.post('/admin/effect-reset-settings/update', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
-  const { successRate, doubleRate, tripleRate, quadrupleRate, quintupleRate, dropSingleChance, dropDoubleChance } = req.body || {};
+  const { successRate, doubleRate, tripleRate, quadrupleRate, quintupleRate, dropSingleChance, dropDoubleChance, equipSkillDropChance } = req.body || {};
 
   if (successRate !== undefined) {
     const parsed = Number(successRate);
@@ -1234,6 +1237,14 @@ app.post('/admin/effect-reset-settings/update', async (req, res) => {
     await setEffectDropDoubleChanceDb(parsed);
   }
 
+  if (equipSkillDropChance !== undefined) {
+    const parsed = Number(equipSkillDropChance);
+    if (isNaN(parsed) || parsed < 0 || parsed > 100) {
+      return res.status(400).json({ error: '附加技能掉落概率必须在0-100之间' });
+    }
+    await setEquipSkillDropChanceDb(parsed);
+  }
+
   // 更新内存中的配置
   const newSuccessRate = await getEffectResetSuccessRateDb();
   const newDoubleRate = await getEffectResetDoubleRateDb();
@@ -1242,6 +1253,7 @@ app.post('/admin/effect-reset-settings/update', async (req, res) => {
   const newQuintupleRate = await getEffectResetQuintupleRateDb();
   const newDropSingleChance = await getEffectDropSingleChanceDb();
   const newDropDoubleChance = await getEffectDropDoubleChanceDb();
+  const newEquipSkillDropChance = await getEquipSkillDropChanceDb();
   setEffectResetSuccessRate(newSuccessRate);
   setEffectResetDoubleRate(newDoubleRate);
   setEffectResetTripleRate(newTripleRate);
@@ -1249,7 +1261,8 @@ app.post('/admin/effect-reset-settings/update', async (req, res) => {
   setEffectResetQuintupleRate(newQuintupleRate);
   setEffectDropSingleChance(newDropSingleChance);
   setEffectDropDoubleChance(newDropDoubleChance);
-  res.json({ ok: true, successRate: newSuccessRate, doubleRate: newDoubleRate, tripleRate: newTripleRate, quadrupleRate: newQuadrupleRate, quintupleRate: newQuintupleRate, dropSingleChance: newDropSingleChance, dropDoubleChance: newDropDoubleChance });
+  setEquipSkillDropChance(newEquipSkillDropChance);
+  res.json({ ok: true, successRate: newSuccessRate, doubleRate: newDoubleRate, tripleRate: newTripleRate, quadrupleRate: newQuadrupleRate, quintupleRate: newQuintupleRate, dropSingleChance: newDropSingleChance, dropDoubleChance: newDropDoubleChance, equipSkillDropChance: newEquipSkillDropChance });
 });
 
 // 修炼配置（普通玩家）
@@ -2957,6 +2970,15 @@ async function cleanupInvalidItems() {
   return { checked: rows.length, updated, removedSlots, clearedEquip };
 }
 
+function getSkillNameById(skillId) {
+  if (!skillId) return '';
+  for (const cls of Object.keys(SKILLS)) {
+    const skill = SKILLS[cls]?.[skillId];
+    if (skill) return skill.name || skillId;
+  }
+  return skillId;
+}
+
 function formatItemLabel(itemId, effects = null) {
   const item = ITEM_TEMPLATES[itemId] || { name: itemId };
   if (!effects) return item.name;
@@ -2968,6 +2990,7 @@ function formatItemLabel(itemId, effects = null) {
   if (effects.dodge) tags.push('闪避');
   if (effects.poison) tags.push('毒');
   if (effects.healblock) tags.push('禁疗');
+  if (effects.skill) tags.push(`附技:${getSkillNameById(effects.skill)}`);
   if (Number(effects.elementAtk || 0) > 0) tags.push(`元素+${Math.floor(Number(effects.elementAtk))}`);
   return tags.length ? `${item.name}·${tags.join('·')}` : item.name;
 }
@@ -3130,6 +3153,13 @@ function tickCrossRankEvent() {
   }
 }
 
+const EQUIP_SKILL_IDS = Object.values(SKILLS).flatMap((group) => Object.values(group).map((skill) => skill.id));
+
+function pickRandomEquipSkillId() {
+  if (!EQUIP_SKILL_IDS.length) return null;
+  return EQUIP_SKILL_IDS[randInt(0, EQUIP_SKILL_IDS.length - 1)];
+}
+
 function rollEquipmentEffects(itemId) {
   const item = ITEM_TEMPLATES[itemId];
   if (!item || !['weapon', 'armor', 'accessory'].includes(item.type)) return null;
@@ -3150,21 +3180,29 @@ function rollEquipmentEffects(itemId) {
   // 从配置读取特效掉落概率
   const doubleChance = getEffectDropDoubleChance() / 100;
   const singleChance = getEffectDropSingleChance() / 100;
+  const equipSkillChance = getEquipSkillDropChance() / 100;
 
+  let effects = null;
   if (Math.random() <= doubleChance && candidates.length >= 2) {
     const first = randInt(0, candidates.length - 1);
     let second = randInt(0, candidates.length - 1);
     if (second === first) second = (second + 1) % candidates.length;
-    return {
+    effects = {
       [candidates[first]]: true,
       [candidates[second]]: true
     };
-  }
-  if (Math.random() <= singleChance) {
+  } else if (Math.random() <= singleChance) {
     const pick = candidates[randInt(0, candidates.length - 1)];
-    return { [pick]: true };
+    effects = { [pick]: true };
   }
-  return null;
+  if (Math.random() <= equipSkillChance) {
+    const skillId = pickRandomEquipSkillId();
+    if (skillId) {
+      if (!effects) effects = {};
+      effects.skill = skillId;
+    }
+  }
+  return effects;
 }
 
 function forceEquipmentEffects(itemId) {
@@ -3185,7 +3223,10 @@ function forceEquipmentEffects(itemId) {
   candidates.push('unbreakable');
   candidates.push('healblock');
   const pick = candidates[randInt(0, candidates.length - 1)];
-  return { [pick]: true };
+  const effects = { [pick]: true };
+  const skillId = pickRandomEquipSkillId();
+  if (skillId) effects.skill = skillId;
+  return effects;
 }
 
 function isBossMob(mobTemplate) {
@@ -3710,6 +3751,9 @@ function normalizeEffects(effects) {
   if (effects.dodge) normalized.dodge = true;
   if (effects.poison) normalized.poison = true;
   if (effects.healblock) normalized.healblock = true;
+  if (typeof effects.skill === 'string' && effects.skill.trim()) {
+    normalized.skill = effects.skill.trim();
+  }
   if (Number(effects.elementAtk || 0) > 0) {
     normalized.elementAtk = Math.max(1, Math.floor(Number(effects.elementAtk)));
   }
@@ -3721,7 +3765,13 @@ function sameEffects(a, b) {
   const nb = normalizeEffects(b);
   return Boolean((na?.combo || false) === (nb?.combo || false))
     && Boolean((na?.fury || false) === (nb?.fury || false))
-    && Boolean((na?.unbreakable || false) === (nb?.unbreakable || false));
+    && Boolean((na?.unbreakable || false) === (nb?.unbreakable || false))
+    && String(na?.skill || '') === String(nb?.skill || '')
+    && Number(na?.elementAtk || 0) === Number(nb?.elementAtk || 0)
+    && Boolean((na?.defense || false) === (nb?.defense || false))
+    && Boolean((na?.dodge || false) === (nb?.dodge || false))
+    && Boolean((na?.poison || false) === (nb?.poison || false))
+    && Boolean((na?.healblock || false) === (nb?.healblock || false));
 }
 
 function findInventorySlot(player, itemId, effects = null) {
@@ -9656,6 +9706,8 @@ async function start() {
   setEffectDropSingleChance(effectDropSingleChance);
   const effectDropDoubleChance = await getEffectDropDoubleChanceDb();
   setEffectDropDoubleChance(effectDropDoubleChance);
+  const equipSkillDropChance = await getEquipSkillDropChanceDb();
+  setEquipSkillDropChance(equipSkillDropChance);
   getRealmIds().forEach((realmId) => {
     checkMobRespawn(realmId);
   });

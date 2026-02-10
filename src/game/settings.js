@@ -167,6 +167,7 @@ let refineBonusPerLevel = 1; // 每级锻造加成值
 // 特效装备掉落配置（可由后台动态配置）
 let effectDropSingleChance = 0.009; // 单特效掉落概率(%)
 let effectDropDoubleChance = 0.001; // 双特效掉落概率(%)
+let equipSkillDropChance = 0.5; // 装备附加技能掉落概率(%)
 
 // 特效重置配置（可由后台动态配置）
 let effectResetSuccessRate = 0.1; // 成功率(%)
@@ -371,6 +372,24 @@ export function setEffectDropDoubleChance(rate) {
  */
 export function getEffectDropDoubleChance() {
   return effectDropDoubleChance;
+}
+
+/**
+ * 设置装备附加技能掉落概率
+ * @param {number} rate - 附加技能掉落概率(%)
+ */
+export function setEquipSkillDropChance(rate) {
+  if (typeof rate === 'number' && rate >= 0 && rate <= 100) {
+    equipSkillDropChance = rate;
+  }
+}
+
+/**
+ * 获取装备附加技能掉落概率
+ * @returns {number} 附加技能掉落概率(%)
+ */
+export function getEquipSkillDropChance() {
+  return equipSkillDropChance;
 }
 
 

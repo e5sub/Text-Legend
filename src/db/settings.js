@@ -777,3 +777,14 @@ export async function setEffectDropDoubleChance(rate) {
   await setSetting('effect_drop_double_chance', String(normalized));
 }
 
+export async function getEquipSkillDropChance() {
+  const value = await getSetting('equip_skill_drop_chance', '0.5');
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 0.5;
+}
+
+export async function setEquipSkillDropChance(rate) {
+  const normalized = Math.max(0, Math.min(100, Number(rate) || 0.5));
+  await setSetting('equip_skill_drop_chance', String(normalized));
+}
+
