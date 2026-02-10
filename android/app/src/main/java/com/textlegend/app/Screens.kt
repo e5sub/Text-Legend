@@ -3577,19 +3577,22 @@ private fun hasSpecialEffects(effects: JsonObject?): Boolean {
     return effects != null && effects.isNotEmpty()
 }
 
-private fun buildEffectSecondaryOptions(state: GameState?, mainSelection: String): List<Pair<String, String>> {
-    if (state == null || mainSelection.isBlank() || !mainSelection.startsWith("equip:")) return emptyList()
-    val slot = mainSelection.removePrefix("equip:").trim()
-    val mainEq = state.equipment.firstOrNull { it.slot == slot } ?: return emptyList()
-    val mainId = mainEq.item?.id ?: return emptyList()
-    return state.items.orEmpty()
-        .filter { it.id == mainId || it.key == mainId }
-        .filter { hasSpecialEffects(it.effects) }
-        .map { item ->
-            val key = if (item.key.isNotBlank()) item.key else item.id
-            key to "${item.name} x${item.qty}"
-        }
-}
+  private fun buildEffectSecondaryOptions(state: GameState?, mainSelection: String): List<Pair<String, String>> {
+      if (state == null || mainSelection.isBlank() || !mainSelection.startsWith("equip:")) return emptyList()
+      val slot = mainSelection.removePrefix("equip:").trim()
+      val mainEq = state.equipment.firstOrNull { it.slot == slot } ?: return emptyList()
+      if (mainEq.item?.id.isNullOrBlank()) return emptyList()
+      return state.items.orEmpty()
+          .filter { item ->
+              val isEquip = !item.slot.isNullOrBlank() || item.type == "weapon" || item.type == "armor" || item.type == "accessory"
+              val notShop = item.is_shop_item != true
+              isEquip && notShop && hasSpecialEffects(item.effects) && item.qty > 0
+          }
+          .map { item ->
+              val key = if (item.key.isNotBlank()) item.key else item.id
+              key to "${item.name} x${item.qty}"
+          }
+  }
 
   private fun buildForgeSecondaryOptions(state: GameState?, mainSelection: String): List<Pair<String, String>> {
       if (state == null || mainSelection.isBlank() || !mainSelection.startsWith("equip:")) return emptyList()
