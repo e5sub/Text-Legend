@@ -116,6 +116,22 @@ button:hover {
   margin-top: 6px;
 }
 
+.cmd-rate-settings .row {
+  justify-content: flex-start;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cmd-rate-settings label {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.cmd-rate-settings input {
+  width: auto;
+  margin: 0;
+}
+
 .block.collapsed .block-body {
   display: none;
 }
