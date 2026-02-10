@@ -2120,7 +2120,7 @@ private fun SettingsScreen(vm: GameViewModel, onDismiss: () -> Unit) {
           ) {
               Column(modifier = Modifier.padding(12.dp)) {
                   Text(
-                      text = members?.guildName?.let { "行会：$it" } ?: members?.guild?.name?.let { "行会：$it" } ?: "未加入行会",
+                      text = members?.guildName?.let { "行会：$it" } ?: "未加入行会",
                       fontWeight = FontWeight.Bold
                   )
                   Spacer(modifier = Modifier.height(4.dp))
@@ -3286,7 +3286,7 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
                 "taoist" -> "道士"
                 else -> lastClass
             }
-            val latestLine = rankMessages.lastOrNull { it.startsWith("$title排行榜:") }
+            val latestLine = rankMessages.lastOrNull { it.startsWith("${title}排行榜:") }
             val rawEntries = latestLine?.substringAfter("排行榜:")?.trim().orEmpty()
             val seen = LinkedHashSet<String>()
             val lines = rawEntries.split(Regex("\\s+")).filter { it.isNotBlank() }.filter { seen.add(it) }

@@ -6878,17 +6878,20 @@ io.on('connection', (socket) => {
     const { clean } = sanitizePayload(payload, ['text', 'source', 'seq', 'sig'], 'cmd');
     const inputText = typeof clean.text === 'string' ? clean.text : '';
     const inputSource = typeof clean.source === 'string' ? clean.source : '';
-    const { rateLimits, cooldowns } = await getCmdRateSettingsCached();
-    if (hitRateLimit(player, 'cmd', rateLimits.global.limit, rateLimits.global.windowMs) ||
-        hitRateLimit(player, 'cmd_burst', rateLimits.burst.limit, rateLimits.burst.windowMs)) {
-      player.send('操作过快，请稍后再试。');
-      return;
-    }
     const cmdName = inputText.trim().split(/\s+/)[0]?.toLowerCase();
-    if (cmdName && cooldowns[cmdName]) {
-      if (hitCooldown(player, `cmd:${cmdName}`, cooldowns[cmdName])) {
+    const rateLimitExempt = new Set(['refine', 'forge', 'train', 'effect']);
+    const { rateLimits, cooldowns } = await getCmdRateSettingsCached();
+    if (!rateLimitExempt.has(cmdName)) {
+      if (hitRateLimit(player, 'cmd', rateLimits.global.limit, rateLimits.global.windowMs) ||
+          hitRateLimit(player, 'cmd_burst', rateLimits.burst.limit, rateLimits.burst.windowMs)) {
         player.send('操作过快，请稍后再试。');
         return;
+      }
+      if (cmdName && cooldowns[cmdName]) {
+        if (hitCooldown(player, `cmd:${cmdName}`, cooldowns[cmdName])) {
+          player.send('操作过快，请稍后再试。');
+          return;
+        }
       }
     }
     const antiKey = socket.data?.antiKey;

@@ -34,9 +34,6 @@ const cmdRateGlobalLimitInput = document.getElementById('cmd-rate-global-limit')
 const cmdRateGlobalWindowInput = document.getElementById('cmd-rate-global-window');
 const cmdRateBurstLimitInput = document.getElementById('cmd-rate-burst-limit');
 const cmdRateBurstWindowInput = document.getElementById('cmd-rate-burst-window');
-const cmdCooldownForgeInput = document.getElementById('cmd-cooldown-forge');
-const cmdCooldownRefineInput = document.getElementById('cmd-cooldown-refine');
-const cmdCooldownEffectInput = document.getElementById('cmd-cooldown-effect');
 const cmdCooldownConsignInput = document.getElementById('cmd-cooldown-consign');
 const cmdCooldownTradeInput = document.getElementById('cmd-cooldown-trade');
 const cmdCooldownMailInput = document.getElementById('cmd-cooldown-mail');
@@ -3296,9 +3293,6 @@ async function loadCmdRateSettings() {
     if (cmdRateGlobalWindowInput) cmdRateGlobalWindowInput.value = String(rate.global?.windowMs ?? 10000);
     if (cmdRateBurstLimitInput) cmdRateBurstLimitInput.value = String(rate.burst?.limit ?? 60);
     if (cmdRateBurstWindowInput) cmdRateBurstWindowInput.value = String(rate.burst?.windowMs ?? 10000);
-    if (cmdCooldownForgeInput) cmdCooldownForgeInput.value = String(cooldowns.forge ?? 1200);
-    if (cmdCooldownRefineInput) cmdCooldownRefineInput.value = String(cooldowns.refine ?? 1200);
-    if (cmdCooldownEffectInput) cmdCooldownEffectInput.value = String(cooldowns.effect ?? 1200);
     if (cmdCooldownConsignInput) cmdCooldownConsignInput.value = String(cooldowns.consign ?? 800);
     if (cmdCooldownTradeInput) cmdCooldownTradeInput.value = String(cooldowns.trade ?? 800);
     if (cmdCooldownMailInput) cmdCooldownMailInput.value = String(cooldowns.mail ?? 800);
@@ -3326,9 +3320,6 @@ async function saveCmdRateSettings() {
       }
     };
     const cooldowns = {
-      forge: Number(cmdCooldownForgeInput?.value || 1200),
-      refine: Number(cmdCooldownRefineInput?.value || 1200),
-      effect: Number(cmdCooldownEffectInput?.value || 1200),
       consign: Number(cmdCooldownConsignInput?.value || 800),
       trade: Number(cmdCooldownTradeInput?.value || 800),
       mail: Number(cmdCooldownMailInput?.value || 800)
