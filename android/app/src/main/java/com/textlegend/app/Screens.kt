@@ -1230,7 +1230,7 @@ private fun formatEffectText(effects: JsonObject?): String {
     if (elementAtk > 0) parts.add("元素 +${elementAtk.toInt()}")
     val skillId = runCatching { effects["skill"]?.jsonPrimitive?.content }.getOrNull()
     if (!skillId.isNullOrBlank()) {
-        parts.add("附加技能:${skillId}")
+        parts.add("附加技能:${skillNameById(skillId)}")
     }
     val keys = effects.keys.filter { it != "elementAtk" && it != "skill" }
     if (keys.isNotEmpty()) {
@@ -1244,13 +1244,50 @@ private fun formatEffectInline(effects: JsonObject?): String {
     val parts = mutableListOf<String>()
     val skillId = runCatching { effects["skill"]?.jsonPrimitive?.content }.getOrNull()
     if (!skillId.isNullOrBlank()) {
-        parts.add("附加技能:${skillId}")
+        parts.add("附加技能:${skillNameById(skillId)}")
     }
     val keys = effects.keys.filter { it != "elementAtk" && it != "skill" }
     if (keys.isNotEmpty()) {
         parts.add(keys.joinToString("、") { effectLabel(it) })
     }
     return parts.joinToString(" ")
+}
+
+private fun skillNameById(id: String): String {
+    val map = mapOf(
+        "slash" to "基本剑术",
+        "attack" to "攻杀剑术",
+        "assassinate" to "刺杀剑术",
+        "halfmoon" to "半月弯刀",
+        "firestrike" to "烈火剑法",
+        "savage" to "野蛮冲撞",
+        "earth_spike" to "彻地钉",
+        "tiangang" to "先天罡气",
+        "fireball" to "小火球",
+        "resist" to "抗拒火环",
+        "inferno" to "地狱火",
+        "explode" to "爆裂火焰",
+        "lightning" to "雷电术",
+        "flash" to "疾光电影",
+        "thunder" to "地狱雷光",
+        "thunderstorm" to "雷霆万钧",
+        "shield" to "魔法盾",
+        "iceblast" to "冰咆哮",
+        "group_magic_shield" to "群体魔法盾",
+        "heal" to "治愈术",
+        "group_heal" to "群体治疗术",
+        "poison" to "施毒术",
+        "soul" to "灵魂火符",
+        "invis" to "隐身术",
+        "group_invis" to "群体隐身术",
+        "armor" to "神圣战甲术",
+        "ghost" to "幽灵盾",
+        "skeleton" to "召唤骷髅",
+        "summon" to "召唤神兽",
+        "white_tiger" to "召唤白虎",
+        "moon_fairy" to "召唤月仙"
+    )
+    return map[id] ?: id
 }
 
 private fun effectLabel(key: String): String = when (key) {
