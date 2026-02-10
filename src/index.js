@@ -2820,6 +2820,7 @@ const ASSASSINATE_SECONDARY_DAMAGE_RATE = 0.3;
 const SABAK_TAX_RATE = 0.2;
 const GUILD_BONUS_MULT = 2;
 const CULTIVATION_REWARD_MULT_PER_LEVEL = 1;
+const CULTIVATION_ROOM_EXP_GOLD_RATE = 0.5;
 
 function cultivationRewardMultiplier(player) {
   return 1;
@@ -5542,7 +5543,19 @@ async function buildState(player) {
         : 0,
       autoSkillId: player.flags?.autoSkillId || null,
       guild_bonus: guildBonus,
-      set_bonus: Boolean(player.flags?.setBonusActive)
+      set_bonus: Boolean(player.flags?.setBonusActive),
+      exp_gold_bonus_pct: (() => {
+        const totalPartyCount = partyMembersTotalCount(party) || 1;
+        const partyMult = totalPartyCount > 1 ? (1 + Math.min(0.2 * totalPartyCount, 1.0)) : 1;
+        const cultivationMult = isCultivationRoom(player.position.zone) ? 1 : cultivationRewardMultiplier(player);
+        const rewardMult = totalRewardMultiplier({
+          vipActive: isVipActive(player),
+          guildActive: Boolean(player.guild),
+          cultivationMult,
+          partyMult
+        });
+        return Math.max(0, Math.round((rewardMult - 1) * 100));
+      })()
     },
     summon: summonPayloads[0] || null,
     summons: summonPayloads,
@@ -7942,8 +7955,12 @@ async function processMobDeath(player, mob, online) {
     return;
   }
   gainSummonExp(player);
-  const exp = template.exp;
-  const gold = randInt(template.gold[0], template.gold[1]);
+  let exp = template.exp;
+  let gold = randInt(template.gold[0], template.gold[1]);
+  if (isCultivationRoom(mobZoneId)) {
+    exp = Math.max(1, Math.floor(exp * CULTIVATION_ROOM_EXP_GOLD_RATE));
+    gold = Math.max(1, Math.floor(gold * CULTIVATION_ROOM_EXP_GOLD_RATE));
+  }
 
   const party = getPartyByMember(player.name, realmId);
   // 检查队伍成员是否都在同一个房间
