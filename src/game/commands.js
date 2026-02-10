@@ -2145,7 +2145,93 @@ export async function handleCommand({ player, players, allCharacters, playersByN
     case 'refine': {
       if (source !== 'ui') return;
       if (!args) return send('要锻造什么装备？');
-      const itemRaw = args.trim();
+      const rawArgs = args.trim();
+      if (rawArgs.startsWith('all ')) {
+        const targetRaw = rawArgs.slice(4).trim();
+        const targetLevel = Number(targetRaw);
+        if (!Number.isFinite(targetLevel) || targetLevel <= 0 || targetLevel % 10 !== 0) {
+          return send('目标锻造等级必须为10的倍数（如 10/20/30）。');
+        }
+        const slots = Object.keys(player.equipment || {});
+        if (!slots.length) return send('没有可锻造的装备。');
+        const results = [];
+        for (const slotName of slots) {
+          const equipped = player.equipment?.[slotName];
+          if (!equipped || !equipped.id) continue;
+          const item = ITEM_TEMPLATES[equipped.id];
+          if (!item) continue;
+          if (!item.slot || !['weapon', 'armor', 'accessory'].includes(item.type)) continue;
+          let current = equipped.refine_level || 0;
+          if (current >= targetLevel) {
+            results.push(`${item.name}: 已达到 +${current}`);
+            continue;
+          }
+          let attempts = 0;
+          const maxAttempts = Math.max(10, (targetLevel - current) * 3);
+          while (current < targetLevel && attempts < maxAttempts) {
+            attempts += 1;
+            const virtualArgs = `equip:${slotName}`;
+            // 复制单次锻造逻辑（与下方一致）
+            const currentRefineLevel = equipped.refine_level || 0;
+            const nextRefineLevel = currentRefineLevel + 1;
+            const tier = Math.floor((nextRefineLevel - 2) / 10);
+            const baseSuccessRate = Math.max(1, getRefineBaseSuccessRate() - tier * getRefineDecayRate());
+            const successRate = nextRefineLevel === 1 ? 100 : baseSuccessRate;
+            const isProtected = currentRefineLevel > 0 && currentRefineLevel % 10 === 0;
+
+            const allShopItems = new Set();
+            Object.values(SHOP_STOCKS).forEach(stockList => {
+              stockList.forEach(itemId => allShopItems.add(itemId));
+            });
+            const materialCount = getRefineMaterialCount();
+            const materials = [];
+            const inventory = Array.isArray(player.inventory) ? player.inventory.slice() : [];
+            for (const invSlot of inventory) {
+              if (!invSlot || !invSlot.id) continue;
+              const matItem = ITEM_TEMPLATES[invSlot.id];
+              if (!matItem) continue;
+              if (!isEquipmentItem(matItem)) continue;
+              if (allShopItems.has(invSlot.id)) continue;
+              const rarity = matItem.rarity || rarityByPrice(matItem);
+              if (!isBelowEpic(rarity)) continue;
+              if (hasSpecialEffects(invSlot.effects)) continue;
+              const qty = Math.max(0, Number(invSlot.qty || 0));
+              if (qty <= 0) continue;
+              const takeQty = Math.min(qty, materialCount - materials.length);
+              for (let i = 0; i < takeQty; i++) {
+                materials.push({ slot: invSlot, item: matItem });
+              }
+              if (materials.length >= materialCount) break;
+            }
+            if (materials.length < materialCount) {
+              results.push(`${item.name}: 材料不足，已停在 +${equipped.refine_level || 0}`);
+              break;
+            }
+            materials.forEach(({ slot }) => {
+              if (slot.qty) {
+                slot.qty -= 1;
+              } else {
+                const index = player.inventory.indexOf(slot);
+                if (index > -1) {
+                  player.inventory.splice(index, 1);
+                }
+              }
+            });
+            player.inventory = player.inventory.filter((slot) => !slot.qty || slot.qty > 0);
+
+            const success = Math.random() * 100 < successRate;
+            const newRefineLevel = success ? nextRefineLevel : (isProtected ? currentRefineLevel : Math.max(0, currentRefineLevel - 1));
+            equipped.refine_level = newRefineLevel;
+            current = newRefineLevel;
+          }
+          results.push(`${item.name}: 当前 +${equipped.refine_level || 0}`);
+        }
+        computeDerived(player);
+        player.forceStateRefresh = true;
+        send(results.length ? results.join('\n') : '没有可锻造的装备。');
+        return;
+      }
+      const itemRaw = rawArgs;
 
       // 解析主件装备
       let mainResolved = null;

@@ -2714,12 +2714,12 @@ private fun ShopDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Un
 }
 
 @Composable
-private fun ForgeDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Unit) {
-    var mainSelection by remember { mutableStateOf("") }
-    var secondarySelection by remember { mutableStateOf("") }
+  private fun ForgeDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Unit) {
+      var mainSelection by remember { mutableStateOf("") }
+      var secondarySelection by remember { mutableStateOf("") }
 
-    val mainOptions = buildEquippedOptions(state)
-    val secondaryOptions = buildForgeSecondaryOptions(state, mainSelection)
+      val mainOptions = buildForgeMainOptions(state)
+      val secondaryOptions = buildForgeSecondaryOptions(state, mainSelection)
 
     ScreenScaffold(title = "装备合成", onBack = onDismiss) {
         if (secondarySelection.isNotBlank() && secondaryOptions.none { it.first == secondarySelection }) {
@@ -2751,10 +2751,11 @@ private fun ForgeDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> U
 }
 
 @Composable
-private fun RefineDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Unit) {
-    var selection by remember { mutableStateOf("") }
-    val options = buildEquippedOptions(state)
-    val materialOptions = buildRefineMaterialOptions(state)
+  private fun RefineDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Unit) {
+      var selection by remember { mutableStateOf("") }
+      var bulkTarget by remember { mutableStateOf("10") }
+      val options = buildEquippedOptions(state)
+      val materialOptions = buildRefineMaterialOptions(state)
     val refineConfig = state?.refine_config
     val refineLevel = resolveRefineLevel(state, selection)
     val successRate = if (refineConfig != null && refineLevel != null) {
@@ -2805,8 +2806,27 @@ private fun RefineDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> 
             Text("副件材料(背包符合)")
             OptionGrid(options = materialOptions, selected = "", onSelect = { })
         }
+
+        Spacer(modifier = Modifier.height(10.dp))
+        Text("一键锻造(整十级)", style = MaterialTheme.typography.titleMedium)
+        Spacer(modifier = Modifier.height(6.dp))
+        OutlinedTextField(
+            value = bulkTarget,
+            onValueChange = { bulkTarget = it.filter { ch -> ch.isDigit() } },
+            label = { Text("目标等级(10/20/30)") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Button(
+            onClick = {
+                val target = bulkTarget.toIntOrNull()
+                if (target != null) vm.sendCmd("refine all $target")
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) { Text("一键锻造到目标等级") }
     }
-}
+  }
 
 @Composable
 private fun EffectDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Unit) {
@@ -3418,24 +3438,38 @@ private fun buildInventoryOptions(state: GameState?): List<Pair<String, String>>
     }
 }
 
-private fun buildEquippedOptions(state: GameState?): List<Pair<String, String>> {
-    val list = state?.equipment.orEmpty()
-    return list.mapNotNull { eq ->
-        val item = eq.item ?: return@mapNotNull null
-        val label = "${equipSlotLabel(eq.slot)}: ${item.name}"
-        "equip:${eq.slot}" to label
-    }
-}
+  private fun buildEquippedOptions(state: GameState?): List<Pair<String, String>> {
+      val list = state?.equipment.orEmpty()
+      return list.mapNotNull { eq ->
+          val item = eq.item ?: return@mapNotNull null
+          val label = "${equipSlotLabel(eq.slot)}: ${item.name}"
+          "equip:${eq.slot}" to label
+      }
+  }
 
-private fun equipSlotLabel(slot: String): String = when (slot) {
+  private fun equipSlotLabel(slot: String): String = when (slot) {
     "weapon" -> "武器"
     "chest" -> "衣服"
     "feet" -> "鞋子"
     "ring_left" -> "左戒指"
     "ring_right" -> "右戒指"
     "head" -> "头盔"
-    else -> slot
-}
+      else -> slot
+  }
+
+  private fun isLegendaryOrAbove(rarity: String?): Boolean {
+      return rarityRank(rarity) >= 4
+  }
+
+  private fun buildForgeMainOptions(state: GameState?): List<Pair<String, String>> {
+      val list = state?.equipment.orEmpty()
+      return list.mapNotNull { eq ->
+          val item = eq.item ?: return@mapNotNull null
+          if (!isLegendaryOrAbove(item.rarity)) return@mapNotNull null
+          val label = "${equipSlotLabel(eq.slot)}: ${item.name}"
+          "equip:${eq.slot}" to label
+      }
+  }
 
 private fun buildRefineMaterialOptions(state: GameState?): List<Pair<String, String>> {
     val items = state?.items.orEmpty()
@@ -3480,18 +3514,19 @@ private fun buildEffectSecondaryOptions(state: GameState?, mainSelection: String
         }
 }
 
-private fun buildForgeSecondaryOptions(state: GameState?, mainSelection: String): List<Pair<String, String>> {
-    if (state == null || mainSelection.isBlank() || !mainSelection.startsWith("equip:")) return emptyList()
-    val slot = mainSelection.removePrefix("equip:").trim()
-    val mainEq = state.equipment.firstOrNull { it.slot == slot } ?: return emptyList()
-    val mainId = mainEq.item?.id ?: return emptyList()
-    return state.items.orEmpty()
-        .filter { it.id == mainId || it.key == mainId }
-        .map { item ->
-            val key = if (item.key.isNotBlank()) item.key else item.id
-            key to "${item.name} x${item.qty}"
-        }
-}
+  private fun buildForgeSecondaryOptions(state: GameState?, mainSelection: String): List<Pair<String, String>> {
+      if (state == null || mainSelection.isBlank() || !mainSelection.startsWith("equip:")) return emptyList()
+      val slot = mainSelection.removePrefix("equip:").trim()
+      val mainEq = state.equipment.firstOrNull { it.slot == slot } ?: return emptyList()
+      val mainId = mainEq.item?.id ?: return emptyList()
+      return state.items.orEmpty()
+          .filter { it.id == mainId || it.key == mainId }
+          .filter { isLegendaryOrAbove(it.rarity) }
+          .map { item ->
+              val key = if (item.key.isNotBlank()) item.key else item.id
+              key to "${item.name} x${item.qty}"
+          }
+  }
 
 private fun resolveRefineLevel(state: GameState?, selection: String): Int? {
     if (selection.isBlank() || state == null) return null
