@@ -2832,7 +2832,7 @@ private fun ShopDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Un
 private fun EffectDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Unit) {
     var mainSelection by remember { mutableStateOf("") }
     var secondarySelection by remember { mutableStateOf("") }
-    val equipOptions = buildEquippedOptions(state)
+      val equipOptions = buildEffectMainOptions(state)
     val inventoryOptions = buildEffectSecondaryOptions(state, mainSelection)
     val effectConfig = state?.effect_reset_config
     var showConfirm by remember { mutableStateOf(false) }
@@ -3442,7 +3442,6 @@ private fun buildInventoryOptions(state: GameState?): List<Pair<String, String>>
       val list = state?.equipment.orEmpty()
       return list.mapNotNull { eq ->
           val item = eq.item ?: return@mapNotNull null
-          if (!hasSpecialEffects(item.effects)) return@mapNotNull null
           val label = "${equipSlotLabel(eq.slot)}: ${item.name}"
           "equip:${eq.slot}" to label
       }
@@ -3467,6 +3466,16 @@ private fun buildInventoryOptions(state: GameState?): List<Pair<String, String>>
       return list.mapNotNull { eq ->
           val item = eq.item ?: return@mapNotNull null
           if (!isLegendaryOrAbove(item.rarity)) return@mapNotNull null
+          val label = "${equipSlotLabel(eq.slot)}: ${item.name}"
+          "equip:${eq.slot}" to label
+      }
+  }
+
+  private fun buildEffectMainOptions(state: GameState?): List<Pair<String, String>> {
+      val list = state?.equipment.orEmpty()
+      return list.mapNotNull { eq ->
+          val item = eq.item ?: return@mapNotNull null
+          if (!hasSpecialEffects(item.effects)) return@mapNotNull null
           val label = "${equipSlotLabel(eq.slot)}: ${item.name}"
           "equip:${eq.slot}" to label
       }
