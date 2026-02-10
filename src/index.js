@@ -2820,7 +2820,6 @@ const ASSASSINATE_SECONDARY_DAMAGE_RATE = 0.3;
 const SABAK_TAX_RATE = 0.2;
 const GUILD_BONUS_MULT = 2;
 const CULTIVATION_REWARD_MULT_PER_LEVEL = 1;
-const CULTIVATION_ROOM_EXP_GOLD_RATE = 0.5;
 
 function cultivationRewardMultiplier(player) {
   const level = Math.floor(Number(player?.flags?.cultivationLevel ?? -1));
@@ -5528,7 +5527,7 @@ async function buildState(player) {
       mp: Math.floor(player.mp),
       max_mp: Math.floor(player.max_mp),
       exp: Math.floor(player.exp),
-      exp_next: Math.floor(expForLevel(player.level)),
+      exp_next: Math.floor(expForLevel(player.level, player.flags?.cultivationLevel)),
       gold: player.gold,
       atk: Math.floor(player.atk || 0),
       def: Math.floor(player.def || 0),
@@ -7959,9 +7958,8 @@ async function processMobDeath(player, mob, online) {
   gainSummonExp(player);
   let exp = template.exp;
   let gold = randInt(template.gold[0], template.gold[1]);
-  if (isCultivationRoom(mobZoneId)) {
-    exp = Math.max(1, Math.floor(exp * CULTIVATION_ROOM_EXP_GOLD_RATE));
-    gold = Math.max(1, Math.floor(gold * CULTIVATION_ROOM_EXP_GOLD_RATE));
+  if (isCultivationRoom(mobZoneId) && !isCultivationBoss(template)) {
+    exp = Math.max(1, Math.floor(exp * 0.5));
   }
 
   const party = getPartyByMember(player.name, realmId);

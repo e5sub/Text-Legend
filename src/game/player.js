@@ -593,8 +593,8 @@ export function computeDerived(player) {
 export function gainExp(player, amount) {
   player.exp += amount;
   let leveled = false;
-  while (player.exp >= expForLevel(player.level)) {
-    player.exp -= expForLevel(player.level);
+  while (player.exp >= expForLevel(player.level, player.flags?.cultivationLevel)) {
+    player.exp -= expForLevel(player.level, player.flags?.cultivationLevel);
     player.level += 1;
     leveled = true;
   }

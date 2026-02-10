@@ -477,7 +477,7 @@ function formatStats(player, partyApi) {
   const cultivationInfo = getCultivationInfo(cultivationLevel);
   return [
     `职业: ${className}`,
-    `等级: ${player.level} (${player.exp}/${expForLevel(player.level)} EXP)`,
+    `等级: ${player.level} (${player.exp}/${expForLevel(player.level, player.flags?.cultivationLevel)} EXP)`,
     `生命: ${Math.floor(player.hp)}/${Math.floor(player.max_hp)}`,
     `魔法: ${Math.floor(player.mp)}/${Math.floor(player.max_mp)}`,
     `攻击: ${Math.floor(player.atk)} 防御: ${Math.floor(player.def)} 魔法: ${Math.floor(player.mag)}`,
@@ -2586,7 +2586,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       }
       player.level -= costLevels;
       if (player.level < 1) player.level = 1;
-      player.exp = Math.min(player.exp, expForLevel(player.level) - 1);
+      player.exp = Math.min(player.exp, expForLevel(player.level, player.flags?.cultivationLevel) - 1);
       player.flags.cultivationLevel = current + 1;
       const nextInfo = getCultivationInfo(player.flags.cultivationLevel);
       computeDerived(player);

@@ -71,21 +71,29 @@ const EXP_TABLE = [
   127600, 132700, 137900, 143200, 148600, 154100, 159700, 165400, 171200, 177100
 ];
 
-export function expForLevel(level) {
-  if (level < EXP_TABLE.length) return EXP_TABLE[level];
+export function expForLevel(level, cultivationLevel = null) {
+  if (level < EXP_TABLE.length) {
+    return Math.floor(applyCultivationExpMult(EXP_TABLE[level], cultivationLevel));
+  }
   const base = EXP_TABLE[EXP_TABLE.length - 1];
   const extra = level - (EXP_TABLE.length - 1);
   const exp = base + extra * extra * 120 + extra * 800;
   if (level >= 140) {
     const steps = Math.floor((level - 140) / 20);
     const mult = 50 + steps * 10;
-    return Math.floor(exp * mult);
+    return Math.floor(applyCultivationExpMult(exp * mult, cultivationLevel));
   }
-  if (level >= 120) return Math.floor(exp * 40);
-  if (level >= 100) return Math.floor(exp * 20);
-  if (level >= 80) return Math.floor(exp * 12);
-  if (level >= 60) return Math.floor(exp * 5);
-  return exp;
+  if (level >= 120) return Math.floor(applyCultivationExpMult(exp * 40, cultivationLevel));
+  if (level >= 100) return Math.floor(applyCultivationExpMult(exp * 20, cultivationLevel));
+  if (level >= 80) return Math.floor(applyCultivationExpMult(exp * 12, cultivationLevel));
+  if (level >= 60) return Math.floor(applyCultivationExpMult(exp * 5, cultivationLevel));
+  return Math.floor(applyCultivationExpMult(exp, cultivationLevel));
+}
+
+function applyCultivationExpMult(exp, cultivationLevel) {
+  const level = Math.floor(Number(cultivationLevel ?? -1));
+  if (Number.isNaN(level) || level < 0) return exp;
+  return exp * (1 + (level + 1) * 0.5);
 }
 
 export function maxBagSlots(level) {
