@@ -6894,29 +6894,7 @@ io.on('connection', (socket) => {
         }
       }
     }
-    const antiKey = socket.data?.antiKey;
-    if (antiKey) {
-      const seq = Number(clean.seq);
-      const sig = typeof clean.sig === 'string' ? clean.sig : '';
-      if (!Number.isFinite(seq) || seq <= (socket.data?.antiSeq || 0)) {
-        console.warn(
-          `[Anti] 请求校验失败: seq无效 name=${player.name} socket=${socket.id} seq=${seq} lastSeq=${socket.data?.antiSeq || 0} text=${inputText}`
-        );
-        player.send('请求无效。');
-        return;
-      }
-      const expected = crypto.createHmac('sha256', antiKey).update(`${seq}|${inputText}`).digest('hex');
-      if (sig !== expected) {
-        const sigPreview = sig ? `${sig.slice(0, 8)}...${sig.slice(-8)}` : '';
-        const expectedPreview = expected ? `${expected.slice(0, 8)}...${expected.slice(-8)}` : '';
-        console.warn(
-          `[Anti] 请求校验失败: 签名不匹配 name=${player.name} socket=${socket.id} seq=${seq} text=${inputText} sig=${sigPreview} expected=${expectedPreview}`
-        );
-        player.send('请求校验失败。');
-        return;
-      }
-      socket.data.antiSeq = seq;
-    }
+    // antiKey 校验已禁用
     const prevZone = player.position.zone;
     const prevRoom = player.position.room;
     const commandRealmId = getRoomRealmId(player.position.zone, player.position.room, player.realmId || 1);

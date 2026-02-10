@@ -6224,25 +6224,6 @@ function enterGame(name) {
     if (event === 'cmd' && payload && typeof payload === 'object' && !payload.source) {
       payload = { ...payload, source: 'ui' };
     }
-    if (event === 'cmd' && payload && typeof payload === 'object' && payload.text && !antiKey) {
-      enqueueCmd(String(payload.text), payload.source);
-      return;
-    }
-    if (event === 'cmd' && payload && typeof payload === 'object' && payload.text && antiKey) {
-      const seq = antiSeq + 1;
-      antiSeq = seq;
-      signCmdWeb(antiKey, seq, String(payload.text)).then((sig) => {
-        if (!sig) {
-          enqueueCmd(String(payload.text), payload.source);
-          antiKey = '';
-          antiSeq = 0;
-          return;
-        }
-        const signed = { ...payload, seq, sig };
-        rawEmit(event, signed);
-      });
-      return;
-    }
     return rawEmit(event, payload);
   };
   socket.on('connect', async () => {
