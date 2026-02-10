@@ -21,6 +21,7 @@ let stateThrottleOverride = localStorage.getItem('stateThrottleOverride') === 't
 let stateThrottleOverrideServerAllowed = true;
 let antiKey = '';
 let antiSeq = 0;
+let pendingCmds = [];
 
 async function signCmdWeb(key, seq, text) {
   try {
@@ -40,6 +41,19 @@ async function signCmdWeb(key, seq, text) {
       .join('');
   } catch {
     return '';
+  }
+}
+function enqueueCmd(text, source) {
+  if (!text) return;
+  if (pendingCmds.length >= 10) pendingCmds.shift();
+  pendingCmds.push({ text, source: source || 'ui' });
+}
+
+function flushPendingCmds() {
+  if (!antiKey || !socket) return;
+  while (pendingCmds.length > 0) {
+    const item = pendingCmds.shift();
+    socket.emit('cmd', { text: item.text, source: item.source });
   }
 }
 let refineMaterialCount = 20; // 默认值
@@ -4644,6 +4658,7 @@ function handleIncomingState(payload) {
       const seq = Number(payload.anti.seq) || 0;
       if (seq > antiSeq) antiSeq = seq;
     }
+    flushPendingCmds();
   }
   const roomChanged = payload.room && (!lastState || !lastState.room ||
     payload.room.zoneId !== lastState.room.zoneId || payload.room.roomId !== lastState.room.roomId);
@@ -6200,11 +6215,18 @@ function enterGame(name) {
   setBar(ui.hp, 0, 1);
   setBar(ui.mp, 0, 1);
   setBar(ui.exp, 0, 1);
+  antiKey = '';
+  antiSeq = 0;
+  pendingCmds = [];
   socket = io();
   const rawEmit = socket.emit.bind(socket);
   socket.emit = (event, payload) => {
     if (event === 'cmd' && payload && typeof payload === 'object' && !payload.source) {
       payload = { ...payload, source: 'ui' };
+    }
+    if (event === 'cmd' && payload && typeof payload === 'object' && payload.text && !antiKey) {
+      enqueueCmd(String(payload.text), payload.source);
+      return;
     }
     if (event === 'cmd' && payload && typeof payload === 'object' && payload.text && antiKey) {
       const seq = antiSeq + 1;
@@ -6261,6 +6283,11 @@ function enterGame(name) {
       }
       exitGame();
     }
+  });
+  socket.on('disconnect', () => {
+    antiKey = '';
+    antiSeq = 0;
+    pendingCmds = [];
   });
   socket.on('trade_invite', (payload) => {
     const from = payload?.from;

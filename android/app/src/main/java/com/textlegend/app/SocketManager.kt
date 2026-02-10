@@ -14,6 +14,7 @@ class SocketManager(private val json: Json) {
     private var socket: Socket? = null
     private var antiKey: String? = null
     private var antiSeq: Long = 0
+    private val pendingCmds: ArrayDeque<String> = ArrayDeque()
 
     fun connect(
         baseUrl: String,
@@ -43,6 +44,9 @@ class SocketManager(private val json: Json) {
         onConsignHistory: (ConsignHistoryPayload) -> Unit
     ) {
         disconnect()
+        antiKey = null
+        antiSeq = 0
+        pendingCmds.clear()
         val socketBase = baseUrl.trim().removeSuffix("/")
         val options = IO.Options.builder()
             .setForceNew(true)
@@ -104,6 +108,7 @@ class SocketManager(private val json: Json) {
                         if (!anti.key.isNullOrBlank()) antiKey = anti.key
                         antiSeq = max(antiSeq, anti.seq)
                     }
+                    flushPendingCmds()
                     onState(state)
                 }.onFailure {
                     val msg = it.message?.take(120) ?: "unknown"
@@ -207,9 +212,16 @@ class SocketManager(private val json: Json) {
         socket?.off()
         socket?.disconnect()
         socket = null
+        antiKey = null
+        antiSeq = 0
+        pendingCmds.clear()
     }
 
     fun emitCmd(text: String) {
+        if (antiKey.isNullOrBlank()) {
+            enqueueCmd(text)
+            return
+        }
         val payload = JSONObject().apply {
             put("text", text)
             put("source", "ui")
@@ -223,6 +235,20 @@ class SocketManager(private val json: Json) {
             payload.put("sig", sig)
         }
         socket?.emit("cmd", payload)
+    }
+
+    private fun enqueueCmd(text: String) {
+        if (text.isBlank()) return
+        if (pendingCmds.size >= 10) pendingCmds.removeFirst()
+        pendingCmds.addLast(text)
+    }
+
+    private fun flushPendingCmds() {
+        if (antiKey.isNullOrBlank() || socket == null) return
+        while (pendingCmds.isNotEmpty()) {
+            val text = pendingCmds.removeFirst()
+            emitCmd(text)
+        }
     }
 
     private fun signCmd(key: String, seq: Long, text: String): String {
