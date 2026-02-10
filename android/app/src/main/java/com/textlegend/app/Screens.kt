@@ -2761,41 +2761,15 @@ private fun ShopDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Un
     val successRate = if (refineConfig != null && refineLevel != null) {
         calcRefineSuccessRate(refineLevel, refineConfig)
     } else null
-    var showConfirm by remember { mutableStateOf(false) }
-    ScreenScaffold(title = "装备锻造", onBack = onDismiss) {
-        if (showConfirm) {
-            AlertDialog(
-                onDismissRequest = { showConfirm = false },
-                title = { Text("确认锻造") },
-                text = {
-                    Column {
-                        val label = options.firstOrNull { it.first == selection }?.second ?: selection
-                        Text("装备: $label")
-                        if (refineLevel != null) Text("当前等级: +$refineLevel → +${refineLevel + 1}")
-                        if (successRate != null) Text("成功率: ${"%.1f".format(successRate)}%")
-                    }
-                },
-                confirmButton = {
-                    Button(onClick = {
-                        if (selection.isNotBlank()) vm.sendCmd("refine $selection")
-                        showConfirm = false
-                    }) { Text("锻造") }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showConfirm = false }) { Text("取消") }
-                }
-            )
-        }
-
-        Text("点击已穿戴装备进行锻造")
-        if (options.isEmpty()) {
-            Text("暂无已穿戴装备", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        } else {
-            OptionGrid(options = options, selected = selection, onSelect = {
-                selection = it
-                showConfirm = true
-            })
-        }
+      ScreenScaffold(title = "装备锻造", onBack = onDismiss) {
+          Text("已穿戴装备（仅查看）")
+          if (options.isEmpty()) {
+              Text("暂无已穿戴装备", color = MaterialTheme.colorScheme.onSurfaceVariant)
+          } else {
+              OptionGrid(options = options, selected = selection, onSelect = {
+                  selection = it
+              })
+          }
         if (refineLevel != null && refineConfig != null && successRate != null) {
             Text("当前等级: +$refineLevel → +${refineLevel + 1}")
             Text("成功率: ${"%.1f".format(successRate)}%")
