@@ -1126,6 +1126,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         name: target.name,
         level: target.level,
         class: className,
+        cultivationLevel: Math.floor(Number(target.flags?.cultivationLevel ?? -1)),
         hp: target.hp,
         maxHp: target.max_hp,
         mp: target.mp,

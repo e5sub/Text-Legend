@@ -6426,6 +6426,10 @@ function showObserveModal(data) {
   html += '<div class="observe-stats">';
   html += `<div class="observe-stat-row"><span class="observe-stat-label">等级</span><span class="observe-stat-value">${data.level}</span></div>`;
   html += `<div class="observe-stat-row"><span class="observe-stat-label">职业</span><span class="observe-stat-value">${data.class}</span></div>`;
+  if (data.cultivationLevel !== undefined && data.cultivationLevel !== null) {
+    const cultivationText = Number(data.cultivationLevel) >= 0 ? getCultivationInfo(data.cultivationLevel).name : '无';
+    html += `<div class="observe-stat-row"><span class="observe-stat-label">修真等级</span><span class="observe-stat-value">${cultivationText}</span></div>`;
+  }
   html += `<div class="observe-stat-row"><span class="observe-stat-label">生命</span><span class="observe-stat-value">${Math.floor(data.hp)}/${Math.floor(data.maxHp)}</span></div>`;
   html += `<div class="observe-stat-row"><span class="observe-stat-label">魔法</span><span class="observe-stat-value">${Math.floor(data.mp)}/${Math.floor(data.maxMp)}</span></div>`;
   html += `<div class="observe-stat-row"><span class="observe-stat-label">攻击</span><span class="observe-stat-value">${Math.floor(data.atk)}</span></div>`;
