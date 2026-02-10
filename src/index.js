@@ -8020,7 +8020,7 @@ async function processMobDeath(player, mob, online) {
 
     partyMembersForReward.forEach((member) => {
       const partyMult = totalPartyCount > 1 ? (1 + Math.min(0.2 * totalPartyCount, 1.0)) : 1;
-      const cultivationMult = cultivationRewardMultiplier(member);
+      const cultivationMult = isCultivationRoom(mobZoneId) ? 1 : cultivationRewardMultiplier(member);
       const rewardMult = totalRewardMultiplier({
         vipActive: isVipActive(member),
         guildActive: Boolean(member.guild),
