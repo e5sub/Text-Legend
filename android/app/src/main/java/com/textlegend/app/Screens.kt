@@ -472,7 +472,7 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
 
             composable("stats") { StatsDialog(state = state, onDismiss = { innerNav.popBackStack() }) }
             composable("party") { PartyDialog(vm = vm, state = state, prefillName = quickTargetName, onDismiss = { quickTargetName = null; innerNav.popBackStack() }) }
-            composable("guild") { GuildDialog(vm = vm, prefillName = quickTargetName, onDismiss = { quickTargetName = null; innerNav.popBackStack() }) }
+              composable("guild") { GuildDialog(vm = vm, state = state, prefillName = quickTargetName, onDismiss = { quickTargetName = null; innerNav.popBackStack() }) }
             composable("mail") { MailDialog(vm = vm, prefillName = quickTargetName, onDismiss = { quickTargetName = null; innerNav.popBackStack() }) }
             composable("trade") { TradeDialog(vm = vm, state = state, prefillName = quickTargetName, onDismiss = { quickTargetName = null; innerNav.popBackStack() }) }
             composable("consign") { ConsignDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
@@ -1921,39 +1921,135 @@ private fun SettingsScreen(vm: GameViewModel, onDismiss: () -> Unit) {
   }
 
 @Composable
-private fun PartyDialog(vm: GameViewModel, state: GameState?, prefillName: String?, onDismiss: () -> Unit) {
-    var inviteName by remember { mutableStateOf(prefillName ?: "") }
-    LaunchedEffect(prefillName) {
-        if (!prefillName.isNullOrBlank()) inviteName = prefillName
-    }
-    val party = state?.party
-    ScreenScaffold(title = "队伍", onBack = onDismiss) {
-        if (party == null) {
-            Text("当前未组队")
-            Button(onClick = { vm.sendCmd("party create") }) { Text("创建队伍") }
-        } else {
-            Text("队长: ${party.leader}")
-            party.members.forEach { member ->
-                Text("${member.name} ${if (member.online) "在线" else "离线"}")
-            }
-            Row {
-                OutlinedTextField(value = inviteName, onValueChange = { inviteName = it }, label = { Text("邀请玩家") })
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = { if (inviteName.isNotBlank()) vm.sendCmd("party invite ${inviteName.trim()}") }) { Text("邀请") }
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = { vm.sendCmd("party leave") }) { Text("退出队伍") }
+    private fun PartyDialog(vm: GameViewModel, state: GameState?, prefillName: String?, onDismiss: () -> Unit) {
+        var inviteName by remember { mutableStateOf(prefillName ?: "") }
+        var manageTarget by remember { mutableStateOf<PartyMember?>(null) }
+        LaunchedEffect(prefillName) {
+            if (!prefillName.isNullOrBlank()) inviteName = prefillName
         }
-    }
-}
+        val party = state?.party
+        ScreenScaffold(title = "队伍", onBack = onDismiss) {
+            if (party == null) {
+              Text("当前未组队")
+              Button(onClick = { vm.sendCmd("party create") }) { Text("创建队伍") }
+            } else {
+                val myName = state?.player?.name ?: ""
+                val isLeader = party.leader == myName
 
-@Composable
-private fun GuildDialog(vm: GameViewModel, prefillName: String?, onDismiss: () -> Unit) {
-    val members by vm.guildMembers.collectAsState()
-    val guildList by vm.guildList.collectAsState()
-    var guildId by remember { mutableStateOf("") }
-    var inviteName by remember { mutableStateOf(prefillName ?: "") }
-    val roleOrder = remember { mapOf("leader" to 0, "vice_leader" to 1, "admin" to 2, "member" to 3) }
+                if (manageTarget != null) {
+                    val target = manageTarget!!
+                    val isSelf = target.name == myName
+                    val canManage = isLeader && !isSelf
+                    AlertDialog(
+                        onDismissRequest = { manageTarget = null },
+                        title = { Text("队长管理") },
+                        text = { Text(target.name) },
+                        confirmButton = {
+                            Column(horizontalAlignment = Alignment.End) {
+                                if (canManage) {
+                                    Button(
+                                        onClick = {
+                                            vm.sendCmd("party transfer ${target.name}")
+                                            manageTarget = null
+                                        }
+                                    ) { Text("转让队长") }
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Button(
+                                        onClick = {
+                                            vm.sendCmd("party kick ${target.name}")
+                                            manageTarget = null
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB84D4D))
+                                    ) { Text("踢出队伍") }
+                                }
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { manageTarget = null }) { Text("取消") }
+                        }
+                    )
+                }
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                  Column(modifier = Modifier.padding(12.dp)) {
+                      Text("队长：${party.leader}", fontWeight = FontWeight.Bold)
+                      Spacer(modifier = Modifier.height(4.dp))
+                      Text("成员：${party.members.size}（在线 ${party.members.count { it.online }}）")
+                  }
+              }
+
+              Spacer(modifier = Modifier.height(10.dp))
+              Text("成员列表", style = MaterialTheme.typography.titleMedium)
+              Spacer(modifier = Modifier.height(6.dp))
+              val rows = party.members.chunked(2)
+              Column {
+                  rows.forEach { row ->
+                      Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                          row.forEach { member ->
+                              val onlineText = if (member.online) "在线" else "离线"
+                              val onlineColor = if (member.online) Color(0xFF7DDC90) else MaterialTheme.colorScheme.outline
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(vertical = 4.dp)
+                                        .clickable { manageTarget = member },
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+                                ) {
+                                  Row(
+                                      modifier = Modifier.fillMaxWidth().padding(10.dp),
+                                      verticalAlignment = Alignment.CenterVertically,
+                                      horizontalArrangement = Arrangement.SpaceBetween
+                                  ) {
+                                      Column {
+                                          Text(member.name, fontWeight = FontWeight.SemiBold)
+                                          if (member.name == party.leader) {
+                                              Text("队长", fontSize = 12.sp, color = Color(0xFFE9B44C))
+                                          }
+                                      }
+                                      Text(onlineText, color = onlineColor, fontSize = 12.sp)
+                                  }
+                              }
+                          }
+                          if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
+                      }
+                  }
+              }
+
+              Spacer(modifier = Modifier.height(10.dp))
+              OutlinedTextField(
+                  value = inviteName,
+                  onValueChange = { inviteName = it },
+                  label = { Text("邀请玩家") },
+                  modifier = Modifier.fillMaxWidth()
+              )
+              Spacer(modifier = Modifier.height(6.dp))
+              Button(
+                  onClick = { if (inviteName.isNotBlank()) vm.sendCmd("party invite ${inviteName.trim()}") },
+                  modifier = Modifier.fillMaxWidth()
+              ) { Text("邀请") }
+              Spacer(modifier = Modifier.height(8.dp))
+              Button(
+                  onClick = { vm.sendCmd("party leave") },
+                  modifier = Modifier.fillMaxWidth()
+              ) { Text("退出队伍") }
+          }
+      }
+  }
+
+  @Composable
+  private fun GuildDialog(vm: GameViewModel, state: GameState?, prefillName: String?, onDismiss: () -> Unit) {
+      val members by vm.guildMembers.collectAsState()
+      val guildList by vm.guildList.collectAsState()
+      var guildId by remember { mutableStateOf("") }
+      var inviteName by remember { mutableStateOf(prefillName ?: "") }
+      val roleOrder = remember { mapOf("leader" to 0, "vice_leader" to 1, "admin" to 2, "member" to 3) }
+      var manageTarget by remember { mutableStateOf<GuildMemberInfo?>(null) }
+      val myName = state?.player?.name ?: ""
     LaunchedEffect(prefillName) {
         if (!prefillName.isNullOrBlank()) inviteName = prefillName
     }
@@ -1963,137 +2059,200 @@ private fun GuildDialog(vm: GameViewModel, prefillName: String?, onDismiss: () -
         vm.guildList()
     }
 
-    ScreenScaffold(title = "行会", onBack = onDismiss) {
-        val memberList = members?.members.orEmpty()
-        val onlineCount = memberList.count { it.online }
+      ScreenScaffold(title = "行会", onBack = onDismiss) {
+          val memberList = members?.members.orEmpty()
+          val onlineCount = memberList.count { it.online }
+          val myRole = memberList.firstOrNull { it.name == myName }?.role ?: ""
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Column(modifier = Modifier.padding(12.dp)) {
-                Text(
-                    text = members?.guildName?.let { "行会：$it" } ?: "未加入行会",
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                if (members?.ok == true) {
-                    Text("成员：${memberList.size}（在线 ${onlineCount}）")
-                }
-            }
-        }
+          if (manageTarget != null) {
+              val target = manageTarget!!
+              val isSelf = target.name == myName
+              val canKick = when (myRole) {
+                  "leader" -> !isSelf && target.role != "leader"
+                  "vice_leader" -> !isSelf && target.role == "member"
+                  else -> false
+              }
+              val canVice = myRole == "leader" && !isSelf && target.role != "leader"
+              val roleLabel = when (target.role) {
+                  "leader" -> "会长"
+                  "vice_leader" -> "副会长"
+                  "admin" -> "管理"
+                  else -> "成员"
+              }
+              AlertDialog(
+                  onDismissRequest = { manageTarget = null },
+                  title = { Text("行会管理") },
+                  text = { Text("${target.name} · $roleLabel") },
+                  confirmButton = {
+                      Column(horizontalAlignment = Alignment.End) {
+                          if (canVice) {
+                              Button(onClick = {
+                                  vm.sendCmd("guild vice ${target.name}")
+                                  vm.guildMembers()
+                                  manageTarget = null
+                              }) {
+                                  Text(if (target.role == "vice_leader") "取消副会长" else "任命副会长")
+                              }
+                              Spacer(modifier = Modifier.height(6.dp))
+                          }
+                          if (canKick) {
+                              Button(
+                                  onClick = {
+                                      vm.sendCmd("guild kick ${target.name}")
+                                      vm.guildMembers()
+                                      manageTarget = null
+                                  },
+                                  colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB84D4D))
+                              ) { Text("踢出行会") }
+                          }
+                      }
+                  },
+                  dismissButton = {
+                      TextButton(onClick = { manageTarget = null }) { Text("取消") }
+                  }
+              )
+          }
+
+          Card(
+              modifier = Modifier.fillMaxWidth(),
+              colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary),
+              elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+          ) {
+              Column(modifier = Modifier.padding(12.dp)) {
+                  Text(
+                      text = members?.guildName?.let { "行会：$it" } ?: members?.guild?.name?.let { "行会：$it" } ?: "未加入行会",
+                      fontWeight = FontWeight.Bold
+                  )
+                  Spacer(modifier = Modifier.height(4.dp))
+                  if (members?.ok == true) {
+                      Text("成员：${memberList.size}（在线 ${onlineCount}）")
+                  }
+              }
+          }
 
         Spacer(modifier = Modifier.height(10.dp))
         Text("成员列表", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(6.dp))
 
-        if (members?.ok == true) {
-            val sortedMembers = memberList.sortedWith(
-                compareBy<GuildMemberInfo> { roleOrder[it.role] ?: 9 }
-                    .thenBy { it.name }
-            )
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 420.dp)
-            ) {
-                items(sortedMembers) { member ->
-                    val roleLabel = when (member.role) {
-                        "leader" -> "会长"
-                        "vice_leader" -> "副会长"
-                        "admin" -> "管理"
-                        else -> "成员"
-                    }
-                    val roleColor = when (member.role) {
-                        "leader" -> Color(0xFFE9B44C)
-                        "vice_leader" -> Color(0xFFF0A35E)
-                        "admin" -> Color(0xFF6FB7A8)
-                        else -> MaterialTheme.colorScheme.outline
-                    }
-                    val onlineText = if (member.online) "在线" else "离线"
-                    val onlineColor = if (member.online) Color(0xFF7DDC90) else MaterialTheme.colorScheme.outline
+          if (members?.ok == true) {
+              val sortedMembers = memberList.sortedWith(
+                  compareBy<GuildMemberInfo> { roleOrder[it.role] ?: 9 }
+                      .thenBy { it.name }
+              )
+              LazyColumn(
+                  modifier = Modifier
+                      .fillMaxWidth()
+                      .heightIn(max = 420.dp)
+              ) {
+                  val rows = sortedMembers.chunked(2)
+                  items(rows) { row ->
+                      Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                          row.forEach { member ->
+                              val roleLabel = when (member.role) {
+                                  "leader" -> "会长"
+                                  "vice_leader" -> "副会长"
+                                  "admin" -> "管理"
+                                  else -> "成员"
+                              }
+                              val roleColor = when (member.role) {
+                                  "leader" -> Color(0xFFE9B44C)
+                                  "vice_leader" -> Color(0xFFF0A35E)
+                                  "admin" -> Color(0xFF6FB7A8)
+                                  else -> MaterialTheme.colorScheme.outline
+                              }
+                              val onlineText = if (member.online) "在线" else "离线"
+                              val onlineColor = if (member.online) Color(0xFF7DDC90) else MaterialTheme.colorScheme.outline
 
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        shape = RoundedCornerShape(10.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column {
-                                Text(member.name, fontWeight = FontWeight.SemiBold)
-                                Text("Lv${member.level} ${classLabel(member.classId)}")
-                            }
-                            Column(horizontalAlignment = Alignment.End) {
-                                Surface(
-                                    shape = RoundedCornerShape(999.dp),
-                                    color = roleColor.copy(alpha = 0.2f),
-                                    border = BorderStroke(1.dp, roleColor.copy(alpha = 0.7f))
-                                ) {
-                                    Text(
-                                        text = roleLabel,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                        color = roleColor,
-                                        fontSize = 12.sp
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(onlineText, color = onlineColor, fontSize = 12.sp)
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            Text("未加入行会")
-        }
+                              Surface(
+                                  modifier = Modifier
+                                      .weight(1f)
+                                      .padding(vertical = 4.dp)
+                                      .clickable {
+                                          if (members?.ok == true) {
+                                              manageTarget = member
+                                          }
+                                      },
+                                  shape = RoundedCornerShape(10.dp),
+                                  color = MaterialTheme.colorScheme.surfaceVariant,
+                                  border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+                              ) {
+                                  Row(
+                                      modifier = Modifier.fillMaxWidth().padding(10.dp),
+                                      verticalAlignment = Alignment.CenterVertically,
+                                      horizontalArrangement = Arrangement.SpaceBetween
+                                  ) {
+                                      Column {
+                                          Text(member.name, fontWeight = FontWeight.SemiBold)
+                                          Text("Lv${member.level} ${classLabel(member.classId)}")
+                                      }
+                                      Column(horizontalAlignment = Alignment.End) {
+                                          Surface(
+                                              shape = RoundedCornerShape(999.dp),
+                                              color = roleColor.copy(alpha = 0.2f),
+                                              border = BorderStroke(1.dp, roleColor.copy(alpha = 0.7f))
+                                          ) {
+                                              Text(
+                                                  text = roleLabel,
+                                                  modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                                  color = roleColor,
+                                                  fontSize = 12.sp
+                                              )
+                                          }
+                                          Spacer(modifier = Modifier.height(4.dp))
+                                          Text(onlineText, color = onlineColor, fontSize = 12.sp)
+                                      }
+                                  }
+                              }
+                          }
+                          if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
+                      }
+                  }
+              }
+          } else {
+              Text("未加入行会")
+          }
 
-        Spacer(modifier = Modifier.height(12.dp))
-        Text("行会列表", style = MaterialTheme.typography.titleMedium)
-        Spacer(modifier = Modifier.height(6.dp))
-        guildList?.guilds?.forEach { g ->
-            Surface(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                shape = RoundedCornerShape(10.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(g.name, fontWeight = FontWeight.SemiBold)
-                        Text("ID ${g.id} · 人数 ${g.memberCount}", fontSize = 12.sp)
-                    }
-                }
-            }
-        }
+          if (members?.ok != true) {
+              Spacer(modifier = Modifier.height(12.dp))
+              Text("行会列表", style = MaterialTheme.typography.titleMedium)
+              Spacer(modifier = Modifier.height(6.dp))
+              guildList?.guilds?.forEach { g ->
+                  Surface(
+                      modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                      shape = RoundedCornerShape(10.dp),
+                      color = MaterialTheme.colorScheme.surfaceVariant,
+                      border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+                  ) {
+                      Row(
+                          modifier = Modifier.fillMaxWidth().padding(10.dp),
+                          horizontalArrangement = Arrangement.SpaceBetween,
+                          verticalAlignment = Alignment.CenterVertically
+                      ) {
+                          Column {
+                              Text(g.name, fontWeight = FontWeight.SemiBold)
+                              Text("ID ${g.id} · 人数 ${g.memberCount}", fontSize = 12.sp)
+                          }
+                      }
+                  }
+              }
 
-        Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(
-            value = guildId,
-            onValueChange = { guildId = it },
-            label = { Text("申请行会ID") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        Button(
-            onClick = {
-                val id = guildId.toIntOrNull()
-                if (id != null) vm.guildApply(id)
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) { Text("申请加入") }
+              Spacer(modifier = Modifier.height(8.dp))
+              OutlinedTextField(
+                  value = guildId,
+                  onValueChange = { guildId = it },
+                  label = { Text("申请行会ID") },
+                  keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                  modifier = Modifier.fillMaxWidth()
+              )
+              Spacer(modifier = Modifier.height(6.dp))
+              Button(
+                  onClick = {
+                      val id = guildId.toIntOrNull()
+                      if (id != null) vm.guildApply(id)
+                  },
+                  modifier = Modifier.fillMaxWidth()
+              ) { Text("申请加入") }
+          }
 
         Spacer(modifier = Modifier.height(10.dp))
         OutlinedTextField(
@@ -2723,24 +2882,99 @@ private fun SabakDialog(vm: GameViewModel, onDismiss: () -> Unit) {
     LaunchedEffect(Unit) { vm.sabakInfo() }
     ScreenScaffold(title = "沙巴克", onBack = onDismiss) {
         val current = info?.current
-        Text("当前城主: ${current?.ownerGuildName ?: "无"}")
-        Text("状态: ${if (current?.active == true) "攻城中" else "未开始"}")
-        Spacer(modifier = Modifier.height(8.dp))
-        Text("报名列表")
-        info?.registrations?.forEach { g ->
-            val name = g.guildName ?: "未知"
-            val id = g.guildId?.toString() ?: "-"
-            Text("$id $name")
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text("当前城主：${current?.ownerGuildName ?: "无"}", fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("状态：${if (current?.active == true) "攻城中" else "未开始"}")
+                if (current?.startsAt != null) {
+                    Text("开始时间：${formatTimestamp(current.startsAt)}")
+                }
+                if (current?.endsAt != null) {
+                    Text("结束时间：${formatTimestamp(current.endsAt)}")
+                }
+            }
         }
+
+        Spacer(modifier = Modifier.height(10.dp))
+        Text("守城方", style = MaterialTheme.typography.titleMedium)
+        Spacer(modifier = Modifier.height(6.dp))
+        val defender = current?.ownerGuildName ?: "无"
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(10.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+        ) {
+            Column(modifier = Modifier.padding(10.dp)) {
+                Text(defender, fontWeight = FontWeight.SemiBold)
+                Text("城主行会", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+        Text("攻城方", style = MaterialTheme.typography.titleMedium)
+        Spacer(modifier = Modifier.height(6.dp))
+        val attackers = info?.registrations
+            ?.filter { it.guildName != null && it.guildName != current?.ownerGuildName }
+            .orEmpty()
+        if (attackers.isEmpty()) {
+            Text("暂无报名行会", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else {
+            attackers.chunked(2).forEach { row ->
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { g ->
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(vertical = 4.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Text(g.guildName ?: "未知", fontWeight = FontWeight.SemiBold)
+                                Text("ID ${g.guildId ?: "-"}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                    if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+
         if (info?.registrable == true) {
-            Text("输入报名行会ID")
-            OutlinedTextField(value = gid, onValueChange = { gid = it }, label = { Text("行会ID") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-            Button(onClick = {
-                val id = gid.toIntOrNull()
-                if (id != null) vm.sabakRegisterConfirm(id)
-            }) { Text("确认报名") }
+            Spacer(modifier = Modifier.height(12.dp))
+            Text("报名", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(6.dp))
+            OutlinedTextField(
+                value = gid,
+                onValueChange = { gid = it },
+                label = { Text("行会ID") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Button(
+                onClick = {
+                    val id = gid.toIntOrNull()
+                    if (id != null) vm.sabakRegisterConfirm(id)
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("确认报名") }
         }
     }
+}
+
+private fun formatTimestamp(value: Long): String {
+    return runCatching {
+        val df = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
+        df.format(Date(value))
+    }.getOrDefault("-")
 }
 
 @Composable
@@ -3048,21 +3282,6 @@ private fun RankDialog(state: GameState?, vm: GameViewModel, onDismiss: () -> Un
                             color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
                         )
                     }
-                }
-            }
-            Surface(
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
-            ) {
-                Box(
-                    modifier = Modifier
-                        .clickable { vm.sendCmd("rank $lastClass") }
-                        .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("刷新")
                 }
             }
         }

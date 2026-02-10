@@ -7210,11 +7210,15 @@ io.on('connection', (socket) => {
     const memberList = members.map((m) => ({
       name: m.char_name,
       role: m.role,
-      online: online.some((p) => p.name === m.char_name)
+      online: online.some((p) => p.name === m.char_name),
+      level: m.level || 1,
+      classId: m.class_id || ''
     }));
     socket.emit('guild_members', {
       ok: true,
       guild: { id: player.guild.id, name: player.guild.name },
+      guildId: player.guild.id,
+      guildName: player.guild.name,
       role: player.guild.role || 'member',
       members: memberList
     });

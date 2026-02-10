@@ -66,7 +66,18 @@ export async function getGuildMember(userId, charName, realmId = 1) {
 }
 
 export async function listGuildMembers(guildId, realmId = 1) {
-  return knex('guild_members').where({ guild_id: guildId, realm_id: realmId }).select('char_name', 'role', 'user_id');
+  return knex('guild_members')
+    .leftJoin('characters', function joinCharacters() {
+      this.on('guild_members.char_name', '=', 'characters.name').andOn('guild_members.realm_id', '=', 'characters.realm_id');
+    })
+    .where({ 'guild_members.guild_id': guildId, 'guild_members.realm_id': realmId })
+    .select(
+      'guild_members.char_name',
+      'guild_members.role',
+      'guild_members.user_id',
+      'characters.level',
+      knex.raw('characters.class as class_id')
+    );
 }
 
 export async function isGuildLeader(guildId, userId, charName, realmId = 1) {
