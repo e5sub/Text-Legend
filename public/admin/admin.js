@@ -3230,6 +3230,10 @@ function updateBossRealmSelects(realms) {
   if (wbKillRealmInput) {
     const currentValue = wbKillRealmInput.value;
     wbKillRealmInput.innerHTML = '';
+    const crossOption = document.createElement('option');
+    crossOption.value = '0';
+    crossOption.textContent = '跨服(0)';
+    wbKillRealmInput.appendChild(crossOption);
     realms.forEach((r) => {
       const option = document.createElement('option');
       option.value = r.id;
@@ -3246,6 +3250,10 @@ function updateBossRealmSelects(realms) {
   if (sbKillRealmInput) {
     const currentValue = sbKillRealmInput.value;
     sbKillRealmInput.innerHTML = '';
+    const crossOption = document.createElement('option');
+    crossOption.value = '0';
+    crossOption.textContent = '跨服(0)';
+    sbKillRealmInput.appendChild(crossOption);
     realms.forEach((r) => {
       const option = document.createElement('option');
       option.value = r.id;
@@ -3261,6 +3269,10 @@ function updateBossRealmSelects(realms) {
   if (cbKillRealmInput) {
     const currentValue = cbKillRealmInput.value;
     cbKillRealmInput.innerHTML = '';
+    const crossOption = document.createElement('option');
+    crossOption.value = '0';
+    crossOption.textContent = '跨服(0)';
+    cbKillRealmInput.appendChild(crossOption);
     realms.forEach((r) => {
       const option = document.createElement('option');
       option.value = r.id;
@@ -3269,6 +3281,8 @@ function updateBossRealmSelects(realms) {
     });
     if (currentValue) {
       cbKillRealmInput.value = currentValue;
+    } else {
+      cbKillRealmInput.value = '0';
     }
   }
 }
