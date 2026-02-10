@@ -1902,7 +1902,13 @@ private fun SettingsScreen(vm: GameViewModel, onDismiss: () -> Unit) {
                                       "VIP" -> Color(0xFFF9A825)
                                       else -> MaterialTheme.colorScheme.primary
                                   }
-                                  StatTile(label = label, value = value, iconRes = icon, tint = tint)
+                                  StatTile(
+                                      label = label,
+                                      value = value,
+                                      iconRes = icon,
+                                      tint = tint,
+                                      modifier = Modifier.weight(1f)
+                                  )
                               }
                               if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
                           }
@@ -2845,11 +2851,15 @@ private fun SabakDialog(vm: GameViewModel, onDismiss: () -> Unit) {
   }
 
   @Composable
-  private fun StatTile(label: String, value: String, iconRes: Int, tint: Color) {
+  private fun StatTile(
+      label: String,
+      value: String,
+      iconRes: Int,
+      tint: Color,
+      modifier: Modifier = Modifier
+  ) {
       Surface(
-          modifier = Modifier
-              .weight(1f)
-              .height(66.dp),
+          modifier = modifier.height(66.dp),
           shape = RoundedCornerShape(10.dp),
           color = MaterialTheme.colorScheme.surfaceVariant,
           border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
