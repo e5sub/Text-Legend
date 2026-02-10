@@ -3237,22 +3237,13 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun RankDialog(state: GameState?, vm: GameViewModel, onDismiss: () -> Unit) {
-    val rankMessages by vm.rankMessages.collectAsState()
-    var lastClass by rememberSaveable { mutableStateOf("warrior") }
-    ScreenScaffold(title = "排行榜", onBack = onDismiss) {
-        LaunchedEffect(Unit) {
-            vm.sendCmd("rank $lastClass")
-        }
-        Text("世界BOSS排行")
-        if (state?.worldBossRank.isNullOrEmpty()) {
-            Text("暂无数据")
-        } else {
-            state?.worldBossRank?.forEachIndexed { idx, item ->
-                Text("${idx + 1}. ${item.name} (${item.value})")
-            }
-        }
-        Spacer(modifier = Modifier.height(8.dp))
+  private fun RankDialog(state: GameState?, vm: GameViewModel, onDismiss: () -> Unit) {
+      val rankMessages by vm.rankMessages.collectAsState()
+      var lastClass by rememberSaveable { mutableStateOf("warrior") }
+      ScreenScaffold(title = "排行榜", onBack = onDismiss) {
+          LaunchedEffect(Unit) {
+              vm.sendCmd("rank $lastClass")
+          }
         Text("职业排行榜")
         val tabItems = listOf("warrior" to "战士", "mage" to "法师", "taoist" to "道士")
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -3289,18 +3280,16 @@ private fun RankDialog(state: GameState?, vm: GameViewModel, onDismiss: () -> Un
         if (rankMessages.isEmpty()) {
             Text("点击上方按钮获取排行榜")
         } else {
-            val grouped = rankMessages.mapNotNull { line ->
-                val idx = line.indexOf("排行榜:")
-                if (idx <= 0) null else line.substring(0, idx) to line.substring(idx + 4).trim()
-            }.groupBy({ it.first }, { it.second })
-
             val title = when (lastClass) {
                 "warrior" -> "战士"
                 "mage" -> "法师"
                 "taoist" -> "道士"
                 else -> lastClass
             }
-            val lines = grouped[title].orEmpty()
+            val latestLine = rankMessages.lastOrNull { it.startsWith("$title排行榜:") }
+            val rawEntries = latestLine?.substringAfter("排行榜:")?.trim().orEmpty()
+            val seen = LinkedHashSet<String>()
+            val lines = rawEntries.split(Regex("\\s+")).filter { it.isNotBlank() }.filter { seen.add(it) }
             Surface(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
                 shape = RoundedCornerShape(14.dp),
@@ -3313,22 +3302,20 @@ private fun RankDialog(state: GameState?, vm: GameViewModel, onDismiss: () -> Un
                     if (lines.isEmpty()) {
                         Text("暂无数据", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     } else {
-                        lines.joinToString(" ").split(Regex("\\s+"))
-                            .filter { it.isNotBlank() }
-                            .forEachIndexed { idx, entry ->
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text("${idx + 1}. $entry")
-                                }
+                        lines.forEachIndexed { idx, entry ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("${idx + 1}. $entry")
                             }
+                        }
                     }
                 }
             }
         }
-    }
-}
+      }
+  }
 
 @Composable
 private fun AfkDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Unit) {
