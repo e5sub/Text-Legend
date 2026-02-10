@@ -460,11 +460,11 @@ export function computeDerived(player) {
       elementAtk += Math.max(0, Math.floor(entry.effects.elementAtk));
     }
     stats.str += atk ? Math.floor(atk / 2) : 0;
-    stats.dex += dex || 0;
+    stats.dex += dex ? Math.floor(dex / 2) : 0;
     stats.int += mag ? Math.floor(mag / 2) : 0;
     stats.con += def ? Math.floor(def / 2) : 0;
     stats.spirit += spirit ? Math.floor(spirit / 2) : 0;
-    mdefBonus += mdef;
+    mdefBonus += mdef ? Math.floor(mdef / 2) : 0;
   }
   const training = player.flags.training;
   const trainingFruit = player.flags.trainingFruit;
@@ -516,7 +516,7 @@ export function computeDerived(player) {
   player.atk = stats.str + trainingBonus.atk + trainingFruitBonus.atk + bonusAtk;
   player.def = stats.con + trainingBonus.def + trainingFruitBonus.def + bonusDef;
   const bonusDex = levelBonus.dexPerLevel * levelUp;
-  player.dex = stats.dex + trainingFruitBonus.dex + bonusDex;
+  player.dex = stats.dex + trainingBonus.dex + trainingFruitBonus.dex + bonusDex;
   player.mag = stats.int + trainingBonus.mag + trainingFruitBonus.mag + bonusMag;
   player.spirit = stats.spirit + trainingBonus.spirit + trainingFruitBonus.spirit + bonusSpirit;
   player.mdef = stats.spirit + trainingBonus.mdef + trainingFruitBonus.mdef + mdefBonus + bonusMdef;
