@@ -116,20 +116,51 @@ button:hover {
   margin-top: 6px;
 }
 
-.cmd-rate-settings .row {
-  justify-content: flex-start;
-  gap: 8px;
-  flex-wrap: wrap;
+.cmd-rate-settings .cmd-rate-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
+  align-items: end;
+  margin-top: 8px;
 }
 
-.cmd-rate-settings label {
-  min-width: 0;
-  white-space: nowrap;
+.cmd-rate-settings .cmd-rate-field {
+  display: grid;
+  gap: 6px;
 }
 
-.cmd-rate-settings input {
-  width: auto;
+.cmd-rate-settings .cmd-rate-field label {
+  font-size: 12px;
+  color: #8a6d4b;
+}
+
+.cmd-rate-settings .cmd-rate-field input {
+  width: 100%;
   margin: 0;
+}
+
+.cmd-rate-settings .cmd-rate-action {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
+}
+
+.cmd-rate-settings .cmd-rate-action .btn-small {
+  padding: 6px 14px;
+}
+
+.cmd-rate-settings .muted {
+  margin-top: 6px;
+}
+
+@media (max-width: 900px) {
+  .cmd-rate-settings .cmd-rate-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cmd-rate-settings .cmd-rate-action {
+    justify-content: flex-start;
+  }
 }
 
 .block.collapsed .block-body {

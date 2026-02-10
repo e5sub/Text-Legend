@@ -509,42 +509,67 @@
             <h2>命令限频</h2>
             <button class="btn-small block-toggle">折叠</button>
           </div>
-          <div class="block-body">
-            <div class="row" style="margin-top: 6px;">
-              <label>全局次数</label>
-              <input id="cmd-rate-global-limit" type="number" min="1" value="12" style="max-width: 120px;">
-              <label>窗口(ms)</label>
-              <input id="cmd-rate-global-window" type="number" min="100" value="10000" style="max-width: 140px;">
-              <button id="cmd-rate-save" class="btn-small">保存限频</button>
+            <div class="block-body cmd-rate-settings">
+              <div class="cmd-rate-grid">
+                <div class="cmd-rate-field">
+                  <label>全局次数</label>
+                  <input id="cmd-rate-global-limit" type="number" min="1" value="12">
+                </div>
+                <div class="cmd-rate-field">
+                  <label>窗口(ms)</label>
+                  <input id="cmd-rate-global-window" type="number" min="100" value="10000">
+                </div>
+                <div class="cmd-rate-action">
+                  <button id="cmd-rate-save" class="btn-small">保存限频</button>
+                </div>
+              </div>
+              <p class="muted">全局限频：次数 / 窗口毫秒</p>
+
+              <div class="cmd-rate-grid">
+                <div class="cmd-rate-field">
+                  <label>突发次数</label>
+                  <input id="cmd-rate-burst-limit" type="number" min="1" value="60">
+                </div>
+                <div class="cmd-rate-field">
+                  <label>窗口(ms)</label>
+                  <input id="cmd-rate-burst-window" type="number" min="100" value="10000">
+                </div>
+              </div>
+              <p class="muted">突发限频：次数 / 窗口毫秒</p>
+
+              <div class="cmd-rate-grid">
+                <div class="cmd-rate-field">
+                  <label>锻造</label>
+                  <input id="cmd-cooldown-forge" type="number" min="0" value="1200">
+                </div>
+                <div class="cmd-rate-field">
+                  <label>合成</label>
+                  <input id="cmd-cooldown-refine" type="number" min="0" value="1200">
+                </div>
+                <div class="cmd-rate-field">
+                  <label>特效</label>
+                  <input id="cmd-cooldown-effect" type="number" min="0" value="1200">
+                </div>
+              </div>
+
+              <div class="cmd-rate-grid">
+                <div class="cmd-rate-field">
+                  <label>寄售</label>
+                  <input id="cmd-cooldown-consign" type="number" min="0" value="800">
+                </div>
+                <div class="cmd-rate-field">
+                  <label>交易</label>
+                  <input id="cmd-cooldown-trade" type="number" min="0" value="800">
+                </div>
+                <div class="cmd-rate-field">
+                  <label>邮件</label>
+                  <input id="cmd-cooldown-mail" type="number" min="0" value="800">
+                </div>
+              </div>
+              <p class="muted">命令冷却（毫秒）</p>
+              <div id="cmd-rate-msg" class="msg"></div>
             </div>
-            <p class="muted" style="margin-top: 6px;">全局限频：次数 / 窗口毫秒</p>
-            <div class="row" style="margin-top: 6px;">
-              <label>突发次数</label>
-              <input id="cmd-rate-burst-limit" type="number" min="1" value="60" style="max-width: 120px;">
-              <label>窗口(ms)</label>
-              <input id="cmd-rate-burst-window" type="number" min="100" value="10000" style="max-width: 140px;">
-            </div>
-            <p class="muted" style="margin-top: 6px;">突发限频：次数 / 窗口毫秒</p>
-            <div class="row" style="margin-top: 6px;">
-              <label>锻造</label>
-              <input id="cmd-cooldown-forge" type="number" min="0" value="1200" style="max-width: 120px;">
-              <label>合成</label>
-              <input id="cmd-cooldown-refine" type="number" min="0" value="1200" style="max-width: 120px;">
-              <label>特效</label>
-              <input id="cmd-cooldown-effect" type="number" min="0" value="1200" style="max-width: 120px;">
-            </div>
-            <div class="row" style="margin-top: 6px;">
-              <label>寄售</label>
-              <input id="cmd-cooldown-consign" type="number" min="0" value="800" style="max-width: 120px;">
-              <label>交易</label>
-              <input id="cmd-cooldown-trade" type="number" min="0" value="800" style="max-width: 120px;">
-              <label>邮件</label>
-              <input id="cmd-cooldown-mail" type="number" min="0" value="800" style="max-width: 120px;">
-            </div>
-            <p class="muted" style="margin-top: 6px;">命令冷却（毫秒）</p>
-            <div id="cmd-rate-msg" class="msg"></div>
           </div>
-        </div>
 
         <div class="block" data-collapsible>
           <div class="block-title">
