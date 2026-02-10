@@ -1313,6 +1313,17 @@ private fun formatTime(ts: Long): String {
     return sdf.format(Date(ts))
 }
 
+private fun formatRate(raw: Double): String {
+    val pct = raw * 100.0
+    val formatted = if (pct >= 1.0) {
+        String.format(Locale.US, "%.2f", pct)
+    } else {
+        String.format(Locale.US, "%.4f", pct)
+    }
+    val trimmed = formatted.trimEnd('0').trimEnd('.')
+    return "${if (trimmed.isBlank()) "0" else trimmed}%"
+}
+
 private fun partyMembersText(party: PartyInfo): String {
     val names = party.members.map { "${it.name}${if (it.online) "(在线)" else "(离线)"}" }
     return if (names.size <= 4) {
@@ -2869,7 +2880,7 @@ private fun EffectDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> 
                         Text("主件: $mainLabel")
                         Text("副件: $subLabel")
                         if (effectConfig != null) {
-                            Text("成功率: ${effectConfig.success_rate}%")
+                            Text("成功率: ${formatRate(effectConfig.success_rate)}")
                         }
                     }
                 },
@@ -2906,8 +2917,14 @@ private fun EffectDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> 
             })
         }
         if (effectConfig != null) {
-            Text("成功率: ${effectConfig.success_rate}%")
-            Text("多特效概率: 2条${effectConfig.double_rate}% 3条${effectConfig.triple_rate}% 4条${effectConfig.quadruple_rate}% 5条${effectConfig.quintuple_rate}%")
+            Text("成功率: ${formatRate(effectConfig.success_rate)}")
+            Text(
+                "多特效概率: " +
+                    "2条${formatRate(effectConfig.double_rate)} " +
+                    "3条${formatRate(effectConfig.triple_rate)} " +
+                    "4条${formatRate(effectConfig.quadruple_rate)} " +
+                    "5条${formatRate(effectConfig.quintuple_rate)}"
+            )
         }
         Text("说明：主件为已穿戴，副件自动匹配背包内符合条件的装备。")
     }
@@ -3560,19 +3577,19 @@ private fun hasSpecialEffects(effects: JsonObject?): Boolean {
     return effects != null && effects.isNotEmpty()
 }
 
-  private fun buildEffectSecondaryOptions(state: GameState?, mainSelection: String): List<Pair<String, String>> {
-      if (state == null || mainSelection.isBlank() || !mainSelection.startsWith("equip:")) return emptyList()
-      val slot = mainSelection.removePrefix("equip:").trim()
-      val mainEq = state.equipment.firstOrNull { it.slot == slot } ?: return emptyList()
-      val mainId = mainEq.item?.id ?: return emptyList()
-      return state.items.orEmpty()
-          .filter { it.id == mainId || it.key == mainId }
-          .filter { hasSpecialEffects(it.effects) }
-          .map { item ->
-              val key = if (item.key.isNotBlank()) item.key else item.id
-              key to "${item.name} x${item.qty}"
-          }
-  }
+private fun buildEffectSecondaryOptions(state: GameState?, mainSelection: String): List<Pair<String, String>> {
+    if (state == null || mainSelection.isBlank() || !mainSelection.startsWith("equip:")) return emptyList()
+    val slot = mainSelection.removePrefix("equip:").trim()
+    val mainEq = state.equipment.firstOrNull { it.slot == slot } ?: return emptyList()
+    val mainId = mainEq.item?.id ?: return emptyList()
+    return state.items.orEmpty()
+        .filter { it.id == mainId || it.key == mainId }
+        .filter { hasSpecialEffects(it.effects) }
+        .map { item ->
+            val key = if (item.key.isNotBlank()) item.key else item.id
+            key to "${item.name} x${item.qty}"
+        }
+}
 
   private fun buildForgeSecondaryOptions(state: GameState?, mainSelection: String): List<Pair<String, String>> {
       if (state == null || mainSelection.isBlank() || !mainSelection.startsWith("equip:")) return emptyList()
