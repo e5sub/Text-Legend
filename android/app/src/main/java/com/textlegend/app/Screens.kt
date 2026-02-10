@@ -3442,6 +3442,7 @@ private fun buildInventoryOptions(state: GameState?): List<Pair<String, String>>
       val list = state?.equipment.orEmpty()
       return list.mapNotNull { eq ->
           val item = eq.item ?: return@mapNotNull null
+          if (!hasSpecialEffects(item.effects)) return@mapNotNull null
           val label = "${equipSlotLabel(eq.slot)}: ${item.name}"
           "equip:${eq.slot}" to label
       }
@@ -3501,18 +3502,19 @@ private fun buildForgeMainOptions(state: GameState?): List<Pair<String, String>>
     return options
 }
 
-private fun buildEffectSecondaryOptions(state: GameState?, mainSelection: String): List<Pair<String, String>> {
-    if (state == null || mainSelection.isBlank() || !mainSelection.startsWith("equip:")) return emptyList()
-    val slot = mainSelection.removePrefix("equip:").trim()
-    val mainEq = state.equipment.firstOrNull { it.slot == slot } ?: return emptyList()
-    val mainId = mainEq.item?.id ?: return emptyList()
-    return state.items.orEmpty()
-        .filter { it.id == mainId || it.key == mainId }
-        .map { item ->
-            val key = if (item.key.isNotBlank()) item.key else item.id
-            key to "${item.name} x${item.qty}"
-        }
-}
+  private fun buildEffectSecondaryOptions(state: GameState?, mainSelection: String): List<Pair<String, String>> {
+      if (state == null || mainSelection.isBlank() || !mainSelection.startsWith("equip:")) return emptyList()
+      val slot = mainSelection.removePrefix("equip:").trim()
+      val mainEq = state.equipment.firstOrNull { it.slot == slot } ?: return emptyList()
+      val mainId = mainEq.item?.id ?: return emptyList()
+      return state.items.orEmpty()
+          .filter { it.id == mainId || it.key == mainId }
+          .filter { hasSpecialEffects(it.effects) }
+          .map { item ->
+              val key = if (item.key.isNotBlank()) item.key else item.id
+              key to "${item.name} x${item.qty}"
+          }
+  }
 
   private fun buildForgeSecondaryOptions(state: GameState?, mainSelection: String): List<Pair<String, String>> {
       if (state == null || mainSelection.isBlank() || !mainSelection.startsWith("equip:")) return emptyList()
