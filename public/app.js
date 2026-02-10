@@ -6232,6 +6232,12 @@ function enterGame(name) {
       const seq = antiSeq + 1;
       antiSeq = seq;
       signCmdWeb(antiKey, seq, String(payload.text)).then((sig) => {
+        if (!sig) {
+          enqueueCmd(String(payload.text), payload.source);
+          antiKey = '';
+          antiSeq = 0;
+          return;
+        }
         const signed = { ...payload, seq, sig };
         rawEmit(event, signed);
       });
