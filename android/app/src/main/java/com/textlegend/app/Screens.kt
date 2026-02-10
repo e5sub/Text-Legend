@@ -1825,6 +1825,7 @@ private fun GuildDialog(vm: GameViewModel, prefillName: String?, onDismiss: () -
     val guildList by vm.guildList.collectAsState()
     var guildId by remember { mutableStateOf("") }
     var inviteName by remember { mutableStateOf(prefillName ?: "") }
+    val roleOrder = remember { mapOf("leader" to 0, "vice_leader" to 1, "admin" to 2, "member" to 3) }
     LaunchedEffect(prefillName) {
         if (!prefillName.isNullOrBlank()) inviteName = prefillName
     }
@@ -1835,32 +1836,149 @@ private fun GuildDialog(vm: GameViewModel, prefillName: String?, onDismiss: () -
     }
 
     ScreenScaffold(title = "行会", onBack = onDismiss) {
-        Text("成员")
+        val memberList = members?.members.orEmpty()
+        val onlineCount = memberList.count { it.online }
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text(
+                    text = members?.guildName?.let { "行会：$it" } ?: "未加入行会",
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                if (members?.ok == true) {
+                    Text("成员：${memberList.size}（在线 ${onlineCount}）")
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+        Text("成员列表", style = MaterialTheme.typography.titleMedium)
+        Spacer(modifier = Modifier.height(6.dp))
+
         if (members?.ok == true) {
-            members?.members?.forEach { member ->
-                Text("${member.name} ${member.role} ${if (member.online) "在线" else "离线"}")
+            val sortedMembers = memberList.sortedWith(
+                compareBy<GuildMemberInfo> { roleOrder[it.role] ?: 9 }
+                    .thenBy { it.name }
+            )
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 420.dp)
+            ) {
+                items(sortedMembers) { member ->
+                    val roleLabel = when (member.role) {
+                        "leader" -> "会长"
+                        "vice_leader" -> "副会长"
+                        "admin" -> "管理"
+                        else -> "成员"
+                    }
+                    val roleColor = when (member.role) {
+                        "leader" -> Color(0xFFE9B44C)
+                        "vice_leader" -> Color(0xFFF0A35E)
+                        "admin" -> Color(0xFF6FB7A8)
+                        else -> MaterialTheme.colorScheme.outline
+                    }
+                    val onlineText = if (member.online) "在线" else "离线"
+                    val onlineColor = if (member.online) Color(0xFF7DDC90) else MaterialTheme.colorScheme.outline
+
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text(member.name, fontWeight = FontWeight.SemiBold)
+                                Text("Lv${member.level} ${classLabel(member.classId)}")
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Surface(
+                                    shape = RoundedCornerShape(999.dp),
+                                    color = roleColor.copy(alpha = 0.2f),
+                                    border = BorderStroke(1.dp, roleColor.copy(alpha = 0.7f))
+                                ) {
+                                    Text(
+                                        text = roleLabel,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                        color = roleColor,
+                                        fontSize = 12.sp
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(onlineText, color = onlineColor, fontSize = 12.sp)
+                            }
+                        }
+                    }
+                }
             }
         } else {
             Text("未加入行会")
         }
-        Spacer(modifier = Modifier.height(8.dp))
-        Text("行会列表")
+
+        Spacer(modifier = Modifier.height(12.dp))
+        Text("行会列表", style = MaterialTheme.typography.titleMedium)
+        Spacer(modifier = Modifier.height(6.dp))
         guildList?.guilds?.forEach { g ->
-            Text("${g.id}: ${g.name} (${g.memberCount})")
+            Surface(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(g.name, fontWeight = FontWeight.SemiBold)
+                        Text("ID ${g.id} · 人数 ${g.memberCount}", fontSize = 12.sp)
+                    }
+                }
+            }
         }
+
+        Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = guildId,
             onValueChange = { guildId = it },
             label = { Text("申请行会ID") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
         )
-        Button(onClick = {
-            val id = guildId.toIntOrNull()
-            if (id != null) vm.guildApply(id)
-        }) { Text("申请加入") }
+        Spacer(modifier = Modifier.height(6.dp))
+        Button(
+            onClick = {
+                val id = guildId.toIntOrNull()
+                if (id != null) vm.guildApply(id)
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) { Text("申请加入") }
 
-        OutlinedTextField(value = inviteName, onValueChange = { inviteName = it }, label = { Text("邀请玩家") })
-        Button(onClick = { if (inviteName.isNotBlank()) vm.sendCmd("guild invite ${inviteName.trim()}") }) { Text("邀请") }
+        Spacer(modifier = Modifier.height(10.dp))
+        OutlinedTextField(
+            value = inviteName,
+            onValueChange = { inviteName = it },
+            label = { Text("邀请玩家") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Button(
+            onClick = { if (inviteName.isNotBlank()) vm.sendCmd("guild invite ${inviteName.trim()}") },
+            modifier = Modifier.fillMaxWidth()
+        ) { Text("邀请") }
     }
 }
 
@@ -1944,7 +2062,6 @@ private fun MailDialog(vm: GameViewModel, prefillName: String?, onDismiss: () ->
         if (pageInfo.totalPages > 1) {
             PagerControls(info = pageInfo, onPrev = { page -= 1 }, onNext = { page += 1 })
         }
-        OutlinedTextField(value = itemKey, onValueChange = { itemKey = it }, label = { Text("附件Key(可选)") })
         OutlinedTextField(value = itemQty, onValueChange = { itemQty = it }, label = { Text("附件数量") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
         OutlinedTextField(value = gold, onValueChange = { gold = it }, label = { Text("金币") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
         Button(onClick = {
@@ -2032,20 +2149,103 @@ private fun ConsignDialog(vm: GameViewModel, state: GameState?, onDismiss: () ->
     var sellPrice by remember { mutableStateOf("1") }
     var buyId by remember { mutableStateOf("") }
     var buyQty by remember { mutableStateOf("1") }
+    var showSellDialog by remember { mutableStateOf(false) }
+    var showBuyDialog by remember { mutableStateOf(false) }
+    var sellItemLabel by remember { mutableStateOf("") }
+    var buyItemLabel by remember { mutableStateOf("") }
     var tab by remember { mutableStateOf("market") }
     var filter by remember { mutableStateOf("all") }
     var page by remember { mutableStateOf(0) }
     val pageSize = 9
 
     ScreenScaffold(title = "寄售", onBack = onDismiss) {
+        if (showSellDialog) {
+            AlertDialog(
+                onDismissRequest = { showSellDialog = false },
+                title = { Text("上架物品") },
+                text = {
+                    Column {
+                        Text(sellItemLabel)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = sellQty,
+                            onValueChange = { sellQty = it },
+                            label = { Text("数量") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        )
+                        OutlinedTextField(
+                            value = sellPrice,
+                            onValueChange = { sellPrice = it },
+                            label = { Text("单价") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        val qty = sellQty.toIntOrNull() ?: 1
+                        val price = sellPrice.toIntOrNull() ?: 1
+                        if (sellName.isNotBlank()) vm.sendCmd("consign sell ${sellName.trim()} $qty $price")
+                        showSellDialog = false
+                    }) { Text("上架") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showSellDialog = false }) { Text("取消") }
+                }
+            )
+        }
+        if (showBuyDialog) {
+            AlertDialog(
+                onDismissRequest = { showBuyDialog = false },
+                title = { Text("购买物品") },
+                text = {
+                    Column {
+                        Text(buyItemLabel)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = buyQty,
+                            onValueChange = { buyQty = it },
+                            label = { Text("数量") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        val id = buyId.toIntOrNull()
+                        val qty = buyQty.toIntOrNull() ?: 1
+                        if (id != null) vm.sendCmd("consign buy $id $qty")
+                        showBuyDialog = false
+                    }) { Text("购买") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showBuyDialog = false }) { Text("取消") }
+                }
+            )
+        }
+
+        val activeTabColor = MaterialTheme.colorScheme.primaryContainer
+        val inactiveTabColor = MaterialTheme.colorScheme.surfaceVariant
         Row {
-            Button(onClick = { tab = "market"; page = 0; vm.sendCmd("consign list") }) { Text("市场") }
+            Button(
+                onClick = { tab = "market"; page = 0; vm.sendCmd("consign list") },
+                colors = ButtonDefaults.buttonColors(containerColor = if (tab == "market") activeTabColor else inactiveTabColor)
+            ) { Text("市场") }
             Spacer(modifier = Modifier.width(6.dp))
-            Button(onClick = { tab = "mine"; page = 0; vm.sendCmd("consign my") }) { Text("我的寄售") }
+            Button(
+                onClick = { tab = "mine"; page = 0; vm.sendCmd("consign my") },
+                colors = ButtonDefaults.buttonColors(containerColor = if (tab == "mine") activeTabColor else inactiveTabColor)
+            ) { Text("我的寄售") }
             Spacer(modifier = Modifier.width(6.dp))
-            Button(onClick = { tab = "inventory"; page = 0 }) { Text("背包") }
+            Button(
+                onClick = { tab = "inventory"; page = 0 },
+                colors = ButtonDefaults.buttonColors(containerColor = if (tab == "inventory") activeTabColor else inactiveTabColor)
+            ) { Text("背包") }
             Spacer(modifier = Modifier.width(6.dp))
-            Button(onClick = { tab = "history"; page = 0; vm.sendCmd("consign history") }) { Text("历史") }
+            Button(
+                onClick = { tab = "history"; page = 0; vm.sendCmd("consign history") },
+                colors = ButtonDefaults.buttonColors(containerColor = if (tab == "history") activeTabColor else inactiveTabColor)
+            ) { Text("历史") }
         }
         Spacer(modifier = Modifier.height(8.dp))
         Row {
@@ -2067,7 +2267,12 @@ private fun ConsignDialog(vm: GameViewModel, state: GameState?, onDismiss: () ->
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { buyId = item.id.toString() }
+                            .clickable {
+                                buyId = item.id.toString()
+                                buyQty = "1"
+                                buyItemLabel = "${name} · 数量 ${item.qty} · 单价 ${item.price} 金"
+                                showBuyDialog = true
+                            }
                     ) {
                         Column(modifier = Modifier.padding(8.dp)) {
                             Text(name, fontWeight = FontWeight.SemiBold)
@@ -2090,7 +2295,12 @@ private fun ConsignDialog(vm: GameViewModel, state: GameState?, onDismiss: () ->
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { buyId = item.id.toString() }
+                            .clickable {
+                                buyId = item.id.toString()
+                                buyQty = "1"
+                                buyItemLabel = "${name} · 数量 ${item.qty} · 单价 ${item.price} 金"
+                                showBuyDialog = true
+                            }
                     ) {
                         Column(modifier = Modifier.padding(8.dp)) {
                             Text(name, fontWeight = FontWeight.SemiBold)
@@ -2121,8 +2331,10 @@ private fun ConsignDialog(vm: GameViewModel, state: GameState?, onDismiss: () ->
             PagerControls(info, onPrev = { page -= 1 }, onNext = { page += 1 })
         }
         if (tab == "inventory") {
-            val equipItems = state?.items?.filter { it.type in listOf("weapon", "armor", "accessory", "book") }.orEmpty()
-            val filteredInv = filterInventory(equipItems, filter)
+            val consignable = state?.items
+                ?.filter { it.type != "currency" && !it.untradable && !it.unconsignable }
+                .orEmpty()
+            val filteredInv = filterInventory(consignable, filter)
             val info = paginate(filteredInv, page, pageSize)
             page = info.page
             TwoColumnGrid(
@@ -2131,7 +2343,12 @@ private fun ConsignDialog(vm: GameViewModel, state: GameState?, onDismiss: () ->
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { sellName = item.key.ifBlank { item.id } }
+                            .clickable {
+                                sellName = item.key.ifBlank { item.id }
+                                sellQty = item.qty.toString()
+                                sellItemLabel = "${item.name} · 数量 ${item.qty}"
+                                showSellDialog = true
+                            }
                     ) {
                         Column(modifier = Modifier.padding(8.dp)) {
                             Text(item.name, fontWeight = FontWeight.SemiBold)
@@ -2141,32 +2358,6 @@ private fun ConsignDialog(vm: GameViewModel, state: GameState?, onDismiss: () ->
                 }
             )
             PagerControls(info, onPrev = { page -= 1 }, onNext = { page += 1 })
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Text("上架物品")
-        OutlinedTextField(value = sellName, onValueChange = { sellName = it }, label = { Text("物品名或Key") })
-        OutlinedTextField(value = sellQty, onValueChange = { sellQty = it }, label = { Text("数量") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-        OutlinedTextField(value = sellPrice, onValueChange = { sellPrice = it }, label = { Text("单价") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-        Button(onClick = {
-            val qty = sellQty.toIntOrNull() ?: 1
-            val price = sellPrice.toIntOrNull() ?: 1
-            if (sellName.isNotBlank()) vm.sendCmd("consign sell ${sellName.trim()} $qty $price")
-        }) { Text("上架") }
-        Spacer(modifier = Modifier.height(8.dp))
-        Text("购买/下架")
-        OutlinedTextField(value = buyId, onValueChange = { buyId = it }, label = { Text("寄售ID") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-        OutlinedTextField(value = buyQty, onValueChange = { buyQty = it }, label = { Text("数量") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-        Row {
-            Button(onClick = {
-                val id = buyId.toIntOrNull()
-                val qty = buyQty.toIntOrNull() ?: 1
-                if (id != null) vm.sendCmd("consign buy $id $qty")
-            }) { Text("购买") }
-            Spacer(modifier = Modifier.width(8.dp))
-            Button(onClick = {
-                val id = buyId.toIntOrNull()
-                if (id != null) vm.sendCmd("consign cancel $id")
-            }) { Text("下架") }
         }
     }
 }
@@ -2240,18 +2431,21 @@ private fun ForgeDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> U
     var mainSelection by remember { mutableStateOf("") }
     var secondarySelection by remember { mutableStateOf("") }
 
-    val mainOptions = buildForgeMainOptions(state)
-    val secondaryOptions = buildInventoryOptions(state)
+    val mainOptions = buildEquippedOptions(state)
+    val secondaryOptions = buildForgeSecondaryOptions(state, mainSelection)
 
     ScreenScaffold(title = "装备合成", onBack = onDismiss) {
-        DropdownField(label = "主件(可选已穿戴)", options = mainOptions, selected = mainSelection, onSelect = { mainSelection = it })
-        DropdownField(label = "副件(背包)", options = secondaryOptions, selected = secondarySelection, onSelect = { secondarySelection = it })
+        if (secondarySelection.isNotBlank() && secondaryOptions.none { it.first == secondarySelection }) {
+            secondarySelection = ""
+        }
+        DropdownField(label = "主件(已穿戴)", options = mainOptions, selected = mainSelection, onSelect = { mainSelection = it })
+        DropdownField(label = "副件(背包匹配)", options = secondaryOptions, selected = secondarySelection, onSelect = { secondarySelection = it })
         Button(onClick = {
             if (mainSelection.isNotBlank() && secondarySelection.isNotBlank()) {
                 vm.sendCmd("forge ${mainSelection}|${secondarySelection}")
             }
         }) { Text("合成") }
-        Text("说明: 需要两件相同装备，主件可用 equip:slot 或背包物品，副件必须为背包物品。")
+        Text("说明：需要两件相同装备，主件为已穿戴，副件自动匹配背包内符合条件的装备。")
         Text("仅支持传说及以上装备合成，合成后提升元素攻击。")
     }
 }
@@ -2259,20 +2453,54 @@ private fun ForgeDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> U
 @Composable
 private fun RefineDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Unit) {
     var selection by remember { mutableStateOf("") }
-    val options = buildForgeMainOptions(state)
+    val options = buildEquippedOptions(state)
     val refineConfig = state?.refine_config
     val refineLevel = resolveRefineLevel(state, selection)
     val successRate = if (refineConfig != null && refineLevel != null) {
         calcRefineSuccessRate(refineLevel, refineConfig)
     } else null
+    var showConfirm by remember { mutableStateOf(false) }
     ScreenScaffold(title = "装备锻造", onBack = onDismiss) {
-        DropdownField(label = "锻造装备", options = options, selected = selection, onSelect = { selection = it })
+        if (showConfirm) {
+            AlertDialog(
+                onDismissRequest = { showConfirm = false },
+                title = { Text("确认锻造") },
+                text = {
+                    Column {
+                        val label = options.firstOrNull { it.first == selection }?.second ?: selection
+                        Text("装备: $label")
+                        if (refineLevel != null) Text("当前等级: +$refineLevel → +${refineLevel + 1}")
+                        if (successRate != null) Text("成功率: ${"%.1f".format(successRate)}%")
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        if (selection.isNotBlank()) vm.sendCmd("refine $selection")
+                        showConfirm = false
+                    }) { Text("锻造") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showConfirm = false }) { Text("取消") }
+                }
+            )
+        }
+
+        Text("点击已穿戴装备进行锻造")
+        options.forEach { (value, label) ->
+            ClickableTextRow(
+                text = label,
+                selected = selection == value,
+                onClick = {
+                    selection = value
+                    showConfirm = true
+                }
+            )
+        }
         if (refineLevel != null && refineConfig != null && successRate != null) {
             Text("当前等级: +$refineLevel → +${refineLevel + 1}")
             Text("成功率: ${"%.1f".format(successRate)}%")
             Text("材料需求: ${refineConfig.material_count} 件史诗(不含)以下无特效装备")
         }
-        Button(onClick = { if (selection.isNotBlank()) vm.sendCmd("refine $selection") }) { Text("锻造") }
     }
 }
 
@@ -2281,21 +2509,67 @@ private fun EffectDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> 
     var mainSelection by remember { mutableStateOf("") }
     var secondarySelection by remember { mutableStateOf("") }
     val equipOptions = buildEquippedOptions(state)
-    val inventoryOptions = buildInventoryOptions(state)
+    val inventoryOptions = buildEffectSecondaryOptions(state, mainSelection)
     val effectConfig = state?.effect_reset_config
+    var showConfirm by remember { mutableStateOf(false) }
     ScreenScaffold(title = "特效重置", onBack = onDismiss) {
-        DropdownField(label = "主件(已穿戴)", options = equipOptions, selected = mainSelection, onSelect = { mainSelection = it })
-        DropdownField(label = "副件(背包)", options = inventoryOptions, selected = secondarySelection, onSelect = { secondarySelection = it })
+        if (secondarySelection.isNotBlank() && inventoryOptions.none { it.first == secondarySelection }) {
+            secondarySelection = ""
+        }
+        if (showConfirm) {
+            AlertDialog(
+                onDismissRequest = { showConfirm = false },
+                title = { Text("确认重置") },
+                text = {
+                    Column {
+                        val mainLabel = equipOptions.firstOrNull { it.first == mainSelection }?.second ?: mainSelection
+                        val subLabel = inventoryOptions.firstOrNull { it.first == secondarySelection }?.second ?: secondarySelection
+                        Text("主件: $mainLabel")
+                        Text("副件: $subLabel")
+                        if (effectConfig != null) {
+                            Text("成功率: ${effectConfig.success_rate}%")
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        if (mainSelection.isNotBlank() && secondarySelection.isNotBlank()) {
+                            vm.sendCmd("effect ${mainSelection} ${secondarySelection}")
+                        }
+                        showConfirm = false
+                    }) { Text("重置") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showConfirm = false }) { Text("取消") }
+                }
+            )
+        }
+
+        Text("主件(已穿戴)")
+        equipOptions.forEach { (value, label) ->
+            ClickableTextRow(
+                text = label,
+                selected = mainSelection == value,
+                onClick = { mainSelection = value }
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Text("副件(背包匹配)")
+        inventoryOptions.forEach { (value, label) ->
+            ClickableTextRow(
+                text = label,
+                selected = secondarySelection == value,
+                onClick = {
+                    secondarySelection = value
+                    if (mainSelection.isNotBlank()) showConfirm = true
+                }
+            )
+        }
         if (effectConfig != null) {
             Text("成功率: ${effectConfig.success_rate}%")
             Text("多特效概率: 2条${effectConfig.double_rate}% 3条${effectConfig.triple_rate}% 4条${effectConfig.quadruple_rate}% 5条${effectConfig.quintuple_rate}%")
         }
-        Button(onClick = {
-            if (mainSelection.isNotBlank() && secondarySelection.isNotBlank()) {
-                vm.sendCmd("effect ${mainSelection} ${secondarySelection}")
-            }
-        }) { Text("重置") }
-        Text("说明: 主件必须是 equip:slot，副件为背包物品。")
+        Text("说明：主件为已穿戴，副件自动匹配背包内符合条件的装备。")
     }
 }
 
@@ -2311,7 +2585,9 @@ private fun SabakDialog(vm: GameViewModel, onDismiss: () -> Unit) {
         Spacer(modifier = Modifier.height(8.dp))
         Text("报名列表")
         info?.registrations?.forEach { g ->
-            Text("${g.guildId} ${g.guildName}")
+            val name = g.guildName ?: "未知"
+            val id = g.guildId?.toString() ?: "-"
+            Text("$id $name")
         }
         if (info?.registrable == true) {
             Text("输入报名行会ID")
@@ -2349,16 +2625,38 @@ private fun ChangeClassDialog(vm: GameViewModel, onDismiss: () -> Unit) {
     ScreenScaffold(title = "转职", onBack = onDismiss) {
         Text("转职需要 100万金币 + 转职令牌")
         Spacer(modifier = Modifier.height(8.dp))
-        DropdownField(
-            label = "选择职业",
-            options = listOf(
-                "warrior" to "战士",
-                "mage" to "法师",
-                "taoist" to "道士"
-            ),
-            selected = selected,
-            onSelect = { selected = it }
+        Text("选择职业")
+        Spacer(modifier = Modifier.height(6.dp))
+        val options = listOf(
+            "warrior" to "战士",
+            "mage" to "法师",
+            "taoist" to "道士"
         )
+        options.chunked(3).forEach { rowItems ->
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                rowItems.forEach { (id, label) ->
+                    val isSelected = selected == id
+                    val border = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
+                    val bg = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp)
+                            .clickable { selected = id },
+                        shape = RoundedCornerShape(12.dp),
+                        color = bg,
+                        border = BorderStroke(1.dp, border)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(label, fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal)
+                        }
+                    }
+                }
+                if (rowItems.size == 1) Spacer(modifier = Modifier.weight(2f))
+                if (rowItems.size == 2) Spacer(modifier = Modifier.weight(1f))
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
         Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = {
             vm.sendCmd("changeclass $selected")
@@ -2371,42 +2669,82 @@ private fun ChangeClassDialog(vm: GameViewModel, onDismiss: () -> Unit) {
 private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
     var stat by remember { mutableStateOf("攻击") }
     var count by remember { mutableStateOf("1") }
+    var showConfirm by remember { mutableStateOf(false) }
     ScreenScaffold(title = "修炼", onBack = onDismiss) {
-        DropdownField(
-            label = "属性",
-            options = listOf(
-                "生命" to "生命",
-                "魔法值" to "魔法值",
-                "攻击" to "攻击",
-                "防御" to "防御",
-                "魔法" to "魔法",
-                "魔御" to "魔御",
-                "道术" to "道术",
-                "敏捷" to "敏捷"
-            ),
-            selected = stat,
-            onSelect = { stat = it }
-        )
-        OutlinedTextField(
-            value = count,
-            onValueChange = { count = it },
-            label = { Text("次数") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-        )
-        Button(onClick = {
-            val times = count.toIntOrNull() ?: 1
-            vm.sendCmd("train $stat $times")
-            onDismiss()
-        }) { Text("修炼") }
+        if (showConfirm) {
+            AlertDialog(
+                onDismissRequest = { showConfirm = false },
+                title = { Text("确认修炼") },
+                text = {
+                    Column {
+                        Text("属性: $stat")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = count,
+                            onValueChange = { count = it },
+                            label = { Text("次数") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        val times = count.toIntOrNull() ?: 1
+                        vm.sendCmd("train $stat $times")
+                        showConfirm = false
+                        onDismiss()
+                    }) { Text("修炼") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showConfirm = false }) { Text("取消") }
+                }
+            )
+        }
+        Text("可修炼属性")
+        Spacer(modifier = Modifier.height(6.dp))
+        val options = listOf("生命", "魔法值", "攻击", "防御", "魔法", "魔御", "道术", "敏捷")
+        options.chunked(3).forEach { rowItems ->
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                rowItems.forEach { label ->
+                    val isSelected = stat == label
+                    val border = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
+                    val bg = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp)
+                            .clickable {
+                                stat = label
+                                showConfirm = true
+                            },
+                        shape = RoundedCornerShape(12.dp),
+                        color = bg,
+                        border = BorderStroke(1.dp, border)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(label, fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal, fontSize = 13.sp)
+                        }
+                    }
+                }
+                if (rowItems.size == 1) Spacer(modifier = Modifier.weight(2f))
+                if (rowItems.size == 2) Spacer(modifier = Modifier.weight(1f))
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
     }
 }
 
 @Composable
 private fun RankDialog(state: GameState?, vm: GameViewModel, onDismiss: () -> Unit) {
+    val rankMessages by vm.rankMessages.collectAsState()
     ScreenScaffold(title = "排行榜", onBack = onDismiss) {
         Text("世界BOSS排行")
-        state?.worldBossRank?.forEachIndexed { idx, item ->
-            Text("${idx + 1}. ${item.name} (${item.value})")
+        if (state?.worldBossRank.isNullOrEmpty()) {
+            Text("暂无数据")
+        } else {
+            state?.worldBossRank?.forEachIndexed { idx, item ->
+                Text("${idx + 1}. ${item.name} (${item.value})")
+            }
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text("职业排行榜")
@@ -2416,6 +2754,32 @@ private fun RankDialog(state: GameState?, vm: GameViewModel, onDismiss: () -> Un
             Button(onClick = { vm.sendCmd("rank mage") }) { Text("法师") }
             Spacer(modifier = Modifier.width(6.dp))
             Button(onClick = { vm.sendCmd("rank taoist") }) { Text("道士") }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        if (rankMessages.isEmpty()) {
+            Text("点击上方按钮获取排行榜")
+        } else {
+            val grouped = rankMessages.mapNotNull { line ->
+                val idx = line.indexOf("排行榜:")
+                if (idx <= 0) null else line.substring(0, idx) to line.substring(idx + 4).trim()
+            }.groupBy({ it.first }, { it.second })
+
+            grouped.forEach { (title, lines) ->
+                Surface(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text("$title 排行榜", fontWeight = FontWeight.SemiBold)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        lines.joinToString(" ").split(Regex("\\s+")).filter { it.isNotBlank() }.forEach { entry ->
+                            Text(entry)
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -2525,7 +2889,7 @@ private fun buildEquippedOptions(state: GameState?): List<Pair<String, String>> 
     val list = state?.equipment.orEmpty()
     return list.map { eq ->
         val name = eq.item?.name ?: eq.slot
-        "equip:${eq.slot}" to "${eq.slot}: $name"
+        "equip:${eq.slot}" to name
     }
 }
 
@@ -2534,6 +2898,32 @@ private fun buildForgeMainOptions(state: GameState?): List<Pair<String, String>>
     options.addAll(buildEquippedOptions(state))
     options.addAll(buildInventoryOptions(state))
     return options
+}
+
+private fun buildEffectSecondaryOptions(state: GameState?, mainSelection: String): List<Pair<String, String>> {
+    if (state == null || mainSelection.isBlank() || !mainSelection.startsWith("equip:")) return emptyList()
+    val slot = mainSelection.removePrefix("equip:").trim()
+    val mainEq = state.equipment.firstOrNull { it.slot == slot } ?: return emptyList()
+    val mainId = mainEq.item?.id ?: return emptyList()
+    return state.items.orEmpty()
+        .filter { it.id == mainId || it.key == mainId }
+        .map { item ->
+            val key = if (item.key.isNotBlank()) item.key else item.id
+            key to "${item.name} x${item.qty}"
+        }
+}
+
+private fun buildForgeSecondaryOptions(state: GameState?, mainSelection: String): List<Pair<String, String>> {
+    if (state == null || mainSelection.isBlank() || !mainSelection.startsWith("equip:")) return emptyList()
+    val slot = mainSelection.removePrefix("equip:").trim()
+    val mainEq = state.equipment.firstOrNull { it.slot == slot } ?: return emptyList()
+    val mainId = mainEq.item?.id ?: return emptyList()
+    return state.items.orEmpty()
+        .filter { it.id == mainId || it.key == mainId }
+        .map { item ->
+            val key = if (item.key.isNotBlank()) item.key else item.id
+            key to "${item.name} x${item.qty}"
+        }
 }
 
 private fun resolveRefineLevel(state: GameState?, selection: String): Int? {

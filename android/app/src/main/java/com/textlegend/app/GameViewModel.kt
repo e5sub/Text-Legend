@@ -49,6 +49,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _outputLog = MutableStateFlow<List<OutputPayload>>(emptyList())
     val outputLog: StateFlow<List<OutputPayload>> = _outputLog
+    private val _rankMessages = MutableStateFlow<List<String>>(emptyList())
+    val rankMessages: StateFlow<List<String>> = _rankMessages
 
     private val _mailList = MutableStateFlow<MailListResponse?>(null)
     val mailList: StateFlow<MailListResponse?> = _mailList
@@ -223,6 +225,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             onOutput = { output ->
                 if (shouldShowChatLine(output)) {
                     _outputLog.value = (listOf(output) + _outputLog.value).take(400)
+                }
+                val text = output.text?.trim().orEmpty()
+                if (text.contains("排行榜:")) {
+                    val next = (listOf(text) + _rankMessages.value).distinct().take(6)
+                    _rankMessages.value = next
                 }
                 parseShopItems(output.text)
             },
