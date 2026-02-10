@@ -2388,6 +2388,16 @@ body.dark .chat-name-btn.sponsor-player-name:hover {
   .game-layout {
     grid-template-columns: 1fr;
   }
+  .game-layout,
+  .game-grid,
+  .battle-wrap,
+  .chat-wrap,
+  .side,
+  .battle-panel {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
   .battle-panel {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto;
@@ -3317,6 +3327,16 @@ body.dark .mail-tab.active {
   .side,
   .chat-wrap {
     overflow-x: hidden;
+  }
+  .game-layout,
+  .game-grid,
+  .battle-wrap,
+  .chat-wrap,
+  .side,
+  .battle-panel {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .chat-log {
