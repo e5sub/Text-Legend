@@ -187,6 +187,8 @@ data class StatsInfo(
     val vip: Boolean = false,
     val vip_expires_at: Long? = null,
     val dodge: Int = 0,
+    val cultivation_level: Int = -1,
+    val cultivation_bonus: Int = 0,
     val autoSkillId: JsonElement? = null,
     val sabak_bonus: Boolean = false,
     val set_bonus: Boolean = false

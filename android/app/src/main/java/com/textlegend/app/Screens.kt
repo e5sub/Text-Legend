@@ -470,7 +470,7 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                 }
             }
 
-            composable("stats") { StatsDialog(state = state, onDismiss = { innerNav.popBackStack() }) }
+            composable("stats") { StatsDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
             composable("party") { PartyDialog(vm = vm, state = state, prefillName = quickTargetName, onDismiss = { quickTargetName = null; innerNav.popBackStack() }) }
               composable("guild") { GuildDialog(vm = vm, state = state, prefillName = quickTargetName, onDismiss = { quickTargetName = null; innerNav.popBackStack() }) }
             composable("mail") { MailDialog(vm = vm, prefillName = quickTargetName, onDismiss = { quickTargetName = null; innerNav.popBackStack() }) }
@@ -1324,6 +1324,27 @@ private fun formatRate(raw: Double): String {
     return "${if (trimmed.isBlank()) "0" else trimmed}%"
 }
 
+private val CULTIVATION_RANKS = listOf(
+    "筑基",
+    "灵虚",
+    "和合",
+    "元婴",
+    "空冥",
+    "履霜",
+    "渡劫",
+    "寂灭",
+    "大乘",
+    "上仙",
+    "真仙",
+    "天仙"
+)
+
+private fun cultivationNameByLevel(levelValue: Int): String {
+    if (levelValue < 0) return "无"
+    val idx = levelValue.coerceIn(0, CULTIVATION_RANKS.size - 1)
+    return CULTIVATION_RANKS[idx]
+}
+
 private fun partyMembersText(party: PartyInfo): String {
     val names = party.members.map { "${it.name}${if (it.online) "(在线)" else "(离线)"}" }
     return if (names.size <= 4) {
@@ -1909,7 +1930,7 @@ private fun SettingsScreen(vm: GameViewModel, onDismiss: () -> Unit) {
 }
 
   @Composable
-  private fun StatsDialog(state: GameState?, onDismiss: () -> Unit) {
+  private fun StatsDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Unit) {
       ScreenScaffold(title = "角色状态", onBack = onDismiss) {
           val stats = state?.stats
           val player = state?.player
@@ -1968,6 +1989,30 @@ private fun SettingsScreen(vm: GameViewModel, onDismiss: () -> Unit) {
                               if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
                           }
                           Spacer(modifier = Modifier.height(8.dp))
+                      }
+
+                      val cultivationLevel = stats.cultivation_level
+                      val cultivationName = cultivationNameByLevel(cultivationLevel)
+                      val cultivationBonus = stats.cultivation_bonus
+                      val isMaxCultivation = cultivationLevel >= CULTIVATION_RANKS.size - 1
+                      Row(
+                          modifier = Modifier.fillMaxWidth(),
+                          verticalAlignment = Alignment.CenterVertically
+                      ) {
+                          Text(
+                              text = if (cultivationLevel >= 0) {
+                                  "修真: $cultivationName（所有属性+$cultivationBonus）"
+                              } else {
+                                  "修真: 无"
+                              },
+                              style = MaterialTheme.typography.bodyMedium,
+                              modifier = Modifier.weight(1f)
+                          )
+                          Spacer(modifier = Modifier.width(8.dp))
+                          Button(
+                              onClick = { vm.sendCmd("修真") },
+                              enabled = !isMaxCultivation
+                          ) { Text("提升修真") }
                       }
                   }
               }
