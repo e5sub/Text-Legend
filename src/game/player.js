@@ -459,12 +459,12 @@ export function computeDerived(player) {
     if (entry.effects?.elementAtk) {
       elementAtk += Math.max(0, Math.floor(entry.effects.elementAtk));
     }
-    stats.str += atk ? Math.floor(atk / 2) : 0;
-    stats.dex += dex ? Math.floor(dex / 2) : 0;
-    stats.int += mag ? Math.floor(mag / 2) : 0;
-    stats.con += def ? Math.floor(def / 2) : 0;
-    stats.spirit += spirit ? Math.floor(spirit / 2) : 0;
-    mdefBonus += mdef ? Math.floor(mdef / 2) : 0;
+    stats.str += atk || 0;
+    stats.dex += dex || 0;
+    stats.int += mag || 0;
+    stats.con += def || 0;
+    stats.spirit += spirit || 0;
+    mdefBonus += mdef || 0;
   }
   const training = player.flags.training;
   const trainingFruit = player.flags.trainingFruit;
