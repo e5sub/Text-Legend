@@ -2602,23 +2602,92 @@ private fun SabakDialog(vm: GameViewModel, onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun RepairDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Unit) {
-    ScreenScaffold(title = "修理装备", onBack = onDismiss) {
-        Text("当前装备")
-        state?.equipment?.forEach { eq ->
-            val item = eq.item
-            if (item != null) {
-                Text("${eq.slot}: ${item.name} (${eq.durability ?: 0}/${eq.max_durability ?: 0})")
-            }
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Row {
-            Button(onClick = { vm.sendCmd("repair list") }) { Text("查看费用") }
-            Spacer(modifier = Modifier.width(8.dp))
-            Button(onClick = { vm.sendCmd("repair") }) { Text("修理全部") }
-        }
-    }
-}
+  private fun RepairDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Unit) {
+      fun slotLabel(slot: String): String = when (slot) {
+          "weapon" -> "武器"
+          "chest" -> "衣服"
+          "feet" -> "鞋子"
+          "ring_left" -> "左戒指"
+          "ring_right" -> "右戒指"
+          "head" -> "头盔"
+          else -> slot
+      }
+
+      ScreenScaffold(title = "修理装备", onBack = onDismiss) {
+          Column(
+              modifier = Modifier
+                  .fillMaxWidth()
+                  .verticalScroll(rememberScrollState())
+          ) {
+              Text("当前装备", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+              Spacer(modifier = Modifier.height(8.dp))
+              Card(
+                  modifier = Modifier.fillMaxWidth(),
+                  colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                  elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+              ) {
+                  Column(modifier = Modifier.padding(12.dp)) {
+                      val list = state?.equipment?.filter { it.item != null } ?: emptyList()
+                      if (list.isEmpty()) {
+                          Text("暂无可修理装备", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                      } else {
+                          list.forEachIndexed { index, eq ->
+                              val item = eq.item ?: return@forEachIndexed
+                              val maxDur = eq.max_durability ?: 0
+                              val cur = eq.durability ?: 0
+                              val progress = if (maxDur > 0) cur.toFloat() / maxDur.toFloat() else 0f
+                              Column(modifier = Modifier.fillMaxWidth()) {
+                                  Row(
+                                      modifier = Modifier.fillMaxWidth(),
+                                      horizontalArrangement = Arrangement.SpaceBetween,
+                                      verticalAlignment = Alignment.CenterVertically
+                                  ) {
+                                      Text(
+                                          text = "${slotLabel(eq.slot)}: ${item.name}",
+                                          style = MaterialTheme.typography.bodyMedium,
+                                          fontWeight = FontWeight.Medium
+                                      )
+                                      Text(
+                                          text = "${cur}/${maxDur}",
+                                          style = MaterialTheme.typography.bodySmall,
+                                          color = MaterialTheme.colorScheme.onSurfaceVariant
+                                      )
+                                  }
+                                  Spacer(modifier = Modifier.height(6.dp))
+                                  LinearProgressIndicator(
+                                      progress = progress.coerceIn(0f, 1f),
+                                      modifier = Modifier
+                                          .fillMaxWidth()
+                                          .height(6.dp)
+                                          .clip(RoundedCornerShape(3.dp)),
+                                      color = if (progress < 0.4f) Color(0xFFE57373) else Color(0xFF81C784),
+                                      trackColor = MaterialTheme.colorScheme.surfaceVariant
+                                  )
+                              }
+                              if (index != list.lastIndex) {
+                                  Spacer(modifier = Modifier.height(10.dp))
+                              }
+                          }
+                      }
+                  }
+              }
+              Spacer(modifier = Modifier.height(12.dp))
+              Row(
+                  modifier = Modifier.fillMaxWidth(),
+                  horizontalArrangement = Arrangement.spacedBy(12.dp)
+              ) {
+                  Button(
+                      modifier = Modifier.weight(1f),
+                      onClick = { vm.sendCmd("repair list") }
+                  ) { Text("查看费用") }
+                  Button(
+                      modifier = Modifier.weight(1f),
+                      onClick = { vm.sendCmd("repair all") }
+                  ) { Text("修理全部") }
+              }
+          }
+      }
+  }
 
 @Composable
 private fun ChangeClassDialog(vm: GameViewModel, onDismiss: () -> Unit) {
