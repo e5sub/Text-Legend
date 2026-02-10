@@ -1194,7 +1194,7 @@ private fun formatEffectText(effects: JsonObject?): String {
     val parts = mutableListOf<String>()
     val elementAtk = effects["elementAtk"]?.jsonPrimitive?.doubleOrNull ?: 0.0
     if (elementAtk > 0) parts.add("元素 +${elementAtk.toInt()}")
-    val skillId = effects["skill"]?.jsonPrimitive?.contentOrNull
+    val skillId = runCatching { effects["skill"]?.jsonPrimitive?.content }.getOrNull()
     if (!skillId.isNullOrBlank()) {
         parts.add("附加技能:${skillId}")
     }
@@ -1208,7 +1208,7 @@ private fun formatEffectText(effects: JsonObject?): String {
 private fun formatEffectInline(effects: JsonObject?): String {
     if (effects == null) return ""
     val parts = mutableListOf<String>()
-    val skillId = effects["skill"]?.jsonPrimitive?.contentOrNull
+    val skillId = runCatching { effects["skill"]?.jsonPrimitive?.content }.getOrNull()
     if (!skillId.isNullOrBlank()) {
         parts.add("附加技能:${skillId}")
     }
