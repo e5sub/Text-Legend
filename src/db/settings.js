@@ -127,6 +127,40 @@ export async function setStateThrottleOverrideServerAllowed(enabled) {
   await setSetting('state_throttle_override_server_allowed', enabled ? 'true' : 'false');
 }
 
+// 命令限频配置
+export async function getCmdRateLimits() {
+  const value = await getSetting('cmd_rate_limits', '{"global":{"limit":12,"windowMs":10000},"burst":{"limit":60,"windowMs":10000}}');
+  try {
+    const parsed = JSON.parse(value);
+    return typeof parsed === 'object' && parsed ? parsed : { global: { limit: 12, windowMs: 1000 }, burst: { limit: 60, windowMs: 10000 } };
+  } catch {
+    return { global: { limit: 12, windowMs: 1000 }, burst: { limit: 60, windowMs: 10000 } };
+  }
+}
+
+export async function setCmdRateLimits(limits) {
+  const normalized = JSON.stringify(limits || {});
+  await setSetting('cmd_rate_limits', normalized);
+}
+
+export async function getCmdCooldowns() {
+  const value = await getSetting(
+    'cmd_cooldowns_ms',
+    '{"forge":1200,"refine":1200,"effect":1200,"consign":800,"trade":800,"mail":800}'
+  );
+  try {
+    const parsed = JSON.parse(value);
+    return typeof parsed === 'object' && parsed ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+export async function setCmdCooldowns(cooldowns) {
+  const normalized = JSON.stringify(cooldowns || {});
+  await setSetting('cmd_cooldowns_ms', normalized);
+}
+
 export async function getConsignExpireHours() {
   const value = await getSetting('consign_expire_hours', '48');
   const parsed = parseInt(value, 10);

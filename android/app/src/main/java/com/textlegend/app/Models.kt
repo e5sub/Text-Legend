@@ -78,7 +78,14 @@ data class GameState(
     val state_throttle_override_server_allowed: Boolean = false,
     val refine_material_count: Int = 0,
     val refine_config: RefineConfig? = null,
+    val anti: AntiInfo? = null,
     val effect_reset_config: EffectResetConfig? = null
+)
+
+@Serializable
+data class AntiInfo(
+    val key: String? = null,
+    val seq: Long = 0
 )
 
 @Serializable

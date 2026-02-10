@@ -30,6 +30,18 @@ const roomVariantStatus = document.getElementById('room-variant-status');
 const roomVariantMsg = document.getElementById('room-variant-msg');
 const roomVariantInput = document.getElementById('room-variant-count');
 const roomVariantSaveBtn = document.getElementById('room-variant-save');
+const cmdRateGlobalLimitInput = document.getElementById('cmd-rate-global-limit');
+const cmdRateGlobalWindowInput = document.getElementById('cmd-rate-global-window');
+const cmdRateBurstLimitInput = document.getElementById('cmd-rate-burst-limit');
+const cmdRateBurstWindowInput = document.getElementById('cmd-rate-burst-window');
+const cmdCooldownForgeInput = document.getElementById('cmd-cooldown-forge');
+const cmdCooldownRefineInput = document.getElementById('cmd-cooldown-refine');
+const cmdCooldownEffectInput = document.getElementById('cmd-cooldown-effect');
+const cmdCooldownConsignInput = document.getElementById('cmd-cooldown-consign');
+const cmdCooldownTradeInput = document.getElementById('cmd-cooldown-trade');
+const cmdCooldownMailInput = document.getElementById('cmd-cooldown-mail');
+const cmdRateSaveBtn = document.getElementById('cmd-rate-save');
+const cmdRateMsg = document.getElementById('cmd-rate-msg');
 const usersSearchInput = document.getElementById('users-search');
 const usersSearchBtn = document.getElementById('users-search-btn');
 const sponsorsList = document.getElementById('sponsors-list');
@@ -3273,6 +3285,64 @@ function updateBossRealmSelects(realms) {
   }
 }
 
+async function loadCmdRateSettings() {
+  if (!cmdRateMsg) return;
+  cmdRateMsg.textContent = '';
+  try {
+    const data = await api('/admin/cmd-rate-settings', 'GET');
+    const rate = data.rateLimits || {};
+    const cooldowns = data.cooldowns || {};
+    if (cmdRateGlobalLimitInput) cmdRateGlobalLimitInput.value = String(rate.global?.limit ?? 12);
+    if (cmdRateGlobalWindowInput) cmdRateGlobalWindowInput.value = String(rate.global?.windowMs ?? 10000);
+    if (cmdRateBurstLimitInput) cmdRateBurstLimitInput.value = String(rate.burst?.limit ?? 60);
+    if (cmdRateBurstWindowInput) cmdRateBurstWindowInput.value = String(rate.burst?.windowMs ?? 10000);
+    if (cmdCooldownForgeInput) cmdCooldownForgeInput.value = String(cooldowns.forge ?? 1200);
+    if (cmdCooldownRefineInput) cmdCooldownRefineInput.value = String(cooldowns.refine ?? 1200);
+    if (cmdCooldownEffectInput) cmdCooldownEffectInput.value = String(cooldowns.effect ?? 1200);
+    if (cmdCooldownConsignInput) cmdCooldownConsignInput.value = String(cooldowns.consign ?? 800);
+    if (cmdCooldownTradeInput) cmdCooldownTradeInput.value = String(cooldowns.trade ?? 800);
+    if (cmdCooldownMailInput) cmdCooldownMailInput.value = String(cooldowns.mail ?? 800);
+    cmdRateMsg.textContent = '加载成功';
+    cmdRateMsg.style.color = 'green';
+    setTimeout(() => { cmdRateMsg.textContent = ''; }, 2000);
+  } catch (err) {
+    cmdRateMsg.textContent = `加载失败: ${err.message}`;
+    cmdRateMsg.style.color = 'red';
+  }
+}
+
+async function saveCmdRateSettings() {
+  if (!cmdRateMsg) return;
+  cmdRateMsg.textContent = '';
+  try {
+    const rateLimits = {
+      global: {
+        limit: Number(cmdRateGlobalLimitInput?.value || 12),
+        windowMs: Number(cmdRateGlobalWindowInput?.value || 10000)
+      },
+      burst: {
+        limit: Number(cmdRateBurstLimitInput?.value || 60),
+        windowMs: Number(cmdRateBurstWindowInput?.value || 10000)
+      }
+    };
+    const cooldowns = {
+      forge: Number(cmdCooldownForgeInput?.value || 1200),
+      refine: Number(cmdCooldownRefineInput?.value || 1200),
+      effect: Number(cmdCooldownEffectInput?.value || 1200),
+      consign: Number(cmdCooldownConsignInput?.value || 800),
+      trade: Number(cmdCooldownTradeInput?.value || 800),
+      mail: Number(cmdCooldownMailInput?.value || 800)
+    };
+    await api('/admin/cmd-rate-settings/update', 'POST', { rateLimits, cooldowns });
+    cmdRateMsg.textContent = '保存成功，立即生效';
+    cmdRateMsg.style.color = 'green';
+    setTimeout(() => { cmdRateMsg.textContent = ''; }, 2000);
+  } catch (err) {
+    cmdRateMsg.textContent = `保存失败: ${err.message}`;
+    cmdRateMsg.style.color = 'red';
+  }
+}
+
 async function createRealm() {
   if (!realmNameInput || !realmsMsg) return;
   const name = realmNameInput.value.trim();
@@ -5120,6 +5190,7 @@ async function initDashboard() {
     refreshStateThrottleStatus();
     refreshConsignExpireStatus();
     refreshRoomVariantStatus();
+    loadCmdRateSettings();
     await refreshRealms();
     listSponsors();
     loadWorldBossSettings();
@@ -5317,6 +5388,9 @@ if (consignExpireSaveBtn) {
 }
 if (roomVariantSaveBtn) {
   roomVariantSaveBtn.addEventListener('click', saveRoomVariantCount);
+}
+if (cmdRateSaveBtn) {
+  cmdRateSaveBtn.addEventListener('click', saveCmdRateSettings);
 }
 document.getElementById('backup-download').addEventListener('click', downloadBackup);
 document.getElementById('import-btn').addEventListener('click', importBackup);

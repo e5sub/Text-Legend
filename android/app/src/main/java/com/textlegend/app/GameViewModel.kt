@@ -1,6 +1,9 @@
 ﻿package com.textlegend.app
 
 import android.app.Application
+import android.os.Build
+import android.os.Debug
+import java.io.File
 import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
@@ -209,6 +212,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     fun connectSocket(characterName: String) {
         val tokenValue = token ?: return
+        if (isDeviceTampered()) {
+            _toast.value = "检测到风险环境，已禁止连接"
+            return
+        }
         val deviceId = prefs.getDeviceId()
         val fingerprint = computeDeviceFingerprint(getApplication())
         socket.connect(
@@ -218,6 +225,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             realmId = selectedRealmId.value,
             deviceId = deviceId,
             deviceFingerprint = fingerprint,
+            clientVersion = getVersionCode(getApplication()),
+            clientPlatform = "android",
             onState = { state ->
                 _gameState.value = state
                 _lastStateAt.value = System.currentTimeMillis()
@@ -276,6 +285,31 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             return name !in blocked
         }
         return false
+    }
+
+    private fun isDeviceTampered(): Boolean {
+        if (Debug.isDebuggerConnected()) return true
+        val tags = Build.TAGS ?: ""
+        if (tags.contains("test-keys")) return true
+        val suspiciousPaths = listOf(
+            "/system/bin/su",
+            "/system/xbin/su",
+            "/sbin/su",
+            "/system/app/Superuser.apk",
+            "/system/app/Magisk.apk",
+            "/system/bin/.ext/.su",
+            "/system/usr/we-need-root/su-backup",
+            "/system/xbin/daemonsu"
+        )
+        if (suspiciousPaths.any { File(it).exists() }) return true
+        val props = listOf("ro.debuggable", "ro.secure")
+        return props.any { prop ->
+            runCatching {
+                val process = Runtime.getRuntime().exec(arrayOf("getprop", prop))
+                val value = process.inputStream.bufferedReader().readText().trim()
+                value == "1" && prop == "ro.debuggable"
+            }.getOrDefault(false)
+        }
     }
 
     fun disconnectSocket() {

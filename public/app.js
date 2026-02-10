@@ -19,6 +19,29 @@ let lastStateRenderAt = 0;
 let stateThrottleIntervalMs = 10000;
 let stateThrottleOverride = localStorage.getItem('stateThrottleOverride') === 'true';
 let stateThrottleOverrideServerAllowed = true;
+let antiKey = '';
+let antiSeq = 0;
+
+async function signCmdWeb(key, seq, text) {
+  try {
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(key);
+    const data = encoder.encode(`${seq}|${text}`);
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    const sigBuffer = await crypto.subtle.sign('HMAC', cryptoKey, data);
+    return Array.from(new Uint8Array(sigBuffer))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  } catch {
+    return '';
+  }
+}
 let refineMaterialCount = 20; // 默认值
 let bossRespawnTimer = null;
 let bossRespawnTarget = null;
@@ -4615,6 +4638,13 @@ function handleIncomingState(payload) {
   if (payload.refine_material_count !== undefined) {
     refineMaterialCount = Math.max(1, Number(payload.refine_material_count) || 20);
   }
+  if (payload.anti) {
+    if (payload.anti.key) antiKey = String(payload.anti.key);
+    if (payload.anti.seq !== undefined) {
+      const seq = Number(payload.anti.seq) || 0;
+      if (seq > antiSeq) antiSeq = seq;
+    }
+  }
   const roomChanged = payload.room && (!lastState || !lastState.room ||
     payload.room.zoneId !== lastState.room.zoneId || payload.room.roomId !== lastState.room.roomId);
   const inBossRoom = isBossRoomState(payload) || isBossRoomState(lastState);
@@ -6175,6 +6205,15 @@ function enterGame(name) {
   socket.emit = (event, payload) => {
     if (event === 'cmd' && payload && typeof payload === 'object' && !payload.source) {
       payload = { ...payload, source: 'ui' };
+    }
+    if (event === 'cmd' && payload && typeof payload === 'object' && payload.text && antiKey) {
+      const seq = antiSeq + 1;
+      antiSeq = seq;
+      signCmdWeb(antiKey, seq, String(payload.text)).then((sig) => {
+        const signed = { ...payload, seq, sig };
+        rawEmit(event, signed);
+      });
+      return;
     }
     return rawEmit(event, payload);
   };

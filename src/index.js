@@ -17,7 +17,7 @@ import { addGuildMember, createGuild, getGuildByName, getGuildByNameInRealm, get
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
 import { sendMail, listMail, listSentMail, markMailRead, markMailClaimed, deleteMail } from './db/mail.js';
 import { createVipCodes, listVipCodes, useVipCode } from './db/vip.js';
-import { getSetting, setSetting, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb, getEquipSkillDropChance as getEquipSkillDropChanceDb, setEquipSkillDropChance as setEquipSkillDropChanceDb } from './db/settings.js';
+import { getSetting, setSetting, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb, getEquipSkillDropChance as getEquipSkillDropChanceDb, setEquipSkillDropChance as setEquipSkillDropChanceDb, getCmdRateLimits, setCmdRateLimits, getCmdCooldowns, setCmdCooldowns } from './db/settings.js';
 import { listRealms, getRealmById, updateRealmName, createRealm } from './db/realms.js';
 import {
   listMobRespawns,
@@ -567,6 +567,28 @@ app.get('/admin/worldboss-settings', async (req, res) => {
     respawnMinutes,
     playerBonusConfig
   });
+});
+
+app.get('/admin/cmd-rate-settings', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const rateLimits = await getCmdRateLimits();
+  const cooldowns = await getCmdCooldowns();
+  res.json({ ok: true, rateLimits, cooldowns });
+});
+
+app.post('/admin/cmd-rate-settings/update', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const { rateLimits, cooldowns } = req.body || {};
+  if (rateLimits !== undefined) {
+    await setCmdRateLimits(rateLimits);
+  }
+  if (cooldowns !== undefined) {
+    await setCmdCooldowns(cooldowns);
+  }
+  cmdRateCache = { value: null, updatedAt: 0 };
+  res.json({ ok: true });
 });
 
 app.post('/admin/worldboss-settings/update', async (req, res) => {
@@ -2820,6 +2842,71 @@ const ASSASSINATE_SECONDARY_DAMAGE_RATE = 0.3;
 const SABAK_TAX_RATE = 0.2;
 const GUILD_BONUS_MULT = 2;
 const CULTIVATION_REWARD_MULT_PER_LEVEL = 1;
+const DEFAULT_CMD_RATE_LIMITS = {
+  global: { limit: 12, windowMs: 10000 },
+  burst: { limit: 60, windowMs: 10000 }
+};
+const DEFAULT_CMD_COOLDOWNS_MS = {
+  forge: 1200,
+  refine: 1200,
+  effect: 1200,
+  consign: 800,
+  trade: 800,
+  mail: 800
+};
+const commandRateState = new Map();
+const commandCooldownState = new Map();
+let cmdRateCache = { value: null, updatedAt: 0 };
+
+async function getCmdRateSettingsCached() {
+  const now = Date.now();
+  if (cmdRateCache.value && now - cmdRateCache.updatedAt < 10000) {
+    return cmdRateCache.value;
+  }
+  const rawLimits = await getCmdRateLimits();
+  const rawCooldowns = await getCmdCooldowns();
+  const rateLimits = {
+    global: {
+      limit: Math.max(1, Math.floor(Number(rawLimits?.global?.limit) || DEFAULT_CMD_RATE_LIMITS.global.limit)),
+      windowMs: Math.max(100, Math.floor(Number(rawLimits?.global?.windowMs) || DEFAULT_CMD_RATE_LIMITS.global.windowMs))
+    },
+    burst: {
+      limit: Math.max(1, Math.floor(Number(rawLimits?.burst?.limit) || DEFAULT_CMD_RATE_LIMITS.burst.limit)),
+      windowMs: Math.max(100, Math.floor(Number(rawLimits?.burst?.windowMs) || DEFAULT_CMD_RATE_LIMITS.burst.windowMs))
+    }
+  };
+  const cooldowns = { ...DEFAULT_CMD_COOLDOWNS_MS };
+  if (rawCooldowns && typeof rawCooldowns === 'object') {
+    Object.entries(rawCooldowns).forEach(([key, value]) => {
+      const ms = Math.max(0, Math.floor(Number(value) || 0));
+      cooldowns[key] = ms;
+    });
+  }
+  cmdRateCache = { value: { rateLimits, cooldowns }, updatedAt: now };
+  return cmdRateCache.value;
+}
+
+function hitRateLimit(player, key, limit, windowMs) {
+  const id = `${player.name}:${key}`;
+  const now = Date.now();
+  const entry = commandRateState.get(id) || { count: 0, start: now };
+  if (now - entry.start >= windowMs) {
+    entry.count = 0;
+    entry.start = now;
+  }
+  entry.count += 1;
+  commandRateState.set(id, entry);
+  return entry.count > limit;
+}
+
+function hitCooldown(player, key, cooldownMs) {
+  const id = `${player.name}:${key}`;
+  const now = Date.now();
+  const last = commandCooldownState.get(id) || 0;
+  if (now - last < cooldownMs) return true;
+  commandCooldownState.set(id, now);
+  return false;
+}
 
 function cultivationRewardMultiplier(player) {
   const level = Math.floor(Number(player?.flags?.cultivationLevel ?? -1));
@@ -5567,6 +5654,10 @@ async function buildState(player) {
     training: player.flags?.training || { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 },
     online: { count: onlineCount },
     daily_lucky: dailyLuckyInfo,
+    anti: {
+      key: player.socket?.data?.antiKey || null,
+      seq: player.socket?.data?.antiSeq || 0
+    },
     trade: getTradeByPlayerAny(player.name, realmId).trade ? (() => {
       const trade = getTradeByPlayerAny(player.name, realmId).trade;
       const myOffer = trade.offers[player.name];
@@ -6615,14 +6706,16 @@ io.on('connection', (socket) => {
     }
   });
   socket.on('auth', async (payload) => {
-    const { clean } = sanitizePayload(payload, ['token', 'name', 'realmId', 'deviceId', 'deviceFingerprint'], 'auth');
-    const { token, name, realmId: rawRealmId, deviceId, deviceFingerprint } = clean;
+    const { clean } = sanitizePayload(payload, ['token', 'name', 'realmId', 'deviceId', 'deviceFingerprint', 'clientVersion', 'clientPlatform'], 'auth');
+    const { token, name, realmId: rawRealmId, deviceId, deviceFingerprint, clientVersion, clientPlatform } = clean;
     const session = await getSession(token);
     if (!session) {
       socket.emit('auth_error', { error: '登录已过期。' });
       socket.disconnect();
       return;
     }
+
+    // Android 版本最低限制已取消
 
     const deviceKey = String(deviceFingerprint || '').trim();
     if (!deviceKey) {
@@ -6691,6 +6784,10 @@ io.on('connection', (socket) => {
     loaded.guild = null;
     if (!loaded.flags) loaded.flags = {};
     loaded.stateThrottleOverride = socket.data?.stateThrottleOverride === true;
+    if (!socket.data.antiKey) {
+      socket.data.antiKey = crypto.randomBytes(16).toString('hex');
+      socket.data.antiSeq = 0;
+    }
 
     // 将玩家称号添加到在线玩家称号Map
     if (loaded.rankTitle) {
@@ -6778,9 +6875,37 @@ io.on('connection', (socket) => {
   socket.on('cmd', async (payload) => {
     const player = players.get(socket.id);
     if (!player) return;
-    const { clean } = sanitizePayload(payload, ['text', 'source'], 'cmd');
+    const { clean } = sanitizePayload(payload, ['text', 'source', 'seq', 'sig'], 'cmd');
     const inputText = typeof clean.text === 'string' ? clean.text : '';
     const inputSource = typeof clean.source === 'string' ? clean.source : '';
+    const { rateLimits, cooldowns } = await getCmdRateSettingsCached();
+    if (hitRateLimit(player, 'cmd', rateLimits.global.limit, rateLimits.global.windowMs) ||
+        hitRateLimit(player, 'cmd_burst', rateLimits.burst.limit, rateLimits.burst.windowMs)) {
+      player.send('操作过快，请稍后再试。');
+      return;
+    }
+    const cmdName = inputText.trim().split(/\s+/)[0]?.toLowerCase();
+    if (cmdName && cooldowns[cmdName]) {
+      if (hitCooldown(player, `cmd:${cmdName}`, cooldowns[cmdName])) {
+        player.send('操作过快，请稍后再试。');
+        return;
+      }
+    }
+    const antiKey = socket.data?.antiKey;
+    if (antiKey) {
+      const seq = Number(clean.seq);
+      const sig = typeof clean.sig === 'string' ? clean.sig : '';
+      if (!Number.isFinite(seq) || seq <= (socket.data?.antiSeq || 0)) {
+        player.send('请求无效。');
+        return;
+      }
+      const expected = crypto.createHmac('sha256', antiKey).update(`${seq}|${inputText}`).digest('hex');
+      if (sig !== expected) {
+        player.send('请求校验失败。');
+        return;
+      }
+      socket.data.antiSeq = seq;
+    }
     const prevZone = player.position.zone;
     const prevRoom = player.position.room;
     const commandRealmId = getRoomRealmId(player.position.zone, player.position.room, player.realmId || 1);

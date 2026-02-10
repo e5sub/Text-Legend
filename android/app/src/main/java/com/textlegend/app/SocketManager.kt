@@ -6,9 +6,14 @@ import io.socket.engineio.client.transports.Polling
 import io.socket.engineio.client.transports.WebSocket
 import kotlinx.serialization.json.Json
 import org.json.JSONObject
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
+import kotlin.math.max
 
 class SocketManager(private val json: Json) {
     private var socket: Socket? = null
+    private var antiKey: String? = null
+    private var antiSeq: Long = 0
 
     fun connect(
         baseUrl: String,
@@ -17,6 +22,8 @@ class SocketManager(private val json: Json) {
         realmId: Int,
         deviceId: String,
         deviceFingerprint: String,
+        clientVersion: Int,
+        clientPlatform: String,
         onState: (GameState) -> Unit,
         onOutput: (OutputPayload) -> Unit,
         onAuthError: (String) -> Unit,
@@ -52,6 +59,8 @@ class SocketManager(private val json: Json) {
                     put("realmId", realmId)
                     put("deviceId", deviceId)
                     put("deviceFingerprint", deviceFingerprint)
+                    put("clientVersion", clientVersion)
+                    put("clientPlatform", clientPlatform)
                 })
                 emit("cmd", JSONObject().apply { put("text", "stats") })
                 emit("state_request", JSONObject().apply { put("reason", "client_init") })
@@ -91,6 +100,10 @@ class SocketManager(private val json: Json) {
                         }
                     }.getOrDefault(payloadText)
                     val state = json.decodeFromString(GameState.serializer(), stateJson)
+                    state.anti?.let { anti ->
+                        if (!anti.key.isNullOrBlank()) antiKey = anti.key
+                        antiSeq = max(antiSeq, anti.seq)
+                    }
                     onState(state)
                 }.onFailure {
                     val msg = it.message?.take(120) ?: "unknown"
@@ -197,7 +210,28 @@ class SocketManager(private val json: Json) {
     }
 
     fun emitCmd(text: String) {
-        socket?.emit("cmd", JSONObject().apply { put("text", text); put("source", "ui") })
+        val payload = JSONObject().apply {
+            put("text", text)
+            put("source", "ui")
+        }
+        val key = antiKey
+        if (!key.isNullOrBlank()) {
+            val seq = antiSeq + 1
+            antiSeq = seq
+            val sig = signCmd(key, seq, text)
+            payload.put("seq", seq)
+            payload.put("sig", sig)
+        }
+        socket?.emit("cmd", payload)
+    }
+
+    private fun signCmd(key: String, seq: Long, text: String): String {
+        val mac = Mac.getInstance("HmacSHA256")
+        val secretKey = SecretKeySpec(key.toByteArray(Charsets.UTF_8), "HmacSHA256")
+        mac.init(secretKey)
+        val raw = "${seq}|${text}".toByteArray(Charsets.UTF_8)
+        val bytes = mac.doFinal(raw)
+        return bytes.joinToString("") { "%02x".format(it) }
     }
 
     fun requestState(reason: String) {
