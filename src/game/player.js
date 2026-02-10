@@ -463,7 +463,7 @@ export function computeDerived(player) {
     stats.dex += dex || 0;
     stats.int += mag ? Math.floor(mag / 2) : 0;
     stats.con += def ? Math.floor(def / 2) : 0;
-    stats.spirit += spirit || 0;
+    stats.spirit += spirit ? Math.floor(spirit / 2) : 0;
     mdefBonus += mdef;
   }
   const training = player.flags.training;
