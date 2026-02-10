@@ -55,7 +55,7 @@ export function getItemKey(slot) {
   const isEquipment = item && item.slot;
   const key = effectsKey(slot.effects);
   let baseKey = key ? `${slot.id}#${key}` : slot.id;
-  // 装备类型需要包含耐久度信息，避免不同耐久度的装备被合�?
+  // 装备类型需要包含耐久度信息，避免不同耐久度的装备被合并
   if (isEquipment && (slot.durability != null || slot.max_durability != null || slot.refine_level != null)) {
     const dur = slot.durability ?? 100;
     const maxDur = slot.max_durability ?? 100;
@@ -175,10 +175,10 @@ export function computeDerived(player) {
     player.flags.training = { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 };
   }
   if (!player.flags.trainingFruit) {
-    // 修炼果记录：存储的是修炼果数量，每次计算时乘以系�?
+    // 修炼果记录：存储的是修炼果数量，每次计算时乘以系数
     player.flags.trainingFruit = { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 };
   }
-  // 修炼果系数：从后台配置读�?
+  // 修炼果系数：从后台配置读取
   const TRAINING_FRUIT_COEFFICIENT = getTrainingFruitCoefficient();
   const SET_BONUS_RATE = 1.2;
   const SET_DEFS = [
@@ -417,7 +417,7 @@ export function computeDerived(player) {
       }
     }
 
-    // 锻造等级加成：�?级锻造提升所有属性（可配置，默认1点）
+    // 锻造等级加成：每级锻造提升所有属性（可配置，默认1点）
     const refineBonus = (entry.refine_level || 0) * getRefineBonusPerLevel();
     atk += refineBonus;
     mag += refineBonus;
@@ -436,22 +436,22 @@ export function computeDerived(player) {
       def = Math.floor(def * 1.5);
       mdef = Math.floor(mdef * 1.5);
     }
-    // 闪避特效只生效一个，不叠�?
+    // 闪避特效只生效一个，不叠加
     if (entry.effects?.dodge && dodgeEffectCount === 0) {
       evadeChance = 0.2;
       dodgeEffectCount++;
     }
-    // 毒特效只生效一个，不叠�?
+    // 毒特效只生效一个，不叠加
     if (entry.effects?.poison && poisonEffectCount === 0) {
       player.flags.hasPoisonEffect = true;
       poisonEffectCount++;
     }
-    // 连击特效只生效一个，不叠�?
+    // 连击特效只生效一个，不叠加
     if (entry.effects?.combo && comboEffectCount === 0) {
       player.flags.hasComboEffect = true;
       comboEffectCount++;
     }
-    // 禁疗特效只生效一个，不叠�?
+    // 禁疗特效只生效一个，不叠加
     if (entry.effects?.healblock && healblockEffectCount === 0) {
       player.flags.hasHealblockEffect = true;
       healblockEffectCount++;
@@ -472,7 +472,7 @@ export function computeDerived(player) {
   // 修炼系统每级效果：从后台配置读取
   const TRAINING_PER_LEVEL = getTrainingPerLevelConfig();
 
-  // 修炼加成：等�?* 每级增长�?
+  // 修炼加成：等级×每级增长值
   const trainingBonus = {
     hp: (training.hp || 0) * TRAINING_PER_LEVEL.hp,
     mp: (training.mp || 0) * TRAINING_PER_LEVEL.mp,
@@ -484,7 +484,7 @@ export function computeDerived(player) {
     dex: (training.dex || 0) * TRAINING_PER_LEVEL.dex
   };
 
-  // 修炼果加成：修炼果数�?× 系数
+  // 修炼果加成：修炼果数量×系数
   const trainingFruitBonus = {
     hp: (trainingFruit.hp || 0) * TRAINING_FRUIT_COEFFICIENT,
     mp: (trainingFruit.mp || 0) * TRAINING_FRUIT_COEFFICIENT,
@@ -513,15 +513,15 @@ export function computeDerived(player) {
   player.max_hp = base.con * 10 + cls.hpPerLevel * level + stats.con * 2 + trainingBonus.hp + trainingFruitBonus.hp + bonusHp;
   player.max_mp = base.spirit * 8 + cls.mpPerLevel * level + stats.spirit * 2 + trainingBonus.mp + trainingFruitBonus.mp + bonusMp;
 
-  player.atk = stats.str * 1.6 + level * 1.2 + trainingBonus.atk + trainingFruitBonus.atk + bonusAtk;
-  player.def = stats.con * 1.1 + level * 0.8 + trainingBonus.def + trainingFruitBonus.def + bonusDef;
+  player.atk = stats.str + trainingBonus.atk + trainingFruitBonus.atk + bonusAtk;
+  player.def = stats.con + trainingBonus.def + trainingFruitBonus.def + bonusDef;
   const bonusDex = levelBonus.dexPerLevel * levelUp;
   player.dex = stats.dex + trainingFruitBonus.dex + bonusDex;
-  player.mag = stats.int * 1.4 + stats.spirit * 0.6 + trainingBonus.mag + trainingFruitBonus.mag + bonusMag;
+  player.mag = stats.int + trainingBonus.mag + trainingFruitBonus.mag + bonusMag;
   player.spirit = stats.spirit + bonusSpirit;
-  player.mdef = stats.spirit * 1.1 + level * 0.8 + trainingBonus.mdef + trainingFruitBonus.mdef + mdefBonus + bonusMdef;
+  player.mdef = stats.spirit + trainingBonus.mdef + trainingFruitBonus.mdef + mdefBonus + bonusMdef;
   player.elementAtk = elementAtk;
-  // 装备附加技能：激活办法与套装一�?
+  // 装备附加技能：激活办法与套装一样
   let equipSkillId = '';
   for (const setDef of activeSets) {
     if (equipSkillId) break;
@@ -552,7 +552,7 @@ export function computeDerived(player) {
     delete player.flags.equipSkillId;
   }
 
-  player.evadeChance = evadeChance + (player.dex || 0) * 0.0001; // 1点敏捷增�?.0001闪避
+  player.evadeChance = evadeChance + (player.dex || 0) * 0.0001; // 1点敏捷增加0.0001闪避
 
   const dailyLucky = player.flags?.dailyLucky;
   if (dailyLucky && dailyLucky.attr && Number(dailyLucky.multiplier) > 1) {
@@ -646,7 +646,7 @@ export function addItem(player, itemId, qty = 1, effects = null, durability = nu
       });
     }
   } else {
-    // 非装备类型物品正常堆�?
+    // 非装备类型物品正常堆叠
     const slot = player.inventory.find((i) => i.id === itemId && sameEffects(i.effects, normalized));
     if (slot) {
       slot.qty += qty;
@@ -675,7 +675,7 @@ export function normalizeInventory(player) {
     let finalMaxDur = slot.max_durability;
     let finalRefineLevel = slot.refine_level;
 
-    // 只为装备添加默认耐久度和锻造等�?
+    // 只为装备添加默认耐久度和锻造等级
     if (isEquipment) {
       finalDur = slot.durability !== null ? slot.durability : 100;
       finalMaxDur = slot.max_durability !== null ? slot.max_durability : 100;
@@ -776,7 +776,7 @@ export function equipItem(player, itemId, effects = null, durability = null, max
   }
 
   const maxDur = 100;
-  // 保留背包中物品的耐久度，如果没有则初始化为满�?
+  // 保留背包中物品的耐久度，如果没有则初始化为满值
   const itemDur = has.durability != null ? has.durability : maxDur;
   const itemMaxDur = has.max_durability != null ? has.max_durability : maxDur;
   const itemRefineLevel = has.refine_level != null ? has.refine_level : 0;
