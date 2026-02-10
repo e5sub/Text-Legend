@@ -1646,7 +1646,11 @@ private fun ScreenScaffold(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(title) },
+                title = {
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        Text(title, textAlign = TextAlign.Center)
+                    }
+                },
                 navigationIcon = {
                     OutlinedButton(
                         onClick = {
@@ -1655,6 +1659,9 @@ private fun ScreenScaffold(
                             onBack()
                         }
                     ) { Text("返回") }
+                },
+                actions = {
+                    Spacer(modifier = Modifier.width(64.dp))
                 }
             )
         }
@@ -3312,41 +3319,79 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
   }
 
 @Composable
-private fun AfkDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Unit) {
-    val skills = state?.skills.orEmpty()
-    val selected = remember { mutableStateListOf<String>() }
-    ScreenScaffold(title = "挂机技能", onBack = onDismiss) {
-        skills.forEach { skill ->
-            val checked = selected.contains(skill.id)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth().clickable {
-                    if (checked) selected.remove(skill.id) else selected.add(skill.id)
-                }
-            ) {
-                Checkbox(checked = checked, onCheckedChange = {
-                    if (it) selected.add(skill.id) else selected.remove(skill.id)
-                })
-                Text("${skill.name} (${skill.id})")
-            }
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Row {
-            Button(onClick = { vm.sendCmd("autoskill all") }) { Text("全选") }
-            Spacer(modifier = Modifier.width(6.dp))
-            Button(onClick = { vm.sendCmd("autoskill off"); onDismiss() }) { Text("停止") }
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(onClick = {
-            if (selected.isEmpty()) {
-                vm.sendCmd("autoskill off")
-            } else {
-                vm.sendCmd("autoskill set ${selected.joinToString(",")}")
-            }
-            onDismiss()
-        }) { Text("保存") }
-    }
-}
+  private fun AfkDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Unit) {
+      val skills = state?.skills.orEmpty()
+      val selected = remember { mutableStateListOf<String>() }
+      ScreenScaffold(title = "挂机技能", onBack = onDismiss) {
+          if (skills.isEmpty()) {
+              Text("暂无可用技能", color = MaterialTheme.colorScheme.onSurfaceVariant)
+          } else {
+              val rows = skills.chunked(2)
+              Column {
+                  rows.forEach { row ->
+                      Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                          row.forEach { skill ->
+                              val checked = selected.contains(skill.id)
+                              Surface(
+                                  modifier = Modifier
+                                      .weight(1f)
+                                      .padding(vertical = 4.dp)
+                                      .clickable {
+                                          if (checked) selected.remove(skill.id) else selected.add(skill.id)
+                                      },
+                                  shape = RoundedCornerShape(10.dp),
+                                  color = if (checked) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant,
+                                  border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+                              ) {
+                                  Row(
+                                      modifier = Modifier.fillMaxWidth().padding(10.dp),
+                                      verticalAlignment = Alignment.CenterVertically,
+                                      horizontalArrangement = Arrangement.SpaceBetween
+                                  ) {
+                                      Column {
+                                          Text(skill.name, fontWeight = FontWeight.SemiBold)
+                                          Text("(${skill.id})", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                      }
+                                      Checkbox(
+                                          checked = checked,
+                                          onCheckedChange = {
+                                              if (it) selected.add(skill.id) else selected.remove(skill.id)
+                                          }
+                                      )
+                                  }
+                              }
+                          }
+                          if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
+                      }
+                  }
+              }
+          }
+
+          Spacer(modifier = Modifier.height(10.dp))
+          Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+              Button(
+                  modifier = Modifier.weight(1f),
+                  onClick = { selected.apply { clear(); addAll(skills.map { it.id }) } }
+              ) { Text("全选") }
+              Button(
+                  modifier = Modifier.weight(1f),
+                  onClick = { selected.clear() }
+              ) { Text("清空") }
+          }
+          Spacer(modifier = Modifier.height(8.dp))
+          Button(
+              modifier = Modifier.fillMaxWidth(),
+              onClick = {
+                  if (selected.isEmpty()) {
+                      vm.sendCmd("autoskill off")
+                  } else {
+                      vm.sendCmd("autoskill set ${selected.joinToString(",")}")
+                  }
+                  onDismiss()
+              }
+          ) { Text("开始挂机") }
+      }
+  }
 
 @Composable
 private fun DropsDialog(onDismiss: () -> Unit) {
