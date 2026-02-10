@@ -7962,7 +7962,7 @@ async function processMobDeath(player, mob, online) {
   const isWorldBoss = Boolean(template.worldBoss);
   const isSabakBoss = Boolean(template.sabakBoss);
   const isMolongBoss = template.id === 'molong_boss';
-  const isSpecialBoss = isWorldBoss || isSabakBoss || isMolongBoss;
+  const isSpecialBossMob = isWorldBoss || isSabakBoss || isMolongBoss || isSpecialBoss(template);
   if (isWorldBoss) {
     const nextKills = incrementWorldBossKills(1, roomRealmId);
     void setWorldBossKillCount(nextKills, roomRealmId).catch((err) => {
@@ -7981,15 +7981,15 @@ async function processMobDeath(player, mob, online) {
       console.warn('Failed to persist cultivation boss kill count:', err);
     });
   }
-  if (isSpecialBoss) {
+  if (isSpecialBossMob) {
     // 清理特殊BOSS职业伤害第一奖励标记
     bossClassFirstDamageRewardGiven.delete(`${roomRealmId}:${mob.id}`);
   }
-  const { rankMap, entries } = isSpecialBoss ? buildDamageRankMap(mob, damageSnapshot) : { rankMap: {}, entries: [] };
+  const { rankMap, entries } = isSpecialBossMob ? buildDamageRankMap(mob, damageSnapshot) : { rankMap: {}, entries: [] };
   let lootOwner = player;
   if (!party || partyMembersForReward.length === 0) {
     let ownerName = null;
-    if (isSpecialBoss) {
+    if (isSpecialBossMob) {
       const damageBy = damageSnapshot;
       let maxDamage = -1;
       Object.entries(damageBy).forEach(([name, dmg]) => {
@@ -8039,7 +8039,7 @@ async function processMobDeath(player, mob, online) {
   const dropTargets = [];
   let classRanks = null;
   let classRankMap = null;
-  if (isSpecialBoss) {
+  if (isSpecialBossMob) {
     const totalDamage = entries.reduce((sum, [, dmg]) => sum + dmg, 0) || 1;
     classRanks = entries.length ? buildBossClassRank(mob, entries, roomRealmId) : null;
     if (classRanks) {
@@ -8079,7 +8079,7 @@ async function processMobDeath(player, mob, online) {
     const supremePlayerAwarded = new Set();
     const ultimatePlayerAwarded = new Set();
 
-    if (isSpecialBoss && entries.length) {
+    if (isSpecialBossMob && entries.length) {
       classRanks = classRanks || buildBossClassRank(mob, entries, roomRealmId);
       const rewardKey = `${roomRealmId}:${mob.id}`;
       if (bossClassFirstDamageRewardProcessed.has(rewardKey)) {
