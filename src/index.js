@@ -2822,10 +2822,7 @@ const GUILD_BONUS_MULT = 2;
 const CULTIVATION_REWARD_MULT_PER_LEVEL = 1;
 
 function cultivationRewardMultiplier(player) {
-  const level = Math.floor(Number(player?.flags?.cultivationLevel ?? -1));
-  if (Number.isNaN(level) || level < 0) return 1;
-  // 从100%开始，每级增加100%：0级=2倍，1级=3倍
-  return 1 + (level + 1) * CULTIVATION_REWARD_MULT_PER_LEVEL;
+  return 1;
 }
 
 function totalRewardMultiplier({ vipActive, guildActive, cultivationMult = 1, partyMult = 1 }) {
