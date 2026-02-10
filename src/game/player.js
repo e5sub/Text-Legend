@@ -518,10 +518,10 @@ export function computeDerived(player) {
   const bonusDex = levelBonus.dexPerLevel * levelUp;
   player.dex = stats.dex + trainingFruitBonus.dex + bonusDex;
   player.mag = stats.int + trainingBonus.mag + trainingFruitBonus.mag + bonusMag;
-  player.spirit = stats.spirit + bonusSpirit;
+  player.spirit = stats.spirit + trainingBonus.spirit + trainingFruitBonus.spirit + bonusSpirit;
   player.mdef = stats.spirit + trainingBonus.mdef + trainingFruitBonus.mdef + mdefBonus + bonusMdef;
   player.elementAtk = elementAtk;
-  // 装备附加技能：激活办法与套装一样
+  // 装备附加技能：激活条件与套装一致
   let equipSkillId = '';
   for (const setDef of activeSets) {
     if (equipSkillId) break;
@@ -551,7 +551,6 @@ export function computeDerived(player) {
   } else {
     delete player.flags.equipSkillId;
   }
-
   player.evadeChance = evadeChance + (player.dex || 0) * 0.0001; // 1点敏捷增加0.0001闪避
 
   const dailyLucky = player.flags?.dailyLucky;
@@ -801,4 +800,3 @@ export function unequipItem(player, slot) {
   computeDerived(player);
   return { ok: true, msg: `\u5DF2\u5378\u4E0B${ITEM_TEMPLATES[current.id].name}\u3002` };
 }
-
