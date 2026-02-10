@@ -26,6 +26,7 @@ import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Shadow
@@ -1747,6 +1748,48 @@ private fun ClickableTextRow(
     }
 }
 
+@Composable
+private fun OptionGrid(
+    options: List<Pair<String, String>>,
+    selected: String,
+    onSelect: (String) -> Unit
+) {
+    val rows = options.chunked(2)
+    Column {
+        rows.forEach { row ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                row.forEach { (value, label) ->
+                    val isSelected = selected == value
+                    val bg = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant
+                    val border = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.7f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(vertical = 4.dp)
+                            .clickable { onSelect(value) },
+                        shape = RoundedCornerShape(8.dp),
+                        color = bg,
+                        border = BorderStroke(1.dp, border),
+                        tonalElevation = if (isSelected) 2.dp else 0.dp
+                    ) {
+                        Text(
+                            text = label,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                        )
+                    }
+                }
+                if (row.size == 1) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
 private fun hasAutoSkill(stats: StatsInfo?): Boolean {
     val value = stats?.autoSkillId ?: return false
     return when (value) {
@@ -2439,8 +2482,21 @@ private fun ForgeDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> U
         if (secondarySelection.isNotBlank() && secondaryOptions.none { it.first == secondarySelection }) {
             secondarySelection = ""
         }
-        DropdownField(label = "主件(已穿戴)", options = mainOptions, selected = mainSelection, onSelect = { mainSelection = it })
-        DropdownField(label = "副件(背包匹配)", options = secondaryOptions, selected = secondarySelection, onSelect = { secondarySelection = it })
+        Text("主件(已穿戴)")
+        if (mainOptions.isEmpty()) {
+            Text("暂无已穿戴装备", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else {
+            OptionGrid(options = mainOptions, selected = mainSelection, onSelect = { mainSelection = it })
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Text("副件(背包匹配)")
+        if (mainSelection.isBlank()) {
+            Text("请先选择主件", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else if (secondaryOptions.isEmpty()) {
+            Text("暂无可用副件", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else {
+            OptionGrid(options = secondaryOptions, selected = secondarySelection, onSelect = { secondarySelection = it })
+        }
         Button(onClick = {
             if (mainSelection.isNotBlank() && secondarySelection.isNotBlank()) {
                 vm.sendCmd("forge ${mainSelection}|${secondarySelection}")
@@ -2455,6 +2511,7 @@ private fun ForgeDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> U
 private fun RefineDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Unit) {
     var selection by remember { mutableStateOf("") }
     val options = buildEquippedOptions(state)
+    val materialOptions = buildRefineMaterialOptions(state)
     val refineConfig = state?.refine_config
     val refineLevel = resolveRefineLevel(state, selection)
     val successRate = if (refineConfig != null && refineLevel != null) {
@@ -2487,20 +2544,23 @@ private fun RefineDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> 
         }
 
         Text("点击已穿戴装备进行锻造")
-        options.forEach { (value, label) ->
-            ClickableTextRow(
-                text = label,
-                selected = selection == value,
-                onClick = {
-                    selection = value
-                    showConfirm = true
-                }
-            )
+        if (options.isEmpty()) {
+            Text("暂无已穿戴装备", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else {
+            OptionGrid(options = options, selected = selection, onSelect = {
+                selection = it
+                showConfirm = true
+            })
         }
         if (refineLevel != null && refineConfig != null && successRate != null) {
             Text("当前等级: +$refineLevel → +${refineLevel + 1}")
             Text("成功率: ${"%.1f".format(successRate)}%")
             Text("材料需求: ${refineConfig.material_count} 件史诗(不含)以下无特效装备")
+        }
+        if (materialOptions.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("副件材料(背包符合)")
+            OptionGrid(options = materialOptions, selected = "", onSelect = { })
         }
     }
 }
@@ -2547,24 +2607,22 @@ private fun EffectDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> 
         }
 
         Text("主件(已穿戴)")
-        equipOptions.forEach { (value, label) ->
-            ClickableTextRow(
-                text = label,
-                selected = mainSelection == value,
-                onClick = { mainSelection = value }
-            )
+        if (equipOptions.isEmpty()) {
+            Text("暂无已穿戴装备", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else {
+            OptionGrid(options = equipOptions, selected = mainSelection, onSelect = { mainSelection = it })
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text("副件(背包匹配)")
-        inventoryOptions.forEach { (value, label) ->
-            ClickableTextRow(
-                text = label,
-                selected = secondarySelection == value,
-                onClick = {
-                    secondarySelection = value
-                    if (mainSelection.isNotBlank()) showConfirm = true
-                }
-            )
+        if (mainSelection.isBlank()) {
+            Text("请先选择主件", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else if (inventoryOptions.isEmpty()) {
+            Text("暂无可用副件", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else {
+            OptionGrid(options = inventoryOptions, selected = secondarySelection, onSelect = {
+                secondarySelection = it
+                if (mainSelection.isNotBlank()) showConfirm = true
+            })
         }
         if (effectConfig != null) {
             Text("成功率: ${effectConfig.success_rate}%")
@@ -2807,7 +2865,14 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
 @Composable
 private fun RankDialog(state: GameState?, vm: GameViewModel, onDismiss: () -> Unit) {
     val rankMessages by vm.rankMessages.collectAsState()
+    var lastClass by rememberSaveable { mutableStateOf("") }
     ScreenScaffold(title = "排行榜", onBack = onDismiss) {
+        LaunchedEffect(Unit) {
+            if (lastClass.isBlank()) {
+                lastClass = "warrior"
+                vm.sendCmd("rank warrior")
+            }
+        }
         Text("世界BOSS排行")
         if (state?.worldBossRank.isNullOrEmpty()) {
             Text("暂无数据")
@@ -2818,12 +2883,26 @@ private fun RankDialog(state: GameState?, vm: GameViewModel, onDismiss: () -> Un
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text("职业排行榜")
-        Row {
-            Button(onClick = { vm.sendCmd("rank warrior") }) { Text("战士") }
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Button(onClick = {
+                lastClass = "warrior"
+                vm.sendCmd("rank warrior")
+            }) { Text("战士") }
             Spacer(modifier = Modifier.width(6.dp))
-            Button(onClick = { vm.sendCmd("rank mage") }) { Text("法师") }
+            Button(onClick = {
+                lastClass = "mage"
+                vm.sendCmd("rank mage")
+            }) { Text("法师") }
             Spacer(modifier = Modifier.width(6.dp))
-            Button(onClick = { vm.sendCmd("rank taoist") }) { Text("道士") }
+            Button(onClick = {
+                lastClass = "taoist"
+                vm.sendCmd("rank taoist")
+            }) { Text("道士") }
+            Spacer(modifier = Modifier.width(6.dp))
+            Button(
+                enabled = lastClass.isNotBlank(),
+                onClick = { vm.sendCmd("rank $lastClass") }
+            ) { Text("刷新") }
         }
         Spacer(modifier = Modifier.height(8.dp))
         if (rankMessages.isEmpty()) {
@@ -2957,10 +3036,44 @@ private fun buildInventoryOptions(state: GameState?): List<Pair<String, String>>
 
 private fun buildEquippedOptions(state: GameState?): List<Pair<String, String>> {
     val list = state?.equipment.orEmpty()
-    return list.map { eq ->
-        val name = eq.item?.name ?: eq.slot
-        "equip:${eq.slot}" to name
+    return list.mapNotNull { eq ->
+        val item = eq.item ?: return@mapNotNull null
+        val label = "${equipSlotLabel(eq.slot)}: ${item.name}"
+        "equip:${eq.slot}" to label
     }
+}
+
+private fun equipSlotLabel(slot: String): String = when (slot) {
+    "weapon" -> "武器"
+    "chest" -> "衣服"
+    "feet" -> "鞋子"
+    "ring_left" -> "左戒指"
+    "ring_right" -> "右戒指"
+    "head" -> "头盔"
+    else -> slot
+}
+
+private fun buildRefineMaterialOptions(state: GameState?): List<Pair<String, String>> {
+    val items = state?.items.orEmpty()
+    return items.filter { item ->
+        val isEquip = !item.slot.isNullOrBlank() || item.type == "weapon" || item.type == "armor" || item.type == "accessory"
+        val rarityOk = isBelowEpicRarity(item.rarity)
+        val noEffects = !hasSpecialEffects(item.effects)
+        val notShop = item.is_shop_item != true
+        isEquip && rarityOk && noEffects && notShop && item.qty > 0
+    }.map { item ->
+        val key = if (item.key.isNotBlank()) item.key else item.id
+        key to "${item.name} x${item.qty}"
+    }
+}
+
+private fun isBelowEpicRarity(rarity: String?): Boolean {
+    val rank = rarityRank(rarity)
+    return rank in 1..2
+}
+
+private fun hasSpecialEffects(effects: JsonObject?): Boolean {
+    return effects != null && effects.isNotEmpty()
 }
 
 private fun buildForgeMainOptions(state: GameState?): List<Pair<String, String>> {
