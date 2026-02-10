@@ -3495,13 +3495,6 @@ private fun hasSpecialEffects(effects: JsonObject?): Boolean {
     return effects != null && effects.isNotEmpty()
 }
 
-private fun buildForgeMainOptions(state: GameState?): List<Pair<String, String>> {
-    val options = mutableListOf<Pair<String, String>>()
-    options.addAll(buildEquippedOptions(state))
-    options.addAll(buildInventoryOptions(state))
-    return options
-}
-
   private fun buildEffectSecondaryOptions(state: GameState?, mainSelection: String): List<Pair<String, String>> {
       if (state == null || mainSelection.isBlank() || !mainSelection.startsWith("equip:")) return emptyList()
       val slot = mainSelection.removePrefix("equip:").trim()
