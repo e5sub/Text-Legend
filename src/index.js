@@ -3016,6 +3016,43 @@ function buildItemView(itemId, effects = null, durability = null, max_durability
   };
 }
 
+function buildInventoryItemPayload(slot) {
+  const item = ITEM_TEMPLATES[slot.id] || { id: slot.id, name: slot.id, type: 'unknown' };
+  const effects = slot.effects || null;
+  const effectSkillName = effects?.skill ? getSkillNameById(effects.skill) : '';
+  // 检查是否为商店装备
+  const isShopItem = Object.values(SHOP_STOCKS).some(stockList => stockList.includes(slot.id));
+  // 优先使用装备模板中手动设置的 rarity，如果没有才使用价格计算
+  const rarity = item.rarity || rarityByPrice(item);
+  return {
+    id: slot.id,
+    key: getItemKey(slot),
+    name: item.name,
+    qty: slot.qty,
+    type: item.type,
+    slot: item.slot || null,
+    rarity,
+    is_set: isSetItem(item.id),
+    price: item.price || 0,
+    hp: item.hp || 0,
+    mp: item.mp || 0,
+    atk: item.atk || 0,
+    def: item.def || 0,
+    mdef: item.mdef || 0,
+    mag: item.mag || 0,
+    spirit: item.spirit || 0,
+    dex: item.dex || 0,
+    durability: slot.durability ?? null,
+    max_durability: slot.max_durability ?? null,
+    refine_level: slot.refine_level || 0,
+    effects,
+    effectSkillName,
+    is_shop_item: isShopItem,
+    untradable: Boolean(item.untradable),
+    unconsignable: Boolean(item.unconsignable)
+  };
+}
+
 function parseJson(value, fallback = null) {
   if (value == null) return fallback;
   try {
@@ -4916,6 +4953,11 @@ const AUTO_FULL_TRIAL_MS = 10 * 60 * 1000;
 const AUTO_FULL_MOVE_COOLDOWN_MS = 5000;
 const AUTO_FULL_ROOM_CACHE_TTL = 15000;
 const autoFullRoomCache = new Map();
+const AUTO_FULL_BOSS_LIST = Array.from(new Set(
+  Object.values(MOB_TEMPLATES)
+    .filter((tpl) => tpl && tpl.name && isBossMob(tpl))
+    .map((tpl) => String(tpl.name))
+)).sort((a, b) => a.localeCompare(b, 'zh-CN'));
 
 function getAutoDailyKey(now = Date.now()) {
   const date = new Date(now);
@@ -4969,6 +5011,24 @@ function normalizeSvipStatus(player) {
 
 function isSvipActive(player) {
   return normalizeSvipStatus(player);
+}
+
+function getAutoFullBossFilterSet(player) {
+  const list = player?.flags?.autoFullBossFilter;
+  if (!Array.isArray(list) || list.length === 0) return null;
+  const normalized = list
+    .map((name) => String(name || '').trim().toLowerCase())
+    .filter(Boolean);
+  if (!normalized.length) return null;
+  return new Set(normalized);
+}
+
+function isAutoFullBossAllowed(player, mobTemplate) {
+  const filter = getAutoFullBossFilterSet(player);
+  if (!filter) return true;
+  const name = String(mobTemplate?.name || '').trim().toLowerCase();
+  if (!name) return false;
+  return filter.has(name);
 }
 
 function isVipAutoEnabled(player) {
@@ -5082,6 +5142,7 @@ function findAliveBossTarget(player) {
     if (!mob || mob.hp <= 0) continue;
     const tpl = MOB_TEMPLATES[mob.templateId];
     if (!tpl || !isBossMob(tpl)) continue;
+    if (!isAutoFullBossAllowed(player, tpl)) continue;
     const zoneId = mob.zoneId;
     const roomId = mob.roomId;
     if (!zoneId || !roomId) continue;
@@ -5097,11 +5158,11 @@ function findAliveBossTarget(player) {
   return best;
 }
 
-function findBossInRoom(roomMobs) {
+function findBossInRoom(roomMobs, player) {
   if (!Array.isArray(roomMobs)) return null;
   for (const mob of roomMobs) {
     const tpl = MOB_TEMPLATES[mob.templateId];
-    if (tpl && isBossMob(tpl)) return mob;
+    if (tpl && isBossMob(tpl) && isAutoFullBossAllowed(player, tpl)) return mob;
   }
   return null;
 }
@@ -5153,7 +5214,7 @@ function tryAutoFullAction(player, roomMobs) {
   const now = Date.now();
   const pausedUntil = Number(player.flags.autoFullPausedUntil || 0);
   if (pausedUntil > now) {
-    const bossMob = findBossInRoom(roomMobs);
+    const bossMob = findBossInRoom(roomMobs, player);
     if (bossMob) {
       player.combat = { targetId: bossMob.id, targetType: 'mob', skillId: null };
       return 'engaged';
@@ -5169,7 +5230,7 @@ function tryAutoFullAction(player, roomMobs) {
     }
     return null;
   }
-  const bossMob = findBossInRoom(roomMobs);
+  const bossMob = findBossInRoom(roomMobs, player);
   if (bossMob) {
     if (!player.flags.lastBossRoom) {
       player.flags.lastBossRoom = { zoneId: player.position.zone, roomId: player.position.room };
@@ -5197,7 +5258,7 @@ function tryAutoFullAction(player, roomMobs) {
       } else {
       const roomRealmId = getRoomRealmId(zoneId, roomId, player.realmId || 1);
       const bossRoomMobs = getAliveMobs(zoneId, roomId, roomRealmId);
-      const bossStillAlive = Boolean(findBossInRoom(bossRoomMobs));
+      const bossStillAlive = Boolean(findBossInRoom(bossRoomMobs, player));
       if (bossStillAlive && canMove && movePlayerToRoom(player, zoneId, roomId)) {
         player.flags.autoFullLastMoveAt = now;
         return 'moved';
@@ -5932,42 +5993,8 @@ async function buildState(player) {
     exp: player.flags?.skillMastery?.[s.id]?.exp || 0,
     expNext: player.flags?.skillMastery?.[s.id]?.level ? SKILL_MASTERY_LEVELS[player.flags.skillMastery[s.id].level] : SKILL_MASTERY_LEVELS[1]
   }));
-  const items = player.inventory.map((i) => {
-    const item = ITEM_TEMPLATES[i.id] || { id: i.id, name: i.id, type: 'unknown' };
-    const effects = i.effects || null;
-    const effectSkillName = effects?.skill ? getSkillNameById(effects.skill) : '';
-    // 检查是否为商店装备
-    const isShopItem = Object.values(SHOP_STOCKS).some(stockList => stockList.includes(i.id));
-    // 优先使用装备模板中手动设置的 rarity，如果没有才使用价格计算
-    const rarity = item.rarity || rarityByPrice(item);
-    return {
-      id: i.id,
-      key: getItemKey(i),
-      name: item.name,
-      qty: i.qty,
-      type: item.type,
-      slot: item.slot || null,
-      rarity,
-      is_set: isSetItem(item.id),
-      price: item.price || 0,
-      hp: item.hp || 0,
-      mp: item.mp || 0,
-      atk: item.atk || 0,
-      def: item.def || 0,
-      mdef: item.mdef || 0,
-      mag: item.mag || 0,
-      spirit: item.spirit || 0,
-      dex: item.dex || 0,
-      durability: i.durability ?? null,
-      max_durability: i.max_durability ?? null,
-      refine_level: i.refine_level || 0,
-      effects,
-      effectSkillName,
-      is_shop_item: isShopItem,
-      untradable: Boolean(item.untradable),
-      unconsignable: Boolean(item.unconsignable)
-    };
-  });
+  const items = player.inventory.map((i) => buildInventoryItemPayload(i));
+  const warehouse = (player.warehouse || []).map((i) => buildInventoryItemPayload(i));
   const equipment = Object.entries(player.equipment || {})
     .filter(([, equipped]) => equipped && equipped.id)
     .map(([slot, equipped]) => ({
@@ -6005,6 +6032,9 @@ async function buildState(player) {
   const refineMaterialCount = getRefineMaterialCount();
   const svipSettings = await getSvipSettingsCached();
   const autoFullTrialInfo = getAutoFullTrialInfo(player);
+  const autoFullBossFilter = Array.isArray(player.flags?.autoFullBossFilter) && player.flags.autoFullBossFilter.length
+    ? player.flags.autoFullBossFilter
+    : null;
 
   // 获取特效重置配置
   const effectResetSuccessRate = getEffectResetSuccessRate();
@@ -6062,6 +6092,7 @@ async function buildState(player) {
       autoFullTrialRemainingSec: autoFullTrialInfo.remainingMs == null
         ? null
         : Math.max(0, Math.ceil(autoFullTrialInfo.remainingMs / 1000)),
+      autoFullBossFilter,
       guild_bonus: guildBonus,
       set_bonus: Boolean(player.flags?.setBonusActive),
       exp_gold_bonus_pct: (() => {
@@ -6080,6 +6111,7 @@ async function buildState(player) {
     summon: summonPayloads[0] || null,
     summons: summonPayloads,
     equipment,
+    warehouse,
     guild: player.guild?.name || null,
     guild_role: player.guild?.role || null,
     party: party ? { size: party.members.length, leader: party.leader, members: partyMembers } : null,
@@ -6127,6 +6159,7 @@ async function buildState(player) {
     svip_settings: {
       prices: svipSettings.prices
     },
+    auto_full_boss_list: AUTO_FULL_BOSS_LIST,
     state_throttle_enabled: stateThrottleEnabled,
     state_throttle_interval_sec: stateThrottleIntervalSec,
     state_throttle_override_server_allowed: overrideServerAllowed,

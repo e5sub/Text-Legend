@@ -447,6 +447,7 @@ body.dark .afk-skill-item.selected {
 body.dark .consign-tab,
 body.dark .consign-filter,
 body.dark .bag-tab,
+body.dark .warehouse-tab,
 body.dark .drops-tab {
   background: #3a3028;
   border-color: #5a4838;
@@ -456,6 +457,7 @@ body.dark .drops-tab {
 body.dark .consign-tab.active,
 body.dark .consign-filter.active,
 body.dark .bag-tab.active,
+body.dark .warehouse-tab.active,
 body.dark .drops-tab.active {
   background: #c86b2a;
   color: #fff7ea;
@@ -4490,12 +4492,59 @@ body.dark .mail-tab.active {
   border-color: #b65a1a;
 }
 
+.warehouse-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.warehouse-tab {
+  border-radius: 999px;
+  border: 1px solid rgba(118, 70, 22, 0.25);
+  background: #f7e2c6;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  color: #3a2311;
+  cursor: pointer;
+}
+
+.warehouse-tab.active {
+  background: #b65a1a;
+  color: #fff;
+  border-color: #b65a1a;
+}
+
 #stats-summary {
   white-space: pre-line;
 }
 
 .bag-item:hover {
   filter: brightness(1.03);
+}
+
+.autoafk-boss-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.autoafk-boss-item {
+  border-radius: 10px;
+  border: 1px solid rgba(118, 70, 22, 0.25);
+  background: rgba(255, 240, 220, 0.8);
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: #3a2311;
+}
+
+.autoafk-boss-item.selected {
+  background: #b65a1a;
+  color: #fff;
+  border-color: #b65a1a;
 }
 
 .rank-list {

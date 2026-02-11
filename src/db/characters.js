@@ -1,5 +1,5 @@
 import knex from './index.js';
-import { normalizeInventory, normalizeEquipment } from '../game/player.js';
+import { normalizeInventory, normalizeEquipment, normalizeWarehouse } from '../game/player.js';
 
 function parseJson(value, fallback) {
   try {
@@ -58,6 +58,7 @@ export async function loadCharacter(userId, name, realmId = 1) {
     stats: parseJson(row.stats_json, {}),
     position: parseJson(row.position_json, {}),
     inventory: parseJson(row.inventory_json, []),
+    warehouse: parseJson(row.warehouse_json, []),
     equipment: parseJson(row.equipment_json, {}),
     quests: parseJson(row.quests_json, {}),
     skills: parseJson(row.skills_json, []),
@@ -66,6 +67,7 @@ export async function loadCharacter(userId, name, realmId = 1) {
     status: {}
   };
   normalizeInventory(player);
+  normalizeWarehouse(player);
   normalizeEquipment(player);
   return player;
 }
@@ -81,6 +83,7 @@ export async function findCharacterByNameInRealm(name, realmId = 1) {
 export async function saveCharacter(userId, player, realmId = 1) {
   const resolvedRealmId = Number(player?.realmId ?? realmId ?? 1) || 1;
   normalizeInventory(player);
+  normalizeWarehouse(player);
   // 保存召唤物信息到flags中（只有在召唤物存在且活着时保存）
   if (!player.flags) player.flags = {};
   const summons = Array.isArray(player.summons)
@@ -116,6 +119,7 @@ export async function saveCharacter(userId, player, realmId = 1) {
     stats_json: JSON.stringify(player.stats || {}),
     position_json: JSON.stringify(player.position || {}),
     inventory_json: JSON.stringify(player.inventory || []),
+    warehouse_json: JSON.stringify(player.warehouse || []),
     equipment_json: JSON.stringify(player.equipment || {}),
     quests_json: JSON.stringify(player.quests || {}),
     skills_json: JSON.stringify(player.skills || []),

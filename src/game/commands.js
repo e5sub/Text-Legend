@@ -13,7 +13,7 @@ import {
   hasSkill,
   ensurePlayerSkills
 } from './skills.js';
-import { addItem, removeItem, equipItem, unequipItem, bagLimit, gainExp, computeDerived, getDurabilityMax, getRepairCost, getItemKey, sameEffects } from './player.js';
+import { addItem, addItemToList, removeItem, removeItemFromList, equipItem, unequipItem, bagLimit, gainExp, computeDerived, getDurabilityMax, getRepairCost, getItemKey, sameEffects } from './player.js';
 import { CLASSES, expForLevel, getStartPosition, ROOM_VARIANT_COUNT } from './constants.js';
 import { getRoom, getAliveMobs, spawnMobs } from './state.js';
 import { clamp, randInt } from './utils.js';
@@ -629,6 +629,44 @@ function resolveInventoryItem(player, raw) {
   return { slot: null, item: null, keyMatch: false };
 }
 
+function resolveWarehouseItem(player, raw) {
+  if (!raw || !player || !player.warehouse) return { slot: null, item: null, keyMatch: false };
+  const trimmed = raw.trim();
+  const byKey = player.warehouse.find((slot) => getItemKey(slot) === trimmed);
+  if (byKey) {
+    return { slot: byKey, item: ITEM_TEMPLATES[byKey.id], keyMatch: true };
+  }
+  const byId = player.warehouse.find((slot) => slot.id === trimmed);
+  if (byId) {
+    return { slot: byId, item: ITEM_TEMPLATES[byId.id], keyMatch: false };
+  }
+  const lower = trimmed.toLowerCase();
+  const byName = player.warehouse.find((slot) => {
+    const tmpl = ITEM_TEMPLATES[slot.id];
+    return tmpl && tmpl.name.toLowerCase() === lower;
+  });
+  if (byName) {
+    return { slot: byName, item: ITEM_TEMPLATES[byName.id], keyMatch: false };
+  }
+  return { slot: null, item: null, keyMatch: false };
+}
+
+const WAREHOUSE_LIMIT = 5000;
+
+function canAddToListWithLimit(list, limit, slot) {
+  if (!slot) return false;
+  const exists = (list || []).find((i) =>
+    i.id === slot.id &&
+    sameEffects(i.effects, slot.effects) &&
+    (i.durability ?? null) === (slot.durability ?? null) &&
+    (i.max_durability ?? null) === (slot.max_durability ?? null) &&
+    (i.refine_level ?? 0) === (slot.refine_level ?? 0)
+  );
+  if (exists) return true;
+  const count = Array.isArray(list) ? list.length : 0;
+  return count + 1 <= limit;
+}
+
 function getShopStock(player) {
   const shopId = shopForRoom(player.position.room);
   if (!shopId) return [];
@@ -1237,6 +1275,61 @@ export async function handleCommand({ player, players, allCharacters, playersByN
     }
     case 'bag': {
       send(`背包 (${player.inventory.length}/${bagLimit(player)}): ${formatInventory(player)}`);
+      return;
+    }
+    case 'warehouse': {
+      if (!player.warehouse) player.warehouse = [];
+      const parts = String(args || '').trim().split(/\s+/).filter(Boolean);
+      const sub = (parts[0] || '').toLowerCase();
+      if (!sub || sub === 'list') {
+        const listText = formatInventory({ inventory: player.warehouse });
+        send(`仓库 (${player.warehouse.length}/${WAREHOUSE_LIMIT}): ${listText}`);
+        return;
+      }
+      if (sub === 'deposit') {
+        const itemRaw = parts[1];
+        if (!itemRaw) return;
+        const resolved = resolveInventoryItem(player, itemRaw);
+        if (!resolved.slot || !resolved.item) return send('背包里没有该物品。');
+        const maxQty = Number(resolved.slot.qty || 0);
+        if (maxQty <= 0) return send('背包里没有该物品。');
+        const rawQty = parts[2];
+        const qty = rawQty == null || rawQty === '' ? maxQty : Math.max(1, Math.floor(Number(rawQty)));
+        if (!Number.isFinite(qty)) return send('数量无效。');
+        const finalQty = Math.min(qty, maxQty);
+        if (!canAddToListWithLimit(player.warehouse, WAREHOUSE_LIMIT, resolved.slot)) {
+          return send('仓库已满。');
+        }
+        if (!removeItem(player, resolved.slot.id, finalQty, resolved.slot.effects || null, resolved.slot.durability ?? null, resolved.slot.max_durability ?? null, resolved.slot.refine_level ?? null)) {
+          return send('背包里没有足够数量。');
+        }
+        player.warehouse = addItemToList(player.warehouse, resolved.slot.id, finalQty, resolved.slot.effects || null, resolved.slot.durability ?? null, resolved.slot.max_durability ?? null, resolved.slot.refine_level ?? null);
+        player.forceStateRefresh = true;
+        send(`已存入仓库：${resolved.item.name} x${finalQty}`);
+        return;
+      }
+      if (sub === 'withdraw') {
+        const itemRaw = parts[1];
+        if (!itemRaw) return;
+        const resolved = resolveWarehouseItem(player, itemRaw);
+        if (!resolved.slot || !resolved.item) return send('仓库里没有该物品。');
+        const maxQty = Number(resolved.slot.qty || 0);
+        if (maxQty <= 0) return send('仓库里没有该物品。');
+        const rawQty = parts[2];
+        const qty = rawQty == null || rawQty === '' ? maxQty : Math.max(1, Math.floor(Number(rawQty)));
+        if (!Number.isFinite(qty)) return send('数量无效。');
+        const finalQty = Math.min(qty, maxQty);
+        if (!canAddToListWithLimit(player.inventory, bagLimit(player), resolved.slot)) {
+          return send('背包已满。');
+        }
+        const removed = removeItemFromList(player.warehouse, resolved.slot.id, finalQty, resolved.slot.effects || null, resolved.slot.durability ?? null, resolved.slot.max_durability ?? null, resolved.slot.refine_level ?? null);
+        if (!removed.ok) return send('仓库里没有足够数量。');
+        player.warehouse = removed.list;
+        addItem(player, resolved.slot.id, finalQty, resolved.slot.effects || null, resolved.slot.durability ?? null, resolved.slot.max_durability ?? null, resolved.slot.refine_level ?? null);
+        player.forceStateRefresh = true;
+        send(`已取出仓库：${resolved.item.name} x${finalQty}`);
+        return;
+      }
       return;
     }
     case 'equip': {
@@ -1933,6 +2026,25 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           }
           player.forceStateRefresh = true;
           send(player.flags.autoFullEnabled ? '已开启智能挂机。' : '已关闭智能挂机。');
+          return;
+        }
+        if (sub.startsWith('boss')) {
+          if (!player.flags) player.flags = {};
+          const raw = String(args || '').trim();
+          const rest = raw.replace(/^boss\s*/i, '').trim();
+          if (!rest || rest === 'all') {
+            player.flags.autoFullBossFilter = null;
+            player.forceStateRefresh = true;
+            send('智能挂机BOSS：全部');
+            return;
+          }
+          const list = rest
+            .split(/[,\|]/)
+            .map((name) => name.trim())
+            .filter(Boolean);
+          player.flags.autoFullBossFilter = list.length ? list : null;
+          player.forceStateRefresh = true;
+          send(list.length ? `智能挂机BOSS：${list.join('、')}` : '智能挂机BOSS：全部');
           return;
         }
         if (['on', 'start', 'enable'].includes(sub)) {

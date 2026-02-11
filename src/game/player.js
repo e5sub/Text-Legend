@@ -1,4 +1,4 @@
-import { CLASSES, getStartPosition, expForLevel, maxBagSlots } from './constants.js';
+﻿import { CLASSES, getStartPosition, expForLevel, maxBagSlots } from './constants.js';
 import { ITEM_TEMPLATES } from './items.js';
 import { DEFAULT_SKILLS } from './skills.js';
 import { clamp } from './utils.js';
@@ -139,6 +139,7 @@ export function newCharacter(name, classId) {
       { id: 'potion_small', qty: 3 },
       { id: 'potion_mana', qty: 2 }
     ],
+    warehouse: [],
     equipment: {
       weapon: null,
       chest: null,
@@ -684,6 +685,115 @@ export function addItem(player, itemId, qty = 1, effects = null, durability = nu
   }
 }
 
+
+export function addItemToList(list, itemId, qty = 1, effects = null, durability = null, max_durability = null, refine_level = null) {
+  const target = Array.isArray(list) ? list : [];
+  const normalized = normalizeEffects(effects);
+  const itemTemplate = ITEM_TEMPLATES[itemId];
+  const isEquipment = itemTemplate && itemTemplate.slot;
+
+  if (isEquipment) {
+    const maxDur = 100;
+    const finalDur = durability !== null ? durability : maxDur;
+    const finalMaxDur = max_durability !== null ? max_durability : maxDur;
+    const finalRefineLevel = refine_level !== null ? refine_level : 0;
+
+    const slot = target.find((i) =>
+      i.id === itemId &&
+      sameEffects(i.effects, normalized) &&
+      i.durability === finalDur &&
+      i.max_durability === finalMaxDur &&
+      (i.refine_level ?? 0) === finalRefineLevel
+    );
+
+    if (slot) {
+      slot.qty += qty;
+    } else {
+      target.push({
+        id: itemId,
+        qty,
+        effects: normalized,
+        durability: finalDur,
+        max_durability: finalMaxDur,
+        refine_level: finalRefineLevel
+      });
+    }
+  } else {
+    const slot = target.find((i) => i.id === itemId && sameEffects(i.effects, normalized));
+    if (slot) {
+      slot.qty += qty;
+    } else {
+      const item = { id: itemId, qty, effects: normalized };
+      if (durability !== null) item.durability = durability;
+      if (max_durability !== null) item.max_durability = max_durability;
+      if (refine_level !== null) item.refine_level = refine_level;
+      target.push(item);
+    }
+  }
+  return target;
+}
+
+export function normalizeItemList(items) {
+  const merged = new Map();
+  (items || []).forEach((slot) => {
+    if (!slot || !slot.id) return;
+    const id = slot.id;
+    const qty = Number(slot.qty || 0);
+    if (qty <= 0) return;
+    const effects = normalizeEffects(slot.effects);
+    const itemTemplate = ITEM_TEMPLATES[id];
+    const isEquipment = itemTemplate && itemTemplate.slot;
+
+    let finalDur = slot.durability;
+    let finalMaxDur = slot.max_durability;
+    let finalRefineLevel = slot.refine_level;
+
+    if (isEquipment) {
+      finalDur = slot.durability !== null ? slot.durability : 100;
+      finalMaxDur = slot.max_durability !== null ? slot.max_durability : 100;
+      finalRefineLevel = slot.refine_level !== null ? slot.refine_level : 0;
+    }
+
+    const key = `${id}|${effectsKey(effects)}|${finalDur}|${finalMaxDur}|${finalRefineLevel}`;
+    const cur = merged.get(key) || { id, qty: 0, effects };
+    if (isEquipment) {
+      cur.durability = finalDur;
+      cur.max_durability = finalMaxDur;
+      cur.refine_level = finalRefineLevel;
+    }
+    cur.qty += qty;
+    merged.set(key, cur);
+  });
+  return Array.from(merged.values());
+}
+
+export function normalizeWarehouse(player) {
+  player.warehouse = normalizeItemList(player.warehouse);
+}
+
+export function removeItemFromList(list, itemId, qty = 1, effects = null, durability = null, max_durability = null, refine_level = null) {
+  if (!Array.isArray(list)) return { ok: false, list: [] };
+  const normalized = normalizeEffects(effects);
+  const needsMeta = durability != null || max_durability != null || refine_level != null;
+  const slot = list.find((i) => {
+    if (!i || i.id !== itemId) return false;
+    if (normalized && !sameEffects(i.effects, normalized)) return false;
+    if (needsMeta) {
+      if (durability != null && i.durability !== durability) return false;
+      if (max_durability != null && i.max_durability !== max_durability) return false;
+      if (refine_level != null && (i.refine_level ?? 0) !== refine_level) return false;
+    }
+    return true;
+  });
+  if (!slot) return { ok: false, list };
+  if (slot.qty < qty) return { ok: false, list };
+  slot.qty -= qty;
+  if (slot.qty <= 0) {
+    const next = list.filter((i) => i !== slot);
+    return { ok: true, list: next };
+  }
+  return { ok: true, list };
+}
 export function normalizeInventory(player) {
   const merged = new Map();
   (player.inventory || []).forEach((slot) => {
@@ -825,3 +935,5 @@ export function unequipItem(player, slot) {
   computeDerived(player);
   return { ok: true, msg: `\u5DF2\u5378\u4E0B${ITEM_TEMPLATES[current.id].name}\u3002` };
 }
+
+

@@ -613,15 +613,26 @@ const consignUi = {
   historyPage: document.getElementById('consign-history-page'),
   close: document.getElementById('consign-close')
 };
-  const bagUi = {
-    modal: document.getElementById('bag-modal'),
-    list: document.getElementById('bag-list'),
-    page: document.getElementById('bag-page'),
-    prev: document.getElementById('bag-prev'),
-    next: document.getElementById('bag-next'),
-    tabs: Array.from(document.querySelectorAll('.bag-tab')),
-    close: document.getElementById('bag-close')
-  };
+const bagUi = {
+  modal: document.getElementById('bag-modal'),
+  list: document.getElementById('bag-list'),
+  page: document.getElementById('bag-page'),
+  prev: document.getElementById('bag-prev'),
+  next: document.getElementById('bag-next'),
+  warehouse: document.getElementById('bag-warehouse'),
+  tabs: Array.from(document.querySelectorAll('.bag-tab')),
+  close: document.getElementById('bag-close')
+};
+
+const warehouseUi = {
+  modal: document.getElementById('warehouse-modal'),
+  list: document.getElementById('warehouse-list'),
+  page: document.getElementById('warehouse-page'),
+  prev: document.getElementById('warehouse-prev'),
+  next: document.getElementById('warehouse-next'),
+  tabs: Array.from(document.querySelectorAll('.warehouse-tab')),
+  close: document.getElementById('warehouse-close')
+};
   const trainingBatchUi = {
     modal: document.getElementById('training-batch-modal'),
     list: document.getElementById('training-batch-list'),
@@ -643,6 +654,13 @@ const afkUi = {
   start: document.getElementById('afk-start'),
   autoFull: document.getElementById('afk-auto-full'),
   close: document.getElementById('afk-close')
+};
+const autoFullBossUi = {
+  modal: document.getElementById('autoafk-boss-modal'),
+  list: document.getElementById('autoafk-boss-list'),
+  all: document.getElementById('autoafk-boss-all'),
+  confirm: document.getElementById('autoafk-boss-confirm'),
+  cancel: document.getElementById('autoafk-boss-cancel')
 };
 const playerUi = {
   modal: document.getElementById('player-modal'),
@@ -706,6 +724,12 @@ let bagItems = [];
 let bagPage = 0;
 let bagFilter = 'all';
 const BAG_PAGE_SIZE = 20;
+let warehouseItems = [];
+let warehousePage = 0;
+let warehouseTab = 'bag';
+const WAREHOUSE_PAGE_SIZE = 20;
+let autoFullBossSelection = new Set();
+const AUTOAFK_BOSS_STORAGE_KEY = 'autoafkBossSelection';
 let guildPage = 0;
 const GUILD_PAGE_SIZE = 5;
 
@@ -3420,6 +3444,113 @@ function renderBagModal() {
     bagUi.modal.classList.remove('hidden');
   }
 
+function showWarehouseModal() {
+  hideItemTooltip();
+  if (socket && isStateThrottleActive()) {
+    socket.emit('state_request', { reason: 'warehouse' });
+  }
+  warehouseTab = 'bag';
+  warehousePage = 0;
+  if (warehouseUi.tabs && warehouseUi.tabs.length) {
+    warehouseUi.tabs.forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.tab === warehouseTab);
+    });
+  }
+  renderWarehouseModal();
+}
+
+function renderWarehouseModal() {
+  if (!warehouseUi.modal || !warehouseUi.list) return;
+  warehouseUi.list.innerHTML = '';
+  const sourceItems = warehouseTab === 'warehouse' ? warehouseItems : bagItems;
+  const filtered = sourceItems.slice().sort(sortByRarityDesc);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / WAREHOUSE_PAGE_SIZE));
+  warehousePage = Math.min(Math.max(0, warehousePage), totalPages - 1);
+  const start = warehousePage * WAREHOUSE_PAGE_SIZE;
+  const pageItems = filtered.slice(start, start + WAREHOUSE_PAGE_SIZE);
+  pageItems.forEach((item) => {
+    const btn = document.createElement('div');
+    btn.className = 'bag-item';
+    applyRarityClass(btn, item);
+    btn.textContent = `${formatItemName(item)} x${item.qty}`;
+    if (item.tooltip) {
+      btn.addEventListener('mouseenter', (evt) => showItemTooltip(item.tooltip, evt));
+      btn.addEventListener('mousemove', (evt) => positionTooltip(evt.clientX, evt.clientY));
+      btn.addEventListener('mouseleave', hideItemTooltip);
+    }
+    btn.addEventListener('click', () => handleWarehouseItemAction(item));
+    warehouseUi.list.appendChild(btn);
+  });
+  if (warehouseUi.page) warehouseUi.page.textContent = `第 ${warehousePage + 1}/${totalPages} 页`;
+  if (warehouseUi.prev) warehouseUi.prev.disabled = warehousePage === 0;
+  if (warehouseUi.next) warehouseUi.next.disabled = warehousePage >= totalPages - 1;
+  warehouseUi.modal.classList.remove('hidden');
+}
+
+async function handleWarehouseItemAction(item) {
+  if (!item || !socket) return;
+  const isWithdraw = warehouseTab === 'warehouse';
+  const actionLabel = isWithdraw ? '取出' : '存入';
+  const qtyText = await promptModal({
+    title: `仓库${actionLabel}`,
+    text: `${actionLabel}数量：${formatItemName(item)} (最多 ${item.qty})`,
+    placeholder: '数量',
+    value: String(item.qty || 1),
+    type: 'number'
+  });
+  if (qtyText == null) return;
+  let qty = Math.max(1, Math.floor(Number(qtyText)));
+  if (!Number.isFinite(qty)) return;
+  qty = Math.min(qty, Number(item.qty || 1));
+  const key = item.key || item.id;
+  const cmd = isWithdraw ? `warehouse withdraw ${key} ${qty}` : `warehouse deposit ${key} ${qty}`;
+  socket.emit('cmd', { text: cmd });
+}
+
+function showAutoFullBossModal() {
+  if (!autoFullBossUi.modal || !autoFullBossUi.list) return;
+  const bosses = Array.isArray(lastState?.auto_full_boss_list) ? lastState.auto_full_boss_list.slice() : [];
+  let filter = Array.isArray(lastState?.stats?.autoFullBossFilter) ? lastState.stats.autoFullBossFilter : null;
+  if (!filter || filter.length === 0) {
+    try {
+      const raw = localStorage.getItem(AUTOAFK_BOSS_STORAGE_KEY);
+      const saved = raw ? JSON.parse(raw) : null;
+      if (Array.isArray(saved) && saved.length) {
+        filter = saved;
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }
+  autoFullBossSelection = new Set();
+  if (filter && filter.length) {
+    filter.forEach((name) => autoFullBossSelection.add(String(name)));
+  } else {
+    bosses.forEach((name) => autoFullBossSelection.add(String(name)));
+  }
+  autoFullBossUi.list.innerHTML = '';
+  bosses.forEach((name) => {
+    const btn = document.createElement('div');
+    btn.className = 'autoafk-boss-item';
+    btn.textContent = name;
+    if (autoFullBossSelection.has(String(name))) {
+      btn.classList.add('selected');
+    }
+    btn.addEventListener('click', () => {
+      const key = String(name);
+      if (autoFullBossSelection.has(key)) {
+        autoFullBossSelection.delete(key);
+        btn.classList.remove('selected');
+      } else {
+        autoFullBossSelection.add(key);
+        btn.classList.add('selected');
+      }
+    });
+    autoFullBossUi.list.appendChild(btn);
+  });
+  autoFullBossUi.modal.classList.remove('hidden');
+}
+
   function renderStatsModal() {
     if (!statsUi.modal || !lastState) return;
     const stats = lastState.stats || {};
@@ -5679,6 +5810,7 @@ function renderState(state) {
   }
 
     const allItems = buildItemTotals(state.items || []);
+    const warehouseTotals = buildItemTotals(state.warehouse || []);
     const displayItems = allItems.filter((i) => i.type === 'consumable' && (i.hp || i.mp));
     const displayChips = displayItems.map((i) => ({
       id: i.key || i.id,
@@ -5688,6 +5820,9 @@ function renderState(state) {
       className: `${i.rarity ? `rarity-${normalizeRarityKey(i.rarity)}` : ''}${i.is_set ? ' item-set' : ''}`.trim()
     }));
   bagItems = allItems
+    .map((i) => ({ ...i, tooltip: formatItemTooltip(i) }))
+    .sort(sortByRarityDesc);
+  warehouseItems = warehouseTotals
     .map((i) => ({ ...i, tooltip: formatItemTooltip(i) }))
     .sort(sortByRarityDesc);
   const inlineItems = displayChips.length > BAG_PAGE_SIZE
@@ -5711,6 +5846,9 @@ function renderState(state) {
   }
   if (bagUi.modal && !bagUi.modal.classList.contains('hidden')) {
     renderBagModal();
+  }
+  if (warehouseUi.modal && !warehouseUi.modal.classList.contains('hidden')) {
+    renderWarehouseModal();
   }
   if (repairUi.modal && !repairUi.modal.classList.contains('hidden')) {
     renderRepairList(state.equipment || []);
@@ -7456,6 +7594,77 @@ if (document.getElementById('rank-modal')) {
       hideItemTooltip();
     });
   }
+  if (bagUi.warehouse) {
+    bagUi.warehouse.addEventListener('click', () => {
+      if (bagUi.modal) bagUi.modal.classList.add('hidden');
+      showWarehouseModal();
+    });
+  }
+  if (warehouseUi.tabs && warehouseUi.tabs.length) {
+    warehouseUi.tabs.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        warehouseTab = btn.dataset.tab || 'bag';
+        warehousePage = 0;
+        warehouseUi.tabs.forEach((b) => b.classList.toggle('active', b === btn));
+        renderWarehouseModal();
+      });
+    });
+  }
+  if (warehouseUi.prev) {
+    warehouseUi.prev.addEventListener('click', () => {
+      if (warehousePage > 0) {
+        warehousePage -= 1;
+        renderWarehouseModal();
+      }
+    });
+  }
+  if (warehouseUi.next) {
+    warehouseUi.next.addEventListener('click', () => {
+      const totalPages = Math.max(1, Math.ceil((warehouseTab === 'warehouse' ? warehouseItems.length : bagItems.length) / WAREHOUSE_PAGE_SIZE));
+      if (warehousePage < totalPages - 1) {
+        warehousePage += 1;
+        renderWarehouseModal();
+      }
+    });
+  }
+  if (warehouseUi.close) {
+    warehouseUi.close.addEventListener('click', () => {
+      if (warehouseUi.modal) warehouseUi.modal.classList.add('hidden');
+      hideItemTooltip();
+    });
+  }
+  if (autoFullBossUi.all) {
+    autoFullBossUi.all.addEventListener('click', () => {
+      if (!autoFullBossUi.list) return;
+      autoFullBossSelection = new Set();
+      Array.from(autoFullBossUi.list.querySelectorAll('.autoafk-boss-item')).forEach((node) => {
+        const name = node.textContent || '';
+        autoFullBossSelection.add(name);
+        node.classList.add('selected');
+      });
+    });
+  }
+  if (autoFullBossUi.confirm) {
+    autoFullBossUi.confirm.addEventListener('click', () => {
+      if (!socket) return;
+      const bosses = Array.isArray(lastState?.auto_full_boss_list) ? lastState.auto_full_boss_list.slice() : [];
+      const selected = Array.from(autoFullBossSelection).filter(Boolean);
+      const useAll = selected.length === 0 || selected.length === bosses.length;
+      try {
+        localStorage.setItem(AUTOAFK_BOSS_STORAGE_KEY, JSON.stringify(selected));
+      } catch {
+        // ignore storage errors
+      }
+      socket.emit('cmd', { text: `autoafk boss ${useAll ? 'all' : selected.join(',')}` });
+      socket.emit('cmd', { text: 'autoafk on' });
+      if (autoFullBossUi.modal) autoFullBossUi.modal.classList.add('hidden');
+    });
+  }
+  if (autoFullBossUi.cancel) {
+    autoFullBossUi.cancel.addEventListener('click', () => {
+      if (autoFullBossUi.modal) autoFullBossUi.modal.classList.add('hidden');
+    });
+  }
   if (statsUi.close) {
     statsUi.close.addEventListener('click', () => {
       if (statsUi.modal) statsUi.modal.classList.add('hidden');
@@ -7475,8 +7684,13 @@ if (afkUi.autoFull) {
   afkUi.autoFull.addEventListener('click', () => {
     if (!socket) return;
     const enabled = Boolean(lastState?.stats?.autoFullEnabled);
-    socket.emit('cmd', { text: `autoafk ${enabled ? 'off' : 'on'}` });
-    if (afkUi.modal) afkUi.modal.classList.add('hidden');
+    if (enabled) {
+      socket.emit('cmd', { text: 'autoafk off' });
+      if (afkUi.modal) afkUi.modal.classList.add('hidden');
+    } else {
+      if (afkUi.modal) afkUi.modal.classList.add('hidden');
+      showAutoFullBossModal();
+    }
   });
 }
 if (afkUi.close) {

@@ -572,7 +572,27 @@
       <div class="modal-actions">
         <button id="bag-prev">上一页</button>
         <button id="bag-next">下一页</button>
+        <button id="bag-warehouse">仓库</button>
         <button id="bag-close">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="warehouse-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-title">仓库</div>
+      <div class="modal-list-wrapper">
+        <div class="warehouse-tabs">
+          <button class="warehouse-tab active" data-tab="bag">背包</button>
+          <button class="warehouse-tab" data-tab="warehouse">仓库</button>
+        </div>
+        <div class="modal-text" id="warehouse-page">第 1/1 页</div>
+        <div id="warehouse-list" class="bag-list"></div>
+      </div>
+      <div class="modal-actions">
+        <button id="warehouse-prev">上一页</button>
+        <button id="warehouse-next">下一页</button>
+        <button id="warehouse-close">关闭</button>
       </div>
     </div>
   </div>
@@ -587,6 +607,21 @@
           <button id="afk-auto-full" class="hidden">智能挂机</button>
           <button id="afk-close">取消</button>
         </div>
+    </div>
+  </div>
+
+  <div id="autoafk-boss-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-title">选择要刷的BOSS</div>
+      <div class="modal-text">默认全选，可手动调整</div>
+      <div class="modal-list-wrapper">
+        <div id="autoafk-boss-list" class="autoafk-boss-list"></div>
+      </div>
+      <div class="modal-actions">
+        <button id="autoafk-boss-all">全选</button>
+        <button id="autoafk-boss-confirm">确定</button>
+        <button id="autoafk-boss-cancel">取消</button>
+      </div>
     </div>
   </div>
 
