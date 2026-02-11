@@ -4152,14 +4152,24 @@ async function renderSponsorContent() {
 
   const groupButtons = sponsorUi.content.querySelectorAll('.sponsor-group-btn');
   const qrBlocks = sponsorUi.content.querySelectorAll('.sponsor-group-qrcode');
+  qrBlocks.forEach((block) => {
+    block.classList.add('hidden');
+    block.style.display = 'none';
+  });
   groupButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
       const key = btn.dataset.group;
       groupButtons.forEach((b) => b.classList.remove('active'));
-      qrBlocks.forEach((block) => block.classList.add('hidden'));
+      qrBlocks.forEach((block) => {
+        block.classList.add('hidden');
+        block.style.display = 'none';
+      });
       btn.classList.add('active');
       const block = sponsorUi.content.querySelector(`.sponsor-group-qrcode[data-group="${key}"]`);
-      if (block) block.classList.remove('hidden');
+      if (block) {
+        block.classList.remove('hidden');
+        block.style.display = 'flex';
+      }
     });
   });
 

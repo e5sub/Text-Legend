@@ -5972,6 +5972,10 @@ body.dark .boss-respawn-time #boss-respawn-timer {
   padding: 8px 0;
 }
 
+.sponsor-group-qrcode.hidden {
+  display: none;
+}
+
 .sponsor-group-qrcode img {
   width: min(70vw, 260px);
   max-width: 260px;
