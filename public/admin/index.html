@@ -411,6 +411,11 @@
               </select>
               <button id="vip-create-btn">生成激活码</button>
               <button id="vip-list-btn">查看激活码列表</button>
+              <div class="row" style="margin-top: 8px;">
+                <button id="vip-codes-prev" class="btn-small">上一页</button>
+                <span id="vip-codes-page" class="muted" style="margin: 0 8px;">第 1/1 页</span>
+                <button id="vip-codes-next" class="btn-small">下一页</button>
+              </div>
               <div id="vip-codes-result" class="list"></div>
               
               <div class="table-container" id="vip-codes-table-container" style="display: none;">
@@ -435,6 +440,11 @@
               <input id="recharge-amount" type="number" min="1" value="100">
               <button id="recharge-create-btn">生成卡密</button>
               <button id="recharge-list-btn">查看卡密列表</button>
+              <div class="row" style="margin-top: 8px;">
+                <button id="recharge-codes-prev" class="btn-small">上一页</button>
+                <span id="recharge-codes-page" class="muted" style="margin: 0 8px;">第 1/1 页</span>
+                <button id="recharge-codes-next" class="btn-small">下一页</button>
+              </div>
               <div id="recharge-codes-result" class="list"></div>
 
               <div class="table-container" id="recharge-codes-table-container" style="display: none;">
@@ -1257,6 +1267,6 @@
     </div>
   </div>
 
-  <script src="admin.js?v=4"></script>
+  <script src="admin.js?v=6"></script>
 </body>
 </html>

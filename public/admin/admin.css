@@ -275,6 +275,12 @@ body.theme-dark .admin-switch input:checked + .admin-switch-slider {
 
 .table-container {
   margin: 12px 0;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.table-container table {
+  min-width: 720px;
 }
 
 table {

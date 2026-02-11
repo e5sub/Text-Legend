@@ -45,6 +45,14 @@ export async function useVipCode(code, userId) {
   return row;
 }
 
-export async function listVipCodes(limit = 50) {
-  return knex('vip_codes').orderBy('created_at', 'desc').limit(limit);
+export async function listVipCodes(limit = 50, offset = 0) {
+  return knex('vip_codes')
+    .orderBy('created_at', 'desc')
+    .limit(limit)
+    .offset(offset);
+}
+
+export async function countVipCodes() {
+  const row = await knex('vip_codes').count({ total: '*' }).first();
+  return Number(row?.total || 0);
 }

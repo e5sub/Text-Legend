@@ -39,6 +39,14 @@ export async function useRechargeCard(code, userId, charName) {
   });
 }
 
-export async function listRechargeCards(limit = 50) {
-  return knex('recharge_cards').orderBy('created_at', 'desc').limit(limit);
+export async function listRechargeCards(limit = 50, offset = 0) {
+  return knex('recharge_cards')
+    .orderBy('created_at', 'desc')
+    .limit(limit)
+    .offset(offset);
+}
+
+export async function countRechargeCards() {
+  const row = await knex('recharge_cards').count({ total: '*' }).first();
+  return Number(row?.total || 0);
 }

@@ -19,9 +19,15 @@ const usersList = document.getElementById('users-list');
 const vipCodesResult = document.getElementById('vip-codes-result');
 const vipCodesList = document.getElementById('vip-codes-list');
 const vipCodesTableContainer = document.getElementById('vip-codes-table-container');
+const vipCodesPrev = document.getElementById('vip-codes-prev');
+const vipCodesNext = document.getElementById('vip-codes-next');
+const vipCodesPage = document.getElementById('vip-codes-page');
 const rechargeCodesResult = document.getElementById('recharge-codes-result');
 const rechargeCodesList = document.getElementById('recharge-codes-list');
 const rechargeCodesTableContainer = document.getElementById('recharge-codes-table-container');
+const rechargeCodesPrev = document.getElementById('recharge-codes-prev');
+const rechargeCodesNext = document.getElementById('recharge-codes-next');
+const rechargeCodesPage = document.getElementById('recharge-codes-page');
 const vipSelfClaimStatus = document.getElementById('vip-self-claim-status');
 const vipSelfClaimMsg = document.getElementById('vip-self-claim-msg');
 const vipSelfClaimToggle = document.getElementById('vip-self-claim-toggle');
@@ -52,6 +58,13 @@ const cmdRateGlobalWindowInput = document.getElementById('cmd-rate-global-window
 const cmdRateBurstLimitInput = document.getElementById('cmd-rate-burst-limit');
 const cmdRateBurstWindowInput = document.getElementById('cmd-rate-burst-window');
 const cmdCooldownConsignInput = document.getElementById('cmd-cooldown-consign');
+
+const VIP_CODES_PAGE_SIZE = 50;
+const RECHARGE_CODES_PAGE_SIZE = 50;
+let vipCodesPageIndex = 0;
+let vipCodesTotal = 0;
+let rechargeCodesPageIndex = 0;
+let rechargeCodesTotal = 0;
 const cmdCooldownTradeInput = document.getElementById('cmd-cooldown-trade');
 const cmdCooldownMailInput = document.getElementById('cmd-cooldown-mail');
 const cmdRateSaveBtn = document.getElementById('cmd-rate-save');
@@ -1998,13 +2011,22 @@ async function listVipCodes() {
   vipCodesTableContainer.style.display = 'none';
   
   try {
-    const data = await api('/admin/vip/list', 'GET');
+    const data = await api(`/admin/vip/list?page=${vipCodesPageIndex + 1}&limit=${VIP_CODES_PAGE_SIZE}`, 'GET');
     if (!data.codes || data.codes.length === 0) {
       vipCodesResult.textContent = '暂无激活码';
+      vipCodesTotal = data.total || 0;
+      if (vipCodesPage) vipCodesPage.textContent = '第 1/1 页';
+      if (vipCodesPrev) vipCodesPrev.disabled = true;
+      if (vipCodesNext) vipCodesNext.disabled = true;
       return;
     }
     
     vipCodesTableContainer.style.display = 'block';
+    vipCodesTotal = data.total || data.codes.length;
+    const totalPages = Math.max(1, Math.ceil(vipCodesTotal / VIP_CODES_PAGE_SIZE));
+    if (vipCodesPage) vipCodesPage.textContent = `第 ${vipCodesPageIndex + 1}/${totalPages} 页`;
+    if (vipCodesPrev) vipCodesPrev.disabled = vipCodesPageIndex <= 0;
+    if (vipCodesNext) vipCodesNext.disabled = vipCodesPageIndex >= totalPages - 1;
     data.codes.forEach((c) => {
       const tr = document.createElement('tr');
       const typeMap = {
@@ -2077,6 +2099,8 @@ async function createRechargeCodes() {
     const amount = Number(document.getElementById('recharge-amount').value || 0);
     const data = await api('/admin/recharge/create', 'POST', { count, amount });
     rechargeCodesResult.textContent = `成功生成 ${data.codes.length} 个卡密 (每个 ${data.amount} 元宝):\n\n` + data.codes.join('\n');
+    rechargeCodesPageIndex = 0;
+    rechargeCodesTotal = 0;
   } catch (err) {
     rechargeCodesResult.textContent = err.message;
   }
@@ -2089,13 +2113,22 @@ async function listRechargeCodes() {
   rechargeCodesTableContainer.style.display = 'none';
 
   try {
-    const data = await api('/admin/recharge/list', 'GET');
+    const data = await api(`/admin/recharge/list?page=${rechargeCodesPageIndex + 1}&limit=${RECHARGE_CODES_PAGE_SIZE}`, 'GET');
     if (!data.codes || data.codes.length === 0) {
       rechargeCodesResult.textContent = '暂无卡密';
+      rechargeCodesTotal = data.total || 0;
+      if (rechargeCodesPage) rechargeCodesPage.textContent = '第 1/1 页';
+      if (rechargeCodesPrev) rechargeCodesPrev.disabled = true;
+      if (rechargeCodesNext) rechargeCodesNext.disabled = true;
       return;
     }
 
     rechargeCodesTableContainer.style.display = 'block';
+    rechargeCodesTotal = data.total || data.codes.length;
+    const totalPages = Math.max(1, Math.ceil(rechargeCodesTotal / RECHARGE_CODES_PAGE_SIZE));
+    if (rechargeCodesPage) rechargeCodesPage.textContent = `第 ${rechargeCodesPageIndex + 1}/${totalPages} 页`;
+    if (rechargeCodesPrev) rechargeCodesPrev.disabled = rechargeCodesPageIndex <= 0;
+    if (rechargeCodesNext) rechargeCodesNext.disabled = rechargeCodesPageIndex >= totalPages - 1;
     data.codes.forEach((c) => {
       const tr = document.createElement('tr');
 
@@ -5452,6 +5485,30 @@ document.getElementById('vip-create-btn').addEventListener('click', createVipCod
 document.getElementById('vip-list-btn').addEventListener('click', listVipCodes);
 document.getElementById('recharge-create-btn').addEventListener('click', createRechargeCodes);
 document.getElementById('recharge-list-btn').addEventListener('click', listRechargeCodes);
+if (vipCodesPrev) {
+  vipCodesPrev.addEventListener('click', () => {
+    vipCodesPageIndex = Math.max(0, vipCodesPageIndex - 1);
+    listVipCodes();
+  });
+}
+if (vipCodesNext) {
+  vipCodesNext.addEventListener('click', () => {
+    vipCodesPageIndex += 1;
+    listVipCodes();
+  });
+}
+if (rechargeCodesPrev) {
+  rechargeCodesPrev.addEventListener('click', () => {
+    rechargeCodesPageIndex = Math.max(0, rechargeCodesPageIndex - 1);
+    listRechargeCodes();
+  });
+}
+if (rechargeCodesNext) {
+  rechargeCodesNext.addEventListener('click', () => {
+    rechargeCodesPageIndex += 1;
+    listRechargeCodes();
+  });
+}
 if (vipSelfClaimToggle) {
   vipSelfClaimToggle.addEventListener('change', () => toggleVipSelfClaim(vipSelfClaimToggle.checked));
 }
