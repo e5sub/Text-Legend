@@ -8428,31 +8428,32 @@ function pickCombatSkillId(player, combatSkillId) {
 function autoResummon(player, desiredSkillId = null) {
   if (!player || player.hp <= 0) return false;
   if (!isVipAutoEnabled(player)) return false;
+  const autoEnabled = Boolean(player.flags?.autoFullEnabled || player.flags?.autoSkillId);
+  if (!autoEnabled) return false;
   const skills = getLearnedSkills(player).filter((skill) => skill.type === 'summon');
   if (!skills.length) return false;
 
   const autoSkill = player.flags?.autoSkillId;
   let allowedSummonSkills = [];
-  if (autoSkill === 'all') {
+  if (autoSkill === 'all' || (!autoSkill && player.flags?.autoFullEnabled)) {
     allowedSummonSkills = skills;
   } else if (Array.isArray(autoSkill)) {
     allowedSummonSkills = skills.filter((skill) => autoSkill.includes(skill.id));
   } else if (typeof autoSkill === 'string') {
     allowedSummonSkills = skills.filter((skill) => skill.id === autoSkill);
   }
-  if (!allowedSummonSkills.length) return false;
-
   const existingIds = new Set(getAliveSummons(player).map((summon) => summon.id));
   if (desiredSkillId && existingIds.has(desiredSkillId)) return false;
 
   let summonSkill = null;
   if (desiredSkillId) {
-    summonSkill = allowedSummonSkills.find((skill) => skill.id === desiredSkillId);
+    summonSkill = skills.find((skill) => skill.id === desiredSkillId) || null;
   }
+  if (!summonSkill && !allowedSummonSkills.length) return false;
 
   const lastSkillId = player.flags?.lastSummonSkill;
   if (!summonSkill && lastSkillId && !existingIds.has(lastSkillId)) {
-    summonSkill = allowedSummonSkills.find((skill) => skill.id === lastSkillId);
+    summonSkill = allowedSummonSkills.find((skill) => skill.id === lastSkillId) || null;
   }
 
   if (!summonSkill) {
@@ -8461,13 +8462,28 @@ function autoResummon(player, desiredSkillId = null) {
     summonSkill = candidates.sort((a, b) => getSkillLevel(player, b.id) - getSkillLevel(player, a.id))[0];
   }
 
-  if (!summonSkill || player.mp < summonSkill.mp) return false;
+  if (!summonSkill) return false;
+  if (player.mp < summonSkill.mp) {
+    if (!player.flags) player.flags = {};
+    player.flags.pendingResummonSkillId = summonSkill.id;
+    return false;
+  }
   player.mp = clamp(player.mp - summonSkill.mp, 0, player.max_mp);
   const skillLevel = getSkillLevel(player, summonSkill.id);
   const summon = summonStats(player, summonSkill, skillLevel);
   addOrReplaceSummon(player, { ...summon, exp: 0 });
   player.send(`召唤物被击败，自动召唤 ${summon.name} (等级 ${summon.level})。`);
   return true;
+}
+
+function tryPendingResummon(player) {
+  if (!player?.flags?.pendingResummonSkillId) return false;
+  const desired = player.flags.pendingResummonSkillId;
+  const ok = autoResummon(player, desired);
+  if (ok && player.flags) {
+    player.flags.pendingResummonSkillId = null;
+  }
+  return ok;
 }
 
 function reduceDurabilityOnAttack(player) {
@@ -9054,6 +9070,7 @@ async function combatTick() {
 
     if (!player.combat) {
       regenOutOfCombat(player);
+      tryPendingResummon(player);
       tryAutoHeal(player);
       const aggroMob = roomMobs.find((m) => m.status?.aggroTarget === player.name);
       if (aggroMob) {
@@ -9093,6 +9110,7 @@ async function combatTick() {
     player.flags.lastCombatAt = Date.now();
 
     tryAutoPotion(player);
+    tryPendingResummon(player);
     tryAutoHeal(player);
     tryAutoBuff(player);
 
