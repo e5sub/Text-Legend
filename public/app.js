@@ -4013,6 +4013,13 @@ if (sponsorUi.modal) {
     }
   });
 }
+if (sponsorTitleUi.modal) {
+  sponsorTitleUi.modal.addEventListener('click', (e) => {
+    if (e.target === sponsorTitleUi.modal) {
+      sponsorTitleUi.modal.classList.add('hidden');
+    }
+  });
+}
 }
 
 function parseMarkdown(markdown) {
@@ -4116,6 +4123,19 @@ async function renderSponsorContent() {
 
   sponsorUi.content.innerHTML = `
     <div class="sponsor-markdown">${htmlContent}</div>
+    <div class="sponsor-group-title">玩家交流群</div>
+    <div class="sponsor-group-container">
+      <div class="sponsor-group-actions">
+        <button class="sponsor-group-btn" data-group="qq">QQ群</button>
+        <button class="sponsor-group-btn" data-group="wx">微信群</button>
+      </div>
+      <div class="sponsor-group-qrcode hidden" data-group="qq">
+        <img src="/img/qqqun.png" alt="QQ群二维码">
+      </div>
+      <div class="sponsor-group-qrcode hidden" data-group="wx">
+        <img src="/img/wxqun.png" alt="微信群二维码">
+      </div>
+    </div>
     <div class="sponsor-list-title">赞助名单</div>
     <div class="sponsor-list-container">
       <div class="sponsor-list-scroll">
@@ -4129,6 +4149,19 @@ async function renderSponsorContent() {
       </div>
     </div>
   `;
+
+  const groupButtons = sponsorUi.content.querySelectorAll('.sponsor-group-btn');
+  const qrBlocks = sponsorUi.content.querySelectorAll('.sponsor-group-qrcode');
+  groupButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.group;
+      groupButtons.forEach((b) => b.classList.remove('active'));
+      qrBlocks.forEach((block) => block.classList.add('hidden'));
+      btn.classList.add('active');
+      const block = sponsorUi.content.querySelector(`.sponsor-group-qrcode[data-group="${key}"]`);
+      if (block) block.classList.remove('hidden');
+    });
+  });
 
   // 超过5位时启动自动滚动
   if (hasMoreSponsors) {
