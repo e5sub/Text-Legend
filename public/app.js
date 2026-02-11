@@ -485,6 +485,7 @@ const promptUi = {
   secondaryRow: document.getElementById('prompt-secondary-row'),
   labelSecondary: document.getElementById('prompt-label-secondary'),
   inputSecondary: document.getElementById('prompt-input-secondary'),
+  options: document.getElementById('prompt-options'),
   ok: document.getElementById('prompt-ok'),
   cancel: document.getElementById('prompt-cancel'),
   extra: document.getElementById('prompt-extra')
@@ -1702,12 +1703,14 @@ function promptDualModal({
   valueSecondary,
   typeMain,
   typeSecondary,
-  allowEmpty
+  allowEmpty,
+  optionsSecondary
 }) {
   if (!promptUi.modal || !promptUi.input || !promptUi.inputSecondary) return Promise.resolve(null);
   return new Promise((resolve) => {
     const prevType = promptUi.input.type;
     const prevSecondaryType = promptUi.inputSecondary.type;
+    let optionButtons = [];
     const onCancel = () => {
       cleanup();
       resolve(null);
@@ -1744,6 +1747,11 @@ function promptDualModal({
       if (promptUi.inputSecondary) {
         promptUi.inputSecondary.value = '';
         promptUi.inputSecondary.placeholder = '';
+        promptUi.inputSecondary.classList.remove('hidden');
+      }
+      if (promptUi.options) {
+        promptUi.options.classList.add('hidden');
+        promptUi.options.innerHTML = '';
       }
       if (promptUi.extra) {
         promptUi.extra.classList.add('hidden');
@@ -1774,6 +1782,28 @@ function promptDualModal({
     promptUi.inputSecondary.placeholder = placeholderSecondary || '';
     promptUi.inputSecondary.value = valueSecondary || '';
     promptUi.inputSecondary.type = typeSecondary || 'text';
+    if (promptUi.options && Array.isArray(optionsSecondary) && optionsSecondary.length) {
+      promptUi.options.classList.remove('hidden');
+      promptUi.options.innerHTML = '';
+      promptUi.inputSecondary.classList.add('hidden');
+      const initialValue = (valueSecondary || optionsSecondary[0]?.value || '').trim();
+      promptUi.inputSecondary.value = initialValue;
+      optionButtons = optionsSecondary.map((opt) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'prompt-option';
+        btn.textContent = opt.label;
+        if (String(opt.value) === String(initialValue)) {
+          btn.classList.add('active');
+        }
+        btn.addEventListener('click', () => {
+          promptUi.inputSecondary.value = opt.value;
+          optionButtons.forEach((b) => b.classList.toggle('active', b === btn));
+        });
+        promptUi.options.appendChild(btn);
+        return btn;
+      });
+    }
     promptUi.ok.addEventListener('click', onOk);
     promptUi.cancel.addEventListener('click', onCancel);
     promptUi.input.addEventListener('keydown', onKey);
@@ -2043,23 +2073,24 @@ function renderConsignInventory(items) {
         qty = Math.max(1, Number(qtyText || 1));
         if (Number.isNaN(qty) || qty <= 0) return;
       }
-        const priceText = await promptModal({
-          title: '\u5BC4\u552E\u4EF7\u683C',
-          text: `\u8BF7\u8F93\u5165\u5355\u4EF7: ${formatItemName(item)}`,
-          placeholder: '1000',
-          value: '1000'
-        });
-      if (!priceText) return;
-      const price = Math.max(1, Number(priceText || 0));
-      if (Number.isNaN(price) || price <= 0) return;
-      const currencyText = await promptModal({
-        title: '寄售币种',
-        text: '请输入币种: 金币/元宝',
-        placeholder: '金币/元宝',
-        value: '金币'
+      const priceAndCurrency = await promptDualModal({
+        title: '\u5BC4\u552E\u4EF7\u683C',
+        text: `\u8BF7\u8F93\u5165\u5355\u4EF7: ${formatItemName(item)}`,
+        labelMain: '\u91D1\u989D',
+        placeholderMain: '1000',
+        valueMain: '1000',
+        labelSecondary: '\u5E01\u79CD',
+        placeholderSecondary: '\u91D1\u5E01/\u5143\u5B9D',
+        valueSecondary: '\u91D1\u5E01',
+        optionsSecondary: [
+          { label: '\u91D1\u5E01', value: '\u91D1\u5E01' },
+          { label: '\u5143\u5B9D', value: '\u5143\u5B9D' }
+        ]
       });
-      if (currencyText === null) return;
-      const currency = normalizeCurrencyInput(currencyText);
+      if (!priceAndCurrency) return;
+      const price = Math.max(1, Number(priceAndCurrency.main || 0));
+      if (Number.isNaN(price) || price <= 0) return;
+      const currency = normalizeCurrencyInput(priceAndCurrency.secondary);
       if (!currency) {
         showToast('\u5E01\u79CD\u65E0\u6548');
         return;

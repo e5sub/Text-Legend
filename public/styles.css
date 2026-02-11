@@ -2348,6 +2348,32 @@ body.dark .chat-name-btn.sponsor-player-name:hover {
   display: none;
 }
 
+.prompt-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.prompt-options.hidden {
+  display: none;
+}
+
+.prompt-options .prompt-option {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.prompt-options .prompt-option.active {
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.18);
+}
+
 .prompt-label {
   font-size: 0.85rem;
   color: #6b4b2a;
