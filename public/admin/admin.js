@@ -1,4 +1,18 @@
-﻿const ADMIN_BASE = (() => {\n  if (window.__ADMIN_BASE__) return String(window.__ADMIN_BASE__);\n  const parts = window.location.pathname.split('/').filter(Boolean);\n  const first = parts[0] || 'admin';\n  return /;\n})();\nfunction adminPath(path) {\n  if (!path) return ADMIN_BASE;\n  if (path.startsWith('/admin')) {\n    return ${ADMIN_BASE};\n  }\n  if (path.startsWith('/')) return ${ADMIN_BASE}public/admin/admin.js;\n  return ${ADMIN_BASE}/public/admin/admin.js;\n}\n\nconst loginSection = document.getElementById('login');
+﻿const ADMIN_BASE = (() => {
+  if (window.__ADMIN_BASE__) return String(window.__ADMIN_BASE__);
+  const parts = window.location.pathname.split('/').filter(Boolean);
+  const first = parts[0] || 'admin';
+  return `/${first}`;
+})();
+function adminPath(path) {
+  if (!path) return ADMIN_BASE;
+  if (path.startsWith('/admin')) {
+    return `${ADMIN_BASE}${path.slice('/admin'.length)}`;
+  }
+  if (path.startsWith('/')) return `${ADMIN_BASE}${path}`;
+  return `${ADMIN_BASE}/${path}`;
+}
+const loginSection = document.getElementById('login');
 const dashboardSection = document.getElementById('dashboard');
 const loginMsg = document.getElementById('login-msg');
 const usersList = document.getElementById('users-list');
@@ -6291,5 +6305,6 @@ if (importSelectAll) {
     checkboxes.forEach(cb => cb.checked = e.target.checked);
   });
 }
+
 
 
