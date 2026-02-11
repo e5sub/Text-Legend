@@ -5044,8 +5044,11 @@ function getAutoFullBestRoom(player) {
       if (!canEnterRoomByCultivation(player, zoneId, roomId)) continue;
       const avg = computeRoomAvgExp(room);
       if (avg == null) continue;
-      if (!best || avg > best.avgExp) {
-        best = { zoneId, roomId, avgExp: avg };
+      const roomRealmId = getRoomRealmId(zoneId, roomId, player.realmId || 1);
+      const roomCount = listOnlinePlayers(roomRealmId)
+        .filter((p) => p.position.zone === zoneId && p.position.room === roomId).length;
+      if (!best || avg > best.avgExp || (avg === best.avgExp && roomCount < best.playerCount)) {
+        best = { zoneId, roomId, avgExp: avg, playerCount: roomCount };
       }
     }
   }
