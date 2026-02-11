@@ -5122,7 +5122,7 @@ function renderState(state) {
         }
       }
         if (afkUi.start) {
-          if (svipActive || (state.stats && state.stats.autoFullEnabled)) {
+          if (state.stats && state.stats.autoFullEnabled) {
             afkUi.start.classList.add('hidden');
           } else {
             afkUi.start.classList.remove('hidden');

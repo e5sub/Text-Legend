@@ -3708,7 +3708,8 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
           val stats = state?.stats
           val svipExpiresAt = stats?.svip_expires_at ?: 0L
           val svipActive = stats?.svip == true || (svipExpiresAt > System.currentTimeMillis())
-          if (!svipActive) {
+          val autoFullEnabled = stats?.autoFullEnabled == true
+          if (!autoFullEnabled) {
               Button(
                   modifier = Modifier.fillMaxWidth(),
                   onClick = {
@@ -3726,7 +3727,6 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
           val trialAvailable = stats?.autoFullTrialAvailable == true
           if (svipActive || trialAvailable) {
               Spacer(modifier = Modifier.height(8.dp))
-              val autoFullEnabled = stats?.autoFullEnabled == true
               Button(
                   modifier = Modifier.fillMaxWidth(),
                   onClick = {
