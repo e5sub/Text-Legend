@@ -5232,6 +5232,7 @@ function tryAutoFullAction(player, roomMobs) {
     }
     return null;
   }
+  const hasRoomMobs = Array.isArray(roomMobs) && roomMobs.length > 0;
   const bossMob = findBossInRoom(roomMobs, player);
   if (bossMob) {
     if (!player.flags.lastBossRoom) {
@@ -5243,46 +5244,24 @@ function tryAutoFullAction(player, roomMobs) {
     player.combat = { targetId: bossMob.id, targetType: 'mob', skillId: null };
     return 'engaged';
   }
-  const lastMoveAt = Number(player.flags.autoFullLastMoveAt || 0);
-  const canMove = now - lastMoveAt >= AUTO_FULL_MOVE_COOLDOWN_MS;
-  const canMoveForBoss = now - lastMoveAt >= AUTO_FULL_BOSS_MOVE_COOLDOWN_MS;
-  if (canMoveForBoss) {
-    const bossTarget = findAliveBossTarget(player);
-    if (bossTarget && movePlayerToRoom(player, bossTarget.zoneId, bossTarget.roomId)) {
-      player.flags.autoFullLastMoveAt = now;
-      return 'moved';
-    }
-  }
-  if (player.flags?.lastBossRoom?.zoneId && player.flags?.lastBossRoom?.roomId) {
-    const { zoneId, roomId } = player.flags.lastBossRoom;
-    if (WORLD[zoneId]?.rooms?.[roomId] && (player.position.zone !== zoneId || player.position.room !== roomId)) {
-      if (!canEnterRoomByCultivation(player, zoneId, roomId)) {
-        player.flags.lastBossRoom = null;
-      } else {
-      const roomRealmId = getRoomRealmId(zoneId, roomId, player.realmId || 1);
-      const bossRoomMobs = getAliveMobs(zoneId, roomId, roomRealmId);
-      const bossStillAlive = Boolean(findBossInRoom(bossRoomMobs, player));
-      if (bossStillAlive && canMoveForBoss && movePlayerToRoom(player, zoneId, roomId)) {
-        player.flags.autoFullLastMoveAt = now;
-        return 'moved';
-      }
-      }
-    }
-  }
-  const best = getAutoFullBestRoom(player);
-  if (best && canMove && (player.position.zone !== best.zoneId || player.position.room !== best.roomId)) {
-    if (movePlayerToRoom(player, best.zoneId, best.roomId)) {
-      player.flags.autoFullLastMoveAt = now;
-      return 'moved';
-    }
-  }
-  if (Array.isArray(roomMobs) && roomMobs.length > 0) {
+  // 固定当前房间：只有在当前房间没有怪物时才允许移动
+  if (hasRoomMobs) {
     const idle = roomMobs.filter((m) => !m.status?.aggroTarget);
     const pool = idle.length ? idle : roomMobs;
     const target = pool.length ? pool[randInt(0, pool.length - 1)] : null;
     if (target) {
       player.combat = { targetId: target.id, targetType: 'mob', skillId: null };
       return 'engaged';
+    }
+    return null;
+  }
+  const lastMoveAt = Number(player.flags.autoFullLastMoveAt || 0);
+  const canMove = now - lastMoveAt >= AUTO_FULL_MOVE_COOLDOWN_MS;
+  const best = getAutoFullBestRoom(player);
+  if (best && canMove && (player.position.zone !== best.zoneId || player.position.room !== best.roomId)) {
+    if (movePlayerToRoom(player, best.zoneId, best.roomId)) {
+      player.flags.autoFullLastMoveAt = now;
+      return 'moved';
     }
   }
   return null;
