@@ -1322,6 +1322,28 @@ body.log-collapsed .game-layout {
   content: '';
 }
 
+.status-grid-3 .status-row.lucky-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-grid-3 .status-row.lucky-row .bonus-line {
+  flex: 1;
+  min-width: 0;
+}
+
+.status-grid-3 .status-row.lucky-row .inline-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.status-grid-3 .status-row.lucky-row .inline-gold strong {
+  text-align: right;
+}
+
 .status-row strong {
   font-weight: 600;
 }

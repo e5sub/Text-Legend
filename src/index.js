@@ -4364,6 +4364,7 @@ const rechargeApi = {
     const amount = Math.max(0, Math.floor(Number(used.amount || 0)));
     if (!amount) return { ok: false, msg: '卡密金额异常。' };
     player.yuanbao = (player.yuanbao || 0) + amount;
+    await addSponsor(player.name, amount);
     player.forceStateRefresh = true;
     return { ok: true, msg: `充值成功，获得 ${amount} 元宝。` };
   }
