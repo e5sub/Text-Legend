@@ -5233,6 +5233,16 @@ function tryAutoFullAction(player, roomMobs) {
     return null;
   }
   const hasRoomMobs = Array.isArray(roomMobs) && roomMobs.length > 0;
+  const lastMoveAt = Number(player.flags.autoFullLastMoveAt || 0);
+  const canMove = now - lastMoveAt >= AUTO_FULL_MOVE_COOLDOWN_MS;
+  const canMoveForBoss = now - lastMoveAt >= AUTO_FULL_BOSS_MOVE_COOLDOWN_MS;
+  if (canMoveForBoss) {
+    const bossTarget = findAliveBossTarget(player);
+    if (bossTarget && movePlayerToRoom(player, bossTarget.zoneId, bossTarget.roomId)) {
+      player.flags.autoFullLastMoveAt = now;
+      return 'moved';
+    }
+  }
   const bossMob = findBossInRoom(roomMobs, player);
   if (bossMob) {
     if (!player.flags.lastBossRoom) {
@@ -5255,8 +5265,6 @@ function tryAutoFullAction(player, roomMobs) {
     }
     return null;
   }
-  const lastMoveAt = Number(player.flags.autoFullLastMoveAt || 0);
-  const canMove = now - lastMoveAt >= AUTO_FULL_MOVE_COOLDOWN_MS;
   const best = getAutoFullBestRoom(player);
   if (best && canMove && (player.position.zone !== best.zoneId || player.position.room !== best.roomId)) {
     if (movePlayerToRoom(player, best.zoneId, best.roomId)) {
