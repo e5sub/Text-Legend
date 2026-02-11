@@ -3670,7 +3670,9 @@ private fun hasSpecialEffects(effects: JsonObject?): Boolean {
           .filter { item ->
               val isEquip = !item.slot.isNullOrBlank() || item.type == "weapon" || item.type == "armor" || item.type == "accessory"
               val notShop = item.is_shop_item != true
-              isEquip && notShop && hasSpecialEffects(item.effects) && item.qty > 0
+              val rarityKey = normalizeRarityKey(item.rarity)
+              val rarityOk = rarityKey != "supreme" && rarityKey != "ultimate"
+              isEquip && notShop && rarityOk && hasSpecialEffects(item.effects) && item.qty > 0
           }
           .map { item ->
               val key = if (item.key.isNotBlank()) item.key else item.id

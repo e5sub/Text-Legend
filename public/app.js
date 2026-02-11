@@ -2616,7 +2616,10 @@ function updateEffectSelection(selected) {
   const inventoryWithEffect = (lastState?.items || []).filter(slot => {
     if (!slot) return false;
     if (!slot.effects) return false;
-    return Object.keys(slot.effects).length > 0;
+    if (Object.keys(slot.effects).length === 0) return false;
+    const rarityKey = normalizeRarityKey(slot.rarity);
+    if (rarityKey === 'supreme' || rarityKey === 'ultimate') return false;
+    return true;
   });
 
   if (inventoryWithEffect.length > 0) {

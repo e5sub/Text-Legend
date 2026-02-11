@@ -2458,6 +2458,10 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       // 解析副件装备
       const secondaryResolved = resolveInventoryItem(player, secondaryRaw);
       if (!secondaryResolved.slot || !secondaryResolved.item) return send('背包里没有该副件装备。');
+      const secondaryRarity = secondaryResolved.item.rarity || rarityByPrice(secondaryResolved.item);
+      if (['supreme', 'ultimate'].includes(secondaryRarity)) {
+        return send('副件不能使用至尊或终极装备。');
+      }
 
       // 检查副件是否有特效
       if (!secondaryResolved.slot.effects || Object.keys(secondaryResolved.slot.effects).length === 0) {
