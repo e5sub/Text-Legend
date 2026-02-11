@@ -478,6 +478,19 @@ body.theme-dark .block {
   white-space: pre-line;
 }
 
+.input-with-unit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 8px;
+}
+
+.input-with-unit .unit {
+  color: #9a7b5f;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
 .modal-body {
   max-height: 70vh;
   overflow-y: auto;

@@ -436,8 +436,14 @@
 
             <div style="border-top: 1px solid #ddd; padding-top: 20px;">
               <h3>元宝卡密管理</h3>
-              <input id="recharge-count" type="number" min="1" max="200" value="5">
-              <input id="recharge-amount" type="number" min="1" value="100">
+              <div class="input-with-unit">
+                <input id="recharge-count" type="number" min="1" max="200" value="5">
+                <span class="unit">张</span>
+              </div>
+              <div class="input-with-unit">
+                <input id="recharge-amount" type="number" min="1" value="100">
+                <span class="unit">元宝</span>
+              </div>
               <button id="recharge-create-btn">生成卡密</button>
               <button id="recharge-list-btn">查看卡密列表</button>
               <div class="row" style="margin-top: 8px;">
@@ -1267,6 +1273,6 @@
     </div>
   </div>
 
-  <script src="admin.js?v=6"></script>
+  <script src="admin.js?v=7"></script>
 </body>
 </html>
