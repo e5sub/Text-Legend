@@ -4952,6 +4952,7 @@ const AUTO_DAILY_LIMIT_MS = 4 * 60 * 60 * 1000;
 const AUTO_FULL_TRIAL_MS = 10 * 60 * 1000;
 const AUTO_FULL_MOVE_COOLDOWN_MS = 5000;
 const AUTO_FULL_BOSS_MOVE_COOLDOWN_MS = 1000;
+const AUTO_FULL_CROSS_BOSS_COOLDOWN_MS = 30000;
 const AUTO_FULL_ROOM_CACHE_TTL = 15000;
 const autoFullRoomCache = new Map();
 const AUTO_FULL_BOSS_LIST = Array.from(new Set(
@@ -5161,6 +5162,7 @@ function selectLeastPopulatedRoomAuto(zoneId, roomId, realmId) {
 function findAliveBossTarget(player) {
   if (!player) return null;
   const realmIds = Array.from(new Set([player.realmId || 1, CROSS_REALM_REALM_ID]));
+  const crossBossCooldownUntil = Number(player.flags?.autoFullCrossBossCooldownUntil || 0);
   let best = null;
   for (const realmId of realmIds) {
     const mobs = getAllAliveMobs(realmId);
@@ -5172,6 +5174,9 @@ function findAliveBossTarget(player) {
       const zoneId = mob.zoneId;
       const roomId = mob.roomId;
       if (!zoneId || !roomId) continue;
+      if (zoneId === CROSS_REALM_ZONE_ID && roomId === 'arena' && crossBossCooldownUntil > Date.now()) {
+        continue;
+      }
       if (zoneId === CROSS_RANK_ZONE_ID) continue;
       if (!WORLD[zoneId]?.rooms?.[roomId]) continue;
       if (!canEnterRoomByCultivation(player, zoneId, roomId)) continue;
@@ -8638,9 +8643,16 @@ async function processMobDeath(player, mob, online) {
   const hasParty = partyMembersForReward.length > 1;
   const isBoss = isBossMob(template);
   const isWorldBoss = Boolean(template.worldBoss);
+  const isCrossWorldBoss = template.id === 'cross_world_boss';
   const isSabakBoss = Boolean(template.sabakBoss);
   const isMolongBoss = template.id === 'molong_boss';
   const isSpecialBossMob = isWorldBoss || isSabakBoss || isMolongBoss || isSpecialBoss(template);
+  if (isCrossWorldBoss) {
+    const killer = playersByName(lastHitSnapshot || player?.name, roomRealmId) || player;
+    if (killer && killer.flags) {
+      killer.flags.autoFullCrossBossCooldownUntil = Date.now() + AUTO_FULL_CROSS_BOSS_COOLDOWN_MS;
+    }
+  }
   if (isWorldBoss) {
     const nextKills = incrementWorldBossKills(1, roomRealmId);
     void setWorldBossKillCount(nextKills, roomRealmId).catch((err) => {
