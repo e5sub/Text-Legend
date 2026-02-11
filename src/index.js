@@ -4950,7 +4950,7 @@ function isInvincible(target) {
 
 const AUTO_DAILY_LIMIT_MS = 4 * 60 * 60 * 1000;
 const AUTO_FULL_TRIAL_MS = 10 * 60 * 1000;
-const AUTO_FULL_MOVE_COOLDOWN_MS = 5000;
+const AUTO_FULL_MOVE_COOLDOWN_MS = 0;
 const AUTO_FULL_BOSS_MOVE_COOLDOWN_MS = 0;
 const AUTO_FULL_ROOM_CACHE_TTL = 15000;
 const autoFullRoomCache = new Map();
