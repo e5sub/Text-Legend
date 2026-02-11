@@ -5118,12 +5118,16 @@ function tryAutoFullAction(player, roomMobs) {
   if (player.flags?.lastBossRoom?.zoneId && player.flags?.lastBossRoom?.roomId) {
     const { zoneId, roomId } = player.flags.lastBossRoom;
     if (WORLD[zoneId]?.rooms?.[roomId] && (player.position.zone !== zoneId || player.position.room !== roomId)) {
+      if (!canEnterRoomByCultivation(player, zoneId, roomId)) {
+        player.flags.lastBossRoom = null;
+      } else {
       const roomRealmId = getRoomRealmId(zoneId, roomId, player.realmId || 1);
       const bossRoomMobs = getAliveMobs(zoneId, roomId, roomRealmId);
       const bossStillAlive = Boolean(findBossInRoom(bossRoomMobs));
       if (bossStillAlive && movePlayerToRoom(player, zoneId, roomId)) {
         player.flags.autoFullLastMoveAt = now;
         return 'moved';
+      }
       }
     }
   }
