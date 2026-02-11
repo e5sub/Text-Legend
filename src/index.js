@@ -5094,12 +5094,39 @@ function tryAutoFullAction(player, roomMobs) {
   }
   const bossMob = findBossInRoom(roomMobs);
   if (bossMob) {
+    if (!player.flags.lastBossRoom) {
+      player.flags.lastBossRoom = { zoneId: player.position.zone, roomId: player.position.room };
+    } else {
+      player.flags.lastBossRoom.zoneId = player.position.zone;
+      player.flags.lastBossRoom.roomId = player.position.room;
+    }
     player.combat = { targetId: bossMob.id, targetType: 'mob', skillId: null };
     return 'engaged';
+  }
+  if (Array.isArray(roomMobs) && roomMobs.length > 0) {
+    const idle = roomMobs.filter((m) => !m.status?.aggroTarget);
+    const pool = idle.length ? idle : roomMobs;
+    const target = pool.length ? pool[randInt(0, pool.length - 1)] : null;
+    if (target) {
+      player.combat = { targetId: target.id, targetType: 'mob', skillId: null };
+      return 'engaged';
+    }
   }
   const now = Date.now();
   const lastMoveAt = Number(player.flags.autoFullLastMoveAt || 0);
   if (now - lastMoveAt < AUTO_FULL_MOVE_COOLDOWN_MS) return null;
+  if (player.flags?.lastBossRoom?.zoneId && player.flags?.lastBossRoom?.roomId) {
+    const { zoneId, roomId } = player.flags.lastBossRoom;
+    if (WORLD[zoneId]?.rooms?.[roomId] && (player.position.zone !== zoneId || player.position.room !== roomId)) {
+      const roomRealmId = getRoomRealmId(zoneId, roomId, player.realmId || 1);
+      const bossRoomMobs = getAliveMobs(zoneId, roomId, roomRealmId);
+      const bossStillAlive = Boolean(findBossInRoom(bossRoomMobs));
+      if (bossStillAlive && movePlayerToRoom(player, zoneId, roomId)) {
+        player.flags.autoFullLastMoveAt = now;
+        return 'moved';
+      }
+    }
+  }
   const best = getAutoFullBestRoom(player);
   if (!best) return null;
   if (player.position.zone === best.zoneId && player.position.room === best.roomId) return null;

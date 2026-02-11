@@ -73,6 +73,7 @@ data class GameState(
     val bossRespawn: Long? = null,
     val server_time: Long? = null,
     val vip_self_claim_enabled: Boolean = true,
+    val svip_settings: SvipSettings? = null,
     val state_throttle_enabled: Boolean = false,
     val state_throttle_interval_sec: Int = 0,
     val state_throttle_override_server_allowed: Boolean = false,
@@ -178,6 +179,7 @@ data class StatsInfo(
     val exp: Int = 0,
     @SerialName("exp_next") val expNext: Int = 0,
     val gold: Int = 0,
+    val yuanbao: Int = 0,
     val atk: Int = 0,
     val def: Int = 0,
     val mag: Int = 0,
@@ -186,12 +188,28 @@ data class StatsInfo(
     val pk: Int = 0,
     val vip: Boolean = false,
     val vip_expires_at: Long? = null,
+    val svip: Boolean = false,
+    val svip_expires_at: Long? = null,
     val dodge: Int = 0,
     val cultivation_level: Int = -1,
     val cultivation_bonus: Int = 0,
     val autoSkillId: JsonElement? = null,
+    val autoFullEnabled: Boolean = false,
     val sabak_bonus: Boolean = false,
     val set_bonus: Boolean = false
+)
+
+@Serializable
+data class SvipSettings(
+    val prices: SvipPrices? = null
+)
+
+@Serializable
+data class SvipPrices(
+    val month: Int = 0,
+    val quarter: Int = 0,
+    val year: Int = 0,
+    val permanent: Int = 0
 )
 
 @Serializable

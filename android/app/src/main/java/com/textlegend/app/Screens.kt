@@ -551,7 +551,7 @@ private fun TopStatus(state: GameState?) {
         Row(modifier = Modifier.padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = player?.name ?: "未连接", style = MaterialTheme.typography.titleMedium)
-                Text(text = "${classLabel(player?.classId ?: "")} Lv${player?.level ?: 0} | 金币 ${stats?.gold ?: 0}")
+            Text(text = "${classLabel(player?.classId ?: "")} Lv${player?.level ?: 0} | 金币 ${stats?.gold ?: 0} | 元宝 ${stats?.yuanbao ?: 0}")
                 Spacer(modifier = Modifier.height(6.dp))
                 val hpProgress by animateFloatAsState(
                     targetValue = if (stats != null && stats.maxHp > 0) stats.hp.toFloat() / stats.maxHp else 0f,
@@ -622,6 +622,7 @@ private fun TopStatus(state: GameState?) {
                     }
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(text = vipStatusText(stats), style = MaterialTheme.typography.bodyMedium)
+                    Text(text = svipStatusText(stats), style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }
@@ -1308,6 +1309,13 @@ private fun vipStatusText(stats: StatsInfo?): String {
     return if (ts <= 0L) "VIP 永久" else "VIP 到期 ${formatTime(ts)}"
 }
 
+private fun svipStatusText(stats: StatsInfo?): String {
+    if (stats == null) return "SVIP 未知"
+    if (!stats.svip) return "SVIP 未激活"
+    val ts = stats.svip_expires_at ?: 0L
+    return if (ts <= 0L) "SVIP 永久" else "SVIP 到期 ${formatTime(ts)}"
+}
+
 private fun formatTime(ts: Long): String {
     val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
     return sdf.format(Date(ts))
@@ -1664,12 +1672,28 @@ private fun ActionsTab(
     if (state?.stats?.vip == false) {
         vip.add(ActionItem("VIP激活", "vip activate", R.drawable.ic_vip))
     }
-    val afk = listOf(
-        if (hasAutoSkill(state?.stats))
-            ActionItem("停止挂机", "autoskill off", R.drawable.ic_afk)
-        else
-            ActionItem("挂机", "afk", R.drawable.ic_afk)
-    )
+    if (state?.stats?.svip == false) {
+        val prices = state?.svip_settings?.prices
+        val monthPrice = prices?.month ?: 0
+        val quarterPrice = prices?.quarter ?: 0
+        val yearPrice = prices?.year ?: 0
+        val permanentPrice = prices?.permanent ?: 0
+        vip.add(ActionItem("SVIP月卡(${monthPrice}元宝)", "svip open month", R.drawable.ic_vip))
+        vip.add(ActionItem("SVIP季卡(${quarterPrice}元宝)", "svip open quarter", R.drawable.ic_vip))
+        vip.add(ActionItem("SVIP年卡(${yearPrice}元宝)", "svip open year", R.drawable.ic_vip))
+        vip.add(ActionItem("SVIP永久(${permanentPrice}元宝)", "svip open permanent", R.drawable.ic_vip))
+    }
+    val afk = buildList {
+        if (hasAutoSkill(state?.stats)) {
+            add(ActionItem("停止挂机", "autoskill off", R.drawable.ic_afk))
+        } else {
+            add(ActionItem("挂机", "afk", R.drawable.ic_afk))
+        }
+        if (state?.stats?.svip == true) {
+            val label = if (state.stats.autoFullEnabled) "关闭智能挂机" else "智能挂机"
+            add(ActionItem(label, if (state.stats.autoFullEnabled) "autoafk off" else "autoafk on", R.drawable.ic_afk))
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Text(text = "常用功能", style = MaterialTheme.typography.titleSmall)
@@ -1954,16 +1978,18 @@ private fun SettingsScreen(vm: GameViewModel, onDismiss: () -> Unit) {
                       StatBar("经验", stats.exp, stats.expNext, Color(0xFFFFB74D))
                       Spacer(modifier = Modifier.height(12.dp))
 
-                      val tiles = listOf(
-                          Triple("攻击", stats.atk.toString(), R.drawable.ic_battle),
-                          Triple("防御", stats.def.toString(), R.drawable.ic_status),
-                          Triple("魔法", stats.mag.toString(), R.drawable.ic_magic),
-                          Triple("道术", stats.spirit.toString(), R.drawable.ic_train),
-                          Triple("魔防", stats.mdef.toString(), R.drawable.ic_status),
-                          Triple("闪避", "${stats.dodge}%", R.drawable.ic_afk),
-                          Triple("PK", stats.pk.toString(), R.drawable.ic_castle),
-                          Triple("VIP", if (stats.vip) "是" else "否", R.drawable.ic_vip)
-                      )
+                        val tiles = listOf(
+                            Triple("攻击", stats.atk.toString(), R.drawable.ic_battle),
+                            Triple("防御", stats.def.toString(), R.drawable.ic_status),
+                            Triple("魔法", stats.mag.toString(), R.drawable.ic_magic),
+                            Triple("道术", stats.spirit.toString(), R.drawable.ic_train),
+                            Triple("魔防", stats.mdef.toString(), R.drawable.ic_status),
+                            Triple("闪避", "${stats.dodge}%", R.drawable.ic_afk),
+                            Triple("PK", stats.pk.toString(), R.drawable.ic_castle),
+                            Triple("VIP", if (stats.vip) "是" else "否", R.drawable.ic_vip),
+                            Triple("SVIP", if (stats.svip) "是" else "否", R.drawable.ic_vip),
+                            Triple("元宝", stats.yuanbao.toString(), R.drawable.ic_trade)
+                        )
                       tiles.chunked(2).forEach { row ->
                           Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                               row.forEach { (label, value, icon) ->
@@ -1975,9 +2001,11 @@ private fun SettingsScreen(vm: GameViewModel, onDismiss: () -> Unit) {
                                       "魔防" -> Color(0xFF7E57C2)
                                       "闪避" -> Color(0xFF26A69A)
                                       "PK" -> Color(0xFFEF5350)
-                                      "VIP" -> Color(0xFFF9A825)
-                                      else -> MaterialTheme.colorScheme.primary
-                                  }
+                                        "VIP" -> Color(0xFFF9A825)
+                                        "SVIP" -> Color(0xFFFB8C00)
+                                        "元宝" -> Color(0xFFFFB300)
+                                        else -> MaterialTheme.colorScheme.primary
+                                    }
                                   StatTile(
                                       label = label,
                                       value = value,
@@ -3478,17 +3506,28 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
               ) { Text("清空") }
           }
           Spacer(modifier = Modifier.height(8.dp))
-          Button(
-              modifier = Modifier.fillMaxWidth(),
-              onClick = {
-                  if (selected.isEmpty()) {
-                      vm.sendCmd("autoskill off")
-                  } else {
-                      vm.sendCmd("autoskill set ${selected.joinToString(",")}")
-                  }
-                  onDismiss()
-              }
-          ) { Text("开始挂机") }
+        Button(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = {
+                if (selected.isEmpty()) {
+                    vm.sendCmd("autoskill off")
+                } else {
+                    vm.sendCmd("autoskill set ${selected.joinToString(",")}")
+                }
+                onDismiss()
+            }
+        ) { Text("开始挂机") }
+        if (state?.stats?.svip == true) {
+            Spacer(modifier = Modifier.height(8.dp))
+            val autoFullEnabled = state.stats.autoFullEnabled
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    vm.sendCmd(if (autoFullEnabled) "autoafk off" else "autoafk on")
+                    onDismiss()
+                }
+            ) { Text(if (autoFullEnabled) "关闭智能挂机" else "智能挂机") }
+        }
       }
   }
 

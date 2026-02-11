@@ -326,6 +326,8 @@ const ui = {
   vip: document.getElementById('ui-vip'),
   bonusLine: document.getElementById('ui-bonus-line'),
   luckyLine: document.getElementById('ui-lucky-line'),
+  svipExpireRow: document.getElementById('ui-svip-expire-row'),
+  svipExpire: document.getElementById('ui-svip-expire'),
   online: document.getElementById('ui-online'),
   serverTime: document.getElementById('ui-server-time'),
   party: document.getElementById('ui-party'),
@@ -4941,6 +4943,18 @@ function renderState(state) {
         : '每日幸运玩家：无';
       ui.luckyLine.textContent = luckyText;
     }
+    if (ui.svipExpireRow && ui.svipExpire) {
+      if (state.stats && state.stats.svip) {
+        const expiresAt = Number(state.stats.svip_expires_at || 0);
+        const text = expiresAt > 0
+          ? `SVIP到期时间：${formatVipExpiry(expiresAt)}`
+          : 'SVIP到期时间：永久';
+        ui.svipExpire.textContent = text;
+        ui.svipExpireRow.classList.remove('hidden');
+      } else {
+        ui.svipExpireRow.classList.add('hidden');
+      }
+    }
     if (ui.online) {
       ui.online.textContent = state.online ? String(state.online.count || 0) : '0';
     }
@@ -5723,6 +5737,10 @@ function renderState(state) {
   actions.push({ id: 'rank', label: '\u73a9\u5bb6\u6392\u884c' });
   const afkLabel = state.stats && state.stats.autoSkillId ? '\u505c\u6b62\u6302\u673a' : '\u6302\u673a';
   actions.push({ id: 'afk', label: afkLabel });
+  if (state.stats && state.stats.svip) {
+    const smartLabel = state.stats.autoFullEnabled ? '\u505c\u6b62\u667a\u80fd\u6302\u673a' : '\u667a\u80fd\u6302\u673a';
+    actions.push({ id: 'autoafk', label: smartLabel });
+  }
   actions.push({ id: 'sponsor', label: '\u8d5e\u52a9\u4f5c\u8005', highlight: true });
   renderChips(ui.actions, actions, async (a) => {
     if (socket && isStateThrottleActive()) {
@@ -5782,6 +5800,11 @@ function renderState(state) {
         return;
       }
       showAfkModal(state.skills || [], state.stats ? state.stats.autoSkillId : null);
+      return;
+    }
+    if (a.id === 'autoafk') {
+      const enabled = Boolean(state.stats?.autoFullEnabled);
+      socket.emit('cmd', { text: `autoafk ${enabled ? 'off' : 'on'}` });
       return;
     }
     if (a.id === 'consign') {
@@ -7002,6 +7025,18 @@ if (ui.svipPlan) {
     if (!socket) return;
     const plan = ui.svipPlan.value;
     if (!plan) return;
+    const prices = svipSettings.prices || {};
+    const labelMap = {
+      month: `月卡(${prices.month ?? 0}元宝/30天)`,
+      quarter: `季卡(${prices.quarter ?? 0}元宝/90天)`,
+      year: `年卡(${prices.year ?? 0}元宝/365天)`,
+      permanent: `永久(${prices.permanent ?? 0}元宝)`
+    };
+    const label = labelMap[plan] || plan;
+    if (!window.confirm(`确认开通SVIP：${label}？`)) {
+      ui.svipPlan.value = '';
+      return;
+    }
     socket.emit('cmd', { text: `svip open ${plan}` });
     ui.svipPlan.value = '';
   });
