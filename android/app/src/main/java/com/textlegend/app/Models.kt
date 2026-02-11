@@ -195,6 +195,8 @@ data class StatsInfo(
     val cultivation_bonus: Int = 0,
     val autoSkillId: JsonElement? = null,
     val autoFullEnabled: Boolean = false,
+    val autoFullTrialAvailable: Boolean = false,
+    val autoFullTrialRemainingSec: Int? = null,
     val sabak_bonus: Boolean = false,
     val set_bonus: Boolean = false
 )

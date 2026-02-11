@@ -2921,6 +2921,14 @@ function formatVipExpiry(value) {
   return `${yyyy}/${mm}/${dd}`;
 }
 
+function formatCountdown(seconds) {
+  const total = Number(seconds || 0);
+  if (!Number.isFinite(total) || total <= 0) return '0:00';
+  const mins = Math.floor(total / 60);
+  const secs = Math.floor(total % 60);
+  return `${mins}:${String(secs).padStart(2, '0')}`;
+}
+
 function formatVipDisplay(stats) {
   if (!stats || !stats.vip) return '否';
   const expiresAt = Number(stats.vip_expires_at || 0);
@@ -4892,13 +4900,22 @@ function renderState(state) {
         updateSvipPlanOptions();
       }
       if (afkUi.autoFull) {
-        if (svipActive) {
+        const trialAvailable = Boolean(state.stats.autoFullTrialAvailable);
+        const trialRemaining = Number(state.stats.autoFullTrialRemainingSec || 0);
+        const canShowAutoFull = svipActive || trialAvailable;
+        if (canShowAutoFull) {
           if (state.stats && state.stats.autoSkillId) {
             afkUi.autoFull.classList.add('hidden');
           } else {
             afkUi.autoFull.classList.remove('hidden');
           }
-          afkUi.autoFull.textContent = state.stats.autoFullEnabled ? '关闭智能挂机' : '智能挂机';
+          const isEnabled = Boolean(state.stats.autoFullEnabled);
+          if (!svipActive && trialAvailable && !isEnabled) {
+            const remainText = trialRemaining > 0 ? ` ${formatCountdown(trialRemaining)}` : '';
+            afkUi.autoFull.textContent = `智能挂机(试用${remainText})`;
+          } else {
+            afkUi.autoFull.textContent = isEnabled ? '关闭智能挂机' : '智能挂机';
+          }
         } else {
           afkUi.autoFull.classList.add('hidden');
         }

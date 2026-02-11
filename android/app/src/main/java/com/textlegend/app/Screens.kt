@@ -1114,6 +1114,13 @@ private fun rarityRank(rarity: String?): Int = when (normalizeRarityKey(rarity))
     else -> 0
 }
 
+private fun formatCountdown(seconds: Int?): String {
+    val total = (seconds ?: 0).coerceAtLeast(0)
+    val mins = total / 60
+    val secs = total % 60
+    return "${mins}:${secs.toString().padStart(2, '0')}"
+}
+
   private fun rarityColor(rarity: String?): Color = when (normalizeRarityKey(rarity)) {
       "common" -> Color(0xFFB68E66)
       "uncommon" -> Color(0xFF5FCB7B)
@@ -1689,9 +1696,13 @@ private fun ActionsTab(
         } else {
             add(ActionItem("挂机", "afk", R.drawable.ic_afk))
         }
-        if (state?.stats?.svip == true) {
-            val label = if (state.stats.autoFullEnabled) "关闭智能挂机" else "智能挂机"
-            add(ActionItem(label, if (state.stats.autoFullEnabled) "autoafk off" else "autoafk on", R.drawable.ic_afk))
+        val svipActive = state?.stats?.svip == true
+        val trialAvailable = state?.stats?.autoFullTrialAvailable == true
+        if (svipActive || trialAvailable) {
+            val autoFullEnabled = state?.stats?.autoFullEnabled == true
+            val remain = formatCountdown(state?.stats?.autoFullTrialRemainingSec)
+            val label = if (!svipActive && trialAvailable && !autoFullEnabled) "智能挂机(试用 $remain)" else if (autoFullEnabled) "关闭智能挂机" else "智能挂机"
+            add(ActionItem(label, if (autoFullEnabled) "autoafk off" else "autoafk on", R.drawable.ic_afk))
         }
     }
 
@@ -3517,7 +3528,8 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
                 onDismiss()
             }
         ) { Text("开始挂机") }
-        if (state?.stats?.svip == true) {
+        val trialAvailable = state?.stats?.autoFullTrialAvailable == true
+        if (state?.stats?.svip == true || trialAvailable) {
             Spacer(modifier = Modifier.height(8.dp))
             val autoFullEnabled = state.stats.autoFullEnabled
             Button(
@@ -3526,7 +3538,10 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
                     vm.sendCmd(if (autoFullEnabled) "autoafk off" else "autoafk on")
                     onDismiss()
                 }
-            ) { Text(if (autoFullEnabled) "关闭智能挂机" else "智能挂机") }
+            ) {
+                val remain = formatCountdown(state.stats.autoFullTrialRemainingSec)
+                Text(if (!state.stats.svip && trialAvailable && !autoFullEnabled) "智能挂机(试用 $remain)" else if (autoFullEnabled) "关闭智能挂机" else "智能挂机")
+            }
         }
       }
   }

@@ -4912,6 +4912,7 @@ function isInvincible(target) {
 }
 
 const AUTO_DAILY_LIMIT_MS = 4 * 60 * 60 * 1000;
+const AUTO_FULL_TRIAL_MS = 10 * 60 * 1000;
 const AUTO_FULL_MOVE_COOLDOWN_MS = 5000;
 const AUTO_FULL_ROOM_CACHE_TTL = 15000;
 const autoFullRoomCache = new Map();
@@ -4922,6 +4923,22 @@ function getAutoDailyKey(now = Date.now()) {
   const mm = String(date.getMonth() + 1).padStart(2, '0');
   const dd = String(date.getDate()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd}`;
+}
+
+function getAutoFullTrialInfo(player, now = Date.now()) {
+  if (!player) return { available: false, remainingMs: 0 };
+  if (!player.flags) player.flags = {};
+  if (isSvipActive(player)) return { available: true, remainingMs: null };
+  const dayKey = getAutoDailyKey(now);
+  const trialDay = player.flags.autoFullTrialDay || null;
+  const expiresAt = Number(player.flags.autoFullTrialExpiresAt || 0);
+  if (trialDay !== dayKey) {
+    return { available: true, remainingMs: AUTO_FULL_TRIAL_MS };
+  }
+  if (expiresAt > now) {
+    return { available: true, remainingMs: Math.max(0, expiresAt - now) };
+  }
+  return { available: false, remainingMs: 0 };
 }
 
 function normalizeVipStatus(player) {
@@ -5111,13 +5128,27 @@ function movePlayerToRoom(player, zoneId, roomId) {
 function tryAutoFullAction(player, roomMobs) {
   if (!player?.flags?.autoFullEnabled) return null;
   if (!isSvipActive(player)) {
-    if (player.flags.autoFullEnabled) {
-      player.flags.autoFullEnabled = false;
-      if (typeof player.send === 'function') {
-        player.send('SVIP已到期，智能挂机已关闭。');
+    const trialInfo = getAutoFullTrialInfo(player);
+    if (!trialInfo.available) {
+      if (player.flags.autoFullEnabled) {
+        player.flags.autoFullEnabled = false;
+        player.forceStateRefresh = true;
+        if (typeof player.send === 'function') {
+          player.send('智能挂机体验已结束，今日不可再使用。');
+        }
       }
+      return null;
     }
-    return null;
+    const now = Date.now();
+    const expiresAt = Number(player.flags.autoFullTrialExpiresAt || 0);
+    if (expiresAt <= now) {
+      player.flags.autoFullEnabled = false;
+      player.forceStateRefresh = true;
+      if (typeof player.send === 'function') {
+        player.send('智能挂机体验已结束，今日不可再使用。');
+      }
+      return null;
+    }
   }
   const now = Date.now();
   const pausedUntil = Number(player.flags.autoFullPausedUntil || 0);
@@ -5973,6 +6004,7 @@ async function buildState(player) {
   // 获取锻造材料数量配置
   const refineMaterialCount = getRefineMaterialCount();
   const svipSettings = await getSvipSettingsCached();
+  const autoFullTrialInfo = getAutoFullTrialInfo(player);
 
   // 获取特效重置配置
   const effectResetSuccessRate = getEffectResetSuccessRate();
@@ -6026,6 +6058,10 @@ async function buildState(player) {
         : 0,
       autoSkillId: player.flags?.autoSkillId || null,
       autoFullEnabled: Boolean(player.flags?.autoFullEnabled),
+      autoFullTrialAvailable: Boolean(autoFullTrialInfo.available),
+      autoFullTrialRemainingSec: autoFullTrialInfo.remainingMs == null
+        ? null
+        : Math.max(0, Math.ceil(autoFullTrialInfo.remainingMs / 1000)),
       guild_bonus: guildBonus,
       set_bonus: Boolean(player.flags?.setBonusActive),
       exp_gold_bonus_pct: (() => {

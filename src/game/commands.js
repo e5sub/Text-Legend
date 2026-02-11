@@ -34,6 +34,31 @@ import { getRealmById } from '../db/realms.js';
 
 // 特效重置：生成随机特效（不包含elementAtk，因为元素攻击只能通过装备合成获得）
 const ALLOWED_EFFECTS = ['combo', 'fury', 'unbreakable', 'defense', 'dodge', 'poison', 'healblock'];
+const AUTO_FULL_TRIAL_MS = 10 * 60 * 1000;
+
+function getAutoFullTrialDayKey(now = Date.now()) {
+  const date = new Date(now);
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function getAutoFullTrialInfo(player, now = Date.now()) {
+  if (!player) return { available: false, remainingMs: 0 };
+  if (!player.flags) player.flags = {};
+  if (normalizeSvipStatus(player)) return { available: true, remainingMs: null };
+  const dayKey = getAutoFullTrialDayKey(now);
+  const trialDay = player.flags.autoFullTrialDay || null;
+  const expiresAt = Number(player.flags.autoFullTrialExpiresAt || 0);
+  if (trialDay !== dayKey) {
+    return { available: true, remainingMs: AUTO_FULL_TRIAL_MS };
+  }
+  if (expiresAt > now) {
+    return { available: true, remainingMs: Math.max(0, expiresAt - now) };
+  }
+  return { available: false, remainingMs: 0 };
+}
 
 const CULTIVATION_RANKS = [
   '筑基',
@@ -1883,11 +1908,23 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       case 'autoafk': {
         const sub = String(args || '').trim().toLowerCase();
         if (!sub) {
-          if (!normalizeSvipStatus(player)) {
-            send('SVIP未开通或已到期，无法使用智能挂机。');
-            return;
-          }
           if (!player.flags) player.flags = {};
+          if (!normalizeSvipStatus(player)) {
+            const now = Date.now();
+            const trialInfo = getAutoFullTrialInfo(player, now);
+            if (!trialInfo.available) {
+              send('今日智能挂机体验已结束。');
+              return;
+            }
+            const dayKey = getAutoFullTrialDayKey(now);
+            if (player.flags.autoFullTrialDay !== dayKey) {
+              player.flags.autoFullTrialDay = dayKey;
+              player.flags.autoFullTrialExpiresAt = now + AUTO_FULL_TRIAL_MS;
+            } else if (Number(player.flags.autoFullTrialExpiresAt || 0) <= now) {
+              send('今日智能挂机体验已结束。');
+              return;
+            }
+          }
           player.flags.autoFullEnabled = !player.flags.autoFullEnabled;
           if (player.flags.autoFullEnabled) {
             player.flags.autoSkillId = null;
@@ -1899,11 +1936,23 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           return;
         }
         if (['on', 'start', 'enable'].includes(sub)) {
-          if (!normalizeSvipStatus(player)) {
-            send('SVIP未开通或已到期，无法使用智能挂机。');
-            return;
-          }
           if (!player.flags) player.flags = {};
+          if (!normalizeSvipStatus(player)) {
+            const now = Date.now();
+            const trialInfo = getAutoFullTrialInfo(player, now);
+            if (!trialInfo.available) {
+              send('今日智能挂机体验已结束。');
+              return;
+            }
+            const dayKey = getAutoFullTrialDayKey(now);
+            if (player.flags.autoFullTrialDay !== dayKey) {
+              player.flags.autoFullTrialDay = dayKey;
+              player.flags.autoFullTrialExpiresAt = now + AUTO_FULL_TRIAL_MS;
+            } else if (Number(player.flags.autoFullTrialExpiresAt || 0) <= now) {
+              send('今日智能挂机体验已结束。');
+              return;
+            }
+          }
           player.flags.autoFullEnabled = true;
           player.flags.autoSkillId = null;
           player.flags.autoHpPct = null;
