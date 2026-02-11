@@ -7692,6 +7692,30 @@ if (document.getElementById('rank-modal')) {
       const bosses = Array.isArray(lastState?.auto_full_boss_list) ? lastState.auto_full_boss_list.slice() : [];
       const selected = Array.from(autoFullBossSelection).filter(Boolean);
       const useAll = selected.length === 0 || selected.length === bosses.length;
+      let skillIds = Array.from(afkUi.selected || []).filter(Boolean);
+      if (!skillIds.length) {
+        try {
+          const raw = localStorage.getItem(AUTOAFK_SKILL_STORAGE_KEY);
+          const stored = raw ? JSON.parse(raw) : [];
+          if (Array.isArray(stored)) {
+            skillIds = stored.filter(Boolean);
+          }
+        } catch {
+          // ignore storage errors
+        }
+      }
+      if (!skillIds.length) {
+        const allSkills = Array.isArray(lastState?.skills) ? lastState.skills.map((s) => s.id).filter(Boolean) : [];
+        skillIds = allSkills;
+      }
+      if (skillIds.length) {
+        try {
+          localStorage.setItem(AUTOAFK_SKILL_STORAGE_KEY, JSON.stringify(skillIds));
+        } catch {
+          // ignore storage errors
+        }
+        socket.emit('cmd', { text: `autoskill set ${skillIds.join(',')}` });
+      }
       try {
         localStorage.setItem(AUTOAFK_BOSS_STORAGE_KEY, JSON.stringify(selected));
       } catch {

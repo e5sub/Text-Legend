@@ -416,7 +416,7 @@ export function getAllAliveMobs(realmId = 1) {
     for (const mob of mobs) {
       const tpl = MOB_TEMPLATES[mob.templateId];
       if (mob.summoned || mob.status?.summoned || tpl?.summoned) continue;
-      if (mob.hp > 0 && mob.hp < mob.max_hp) {
+      if (mob.hp > 0) {
         aliveMobs.push({
           realmId: keyRealmId,
           zoneId,

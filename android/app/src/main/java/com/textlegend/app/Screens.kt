@@ -3719,7 +3719,16 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {
-                    vm.sendCmd(if (autoFullEnabled) "autoafk off" else "autoafk on")
+                    if (autoFullEnabled) {
+                        vm.sendCmd("autoafk off")
+                    } else {
+                        val ids = if (selected.isEmpty()) skills.map { it.id } else selected.toList()
+                        if (ids.isNotEmpty()) {
+                            vm.sendCmd("autoskill set ${ids.joinToString(",")}")
+                            prefs.setAutoAfkSkillSelection(ids.joinToString(","))
+                        }
+                        vm.sendCmd("autoafk on")
+                    }
                     onDismiss()
                 }
             ) {
