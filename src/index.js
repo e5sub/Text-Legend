@@ -5160,24 +5160,26 @@ function selectLeastPopulatedRoomAuto(zoneId, roomId, realmId) {
 
 function findAliveBossTarget(player) {
   if (!player) return null;
-  const realmId = player.realmId || 1;
-  const mobs = getAllAliveMobs(realmId);
+  const realmIds = Array.from(new Set([player.realmId || 1, CROSS_REALM_REALM_ID]));
   let best = null;
-  for (const mob of mobs) {
-    if (!mob || mob.hp <= 0) continue;
-    const tpl = MOB_TEMPLATES[mob.templateId];
-    if (!tpl || !isBossMob(tpl)) continue;
-    if (!isAutoFullBossAllowed(player, tpl)) continue;
-    const zoneId = mob.zoneId;
-    const roomId = mob.roomId;
-    if (!zoneId || !roomId) continue;
-    if (CROSS_REALM_ZONES.has(zoneId)) continue;
-    if (!WORLD[zoneId]?.rooms?.[roomId]) continue;
-    if (!canEnterRoomByCultivation(player, zoneId, roomId)) continue;
-    if (player.position.zone === zoneId && player.position.room === roomId) continue;
-    const exp = Number(tpl.exp || 0);
-    if (!best || exp > best.exp) {
-      best = { zoneId, roomId, exp };
+  for (const realmId of realmIds) {
+    const mobs = getAllAliveMobs(realmId);
+    for (const mob of mobs) {
+      if (!mob || mob.hp <= 0) continue;
+      const tpl = MOB_TEMPLATES[mob.templateId];
+      if (!tpl || !isBossMob(tpl)) continue;
+      if (!isAutoFullBossAllowed(player, tpl)) continue;
+      const zoneId = mob.zoneId;
+      const roomId = mob.roomId;
+      if (!zoneId || !roomId) continue;
+      if (zoneId === CROSS_RANK_ZONE_ID) continue;
+      if (!WORLD[zoneId]?.rooms?.[roomId]) continue;
+      if (!canEnterRoomByCultivation(player, zoneId, roomId)) continue;
+      if (player.position.zone === zoneId && player.position.room === roomId) continue;
+      const exp = Number(tpl.exp || 0);
+      if (!best || exp > best.exp) {
+        best = { zoneId, roomId, exp };
+      }
     }
   }
   return best;
