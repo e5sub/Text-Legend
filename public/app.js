@@ -316,6 +316,8 @@ const ui = {
   serverTime: document.getElementById('ui-server-time'),
   party: document.getElementById('ui-party'),
   gold: document.getElementById('ui-gold'),
+  yuanbao: document.getElementById('ui-yuanbao'),
+  recharge: document.getElementById('ui-recharge'),
   cultivation: document.getElementById('ui-cultivation'),
   cultivationUpgrade: document.getElementById('ui-cultivation-upgrade'),
   hpValue: document.getElementById('ui-hp'),
@@ -411,8 +413,10 @@ const tradeUi = {
   itemSelect: document.getElementById('trade-item'),
   qtyInput: document.getElementById('trade-qty'),
   goldInput: document.getElementById('trade-gold'),
+  yuanbaoInput: document.getElementById('trade-yuanbao'),
   addItemBtn: document.getElementById('trade-add-item'),
   addGoldBtn: document.getElementById('trade-add-gold'),
+  addYuanbaoBtn: document.getElementById('trade-add-yuanbao'),
   lockBtn: document.getElementById('trade-lock'),
   confirmBtn: document.getElementById('trade-confirm'),
   cancelBtn: document.getElementById('trade-cancel'),
@@ -422,6 +426,8 @@ const tradeUi = {
   partnerItems: document.getElementById('trade-partner-items'),
   myGold: document.getElementById('trade-my-gold'),
   partnerGold: document.getElementById('trade-partner-gold'),
+  myYuanbao: document.getElementById('trade-my-yuanbao'),
+  partnerYuanbao: document.getElementById('trade-partner-yuanbao'),
   partnerTitle: document.getElementById('trade-partner-title'),
   panel: document.getElementById('trade-panel'),
   modal: document.getElementById('trade-modal')
@@ -667,8 +673,10 @@ let consignMarketFilter = 'all';
 let tradeData = {
   myItems: [],
   myGold: 0,
+  myYuanbao: 0,
   partnerItems: [],
   partnerGold: 0,
+  partnerYuanbao: 0,
   partnerName: ''
 };
 let guildMembers = [];
@@ -1477,6 +1485,8 @@ function updateTradeDisplay() {
   // 更新金币
   if (tradeUi.myGold) tradeUi.myGold.textContent = `金币: ${tradeData.myGold}`;
   if (tradeUi.partnerGold) tradeUi.partnerGold.textContent = `金币: ${tradeData.partnerGold}`;
+  if (tradeUi.myYuanbao) tradeUi.myYuanbao.textContent = `元宝: ${tradeData.myYuanbao || 0}`;
+  if (tradeUi.partnerYuanbao) tradeUi.partnerYuanbao.textContent = `元宝: ${tradeData.partnerYuanbao || 0}`;
 }
 
 function updateTradePartnerStatus(text) {
@@ -1507,8 +1517,10 @@ function updateTradePartnerStatus(text) {
     tradeData = {
       myItems: [],
       myGold: 0,
+      myYuanbao: 0,
       partnerItems: [],
       partnerGold: 0,
+      partnerYuanbao: 0,
       partnerName: ''
     };
     updateTradeDisplay();
@@ -1518,8 +1530,10 @@ function updateTradePartnerStatus(text) {
     tradeData = {
       myItems: [],
       myGold: 0,
+      myYuanbao: 0,
       partnerItems: [],
       partnerGold: 0,
+      partnerYuanbao: 0,
       partnerName: ''
     };
     updateTradeDisplay();
@@ -1552,6 +1566,12 @@ function parseTradeItems(text) {
     updateTradeDisplay();
   }
 
+  const myYuanbaoMatch = text.match(/^你放入元宝: (\d+)/);
+  if (myYuanbaoMatch) {
+    tradeData.myYuanbao = parseInt(myYuanbaoMatch[1], 10);
+    updateTradeDisplay();
+  }
+
   // 解析对方放入的物品
   const partnerMatch = text.match(/^(.+?) 放入: (.+) x(\d+)$/);
   if (partnerMatch) {
@@ -1574,6 +1594,14 @@ function parseTradeItems(text) {
     const playerName = partnerGoldMatch[1];
     tradeData.partnerName = playerName;
     tradeData.partnerGold = parseInt(partnerGoldMatch[2], 10);
+    updateTradeDisplay();
+  }
+
+  const partnerYuanbaoMatch = text.match(/^(.+?) 放入元宝: (\d+)/);
+  if (partnerYuanbaoMatch) {
+    const playerName = partnerYuanbaoMatch[1];
+    tradeData.partnerName = playerName;
+    tradeData.partnerYuanbao = parseInt(partnerYuanbaoMatch[2], 10);
     updateTradeDisplay();
   }
 }
@@ -1869,6 +1897,17 @@ function paginateItems(items, page) {
   return { totalPages, page: safePage, slice: items.slice(start, start + CONSIGN_PAGE_SIZE) };
 }
 
+function getCurrencyLabel(currency) {
+  return String(currency || '').toLowerCase() === 'yuanbao' ? '元宝' : '金币';
+}
+
+function normalizeCurrencyInput(value) {
+  const raw = String(value || '').trim().toLowerCase();
+  if (!raw || raw === '金币' || raw === '金' || raw === 'gold' || raw === 'g') return 'gold';
+  if (raw === '元宝' || raw === 'yb' || raw === 'yuanbao') return 'yuanbao';
+  return null;
+}
+
 function renderConsignMarket(items) {
   if (!consignUi.marketList) return;
   consignUi.marketList.innerHTML = '';
@@ -1885,7 +1924,8 @@ function renderConsignMarket(items) {
     const btn = document.createElement('div');
     btn.className = 'consign-item';
     applyRarityClass(btn, entry.item);
-      btn.innerHTML = `${formatItemName(entry.item)} x${entry.qty} (${entry.price}\u91D1)<small>${entry.seller}</small>`;
+      const currencyLabel = getCurrencyLabel(entry.currency);
+      btn.innerHTML = `${formatItemName(entry.item)} x${entry.qty} (${entry.price}${currencyLabel})<small>${entry.seller}</small>`;
     const tooltip = formatItemTooltip(entry.item);
     if (tooltip) {
       btn.addEventListener('mouseenter', (evt) => showItemTooltip(tooltip, evt));
@@ -1908,7 +1948,7 @@ function renderConsignMarket(items) {
       }
       const confirmed = await confirmModal({
         title: '\u786E\u8BA4\u8D2D\u4E70',
-        text: `\u786E\u8BA4\u8D2D\u4E70 ${formatItemName(entry.item)} x${qty}\uFF1F\n\u4EF7\u683C: ${entry.price * qty}\u91D1`
+        text: `\u786E\u8BA4\u8D2D\u4E70 ${formatItemName(entry.item)} x${qty}\uFF1F\n\u4EF7\u683C: ${entry.price * qty}${currencyLabel}`
       });
       if (!confirmed) return;
       socket.emit('cmd', { text: `consign buy ${entry.id} ${qty}` });
@@ -1940,7 +1980,8 @@ function renderConsignMine(items) {
     const btn = document.createElement('div');
     btn.className = 'consign-item';
     applyRarityClass(btn, entry.item);
-      btn.innerHTML = `${formatItemName(entry.item)} x${entry.qty} (${entry.price}\u91D1)<small>\u7F16\u53F7 ${entry.id}</small>`;
+      const currencyLabel = getCurrencyLabel(entry.currency);
+      btn.innerHTML = `${formatItemName(entry.item)} x${entry.qty} (${entry.price}${currencyLabel})<small>\u7F16\u53F7 ${entry.id}</small>`;
     const tooltip = formatItemTooltip(entry.item);
     if (tooltip) {
       btn.addEventListener('mouseenter', (evt) => showItemTooltip(tooltip, evt));
@@ -2011,8 +2052,21 @@ function renderConsignInventory(items) {
       if (!priceText) return;
       const price = Math.max(1, Number(priceText || 0));
       if (Number.isNaN(price) || price <= 0) return;
+      const currencyText = await promptModal({
+        title: '\u5BC4\u552E\u5E01\u79CD',
+        text: '\u8BF7\u8F93\u5165\u5E01\u79CD: \u91D1\u5E01/\u5143\u5B9D',
+        placeholder: '\u91D1\u5E01',
+        value: '\u91D1\u5E01',
+        allowEmpty: true
+      });
+      if (currencyText === null) return;
+      const currency = normalizeCurrencyInput(currencyText);
+      if (!currency) {
+        showToast('\u5E01\u79CD\u65E0\u6548');
+        return;
+      }
         const key = item.key || item.id;
-        socket.emit('cmd', { text: `consign sell ${key} ${qty} ${price}` });
+        socket.emit('cmd', { text: `consign sell ${key} ${qty} ${price} ${currency}` });
       socket.emit('cmd', { text: 'consign my' });
       socket.emit('cmd', { text: 'consign list' });
     });
@@ -2043,14 +2097,15 @@ function renderConsignHistory(items) {
     applyRarityClass(div, entry.item);
     const date = new Date(entry.soldAt);
     const dateStr = `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+    const currencyLabel = getCurrencyLabel(entry.currency);
     div.innerHTML = `
       <div class="consign-history-item-header">
         <span class="consign-history-item-item">${formatItemName(entry.item)} x${entry.qty}</span>
-        <span>${entry.total}\u91D1</span>
+        <span>${entry.total}${currencyLabel}</span>
       </div>
       <div class="consignment-history-meta">
         <span>\u4E70\u5BB6: ${entry.buyer}</span>
-        <span>\u5355\u4EF7: ${entry.price}\u91D1</span>
+        <span>\u5355\u4EF7: ${entry.price}${currencyLabel}</span>
         <span>${dateStr}</span>
       </div>
     `;
@@ -3147,6 +3202,9 @@ function parseStats(line) {
   if (text.startsWith('金币:')) {
     ui.gold.textContent = text.replace('金币:', '').trim();
   }
+  if (text.startsWith('元宝:')) {
+    if (ui.yuanbao) ui.yuanbao.textContent = text.replace('元宝:', '').trim();
+  }
   if (text.startsWith('行会:')) {
     ui.guild.textContent = text.replace('行会:', '').trim();
   }
@@ -3311,7 +3369,7 @@ function renderBagModal() {
       `${lastState.player?.name || ''} Lv${lastState.player?.level || 0}`,
       `生命: ${stats.hp || 0}/${stats.max_hp || 0}  魔法: ${stats.mp || 0}/${stats.max_mp || 0}`,
       `攻击: ${stats.atk || 0}  防御: ${stats.def || 0}  魔法: ${stats.mag || 0}`,
-      `道术: ${stats.spirit || 0}  魔御: ${stats.mdef || 0}  金币: ${stats.gold || 0}`,
+      `道术: ${stats.spirit || 0}  魔御: ${stats.mdef || 0}  金币: ${stats.gold || 0}  元宝: ${stats.yuanbao || 0}`,
       `PK值: ${stats.pk || 0}  VIP: ${formatVipDisplay(stats)}  行会加成: ${stats.guild_bonus ? '已生效' : '无'}  套装加成: ${stats.set_bonus ? '已激活' : '无'}`
     ];
     if (statsUi.summary) statsUi.summary.textContent = summaryLines.join('\n');
@@ -4759,6 +4817,7 @@ function renderState(state) {
     }
 
     ui.gold.textContent = state.stats.gold;
+    if (ui.yuanbao) ui.yuanbao.textContent = state.stats.yuanbao ?? 0;
     if (ui.cultivation) {
       const levelValue = state.stats?.cultivation_level ?? state.player?.cultivation_level ?? -1;
       const info = getCultivationInfo(levelValue);
@@ -4882,6 +4941,8 @@ function renderState(state) {
       // 更新金币
       if (tradeUi.myGold) tradeUi.myGold.textContent = `金币: ${state.trade.myGold}`;
       if (tradeUi.partnerGold) tradeUi.partnerGold.textContent = `金币: ${state.trade.partnerGold}`;
+      if (tradeUi.myYuanbao) tradeUi.myYuanbao.textContent = `元宝: ${state.trade.myYuanbao || 0}`;
+      if (tradeUi.partnerYuanbao) tradeUi.partnerYuanbao.textContent = `元宝: ${state.trade.partnerYuanbao || 0}`;
 
       // 更新锁定/确认状态
       if (tradeUi.status) {
@@ -6210,6 +6271,7 @@ function enterGame(name) {
   ui.pk.textContent = '-';
   ui.vip.textContent = '-';
   ui.gold.textContent = '0';
+  if (ui.yuanbao) ui.yuanbao.textContent = '0';
   if (ui.cultivation) ui.cultivation.textContent = '-';
   if (ui.cultivationUpgrade) ui.cultivationUpgrade.classList.add('hidden');
   setBar(ui.hp, 0, 1);
@@ -6777,6 +6839,15 @@ if (tradeUi.addGoldBtn) {
     socket.emit('cmd', { text: `trade add gold ${amount}` });
   });
 }
+if (tradeUi.addYuanbaoBtn) {
+  tradeUi.addYuanbaoBtn.addEventListener('click', () => {
+    if (!socket) return;
+    const ybValue = tradeUi.yuanbaoInput ? tradeUi.yuanbaoInput.value : '0';
+    const amount = Number(ybValue || 0);
+    if (!amount || amount <= 0) return;
+    socket.emit('cmd', { text: `trade add yuanbao ${amount}` });
+  });
+}
 if (tradeUi.lockBtn) {
   tradeUi.lockBtn.addEventListener('click', () => {
     if (!socket) return;
@@ -6835,6 +6906,18 @@ if (ui.cultivationUpgrade) {
   ui.cultivationUpgrade.addEventListener('click', () => {
     if (!socket) return;
     socket.emit('cmd', { text: '修真' });
+  });
+}
+if (ui.recharge) {
+  ui.recharge.addEventListener('click', async () => {
+    if (!socket) return;
+    const code = await promptModal({
+      title: '元宝充值',
+      text: '请输入卡密',
+      placeholder: '卡密'
+    });
+    if (!code) return;
+    socket.emit('cmd', { text: `recharge ${code}` });
   });
 }
 if (mailUi.refresh) {

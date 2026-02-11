@@ -128,6 +128,7 @@ export function newCharacter(name, classId) {
     level,
     exp: 0,
     gold: 100,
+    yuanbao: 0,
     hp: maxHp,
     mp: maxMp,
     max_hp: maxHp,

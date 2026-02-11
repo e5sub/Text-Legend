@@ -5,6 +5,9 @@ const usersList = document.getElementById('users-list');
 const vipCodesResult = document.getElementById('vip-codes-result');
 const vipCodesList = document.getElementById('vip-codes-list');
 const vipCodesTableContainer = document.getElementById('vip-codes-table-container');
+const rechargeCodesResult = document.getElementById('recharge-codes-result');
+const rechargeCodesList = document.getElementById('recharge-codes-list');
+const rechargeCodesTableContainer = document.getElementById('recharge-codes-table-container');
 const vipSelfClaimStatus = document.getElementById('vip-self-claim-status');
 const vipSelfClaimMsg = document.getElementById('vip-self-claim-msg');
 const vipSelfClaimToggle = document.getElementById('vip-self-claim-toggle');
@@ -2048,6 +2051,82 @@ async function listVipCodes() {
     });
   } catch (err) {
     vipCodesResult.textContent = err.message;
+  }
+}
+
+async function createRechargeCodes() {
+  if (!rechargeCodesResult || !rechargeCodesTableContainer) return;
+  rechargeCodesResult.textContent = '';
+  rechargeCodesTableContainer.style.display = 'none';
+  try {
+    const count = Number(document.getElementById('recharge-count').value || 1);
+    const amount = Number(document.getElementById('recharge-amount').value || 0);
+    const data = await api('/admin/recharge/create', 'POST', { count, amount });
+    rechargeCodesResult.textContent = `成功生成 ${data.codes.length} 个卡密 (每个 ${data.amount} 元宝):\n\n` + data.codes.join('\n');
+  } catch (err) {
+    rechargeCodesResult.textContent = err.message;
+  }
+}
+
+async function listRechargeCodes() {
+  if (!rechargeCodesResult || !rechargeCodesList || !rechargeCodesTableContainer) return;
+  rechargeCodesResult.textContent = '';
+  rechargeCodesList.innerHTML = '';
+  rechargeCodesTableContainer.style.display = 'none';
+
+  try {
+    const data = await api('/admin/recharge/list', 'GET');
+    if (!data.codes || data.codes.length === 0) {
+      rechargeCodesResult.textContent = '暂无卡密';
+      return;
+    }
+
+    rechargeCodesTableContainer.style.display = 'block';
+    data.codes.forEach((c) => {
+      const tr = document.createElement('tr');
+
+      const tdCode = document.createElement('td');
+      tdCode.textContent = c.code;
+      tdCode.style.fontFamily = 'monospace';
+      tr.appendChild(tdCode);
+
+      const tdAmount = document.createElement('td');
+      tdAmount.textContent = c.amount || 0;
+      tr.appendChild(tdAmount);
+
+      const tdStatus = document.createElement('td');
+      const statusBadge = document.createElement('span');
+      statusBadge.className = c.used_by_user_id ? 'badge badge-no' : 'badge badge-yes';
+      statusBadge.textContent = c.used_by_user_id ? '已使用' : '未使用';
+      tdStatus.appendChild(statusBadge);
+      tr.appendChild(tdStatus);
+
+      const tdUser = document.createElement('td');
+      tdUser.textContent = c.used_by_user_id || '-';
+      tr.appendChild(tdUser);
+
+      const tdChar = document.createElement('td');
+      tdChar.textContent = c.used_by_char_name || '-';
+      tr.appendChild(tdChar);
+
+      const tdTime = document.createElement('td');
+      if (c.used_at) {
+        tdTime.textContent = new Date(c.used_at).toLocaleString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      } else {
+        tdTime.textContent = '-';
+      }
+      tr.appendChild(tdTime);
+
+      rechargeCodesList.appendChild(tr);
+    });
+  } catch (err) {
+    rechargeCodesResult.textContent = err.message;
   }
 }
 
@@ -5357,6 +5436,8 @@ if (document.getElementById('wb-kill-reset-btn')) {
 }
 document.getElementById('vip-create-btn').addEventListener('click', createVipCodes);
 document.getElementById('vip-list-btn').addEventListener('click', listVipCodes);
+document.getElementById('recharge-create-btn').addEventListener('click', createRechargeCodes);
+document.getElementById('recharge-list-btn').addEventListener('click', listRechargeCodes);
 if (vipSelfClaimToggle) {
   vipSelfClaimToggle.addEventListener('change', () => toggleVipSelfClaim(vipSelfClaimToggle.checked));
 }

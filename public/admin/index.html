@@ -428,6 +428,31 @@
                 </table>
               </div>
             </div>
+
+            <div style="border-top: 1px solid #ddd; padding-top: 20px;">
+              <h3>元宝卡密管理</h3>
+              <input id="recharge-count" type="number" min="1" max="200" value="5">
+              <input id="recharge-amount" type="number" min="1" value="100">
+              <button id="recharge-create-btn">生成卡密</button>
+              <button id="recharge-list-btn">查看卡密列表</button>
+              <div id="recharge-codes-result" class="list"></div>
+
+              <div class="table-container" id="recharge-codes-table-container" style="display: none;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>卡密</th>
+                      <th>元宝</th>
+                      <th>状态</th>
+                      <th>使用者ID</th>
+                      <th>使用角色</th>
+                      <th>使用时间</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recharge-codes-list"></tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
 

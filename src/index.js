@@ -17,6 +17,7 @@ import { addGuildMember, createGuild, getGuildByName, getGuildByNameInRealm, get
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
 import { sendMail, listMail, listSentMail, markMailRead, markMailClaimed, deleteMail } from './db/mail.js';
 import { createVipCodes, listVipCodes, useVipCode } from './db/vip.js';
+import { createRechargeCards, listRechargeCards, useRechargeCard } from './db/recharge.js';
 import { getSetting, setSetting, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb, getEquipSkillDropChance as getEquipSkillDropChanceDb, setEquipSkillDropChance as setEquipSkillDropChanceDb, getCmdRateLimits, setCmdRateLimits, getCmdCooldowns, setCmdCooldowns } from './db/settings.js';
 import { listRealms, getRealmById, updateRealmName, createRealm } from './db/realms.js';
 import {
@@ -97,7 +98,9 @@ import {
   validateDurability,
   validateMaxDurability,
   validatePlayerHasItem,
-  validatePlayerHasGold
+  validatePlayerHasGold,
+  validateYuanbao,
+  validatePlayerHasYuanbao
 } from './game/validator.js';
 import {
   DEFAULT_SKILLS,
@@ -797,6 +800,26 @@ app.get('/admin/vip/list', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
   const codes = await listVipCodes();
+  res.json({ ok: true, codes });
+});
+
+app.post('/admin/recharge/create', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const { count, amount } = req.body || {};
+  const safeCount = Math.min(Number(count || 1), 200);
+  const value = Math.floor(Number(amount || 0));
+  if (!Number.isFinite(value) || value <= 0) {
+    return res.status(400).json({ error: '无效的元宝数量' });
+  }
+  const codes = await createRechargeCards(safeCount, value, admin.user.id);
+  res.json({ ok: true, codes, amount: value });
+});
+
+app.get('/admin/recharge/list', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const codes = await listRechargeCards();
   res.json({ ok: true, codes });
 });
 
@@ -3817,7 +3840,7 @@ function playersByName(name, realmId = null) {
 
 function ensureOffer(trade, playerName) {
   if (!trade.offers[playerName]) {
-    trade.offers[playerName] = { gold: 0, items: [] };
+    trade.offers[playerName] = { gold: 0, yuanbao: 0, items: [] };
   }
   return trade.offers[playerName];
 }
@@ -3825,6 +3848,7 @@ function ensureOffer(trade, playerName) {
 function offerText(offer) {
   const parts = [];
   if (offer.gold) parts.push(`金币 ${offer.gold}`);
+  if (offer.yuanbao) parts.push(`元宝 ${offer.yuanbao}`);
   offer.items.forEach((i) => {
     const name = formatItemLabel(i.id, i.effects);
     parts.push(`${name} x${i.qty}`);
@@ -3849,6 +3873,14 @@ function normalizeEffects(effects) {
     normalized.elementAtk = Math.max(1, Math.floor(Number(effects.elementAtk)));
   }
   return Object.keys(normalized).length ? normalized : null;
+}
+
+function normalizeCurrency(value) {
+  const raw = String(value || '').trim().toLowerCase();
+  if (!raw) return 'gold';
+  if (raw === 'gold' || raw === 'g' || raw === '金币' || raw === '金') return 'gold';
+  if (raw === 'yuanbao' || raw === 'yb' || raw === '元宝') return 'yuanbao';
+  return 'gold';
 }
 
 function sameEffects(a, b) {
@@ -3897,8 +3929,8 @@ function createTrade(player, target) {
     a: { name: player.name },
     b: { name: target.name },
     offers: {
-      [player.name]: { gold: 0, items: [] },
-      [target.name]: { gold: 0, items: [] }
+      [player.name]: { gold: 0, yuanbao: 0, items: [] },
+      [target.name]: { gold: 0, yuanbao: 0, items: [] }
     },
     locked: { [player.name]: false, [target.name]: false },
     confirmed: { [player.name]: false, [target.name]: false }
@@ -4003,6 +4035,24 @@ const tradeApi = {
     offer.gold += goldResult.value;
     return { ok: true, trade };
   },
+  addYuanbao(player, amount) {
+    const { trade } = getTradeByPlayerAny(player.name, player.realmId || 1);
+    if (!trade) return { ok: false, msg: '你不在交易中。' };
+    if (isCultivationRoom(player.position.zone)) return { ok: false, msg: '修真房间内无法交易。' };
+    if (trade.locked[player.name] || trade.locked[trade.a.name === player.name ? trade.b.name : trade.a.name]) {
+      return { ok: false, msg: '交易已锁定，无法修改。' };
+    }
+
+    const yuanbaoResult = validateYuanbao(amount);
+    if (!yuanbaoResult.ok || yuanbaoResult.value <= 0) return { ok: false, msg: '元宝数量无效。' };
+
+    const hasYuanbaoResult = validatePlayerHasYuanbao(player, yuanbaoResult.value);
+    if (!hasYuanbaoResult.ok) return { ok: false, msg: hasYuanbaoResult.error };
+
+    const offer = ensureOffer(trade, player.name);
+    offer.yuanbao += yuanbaoResult.value;
+    return { ok: true, trade };
+  },
   lock(player) {
     const { trade } = getTradeByPlayerAny(player.name, player.realmId || 1);
     if (!trade) return { ok: false, msg: '你不在交易中。' };
@@ -4056,8 +4106,9 @@ const tradeApi = {
 
     // 双方再次验证金币和物品（防止锁定后客户端修改数据）
     if (playerA.gold < offerA.gold || playerB.gold < offerB.gold ||
+      (playerA.yuanbao || 0) < (offerA.yuanbao || 0) || (playerB.yuanbao || 0) < (offerB.yuanbao || 0) ||
       !hasOfferItems(playerA, offerA) || !hasOfferItems(playerB, offerB)) {
-      clearTrade(trade, '交易失败，物品或金币不足。', realmId);
+      clearTrade(trade, '交易失败，物品或货币不足。', realmId);
       return { ok: false };
     }
 
@@ -4071,6 +4122,10 @@ const tradeApi = {
     playerB.gold += offerA.gold;
     playerB.gold -= offerB.gold;
     playerA.gold += offerB.gold;
+    playerA.yuanbao = (playerA.yuanbao || 0) - (offerA.yuanbao || 0);
+    playerB.yuanbao = (playerB.yuanbao || 0) + (offerA.yuanbao || 0);
+    playerB.yuanbao = (playerB.yuanbao || 0) - (offerB.yuanbao || 0);
+    playerA.yuanbao = (playerA.yuanbao || 0) + (offerB.yuanbao || 0);
     applyOfferItems(playerA, playerB, offerA);
     applyOfferItems(playerB, playerA, offerB);
     clearTrade(trade, '交易完成。', realmId);
@@ -4101,6 +4156,7 @@ const consignApi = {
         seller: row.seller_name,
         qty: row.qty,
         price: row.price,
+        currency: row.currency || 'gold',
         item: buildItemView(row.item_id, parseJson(row.effects_json), row.durability, row.max_durability, row.refine_level ?? 0)
       }));
       player.socket.emit('consign_list', { type: 'market', items });
@@ -4114,12 +4170,13 @@ const consignApi = {
         seller: row.seller_name,
         qty: row.qty,
         price: row.price,
+        currency: row.currency || 'gold',
         item: buildItemView(row.item_id, parseJson(row.effects_json), row.durability, row.max_durability, row.refine_level ?? 0)
       }));
       player.socket.emit('consign_list', { type: 'mine', items });
       return items;
     },
-    async sell(player, invSlot, qty, price, effects = null) {
+    async sell(player, invSlot, qty, price, effects = null, currency = 'gold') {
       if (!invSlot || !invSlot.id) return { ok: false, msg: '背包里没有该物品。' };
       const itemId = invSlot.id;
       // 验证物品ID
@@ -4136,7 +4193,10 @@ const consignApi = {
       const qtyResult = validateItemQty(qty);
       if (!qtyResult.ok) return { ok: false, msg: '数量无效。' };
       
-      const priceResult = validateGold(price, 99999999);
+      const normalizedCurrency = normalizeCurrency(currency);
+      const priceResult = normalizedCurrency === 'yuanbao'
+        ? validateYuanbao(price, 99999999)
+        : validateGold(price, 99999999);
       if (!priceResult.ok || priceResult.value <= 0) return { ok: false, msg: '价格无效。' };
       
       // 验证effects
@@ -4155,6 +4215,7 @@ const consignApi = {
         itemId,
         qty: qtyResult.value,
         price: priceResult.value,
+        currency: normalizedCurrency,
         effectsJson: effectsResult.value ? JSON.stringify(effectsResult.value) : null,
         durability,
         maxDurability,
@@ -4183,10 +4244,17 @@ const consignApi = {
     const serverTotal = row.price * qtyResult.value;
     const fee = Math.floor(serverTotal * CONSIGN_FEE_RATE);
     const sellerGain = serverTotal - fee;
-    const hasGoldResult = validatePlayerHasGold(player, serverTotal);
-    if (!hasGoldResult.ok) return { ok: false, msg: hasGoldResult.error };
+    const currency = normalizeCurrency(row.currency);
+    const hasCurrencyResult = currency === 'yuanbao'
+      ? validatePlayerHasYuanbao(player, serverTotal)
+      : validatePlayerHasGold(player, serverTotal);
+    if (!hasCurrencyResult.ok) return { ok: false, msg: hasCurrencyResult.error };
 
-    player.gold -= serverTotal;
+    if (currency === 'yuanbao') {
+      player.yuanbao = (player.yuanbao || 0) - serverTotal;
+    } else {
+      player.gold -= serverTotal;
+    }
     addItem(player, row.item_id, qtyResult.value, parseJson(row.effects_json), row.durability, row.max_durability, row.refine_level ?? null);
 
     const remain = row.qty - qtyResult.value;
@@ -4203,6 +4271,7 @@ const consignApi = {
       itemId: row.item_id,
       qty: qtyResult.value,
       price: row.price,
+      currency,
       effectsJson: row.effects_json,
       durability: row.durability,
       maxDurability: row.max_durability,
@@ -4212,8 +4281,13 @@ const consignApi = {
 
     const seller = playersByName(row.seller_name, player.realmId || 1);
     if (seller) {
-      seller.gold += sellerGain;
-      seller.send(`寄售成交: ${ITEM_TEMPLATES[row.item_id]?.name || row.item_id} x${qtyResult.value}，获得 ${sellerGain} 金币（手续费 ${fee}）。`);
+      if (currency === 'yuanbao') {
+        seller.yuanbao = (seller.yuanbao || 0) + sellerGain;
+      } else {
+        seller.gold += sellerGain;
+      }
+      const currencyLabel = currency === 'yuanbao' ? '元宝' : '金币';
+      seller.send(`寄售成交: ${ITEM_TEMPLATES[row.item_id]?.name || row.item_id} x${qtyResult.value}，获得 ${sellerGain} ${currencyLabel}（手续费 ${fee}）。`);
       savePlayer(seller);
       await consignApi.listMine(seller);
       await consignApi.listMarket(seller);
@@ -4222,14 +4296,19 @@ const consignApi = {
       if (sellerRow) {
         const sellerPlayer = await loadCharacter(sellerRow.user_id, sellerRow.name, sellerRow.realm_id || 1);
         if (sellerPlayer) {
-          sellerPlayer.gold += sellerGain;
+          if (currency === 'yuanbao') {
+            sellerPlayer.yuanbao = (sellerPlayer.yuanbao || 0) + sellerGain;
+          } else {
+            sellerPlayer.gold += sellerGain;
+          }
           await saveCharacter(sellerRow.user_id, sellerPlayer, sellerRow.realm_id || 1);
         }
       }
     }
     await consignApi.listMine(player);
     await consignApi.listMarket(player);
-    return { ok: true, msg: `购买成功，花费 ${serverTotal} 金币。` };
+    const currencyLabel = currency === 'yuanbao' ? '元宝' : '金币';
+    return { ok: true, msg: `购买成功，花费 ${serverTotal} ${currencyLabel}。` };
   },
   async cancel(player, listingId) {
     await cleanupExpiredConsignments(player.realmId || 1);
@@ -4254,12 +4333,25 @@ const consignApi = {
       buyer: row.buyer_name,
       qty: row.qty,
       price: row.price,
+      currency: row.currency || 'gold',
       total: row.price * row.qty,
       item: buildItemView(row.item_id, parseJson(row.effects_json), row.durability, row.max_durability, row.refine_level ?? 0),
       soldAt: row.sold_at
     }));
     player.socket.emit('consign_history', { items });
     return items;
+  }
+};
+
+const rechargeApi = {
+  async redeem(player, code) {
+    const used = await useRechargeCard(code, player.userId, player.name);
+    if (!used) return { ok: false, msg: '卡密无效或已使用。' };
+    const amount = Math.max(0, Math.floor(Number(used.amount || 0)));
+    if (!amount) return { ok: false, msg: '卡密金额异常。' };
+    player.yuanbao = (player.yuanbao || 0) + amount;
+    player.forceStateRefresh = true;
+    return { ok: true, msg: `充值成功，获得 ${amount} 元宝。` };
   }
 };
 
@@ -5616,6 +5708,7 @@ async function buildState(player) {
       exp: Math.floor(player.exp),
       exp_next: Math.floor(expForLevel(player.level, player.flags?.cultivationLevel)),
       gold: player.gold,
+      yuanbao: player.yuanbao || 0,
       atk: Math.floor(player.atk || 0),
       def: Math.floor(player.def || 0),
       mag: Math.floor(player.mag || 0),
@@ -5667,8 +5760,10 @@ async function buildState(player) {
         partnerName,
         myItems: myOffer.items.map(i => ({ id: i.id, qty: i.qty, effects: i.effects })),
         myGold: myOffer.gold,
+        myYuanbao: myOffer.yuanbao || 0,
         partnerItems: partnerOffer.items.map(i => ({ id: i.id, qty: i.qty, effects: i.effects })),
         partnerGold: partnerOffer.gold,
+        partnerYuanbao: partnerOffer.yuanbao || 0,
         locked: trade.locked,
         confirmed: trade.confirmed
       };
@@ -6858,6 +6953,7 @@ io.on('connection', (socket) => {
     players.set(socket.id, loaded);
     loaded.send(`欢迎回来，${loaded.name}。`);
     loaded.send(`金币: ${loaded.gold}`);
+    loaded.send(`元宝: ${loaded.yuanbao || 0}`);
     if (loaded.guild) loaded.send(`行会: ${loaded.guild.name}`);
     // 加入服务器房间，以便接收公告
     const serverId = loaded.realmId || 1;
@@ -6972,6 +7068,7 @@ io.on('connection', (socket) => {
         canUserClaimVip,
         incrementCharacterVipClaimCount
       },
+      rechargeApi,
       tradeApi,
       consignApi,
       mailApi: {

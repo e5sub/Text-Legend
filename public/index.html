@@ -94,11 +94,15 @@
                 <div class="status-row"><span>在线人数</span><strong id="ui-online">-</strong></div>
                 <div class="status-row"><span>服务器时间</span><strong id="ui-server-time">-</strong></div>
                 <div class="status-row"><span>队伍成员</span><strong id="ui-party">-</strong></div>
-                <div class="status-row gold-row"><span>金币</span><strong id="ui-gold">0</strong></div>
                 <div class="status-row cultivation-row">
                   <span>修真</span>
                   <strong id="ui-cultivation">-</strong>
                   <button id="ui-cultivation-upgrade" class="mini-btn hidden" type="button">提升修为</button>
+                </div>
+                <div class="status-row yuanbao-row">
+                  <span>元宝</span>
+                  <strong id="ui-yuanbao">0</strong>
+                  <button id="ui-recharge" class="mini-btn" type="button">充值</button>
                 </div>
               </div>
             </div>
@@ -126,6 +130,7 @@
                   <div class="status-row compact"><span>闪避</span><strong id="ui-dodge">0</strong></div>
                   <div class="status-row compact wide"><span id="ui-bonus-line" class="bonus-line">沙巴克加成：- | 套装加成：-</span></div>
                   <div class="status-row compact wide"><span id="ui-lucky-line" class="bonus-line">每日幸运玩家：-</span></div>
+                  <div class="status-row gold-row"><span>金币</span><strong id="ui-gold">0</strong></div>
                 </div>
               </div>
             </div>
@@ -597,11 +602,13 @@
             <div class="trade-offer-title" id="trade-my-title">我方</div>
             <div id="trade-my-items" class="trade-items"></div>
             <div id="trade-my-gold" class="trade-gold">金币: 0</div>
+            <div id="trade-my-yuanbao" class="trade-gold">元宝: 0</div>
           </div>
           <div class="trade-offer">
             <div class="trade-offer-title" id="trade-partner-title">对方</div>
             <div id="trade-partner-items" class="trade-items"></div>
             <div id="trade-partner-gold" class="trade-gold">金币: 0</div>
+            <div id="trade-partner-yuanbao" class="trade-gold">元宝: 0</div>
           </div>
         </div>
         <div class="trade-row">
@@ -612,6 +619,10 @@
         <div class="trade-row">
           <input id="trade-gold" type="number" min="1" value="0">
           <button id="trade-add-gold">&#x653E;&#x5165;&#x91D1;&#x5E01;</button>
+        </div>
+        <div class="trade-row">
+          <input id="trade-yuanbao" type="number" min="1" value="0">
+          <button id="trade-add-yuanbao">放入元宝</button>
         </div>
         <div class="trade-row">
           <button id="trade-lock">&#x9501;&#x5B9A;</button>

@@ -1238,12 +1238,14 @@ body.log-collapsed .game-layout {
   white-space: nowrap;
 }
 
-.status-row.cultivation-row {
+.status-row.cultivation-row,
+.status-row.yuanbao-row {
   margin: 4px 0;
   gap: 10px;
 }
 
-.status-row.cultivation-row strong {
+.status-row.cultivation-row strong,
+.status-row.yuanbao-row strong {
   flex: 1;
   text-align: right;
   overflow: hidden;
@@ -1251,7 +1253,8 @@ body.log-collapsed .game-layout {
   white-space: nowrap;
 }
 
-.status-row.cultivation-row .mini-btn {
+.status-row.cultivation-row .mini-btn,
+.status-row.yuanbao-row .mini-btn {
   margin-left: 8px;
   padding: 2px 8px;
   font-size: 0.75rem;
@@ -1263,7 +1266,8 @@ body.log-collapsed .game-layout {
   cursor: pointer;
 }
 
-.status-row.cultivation-row .mini-btn:hover {
+.status-row.cultivation-row .mini-btn:hover,
+.status-row.yuanbao-row .mini-btn:hover {
   filter: brightness(1.1);
 }
 

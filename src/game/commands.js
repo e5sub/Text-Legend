@@ -773,7 +773,7 @@ function partyStatus(party) {
   return `队伍成员: ${party.members.join(', ')}`;
 }
 
-export async function handleCommand({ player, players, allCharacters, playersByName, input, source, send, partyApi, guildApi, tradeApi, mailApi, consignApi, onMove, logLoot, realmId, emitAnnouncement }) {
+export async function handleCommand({ player, players, allCharacters, playersByName, input, source, send, partyApi, guildApi, tradeApi, rechargeApi, mailApi, consignApi, onMove, logLoot, realmId, emitAnnouncement }) {
   const [cmdRaw, ...rest] = input.trim().split(' ');
   const cmd = (cmdRaw || '').toLowerCase();
   const args = rest.join(' ').trim();
@@ -2024,21 +2024,27 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         if (!items.length) send('暂无寄售记录。');
         return;
       }
-        if (sub === 'sell') {
-          if (parts.length < 3) return;
-          const price = Number(parts.pop());
-          const qty = Number(parts.pop());
-          const name = parts.join(' ');
-          if (!name || Number.isNaN(price) || Number.isNaN(qty)) {
-            return;
-          }
-          const resolved = resolveInventoryItem(player, name);
-          if (!resolved.slot || !resolved.item) return send('背包里没有该物品。');
-          const res = await consignApi.sell(player, resolved.slot, qty, price, resolved.slot.effects || null);
-          if (res && res.ok) player.forceStateRefresh = true;
-          send(res.msg);
+      if (sub === 'sell') {
+        if (parts.length < 3) return;
+        let currency = 'gold';
+        const tail = parts[parts.length - 1];
+        if (tail && Number.isNaN(Number(tail))) {
+          currency = tail;
+          parts.pop();
+        }
+        const price = Number(parts.pop());
+        const qty = Number(parts.pop());
+        const name = parts.join(' ');
+        if (!name || Number.isNaN(price) || Number.isNaN(qty)) {
           return;
         }
+        const resolved = resolveInventoryItem(player, name);
+        if (!resolved.slot || !resolved.item) return send('背包里没有该物品。');
+        const res = await consignApi.sell(player, resolved.slot, qty, price, resolved.slot.effects || null, currency);
+        if (res && res.ok) player.forceStateRefresh = true;
+        send(res.msg);
+        return;
+      }
       if (sub === 'buy') {
         if (parts.length < 1) return;
         const id = Number(parts[0]);
@@ -3252,6 +3258,18 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           if (other) other.send(`${player.name} 放入金币: ${amount}`);
           return;
         }
+        if (kind.toLowerCase() === 'yuanbao' || kind.toLowerCase() === 'yb') {
+          const amount = Number(restOffer[0]);
+          if (!amount || amount <= 0) return send('请输入元宝数量。');
+          const res = tradeApi.addYuanbao(player, amount);
+          if (!res.ok) return send(res.msg);
+          const offer = trade.offers[player.name];
+          const otherName = trade.a.name === player.name ? trade.b.name : trade.a.name;
+          const other = players.find((p) => p.name === otherName);
+          send(`你放入元宝: ${amount} (总计 ${offer.yuanbao || 0})`);
+          if (other) other.send(`${player.name} 放入元宝: ${amount}`);
+          return;
+        }
         if (kind.toLowerCase() !== 'item') return;
         const offerParts = restOffer.slice();
         if (offerParts.length === 0) return send('请输入物品名称或ID。');
@@ -3314,6 +3332,14 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       }
 
       send('交易指令不可用。');
+      return;
+    }
+    case 'recharge': {
+      if (!rechargeApi) return send('充值功能不可用。');
+      const code = String(args || '').trim();
+      if (!code) return send('请输入卡密。');
+      const res = await rechargeApi.redeem(player, code);
+      send(res.msg);
       return;
     }
     case 'vipclaim': {

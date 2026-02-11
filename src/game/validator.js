@@ -63,6 +63,13 @@ export function validateGold(amount, maxAmount = 999999999) {
 }
 
 /**
+ * 验证元宝数量
+ */
+export function validateYuanbao(amount, maxAmount = 999999999) {
+  return validateNumber(amount, 0, maxAmount);
+}
+
+/**
  * 验证玩家名称
  * 限制：1-8个字，只允许中文、英文、数字
  */
@@ -186,6 +193,22 @@ export function validatePlayerHasGold(player, amount) {
     return { ok: false, error: `金币不足，需要 ${value}，拥有 ${player.gold}` };
   }
   
+  return { ok: true, value };
+}
+
+/**
+ * 验证玩家是否有足够的元宝
+ */
+export function validatePlayerHasYuanbao(player, amount) {
+  const { ok, value, error } = validateYuanbao(amount);
+  if (!ok) {
+    return { ok: false, error };
+  }
+
+  if ((player.yuanbao || 0) < value) {
+    return { ok: false, error: `元宝不足，需要 ${value}，拥有 ${player.yuanbao || 0}` };
+  }
+
   return { ok: true, value };
 }
 

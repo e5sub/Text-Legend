@@ -18,7 +18,7 @@ export async function listCharacters(userId, realmId = 1) {
 export async function listAllCharacters(realmId = 1) {
   const characters = await knex('characters')
     .where({ realm_id: realmId })
-    .select('id', 'name', 'class', 'level', 'exp', 'gold', 'hp', 'mp', 'max_hp', 'max_mp', 'stats_json', 'equipment_json', 'flags_json', 'skills_json');
+    .select('id', 'name', 'class', 'level', 'exp', 'gold', 'yuanbao', 'hp', 'mp', 'max_hp', 'max_mp', 'stats_json', 'equipment_json', 'flags_json', 'skills_json');
 
   return characters.map(char => ({
     name: char.name,
@@ -26,6 +26,7 @@ export async function listAllCharacters(realmId = 1) {
     level: char.level,
     exp: char.exp,
     gold: char.gold,
+    yuanbao: char.yuanbao ?? 0,
     hp: char.hp,
     mp: char.mp,
     max_hp: char.max_hp,
@@ -49,6 +50,7 @@ export async function loadCharacter(userId, name, realmId = 1) {
     level: row.level,
     exp: row.exp,
     gold: row.gold,
+    yuanbao: row.yuanbao ?? 0,
     hp: row.hp,
     mp: row.mp,
     max_hp: row.max_hp,
@@ -106,6 +108,7 @@ export async function saveCharacter(userId, player, realmId = 1) {
     level: player.level,
     exp: player.exp,
     gold: player.gold,
+    yuanbao: Math.max(0, Math.floor(Number(player.yuanbao || 0))),
     hp: player.hp,
     mp: player.mp,
     max_hp: player.max_hp,
