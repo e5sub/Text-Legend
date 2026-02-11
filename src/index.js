@@ -8425,7 +8425,7 @@ function handleDeath(player) {
   if (player?.flags?.autoFullEnabled) {
     if (!player.flags) player.flags = {};
     const now = Date.now();
-    player.flags.autoFullPausedUntil = now + 15000;
+    player.flags.autoFullPausedUntil = now + 3000;
     player.flags.autoFullLastMoveAt = now;
   }
   player.hp = Math.floor(player.max_hp * 0.5);
