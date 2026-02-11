@@ -4890,14 +4890,18 @@ function renderState(state) {
       }
       if (afkUi.autoFull) {
         if (svipActive) {
-          afkUi.autoFull.classList.remove('hidden');
+          if (state.stats && state.stats.autoSkillId) {
+            afkUi.autoFull.classList.add('hidden');
+          } else {
+            afkUi.autoFull.classList.remove('hidden');
+          }
           afkUi.autoFull.textContent = state.stats.autoFullEnabled ? '关闭智能挂机' : '智能挂机';
         } else {
           afkUi.autoFull.classList.add('hidden');
         }
       }
       if (afkUi.start) {
-        if (svipActive) {
+        if (state.stats && state.stats.autoFullEnabled) {
           afkUi.start.classList.add('hidden');
         } else {
           afkUi.start.classList.remove('hidden');
