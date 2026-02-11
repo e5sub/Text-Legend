@@ -5188,6 +5188,45 @@ function movePlayerToRoom(player, zoneId, roomId) {
   return true;
 }
 
+function tryAutoFullBossMove(player) {
+  if (!player?.flags?.autoFullEnabled) return null;
+  if (!isSvipActive(player)) {
+    const trialInfo = getAutoFullTrialInfo(player);
+    if (!trialInfo.available) {
+      if (player.flags.autoFullEnabled) {
+        player.flags.autoFullEnabled = false;
+        player.forceStateRefresh = true;
+        if (typeof player.send === 'function') {
+          player.send('智能挂机体验已结束，今日不可再使用。');
+        }
+      }
+      return null;
+    }
+    const now = Date.now();
+    const expiresAt = Number(player.flags.autoFullTrialExpiresAt || 0);
+    if (expiresAt <= now) {
+      player.flags.autoFullEnabled = false;
+      player.forceStateRefresh = true;
+      if (typeof player.send === 'function') {
+        player.send('智能挂机体验已结束，今日不可再使用。');
+      }
+      return null;
+    }
+  }
+  const now = Date.now();
+  const pausedUntil = Number(player.flags.autoFullPausedUntil || 0);
+  if (pausedUntil > now) return null;
+  const lastMoveAt = Number(player.flags.autoFullLastMoveAt || 0);
+  const canMoveForBoss = now - lastMoveAt >= AUTO_FULL_BOSS_MOVE_COOLDOWN_MS;
+  if (!canMoveForBoss) return null;
+  const bossTarget = findAliveBossTarget(player);
+  if (bossTarget && movePlayerToRoom(player, bossTarget.zoneId, bossTarget.roomId)) {
+    player.flags.autoFullLastMoveAt = now;
+    return 'moved';
+  }
+  return null;
+}
+
 function tryAutoFullAction(player, roomMobs) {
   if (!player?.flags?.autoFullEnabled) return null;
   if (!isSvipActive(player)) {
@@ -5235,14 +5274,8 @@ function tryAutoFullAction(player, roomMobs) {
   const hasRoomMobs = Array.isArray(roomMobs) && roomMobs.length > 0;
   const lastMoveAt = Number(player.flags.autoFullLastMoveAt || 0);
   const canMove = now - lastMoveAt >= AUTO_FULL_MOVE_COOLDOWN_MS;
-  const canMoveForBoss = now - lastMoveAt >= AUTO_FULL_BOSS_MOVE_COOLDOWN_MS;
-  if (canMoveForBoss) {
-    const bossTarget = findAliveBossTarget(player);
-    if (bossTarget && movePlayerToRoom(player, bossTarget.zoneId, bossTarget.roomId)) {
-      player.flags.autoFullLastMoveAt = now;
-      return 'moved';
-    }
-  }
+  const bossMove = tryAutoFullBossMove(player);
+  if (bossMove === 'moved') return 'moved';
   const bossMob = findBossInRoom(roomMobs, player);
   if (bossMob) {
     if (!player.flags.lastBossRoom) {
@@ -9057,6 +9090,14 @@ async function combatTick() {
         if (!player.flags) player.flags = {};
         player.flags.summonAggro = true;
       }
+
+    if (player.flags?.autoFullEnabled) {
+      const bossMove = tryAutoFullBossMove(player);
+      if (bossMove === 'moved') {
+        player.combat = null;
+        continue;
+      }
+    }
 
     if (!player.combat) {
       regenOutOfCombat(player);
