@@ -5987,15 +5987,16 @@ function renderState(state) {
       socket.emit('cmd', { text: `train ${stat.trim()}` });
       return;
     }
-      if (a.id === 'afk') {
-        if (state.stats && state.stats.autoFullEnabled) {
-          socket.emit('cmd', { text: 'autoafk off' });
-          return;
-        }
-        if (state.stats && state.stats.autoSkillId) {
-          socket.emit('cmd', { text: 'autoskill off' });
-          return;
-        }
+    if (a.id === 'afk') {
+      if (state.stats && state.stats.autoFullEnabled) {
+        socket.emit('cmd', { text: 'autoafk off' });
+        socket.emit('cmd', { text: 'autoskill off' });
+        return;
+      }
+      if (state.stats && state.stats.autoSkillId) {
+        socket.emit('cmd', { text: 'autoskill off' });
+        return;
+      }
         showAfkModal(state.skills || [], state.stats ? state.stats.autoSkillId : null);
         return;
       }
@@ -7754,6 +7755,7 @@ if (afkUi.autoFull) {
     const enabled = Boolean(lastState?.stats?.autoFullEnabled);
     if (enabled) {
       socket.emit('cmd', { text: 'autoafk off' });
+      socket.emit('cmd', { text: 'autoskill off' });
       if (afkUi.modal) afkUi.modal.classList.add('hidden');
     } else {
       if (afkUi.modal) afkUi.modal.classList.add('hidden');

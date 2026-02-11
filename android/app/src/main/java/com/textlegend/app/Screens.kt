@@ -441,6 +441,10 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                                     "vip claim" -> vm.sendCmd("vip claim")
                                     "afk" -> innerNav.navigate("afk")
                                     "autoskill off" -> vm.sendCmd("autoskill off")
+                                    "autoafk off" -> {
+                                        vm.sendCmd("autoafk off")
+                                        vm.sendCmd("autoskill off")
+                                    }
                                     "trade" -> innerNav.navigate("trade")
                                     "consign" -> innerNav.navigate("consign")
                                     "sabak" -> innerNav.navigate("sabak")
@@ -3723,6 +3727,7 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
                 onClick = {
                     if (autoFullEnabled) {
                         vm.sendCmd("autoafk off")
+                        vm.sendCmd("autoskill off")
                     } else {
                         val ids = if (selected.isEmpty()) skills.map { it.id } else selected.toList()
                         if (ids.isNotEmpty()) {
