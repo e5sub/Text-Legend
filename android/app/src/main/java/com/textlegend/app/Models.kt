@@ -54,6 +54,7 @@ data class GameState(
     val mobs: List<MobInfo> = emptyList(),
     val skills: List<SkillInfo> = emptyList(),
     val items: List<ItemInfo> = emptyList(),
+    val warehouse: List<ItemInfo> = emptyList(),
     val stats: StatsInfo? = null,
     val summon: SummonInfo? = null,
     val summons: List<SummonInfo> = emptyList(),

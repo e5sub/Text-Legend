@@ -401,7 +401,7 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                             } else if (!item.slot.isNullOrBlank()) {
                                 vm.sendCmd("equip $key")
                             }
-                        })
+                        }, onCommand = vm::sendCmd)
                         2 -> ChatTab(
                             state = state,
                             outputs = outputs,
@@ -976,12 +976,31 @@ private fun BattleMobCard(
 }
 
 @Composable
-  private fun InventoryTab(state: GameState?, onUse: (ItemInfo) -> Unit) {
+  private fun InventoryTab(state: GameState?, onUse: (ItemInfo) -> Unit, onCommand: (String) -> Unit) {
+      data class WarehouseAction(val item: ItemInfo, val mode: String)
+      var tabIndex by remember { mutableStateOf(0) }
       var bagPage by remember { mutableStateOf(0) }
+      var warehousePage by remember { mutableStateOf(0) }
+      var warehouseMode by remember { mutableStateOf("deposit") }
+      var warehouseFilter by remember { mutableStateOf("all") }
+      var warehouseAction by remember { mutableStateOf<WarehouseAction?>(null) }
+      var warehouseQty by remember { mutableStateOf("") }
       val bagPageSize = 12
       val isDark = isSystemInDarkTheme()
       val primaryText = if (isDark) Color(0xFFF4E8D6) else MaterialTheme.colorScheme.onSurface
       val secondaryText = if (isDark) Color(0xFFE0D2C1) else MaterialTheme.colorScheme.onSurfaceVariant
+      val filterOptions = listOf(
+          "all" to "全部",
+          "weapon" to "武器",
+          "armor" to "防具",
+          "accessory" to "饰品",
+          "material" to "材料",
+          "consumable" to "消耗",
+          "book" to "书籍"
+      )
+      LaunchedEffect(warehouseAction) {
+          warehouseQty = warehouseAction?.item?.qty?.coerceAtLeast(1)?.toString().orEmpty()
+      }
       LazyColumn(modifier = Modifier.fillMaxSize()) {
           item {
               Text(text = "装备", style = MaterialTheme.typography.titleSmall, color = primaryText)
@@ -1037,68 +1056,214 @@ private fun BattleMobCard(
         }
           item {
               Spacer(modifier = Modifier.height(8.dp))
-              Text(text = "背包", style = MaterialTheme.typography.titleSmall, color = primaryText)
+              TabRow(selectedTabIndex = tabIndex) {
+                  Tab(selected = tabIndex == 0, onClick = { tabIndex = 0 }, text = { Text("背包") })
+                  Tab(selected = tabIndex == 1, onClick = { tabIndex = 1 }, text = { Text("仓库") })
+              }
           }
-        val bagItems = state?.items.orEmpty()
-            .sortedWith(
-                compareByDescending<ItemInfo> { rarityRank(it.rarity) }
-                    .thenBy { it.name }
-            )
-        val bagPageInfo = paginate(bagItems, bagPage, bagPageSize)
-        bagPage = bagPageInfo.page
-        item {
-            val rows = bagPageInfo.slice.chunked(2)
-            Column {
-                rows.forEach { row ->
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        row.forEach { item ->
-                            Surface(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clickable { onUse(item) },
-                                shape = RoundedCornerShape(10.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant,
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
-                            ) {
-                                Column(modifier = Modifier.padding(10.dp)) {
-                                    val isEquip = !item.slot.isNullOrBlank() || item.type == "weapon" || item.type == "armor" || item.type == "accessory"
-                                    val effectInline = formatEffectInline(item.effects)
-                                    val refine = item.refine_level
-                                    val nameSuffixParts = mutableListOf<String>()
-                                    if (effectInline.isNotBlank()) nameSuffixParts.add(effectInline)
-                                    if (isEquip && refine > 0) nameSuffixParts.add("锻造+$refine")
-                                    val nameSuffix = if (nameSuffixParts.isNotEmpty()) {
-                                        "（" + nameSuffixParts.joinToString(" | ") + "）"
-                                    } else ""
-                                      RarityText(
-                                          text = "${item.name} x${item.qty}$nameSuffix",
-                                          rarity = item.rarity
-                                      )
-                                      if (isEquip) {
-                                          val element = elementAtkFromEffects(item.effects)
-                                          Text("${slotLabel(item.slot)}${if (element > 0) " 元素+$element" else ""}", color = secondaryText)
-                                      } else {
-                                          Text(itemTypeLabel(item.type), color = secondaryText)
+          if (tabIndex == 0) {
+              item {
+                  Spacer(modifier = Modifier.height(6.dp))
+                  Text(text = "背包", style = MaterialTheme.typography.titleSmall, color = primaryText)
+              }
+              val bagItems = state?.items.orEmpty()
+                  .sortedWith(
+                      compareByDescending<ItemInfo> { rarityRank(it.rarity) }
+                          .thenBy { it.name }
+                  )
+              val bagPageInfo = paginate(bagItems, bagPage, bagPageSize)
+              bagPage = bagPageInfo.page
+              item {
+                  val rows = bagPageInfo.slice.chunked(2)
+                  Column {
+                      rows.forEach { row ->
+                          Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                              row.forEach { item ->
+                                  Surface(
+                                      modifier = Modifier
+                                          .weight(1f)
+                                          .clickable { onUse(item) },
+                                      shape = RoundedCornerShape(10.dp),
+                                      color = MaterialTheme.colorScheme.surfaceVariant,
+                                      border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+                                  ) {
+                                      Column(modifier = Modifier.padding(10.dp)) {
+                                          val isEquip = !item.slot.isNullOrBlank() || item.type == "weapon" || item.type == "armor" || item.type == "accessory"
+                                          val effectInline = formatEffectInline(item.effects)
+                                          val refine = item.refine_level
+                                          val nameSuffixParts = mutableListOf<String>()
+                                          if (effectInline.isNotBlank()) nameSuffixParts.add(effectInline)
+                                          if (isEquip && refine > 0) nameSuffixParts.add("锻造+$refine")
+                                          val nameSuffix = if (nameSuffixParts.isNotEmpty()) {
+                                              "（" + nameSuffixParts.joinToString(" | ") + "）"
+                                          } else ""
+                                          RarityText(
+                                              text = "${item.name} x${item.qty}$nameSuffix",
+                                              rarity = item.rarity
+                                          )
+                                          if (isEquip) {
+                                              val element = elementAtkFromEffects(item.effects)
+                                              Text("${slotLabel(item.slot)}${if (element > 0) " 元素+$element" else ""}", color = secondaryText)
+                                          } else {
+                                              Text(itemTypeLabel(item.type), color = secondaryText)
+                                          }
                                       }
                                   }
                               }
+                              if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
                           }
-                        if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-            }
-        }
-        item {
-            if (bagPageInfo.totalPages > 1) {
-                PagerControls(
-                    info = bagPageInfo,
-                    onPrev = { bagPage -= 1 },
-                    onNext = { bagPage += 1 }
-                )
-            }
-        }
+                          Spacer(modifier = Modifier.height(8.dp))
+                      }
+                  }
+              }
+              item {
+                  if (bagPageInfo.totalPages > 1) {
+                      PagerControls(
+                          info = bagPageInfo,
+                          onPrev = { bagPage -= 1 },
+                          onNext = { bagPage += 1 }
+                      )
+                  }
+              }
+          } else {
+              item {
+                  Spacer(modifier = Modifier.height(6.dp))
+                  Text(text = "仓库", style = MaterialTheme.typography.titleSmall, color = primaryText)
+                  Spacer(modifier = Modifier.height(6.dp))
+                  FlowRow(
+                      items = listOf("存入" to "deposit", "取出" to "withdraw"),
+                      onClick = {
+                          warehouseMode = it
+                          warehousePage = 0
+                      },
+                      selectedLabel = if (warehouseMode == "deposit") "存入" else "取出"
+                  )
+                  Spacer(modifier = Modifier.height(4.dp))
+                  FlowRow(
+                      items = filterOptions,
+                      onClick = {
+                          warehouseFilter = it
+                          warehousePage = 0
+                      },
+                      selectedLabel = filterOptions.firstOrNull { it.first == warehouseFilter }?.second
+                  )
+                  Spacer(modifier = Modifier.height(6.dp))
+                  Text(
+                      text = if (warehouseMode == "deposit") "点击背包物品存入仓库" else "点击仓库物品取出背包",
+                      color = secondaryText,
+                      style = MaterialTheme.typography.bodySmall
+                  )
+              }
+              val sourceItems = if (warehouseMode == "deposit") state?.items.orEmpty() else state?.warehouse.orEmpty()
+              val filtered = filterInventory(sourceItems, warehouseFilter)
+              val warehouseItems = filtered.sortedWith(
+                  compareByDescending<ItemInfo> { rarityRank(it.rarity) }
+                      .thenBy { it.name }
+              )
+              val warehousePageInfo = paginate(warehouseItems, warehousePage, bagPageSize)
+              warehousePage = warehousePageInfo.page
+              item {
+                  if (warehouseItems.isEmpty()) {
+                      Text("暂无物品", color = secondaryText)
+                  } else {
+                      val rows = warehousePageInfo.slice.chunked(2)
+                      Column {
+                          rows.forEach { row ->
+                              Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                  row.forEach { item ->
+                                      Surface(
+                                          modifier = Modifier
+                                              .weight(1f)
+                                              .clickable {
+                                                  if (item.qty > 0) {
+                                                      warehouseAction = WarehouseAction(item, warehouseMode)
+                                                  }
+                                              },
+                                          shape = RoundedCornerShape(10.dp),
+                                          color = MaterialTheme.colorScheme.surfaceVariant,
+                                          border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+                                      ) {
+                                          Column(modifier = Modifier.padding(10.dp)) {
+                                              val isEquip = !item.slot.isNullOrBlank() || item.type == "weapon" || item.type == "armor" || item.type == "accessory"
+                                              val effectInline = formatEffectInline(item.effects)
+                                              val refine = item.refine_level
+                                              val nameSuffixParts = mutableListOf<String>()
+                                              if (effectInline.isNotBlank()) nameSuffixParts.add(effectInline)
+                                              if (isEquip && refine > 0) nameSuffixParts.add("锻造+$refine")
+                                              val nameSuffix = if (nameSuffixParts.isNotEmpty()) {
+                                                  "（" + nameSuffixParts.joinToString(" | ") + "）"
+                                              } else ""
+                                              RarityText(
+                                                  text = "${item.name} x${item.qty}$nameSuffix",
+                                                  rarity = item.rarity
+                                              )
+                                              if (isEquip) {
+                                                  val element = elementAtkFromEffects(item.effects)
+                                                  Text("${slotLabel(item.slot)}${if (element > 0) " 元素+$element" else ""}", color = secondaryText)
+                                              } else {
+                                                  Text(itemTypeLabel(item.type), color = secondaryText)
+                                              }
+                                          }
+                                      }
+                                  }
+                                  if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
+                              }
+                              Spacer(modifier = Modifier.height(8.dp))
+                          }
+                      }
+                  }
+              }
+              item {
+                  if (warehousePageInfo.totalPages > 1) {
+                      PagerControls(
+                          info = warehousePageInfo,
+                          onPrev = { warehousePage -= 1 },
+                          onNext = { warehousePage += 1 }
+                      )
+                  }
+              }
+          }
     }
+
+      if (warehouseAction != null) {
+          val action = warehouseAction!!
+          AlertDialog(
+              onDismissRequest = { warehouseAction = null },
+              confirmButton = {
+                  Button(onClick = {
+                      val qtyInput = warehouseQty.toIntOrNull()
+                      val maxQty = action.item.qty.coerceAtLeast(1)
+                      val qty = (qtyInput ?: maxQty).coerceIn(1, maxQty)
+                      val key = if (action.item.key.isNotBlank()) action.item.key else action.item.id
+                      val cmd = if (action.mode == "deposit") {
+                          "warehouse deposit $key $qty"
+                      } else {
+                          "warehouse withdraw $key $qty"
+                      }
+                      onCommand(cmd)
+                      warehouseAction = null
+                  }) { Text("确认") }
+              },
+              dismissButton = {
+                  OutlinedButton(onClick = { warehouseAction = null }) { Text("取消") }
+              },
+              title = {
+                  Text(if (action.mode == "deposit") "存入仓库" else "取出背包")
+              },
+              text = {
+                  Column {
+                      Text("${action.item.name}，最多 ${action.item.qty}")
+                      Spacer(modifier = Modifier.height(6.dp))
+                      OutlinedTextField(
+                          value = warehouseQty,
+                          onValueChange = { warehouseQty = it },
+                          label = { Text("数量") },
+                          keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                      )
+                  }
+              }
+          )
+      }
 }
 
 private fun normalizeRarityKey(rarity: String?): String? = rarity?.trim()?.lowercase()
@@ -3459,7 +3624,23 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
 @Composable
   private fun AfkDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Unit) {
       val skills = state?.skills.orEmpty()
+      val context = LocalContext.current
+      val prefs = remember { AppPreferences(context) }
       val selected = remember { mutableStateListOf<String>() }
+      LaunchedEffect(skills) {
+          if (skills.isEmpty()) return@LaunchedEffect
+          if (selected.isNotEmpty()) return@LaunchedEffect
+          val saved = prefs.getAutoAfkSkillSelection()
+              ?.split(",")
+              ?.map { it.trim() }
+              ?.filter { it.isNotBlank() }
+              .orEmpty()
+          if (saved.isNotEmpty()) {
+              selected.addAll(saved)
+          } else {
+              selected.addAll(skills.map { it.id })
+          }
+      }
       ScreenScaffold(title = "挂机技能", onBack = onDismiss) {
           if (skills.isEmpty()) {
               Text("暂无可用技能", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -3522,8 +3703,10 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
             onClick = {
                 if (selected.isEmpty()) {
                     vm.sendCmd("autoskill off")
+                    prefs.setAutoAfkSkillSelection(null)
                 } else {
                     vm.sendCmd("autoskill set ${selected.joinToString(",")}")
+                    prefs.setAutoAfkSkillSelection(selected.joinToString(","))
                 }
                 onDismiss()
             }

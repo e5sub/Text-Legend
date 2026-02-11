@@ -2019,11 +2019,6 @@ export async function handleCommand({ player, players, allCharacters, playersByN
             }
           }
           player.flags.autoFullEnabled = !player.flags.autoFullEnabled;
-          if (player.flags.autoFullEnabled) {
-            player.flags.autoSkillId = null;
-            player.flags.autoHpPct = null;
-            player.flags.autoMpPct = null;
-          }
           player.forceStateRefresh = true;
           send(player.flags.autoFullEnabled ? '已开启智能挂机。' : '已关闭智能挂机。');
           return;
@@ -2066,9 +2061,6 @@ export async function handleCommand({ player, players, allCharacters, playersByN
             }
           }
           player.flags.autoFullEnabled = true;
-          player.flags.autoSkillId = null;
-          player.flags.autoHpPct = null;
-          player.flags.autoMpPct = null;
           player.forceStateRefresh = true;
           send('已开启智能挂机。');
           return;

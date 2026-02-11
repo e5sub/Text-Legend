@@ -448,6 +448,7 @@ body.dark .consign-tab,
 body.dark .consign-filter,
 body.dark .bag-tab,
 body.dark .warehouse-tab,
+body.dark .warehouse-filter,
 body.dark .drops-tab {
   background: #3a3028;
   border-color: #5a4838;
@@ -458,6 +459,7 @@ body.dark .consign-tab.active,
 body.dark .consign-filter.active,
 body.dark .bag-tab.active,
 body.dark .warehouse-tab.active,
+body.dark .warehouse-filter.active,
 body.dark .drops-tab.active {
   background: #c86b2a;
   color: #fff7ea;
@@ -4515,6 +4517,40 @@ body.dark .mail-tab.active {
   border-color: #b65a1a;
 }
 
+.warehouse-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.warehouse-filter {
+  border-radius: 999px;
+  border: 1px solid rgba(118, 70, 22, 0.25);
+  background: #f7e2c6;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  color: #3a2311;
+  cursor: pointer;
+}
+
+.warehouse-filter.active {
+  background: #b65a1a;
+  color: #fff;
+  border-color: #b65a1a;
+}
+
+#warehouse-modal .modal-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px;
+}
+
+#warehouse-modal .modal-actions button {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
 #stats-summary {
   white-space: pre-line;
 }
@@ -4523,10 +4559,21 @@ body.dark .mail-tab.active {
   filter: brightness(1.03);
 }
 
-.autoafk-boss-list {
+#bag-modal .modal-actions {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-wrap: nowrap;
+  gap: 10px;
+}
+
+#bag-modal .modal-actions button {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.autoafk-boss-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
   max-height: 260px;
   overflow-y: auto;
 }

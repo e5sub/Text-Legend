@@ -58,6 +58,12 @@ class AppPreferences(private val context: Context) {
         prefs.edit().putBoolean("${KEY_BATTLE_PANEL_PREFIX}$key", expanded).apply()
     }
 
+    fun getAutoAfkSkillSelection(): String? = prefs.getString(KEY_AUTOAFK_SKILLS, null)
+
+    fun setAutoAfkSkillSelection(value: String?) {
+        prefs.edit().putString(KEY_AUTOAFK_SKILLS, value).apply()
+    }
+
     companion object {
         private const val KEY_SERVER_URL = "server_url"
         private const val KEY_TOKEN = "token"
@@ -67,5 +73,6 @@ class AppPreferences(private val context: Context) {
         private const val KEY_PENDING_DOWNLOAD_ID = "pending_download_id"
         private const val KEY_THEME_MODE = "theme_mode"
         private const val KEY_BATTLE_PANEL_PREFIX = "battle_panel_"
+        private const val KEY_AUTOAFK_SKILLS = "autoafk_skill_selection"
     }
 }

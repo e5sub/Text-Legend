@@ -586,12 +586,22 @@
           <button class="warehouse-tab active" data-tab="bag">背包</button>
           <button class="warehouse-tab" data-tab="warehouse">仓库</button>
         </div>
+        <div class="warehouse-filters">
+          <button class="warehouse-filter active" data-filter="all">全部</button>
+          <button class="warehouse-filter" data-filter="consumable">药品</button>
+          <button class="warehouse-filter" data-filter="weapon">武器</button>
+          <button class="warehouse-filter" data-filter="armor">防具</button>
+          <button class="warehouse-filter" data-filter="accessory">饰品</button>
+          <button class="warehouse-filter" data-filter="book">技能书</button>
+          <button class="warehouse-filter" data-filter="material">材料</button>
+        </div>
         <div class="modal-text" id="warehouse-page">第 1/1 页</div>
         <div id="warehouse-list" class="bag-list"></div>
       </div>
       <div class="modal-actions">
         <button id="warehouse-prev">上一页</button>
         <button id="warehouse-next">下一页</button>
+        <button id="warehouse-bag">背包</button>
         <button id="warehouse-close">关闭</button>
       </div>
     </div>
