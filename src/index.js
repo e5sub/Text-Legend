@@ -5056,6 +5056,30 @@ function getAutoFullBestRoom(player) {
   return best;
 }
 
+function findAliveBossTarget(player) {
+  if (!player) return null;
+  const realmId = player.realmId || 1;
+  const mobs = getAllAliveMobs(realmId);
+  let best = null;
+  for (const mob of mobs) {
+    if (!mob || mob.hp <= 0) continue;
+    const tpl = MOB_TEMPLATES[mob.templateId];
+    if (!tpl || !isBossMob(tpl)) continue;
+    const zoneId = mob.zoneId;
+    const roomId = mob.roomId;
+    if (!zoneId || !roomId) continue;
+    if (CROSS_REALM_ZONES.has(zoneId)) continue;
+    if (!WORLD[zoneId]?.rooms?.[roomId]) continue;
+    if (!canEnterRoomByCultivation(player, zoneId, roomId)) continue;
+    if (player.position.zone === zoneId && player.position.room === roomId) continue;
+    const exp = Number(tpl.exp || 0);
+    if (!best || exp > best.exp) {
+      best = { zoneId, roomId, exp };
+    }
+  }
+  return best;
+}
+
 function findBossInRoom(roomMobs) {
   if (!Array.isArray(roomMobs)) return null;
   for (const mob of roomMobs) {
@@ -5095,6 +5119,25 @@ function tryAutoFullAction(player, roomMobs) {
     }
     return null;
   }
+  const now = Date.now();
+  const pausedUntil = Number(player.flags.autoFullPausedUntil || 0);
+  if (pausedUntil > now) {
+    const bossMob = findBossInRoom(roomMobs);
+    if (bossMob) {
+      player.combat = { targetId: bossMob.id, targetType: 'mob', skillId: null };
+      return 'engaged';
+    }
+    if (Array.isArray(roomMobs) && roomMobs.length > 0) {
+      const idle = roomMobs.filter((m) => !m.status?.aggroTarget);
+      const pool = idle.length ? idle : roomMobs;
+      const target = pool.length ? pool[randInt(0, pool.length - 1)] : null;
+      if (target) {
+        player.combat = { targetId: target.id, targetType: 'mob', skillId: null };
+        return 'engaged';
+      }
+    }
+    return null;
+  }
   const bossMob = findBossInRoom(roomMobs);
   if (bossMob) {
     if (!player.flags.lastBossRoom) {
@@ -5106,18 +5149,15 @@ function tryAutoFullAction(player, roomMobs) {
     player.combat = { targetId: bossMob.id, targetType: 'mob', skillId: null };
     return 'engaged';
   }
-  if (Array.isArray(roomMobs) && roomMobs.length > 0) {
-    const idle = roomMobs.filter((m) => !m.status?.aggroTarget);
-    const pool = idle.length ? idle : roomMobs;
-    const target = pool.length ? pool[randInt(0, pool.length - 1)] : null;
-    if (target) {
-      player.combat = { targetId: target.id, targetType: 'mob', skillId: null };
-      return 'engaged';
+  const lastMoveAt = Number(player.flags.autoFullLastMoveAt || 0);
+  const canMove = now - lastMoveAt >= AUTO_FULL_MOVE_COOLDOWN_MS;
+  if (canMove) {
+    const bossTarget = findAliveBossTarget(player);
+    if (bossTarget && movePlayerToRoom(player, bossTarget.zoneId, bossTarget.roomId)) {
+      player.flags.autoFullLastMoveAt = now;
+      return 'moved';
     }
   }
-  const now = Date.now();
-  const lastMoveAt = Number(player.flags.autoFullLastMoveAt || 0);
-  if (now - lastMoveAt < AUTO_FULL_MOVE_COOLDOWN_MS) return null;
   if (player.flags?.lastBossRoom?.zoneId && player.flags?.lastBossRoom?.roomId) {
     const { zoneId, roomId } = player.flags.lastBossRoom;
     if (WORLD[zoneId]?.rooms?.[roomId] && (player.position.zone !== zoneId || player.position.room !== roomId)) {
@@ -5127,7 +5167,7 @@ function tryAutoFullAction(player, roomMobs) {
       const roomRealmId = getRoomRealmId(zoneId, roomId, player.realmId || 1);
       const bossRoomMobs = getAliveMobs(zoneId, roomId, roomRealmId);
       const bossStillAlive = Boolean(findBossInRoom(bossRoomMobs));
-      if (bossStillAlive && movePlayerToRoom(player, zoneId, roomId)) {
+      if (bossStillAlive && canMove && movePlayerToRoom(player, zoneId, roomId)) {
         player.flags.autoFullLastMoveAt = now;
         return 'moved';
       }
@@ -5135,11 +5175,20 @@ function tryAutoFullAction(player, roomMobs) {
     }
   }
   const best = getAutoFullBestRoom(player);
-  if (!best) return null;
-  if (player.position.zone === best.zoneId && player.position.room === best.roomId) return null;
-  if (movePlayerToRoom(player, best.zoneId, best.roomId)) {
-    player.flags.autoFullLastMoveAt = now;
-    return 'moved';
+  if (best && canMove && (player.position.zone !== best.zoneId || player.position.room !== best.roomId)) {
+    if (movePlayerToRoom(player, best.zoneId, best.roomId)) {
+      player.flags.autoFullLastMoveAt = now;
+      return 'moved';
+    }
+  }
+  if (Array.isArray(roomMobs) && roomMobs.length > 0) {
+    const idle = roomMobs.filter((m) => !m.status?.aggroTarget);
+    const pool = idle.length ? idle : roomMobs;
+    const target = pool.length ? pool[randInt(0, pool.length - 1)] : null;
+    if (target) {
+      player.combat = { targetId: target.id, targetType: 'mob', skillId: null };
+      return 'engaged';
+    }
   }
   return null;
 }
@@ -8373,6 +8422,12 @@ function reduceDurabilityOnAttack(player) {
 }
 
 function handleDeath(player) {
+  if (player?.flags?.autoFullEnabled) {
+    if (!player.flags) player.flags = {};
+    const now = Date.now();
+    player.flags.autoFullPausedUntil = now + 15000;
+    player.flags.autoFullLastMoveAt = now;
+  }
   player.hp = Math.floor(player.max_hp * 0.5);
   player.mp = Math.floor(player.max_mp * 0.3);
   // 随机分配到4个平原变体
