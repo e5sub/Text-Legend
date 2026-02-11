@@ -5434,12 +5434,21 @@ function renderState(state) {
     exp: s.exp || 0,
     expNext: s.expNext || 100
   }));
+  const NO_TARGET_SKILL_TYPES = new Set([
+    'heal',
+    'heal_group',
+    'summon',
+    'buff_shield',
+    'buff_magic_shield_group',
+    'buff_def',
+    'buff_mdef',
+    'stealth',
+    'stealth_group',
+    'buff_tiangang',
+    'repel'
+  ]);
   const handleSkillClick = (s) => {
-    if (s.raw.type === 'heal') {
-      socket.emit('cmd', { text: `cast ${s.raw.id}` });
-      return;
-    }
-    if (s.raw.type === 'summon') {
+    if (NO_TARGET_SKILL_TYPES.has(s.raw.type)) {
       socket.emit('cmd', { text: `cast ${s.raw.id}` });
       return;
     }
