@@ -1839,40 +1839,43 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         return;
       }
       const lower = args.toLowerCase();
-      if (lower === 'off') {
-        if (player.flags) {
-          player.flags.autoSkillId = null;
-          player.flags.autoHpPct = null;
-          player.flags.autoMpPct = null;
+        if (lower === 'off') {
+          if (player.flags) {
+            player.flags.autoSkillId = null;
+            player.flags.autoHpPct = null;
+            player.flags.autoMpPct = null;
+          }
+          send('已关闭自动技能与自动喝药。');
+          return;
         }
-        send('已关闭自动技能与自动喝药。');
-        return;
-      }
-      if (lower === 'all') {
-        if (!player.flags) player.flags = {};
-        player.flags.autoSkillId = 'all';
-        if (player.flags.autoHpPct == null) player.flags.autoHpPct = 50;
-        if (player.flags.autoMpPct == null) player.flags.autoMpPct = 50;
-        send(`已设置自动技能: 全部技能。自动喝药阈值: HP ${player.flags.autoHpPct}% / MP ${player.flags.autoMpPct}%`);
-        return;
-      }
+        if (lower === 'all') {
+          if (!player.flags) player.flags = {};
+          player.flags.autoFullEnabled = false;
+          player.flags.autoSkillId = 'all';
+          if (player.flags.autoHpPct == null) player.flags.autoHpPct = 50;
+          if (player.flags.autoMpPct == null) player.flags.autoMpPct = 50;
+          send(`已设置自动技能: 全部技能。自动喝药阈值: HP ${player.flags.autoHpPct}% / MP ${player.flags.autoMpPct}%`);
+          return;
+        }
       const listText = lower.startsWith('set ') ? args.slice(4) : args;
-      if (listText.includes(',')) {
-        const parts = listText.split(',').map((s) => s.trim()).filter(Boolean);
-        const skills = parts.map((name) => skillByName(player, name)).filter(Boolean);
-        if (skills.length !== parts.length) return send('未找到部分技能。');
+        if (listText.includes(',')) {
+          const parts = listText.split(',').map((s) => s.trim()).filter(Boolean);
+          const skills = parts.map((name) => skillByName(player, name)).filter(Boolean);
+          if (skills.length !== parts.length) return send('未找到部分技能。');
+          if (!player.flags) player.flags = {};
+          player.flags.autoFullEnabled = false;
+          player.flags.autoSkillId = skills.map((s) => s.id);
+          if (player.flags.autoHpPct == null) player.flags.autoHpPct = 50;
+          if (player.flags.autoMpPct == null) player.flags.autoMpPct = 50;
+          send(`已设置自动技能: ${skills.map((s) => s.name).join('、')}。`);
+          return;
+        }
+        const skill = skillByName(player, listText);
+        if (!skill) return send('未找到技能。');
         if (!player.flags) player.flags = {};
-        player.flags.autoSkillId = skills.map((s) => s.id);
+        player.flags.autoFullEnabled = false;
+        player.flags.autoSkillId = skill.id;
         if (player.flags.autoHpPct == null) player.flags.autoHpPct = 50;
-        if (player.flags.autoMpPct == null) player.flags.autoMpPct = 50;
-        send(`已设置自动技能: ${skills.map((s) => s.name).join('、')}。`);
-        return;
-      }
-      const skill = skillByName(player, listText);
-      if (!skill) return send('未找到技能。');
-      if (!player.flags) player.flags = {};
-      player.flags.autoSkillId = skill.id;
-      if (player.flags.autoHpPct == null) player.flags.autoHpPct = 50;
         if (player.flags.autoMpPct == null) player.flags.autoMpPct = 50;
         send(`已设置自动技能: ${skill.name}。`);
         return;
@@ -1884,7 +1887,13 @@ export async function handleCommand({ player, players, allCharacters, playersByN
             send('SVIP未开通或已到期，无法使用智能挂机。');
             return;
           }
+          if (!player.flags) player.flags = {};
           player.flags.autoFullEnabled = !player.flags.autoFullEnabled;
+          if (player.flags.autoFullEnabled) {
+            player.flags.autoSkillId = null;
+            player.flags.autoHpPct = null;
+            player.flags.autoMpPct = null;
+          }
           player.forceStateRefresh = true;
           send(player.flags.autoFullEnabled ? '已开启智能挂机。' : '已关闭智能挂机。');
           return;
@@ -1894,12 +1903,17 @@ export async function handleCommand({ player, players, allCharacters, playersByN
             send('SVIP未开通或已到期，无法使用智能挂机。');
             return;
           }
+          if (!player.flags) player.flags = {};
           player.flags.autoFullEnabled = true;
+          player.flags.autoSkillId = null;
+          player.flags.autoHpPct = null;
+          player.flags.autoMpPct = null;
           player.forceStateRefresh = true;
           send('已开启智能挂机。');
           return;
         }
         if (['off', 'stop', 'disable'].includes(sub)) {
+          if (!player.flags) player.flags = {};
           player.flags.autoFullEnabled = false;
           player.forceStateRefresh = true;
           send('已关闭智能挂机。');

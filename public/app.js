@@ -4896,6 +4896,13 @@ function renderState(state) {
           afkUi.autoFull.classList.add('hidden');
         }
       }
+      if (afkUi.start) {
+        if (svipActive) {
+          afkUi.start.classList.add('hidden');
+        } else {
+          afkUi.start.classList.remove('hidden');
+        }
+      }
       if (ui.cultivation) {
         const levelValue = state.stats?.cultivation_level ?? state.player?.cultivation_level ?? -1;
         const info = getCultivationInfo(levelValue);
@@ -5735,12 +5742,13 @@ function renderState(state) {
     actions.splice(actions.length, 0, { id: 'vip activate', label: 'VIP\u6fc0\u6d3b' });
   }
   actions.push({ id: 'rank', label: '\u73a9\u5bb6\u6392\u884c' });
-  const afkLabel = state.stats && state.stats.autoSkillId ? '\u505c\u6b62\u6302\u673a' : '\u6302\u673a';
-  actions.push({ id: 'afk', label: afkLabel });
-  if (state.stats && state.stats.svip) {
-    const smartLabel = state.stats.autoFullEnabled ? '\u505c\u6b62\u667a\u80fd\u6302\u673a' : '\u667a\u80fd\u6302\u673a';
-    actions.push({ id: 'autoafk', label: smartLabel });
+  let afkLabel = '\u6302\u673a';
+  if (state.stats && state.stats.autoFullEnabled) {
+    afkLabel = '\u505c\u6b62\u667a\u80fd\u6302\u673a';
+  } else if (state.stats && state.stats.autoSkillId) {
+    afkLabel = '\u505c\u6b62\u6302\u673a';
   }
+  actions.push({ id: 'afk', label: afkLabel });
   actions.push({ id: 'sponsor', label: '\u8d5e\u52a9\u4f5c\u8005', highlight: true });
   renderChips(ui.actions, actions, async (a) => {
     if (socket && isStateThrottleActive()) {
@@ -5794,19 +5802,18 @@ function renderState(state) {
       socket.emit('cmd', { text: `train ${stat.trim()}` });
       return;
     }
-    if (a.id === 'afk') {
-      if (state.stats && state.stats.autoSkillId) {
-        socket.emit('cmd', { text: 'autoskill off' });
+      if (a.id === 'afk') {
+        if (state.stats && state.stats.autoFullEnabled) {
+          socket.emit('cmd', { text: 'autoafk off' });
+          return;
+        }
+        if (state.stats && state.stats.autoSkillId) {
+          socket.emit('cmd', { text: 'autoskill off' });
+          return;
+        }
+        showAfkModal(state.skills || [], state.stats ? state.stats.autoSkillId : null);
         return;
       }
-      showAfkModal(state.skills || [], state.stats ? state.stats.autoSkillId : null);
-      return;
-    }
-    if (a.id === 'autoafk') {
-      const enabled = Boolean(state.stats?.autoFullEnabled);
-      socket.emit('cmd', { text: `autoafk ${enabled ? 'off' : 'on'}` });
-      return;
-    }
     if (a.id === 'consign') {
       showConsignModal();
       return;
