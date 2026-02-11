@@ -371,14 +371,6 @@ export function computeDerived(player) {
         mainStat: null
       });
     }
-    if (equipped.chest?.id) {
-      activeSetIds.add(equipped.chest.id);
-      activeSetBonusRates.set(equipped.chest.id, {
-        rate: maxBonusRate,
-        mode: 'all',
-        mainStat: null
-      });
-    }
   }
   player.flags.setBonusActive = activeSetIds.size > 0;
   const bonus = Object.values(player.equipment)
