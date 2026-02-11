@@ -2037,19 +2037,32 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           if (!player.flags) player.flags = {};
           const raw = String(args || '').trim();
           const rest = raw.replace(/^boss\s*/i, '').trim();
-          if (!rest || rest === 'all') {
+          if (!rest) {
+            // 空参数视为“不打BOSS”
+            player.flags.autoFullBossFilter = [];
+            player.forceStateRefresh = true;
+            send('智能挂机BOSS：不打BOSS');
+            return;
+          }
+          if (rest === 'all') {
             player.flags.autoFullBossFilter = null;
             player.forceStateRefresh = true;
             send('智能挂机BOSS：全部');
+            return;
+          }
+          if (['off', 'none', 'disable', 'cancel', '关闭', '取消', '不打'].includes(rest)) {
+            player.flags.autoFullBossFilter = [];
+            player.forceStateRefresh = true;
+            send('智能挂机BOSS：不打BOSS');
             return;
           }
           const list = rest
             .split(/[,\|]/)
             .map((name) => name.trim())
             .filter(Boolean);
-          player.flags.autoFullBossFilter = list.length ? list : null;
+          player.flags.autoFullBossFilter = list;
           player.forceStateRefresh = true;
-          send(list.length ? `智能挂机BOSS：${list.join('、')}` : '智能挂机BOSS：全部');
+          send(list.length ? `智能挂机BOSS：${list.join('、')}` : '智能挂机BOSS：不打BOSS');
           return;
         }
         if (['on', 'start', 'enable'].includes(sub)) {

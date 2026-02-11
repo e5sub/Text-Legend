@@ -4951,6 +4951,7 @@ function isInvincible(target) {
 const AUTO_DAILY_LIMIT_MS = 4 * 60 * 60 * 1000;
 const AUTO_FULL_TRIAL_MS = 10 * 60 * 1000;
 const AUTO_FULL_MOVE_COOLDOWN_MS = 5000;
+const AUTO_FULL_BOSS_MOVE_COOLDOWN_MS = 0;
 const AUTO_FULL_ROOM_CACHE_TTL = 15000;
 const autoFullRoomCache = new Map();
 const AUTO_FULL_BOSS_LIST = Array.from(new Set(
@@ -5015,17 +5016,18 @@ function isSvipActive(player) {
 
 function getAutoFullBossFilterSet(player) {
   const list = player?.flags?.autoFullBossFilter;
-  if (!Array.isArray(list) || list.length === 0) return null;
+  if (!Array.isArray(list)) return null;
+  if (list.length === 0) return new Set();
   const normalized = list
     .map((name) => String(name || '').trim().toLowerCase())
     .filter(Boolean);
-  if (!normalized.length) return null;
   return new Set(normalized);
 }
 
 function isAutoFullBossAllowed(player, mobTemplate) {
   const filter = getAutoFullBossFilterSet(player);
-  if (!filter) return true;
+  if (filter == null) return true;
+  if (filter.size === 0) return false;
   const name = String(mobTemplate?.name || '').trim().toLowerCase();
   if (!name) return false;
   return filter.has(name);
@@ -5243,7 +5245,8 @@ function tryAutoFullAction(player, roomMobs) {
   }
   const lastMoveAt = Number(player.flags.autoFullLastMoveAt || 0);
   const canMove = now - lastMoveAt >= AUTO_FULL_MOVE_COOLDOWN_MS;
-  if (canMove) {
+  const canMoveForBoss = now - lastMoveAt >= AUTO_FULL_BOSS_MOVE_COOLDOWN_MS;
+  if (canMoveForBoss) {
     const bossTarget = findAliveBossTarget(player);
     if (bossTarget && movePlayerToRoom(player, bossTarget.zoneId, bossTarget.roomId)) {
       player.flags.autoFullLastMoveAt = now;
@@ -5259,7 +5262,7 @@ function tryAutoFullAction(player, roomMobs) {
       const roomRealmId = getRoomRealmId(zoneId, roomId, player.realmId || 1);
       const bossRoomMobs = getAliveMobs(zoneId, roomId, roomRealmId);
       const bossStillAlive = Boolean(findBossInRoom(bossRoomMobs, player));
-      if (bossStillAlive && canMove && movePlayerToRoom(player, zoneId, roomId)) {
+      if (bossStillAlive && canMoveForBoss && movePlayerToRoom(player, zoneId, roomId)) {
         player.flags.autoFullLastMoveAt = now;
         return 'moved';
       }
@@ -6032,7 +6035,7 @@ async function buildState(player) {
   const refineMaterialCount = getRefineMaterialCount();
   const svipSettings = await getSvipSettingsCached();
   const autoFullTrialInfo = getAutoFullTrialInfo(player);
-  const autoFullBossFilter = Array.isArray(player.flags?.autoFullBossFilter) && player.flags.autoFullBossFilter.length
+  const autoFullBossFilter = Array.isArray(player.flags?.autoFullBossFilter)
     ? player.flags.autoFullBossFilter
     : null;
 
