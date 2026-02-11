@@ -1230,6 +1230,10 @@ body.log-collapsed .game-layout {
   gap: 10px;
 }
 
+.status-grid-3 .status-row.gold-row {
+  margin: 1px 0;
+}
+
 .status-row.gold-row strong {
   flex: 1;
   text-align: right;

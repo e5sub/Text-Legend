@@ -2053,11 +2053,10 @@ function renderConsignInventory(items) {
       const price = Math.max(1, Number(priceText || 0));
       if (Number.isNaN(price) || price <= 0) return;
       const currencyText = await promptModal({
-        title: '\u5BC4\u552E\u5E01\u79CD',
-        text: '\u8BF7\u8F93\u5165\u5E01\u79CD: \u91D1\u5E01/\u5143\u5B9D',
-        placeholder: '\u91D1\u5E01',
-        value: '\u91D1\u5E01',
-        allowEmpty: true
+        title: '寄售币种',
+        text: '请输入币种: 金币/元宝',
+        placeholder: '金币/元宝',
+        value: '金币'
       });
       if (currencyText === null) return;
       const currency = normalizeCurrencyInput(currencyText);
