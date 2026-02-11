@@ -334,6 +334,7 @@ export function computeDerived(player) {
     if (partialSet) {
       const bonusRate = setDef.bonusRate || SET_BONUS_RATE;
       [
+        setDef.weapon,
         setDef.head,
         setDef.waist,
         setDef.feet,
@@ -341,6 +342,7 @@ export function computeDerived(player) {
         setDef.ring,
         setDef.bracelet
       ].forEach((id) => {
+        if (!id) return;
         activeSetIds.add(id);
         activeSetBonusRates.set(id, {
           rate: bonusRate,
@@ -358,6 +360,25 @@ export function computeDerived(player) {
     player.flags.caiyaTitle = '雄霸天下';
   } else if (player.flags.caiyaTitle) {
     delete player.flags.caiyaTitle;
+  }
+  if (activeSets.length > 0) {
+    const maxBonusRate = Math.max(...activeSets.map((setDef) => setDef.bonusRate || SET_BONUS_RATE));
+    if (equipped.weapon?.id) {
+      activeSetIds.add(equipped.weapon.id);
+      activeSetBonusRates.set(equipped.weapon.id, {
+        rate: maxBonusRate,
+        mode: 'all',
+        mainStat: null
+      });
+    }
+    if (equipped.chest?.id) {
+      activeSetIds.add(equipped.chest.id);
+      activeSetBonusRates.set(equipped.chest.id, {
+        rate: maxBonusRate,
+        mode: 'all',
+        mainStat: null
+      });
+    }
   }
   player.flags.setBonusActive = activeSetIds.size > 0;
   const bonus = Object.values(player.equipment)
