@@ -120,7 +120,7 @@ import { WORLD, expandRoomVariants, shrinkRoomVariants } from './game/world.js';
 import { getRoomMobs, getAliveMobs, spawnMobs, removeMob, seedRespawnCache, setRespawnStore, getAllAliveMobs, incrementWorldBossKills, setWorldBossKillCount as setWorldBossKillCountState, incrementSpecialBossKills, setSpecialBossKillCount as setSpecialBossKillCountState, incrementCultivationBossKills, setCultivationBossKillCount as setCultivationBossKillCountState } from './game/state.js';
 import { calcHitChance, calcDamage, applyDamage, applyHealing, applyPoison, tickStatus, getDefenseMultiplier, consumeFirestrikeCrit } from './game/combat.js';
 import { randInt, clamp } from './game/utils.js';
-import { expForLevel, setRoomVariantCount as applyRoomVariantCount } from './game/constants.js';
+import { expForLevel, ROOM_VARIANT_COUNT, setRoomVariantCount as applyRoomVariantCount } from './game/constants.js';
 import {
   setAllClassLevelBonusConfigs,
   setClassLevelBonusConfig as setClassLevelBonusConfigMem,
@@ -5135,6 +5135,29 @@ function getAutoFullBestRoom(player) {
   return best;
 }
 
+function selectLeastPopulatedRoomAuto(zoneId, roomId, realmId) {
+  const baseRoomId = String(roomId || '').replace(/\d+$/, '');
+  const roomOptions = [];
+  const tryAddRoom = (candidateRoomId) => {
+    if (!WORLD[zoneId]?.rooms?.[candidateRoomId]) return;
+    const roomRealmId = getRoomRealmId(zoneId, candidateRoomId, realmId || 1);
+    const playerCount = listOnlinePlayers(roomRealmId)
+      .filter((p) => p.position.zone === zoneId && p.position.room === candidateRoomId).length;
+    roomOptions.push({ roomId: candidateRoomId, playerCount });
+  };
+
+  if (baseRoomId) {
+    tryAddRoom(baseRoomId);
+    for (let i = 1; i <= ROOM_VARIANT_COUNT; i += 1) {
+      tryAddRoom(`${baseRoomId}${i}`);
+    }
+  }
+
+  if (roomOptions.length === 0) return roomId;
+  roomOptions.sort((a, b) => a.playerCount - b.playerCount);
+  return roomOptions[0].roomId;
+}
+
 function findAliveBossTarget(player) {
   if (!player) return null;
   const realmId = player.realmId || 1;
@@ -5299,10 +5322,13 @@ function tryAutoFullAction(player, roomMobs) {
     return null;
   }
   const best = getAutoFullBestRoom(player);
-  if (best && canMove && (player.position.zone !== best.zoneId || player.position.room !== best.roomId)) {
-    if (movePlayerToRoom(player, best.zoneId, best.roomId)) {
-      player.flags.autoFullLastMoveAt = now;
-      return 'moved';
+  if (best && canMove) {
+    const targetRoomId = selectLeastPopulatedRoomAuto(best.zoneId, best.roomId, player.realmId || 1);
+    if (player.position.zone !== best.zoneId || player.position.room !== targetRoomId) {
+      if (movePlayerToRoom(player, best.zoneId, targetRoomId)) {
+        player.flags.autoFullLastMoveAt = now;
+        return 'moved';
+      }
     }
   }
   return null;
