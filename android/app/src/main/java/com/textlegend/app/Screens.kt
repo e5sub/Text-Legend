@@ -3711,10 +3711,11 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
                 onDismiss()
             }
         ) { Text("开始挂机") }
-        val trialAvailable = state?.stats?.autoFullTrialAvailable == true
-        if (state?.stats?.svip == true || trialAvailable) {
+        val stats = state?.stats
+        val trialAvailable = stats?.autoFullTrialAvailable == true
+        if (stats?.svip == true || trialAvailable) {
             Spacer(modifier = Modifier.height(8.dp))
-            val autoFullEnabled = state.stats.autoFullEnabled
+            val autoFullEnabled = stats?.autoFullEnabled == true
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {
@@ -3722,8 +3723,8 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
                     onDismiss()
                 }
             ) {
-                val remain = formatCountdown(state.stats.autoFullTrialRemainingSec)
-                Text(if (!state.stats.svip && trialAvailable && !autoFullEnabled) "智能挂机(试用 $remain)" else if (autoFullEnabled) "关闭智能挂机" else "智能挂机")
+                val remain = formatCountdown(stats?.autoFullTrialRemainingSec)
+                Text(if (stats?.svip != true && trialAvailable && !autoFullEnabled) "智能挂机(试用 $remain)" else if (autoFullEnabled) "关闭智能挂机" else "智能挂机")
             }
         }
       }
