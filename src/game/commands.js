@@ -2018,17 +2018,20 @@ export async function handleCommand({ player, players, allCharacters, playersByN
               return;
             }
           }
-          player.flags.autoFullEnabled = !player.flags.autoFullEnabled;
-          if (player.flags.autoFullEnabled) {
-            if (!player.flags.autoSkillId) {
-              player.flags.autoSkillId = 'all';
+            const wasEnabled = Boolean(player.flags.autoFullEnabled);
+            player.flags.autoFullEnabled = !player.flags.autoFullEnabled;
+            if (player.flags.autoFullEnabled) {
+              if (!player.flags.autoSkillId) {
+                player.flags.autoSkillId = 'all';
+              }
+              if (player.flags.autoHpPct == null) player.flags.autoHpPct = 50;
+              if (player.flags.autoMpPct == null) player.flags.autoMpPct = 50;
+            } else if (wasEnabled) {
+              player.flags.autoSkillId = null;
             }
-            if (player.flags.autoHpPct == null) player.flags.autoHpPct = 50;
-            if (player.flags.autoMpPct == null) player.flags.autoMpPct = 50;
-          }
-          player.forceStateRefresh = true;
-          send(player.flags.autoFullEnabled ? '已开启智能挂机。' : '已关闭智能挂机。');
-          return;
+            player.forceStateRefresh = true;
+            send(player.flags.autoFullEnabled ? '已开启智能挂机。' : '已关闭智能挂机。');
+            return;
         }
         if (sub.startsWith('boss')) {
           if (!player.flags) player.flags = {};
@@ -2077,13 +2080,17 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           send('已开启智能挂机。');
           return;
         }
-        if (['off', 'stop', 'disable'].includes(sub)) {
-          if (!player.flags) player.flags = {};
-          player.flags.autoFullEnabled = false;
-          player.forceStateRefresh = true;
-          send('已关闭智能挂机。');
-          return;
-        }
+          if (['off', 'stop', 'disable'].includes(sub)) {
+            if (!player.flags) player.flags = {};
+            const wasEnabled = Boolean(player.flags.autoFullEnabled);
+            player.flags.autoFullEnabled = false;
+            if (wasEnabled) {
+              player.flags.autoSkillId = null;
+            }
+            player.forceStateRefresh = true;
+            send('已关闭智能挂机。');
+            return;
+          }
         send('用法: autoafk on/off');
         return;
       }

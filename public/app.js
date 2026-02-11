@@ -5121,13 +5121,13 @@ function renderState(state) {
           afkUi.autoFull.classList.add('hidden');
         }
       }
-      if (afkUi.start) {
-        if (state.stats && state.stats.autoFullEnabled) {
-          afkUi.start.classList.add('hidden');
-        } else {
-          afkUi.start.classList.remove('hidden');
+        if (afkUi.start) {
+          if (svipActive || (state.stats && state.stats.autoFullEnabled)) {
+            afkUi.start.classList.add('hidden');
+          } else {
+            afkUi.start.classList.remove('hidden');
+          }
         }
-      }
       if (ui.cultivation) {
         const levelValue = state.stats?.cultivation_level ?? state.player?.cultivation_level ?? -1;
         const info = getCultivationInfo(levelValue);

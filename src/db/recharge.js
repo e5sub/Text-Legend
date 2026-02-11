@@ -1,7 +1,7 @@
 import knex from './index.js';
 
 function normalizeCode(code) {
-  return String(code || '').trim().toUpperCase();
+  return String(code || '').replace(/\s+/g, '').trim().toUpperCase();
 }
 
 export async function createRechargeCards(count, amount, createdByUserId = null) {

@@ -3,8 +3,12 @@ name: Docker Image CI
 on:
   push:
     branches: [ "master" ]
+    paths-ignore:
+      - "img/**"
   pull_request:
     branches: [ "master" ]
+    paths-ignore:
+      - "img/**"
 
 jobs:
   build:

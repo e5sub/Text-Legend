@@ -1862,12 +1862,13 @@ private fun ActionsTab(
         vip.add(ActionItem("SVIP永久(${permanentPrice}元宝)", "svip open permanent", R.drawable.ic_vip))
     }
     val afk = buildList {
-        if (hasAutoSkill(state?.stats)) {
-            add(ActionItem("停止挂机", "autoskill off", R.drawable.ic_afk))
-        } else {
-            add(ActionItem("挂机", "afk", R.drawable.ic_afk))
+        if (!svipActive) {
+            if (hasAutoSkill(state?.stats)) {
+                add(ActionItem("停止挂机", "autoskill off", R.drawable.ic_afk))
+            } else {
+                add(ActionItem("挂机", "afk", R.drawable.ic_afk))
+            }
         }
-        val svipActive = state?.stats?.svip == true || (svipExpiresAt > System.currentTimeMillis())
         val trialAvailable = state?.stats?.autoFullTrialAvailable == true
         if (svipActive || trialAvailable) {
             val autoFullEnabled = state?.stats?.autoFullEnabled == true
@@ -3704,47 +3705,51 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
               ) { Text("清空") }
           }
           Spacer(modifier = Modifier.height(8.dp))
-        Button(
-            modifier = Modifier.fillMaxWidth(),
-            onClick = {
-                if (selected.isEmpty()) {
-                    vm.sendCmd("autoskill off")
-                    prefs.setAutoAfkSkillSelection(null)
-                } else {
-                    vm.sendCmd("autoskill set ${selected.joinToString(",")}")
-                    prefs.setAutoAfkSkillSelection(selected.joinToString(","))
-                }
-                onDismiss()
-            }
-        ) { Text("开始挂机") }
-        val stats = state?.stats
-        val trialAvailable = stats?.autoFullTrialAvailable == true
-        if (stats?.svip == true || trialAvailable) {
-            Spacer(modifier = Modifier.height(8.dp))
-            val autoFullEnabled = stats?.autoFullEnabled == true
-            Button(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = {
-                    if (autoFullEnabled) {
-                        vm.sendCmd("autoafk off")
-                        vm.sendCmd("autoskill off")
-                    } else {
-                        val ids = if (selected.isEmpty()) skills.map { it.id } else selected.toList()
-                        if (ids.isNotEmpty()) {
-                            vm.sendCmd("autoskill set ${ids.joinToString(",")}")
-                            prefs.setAutoAfkSkillSelection(ids.joinToString(","))
-                        }
-                        vm.sendCmd("autoafk on")
-                    }
-                    onDismiss()
-                }
-            ) {
-                val remain = formatCountdown(stats?.autoFullTrialRemainingSec)
-                Text(if (stats?.svip != true && trialAvailable && !autoFullEnabled) "智能挂机(试用 $remain)" else if (autoFullEnabled) "关闭智能挂机" else "智能挂机")
-            }
+          val stats = state?.stats
+          val svipExpiresAt = stats?.svip_expires_at ?: 0L
+          val svipActive = stats?.svip == true || (svipExpiresAt > System.currentTimeMillis())
+          if (!svipActive) {
+              Button(
+                  modifier = Modifier.fillMaxWidth(),
+                  onClick = {
+                      if (selected.isEmpty()) {
+                          vm.sendCmd("autoskill off")
+                          prefs.setAutoAfkSkillSelection(null)
+                      } else {
+                          vm.sendCmd("autoskill set ${selected.joinToString(",")}")
+                          prefs.setAutoAfkSkillSelection(selected.joinToString(","))
+                      }
+                      onDismiss()
+                  }
+              ) { Text("开始挂机") }
+          }
+          val trialAvailable = stats?.autoFullTrialAvailable == true
+          if (svipActive || trialAvailable) {
+              Spacer(modifier = Modifier.height(8.dp))
+              val autoFullEnabled = stats?.autoFullEnabled == true
+              Button(
+                  modifier = Modifier.fillMaxWidth(),
+                  onClick = {
+                      if (autoFullEnabled) {
+                          vm.sendCmd("autoafk off")
+                          vm.sendCmd("autoskill off")
+                      } else {
+                          val ids = if (selected.isEmpty()) skills.map { it.id } else selected.toList()
+                          if (ids.isNotEmpty()) {
+                              vm.sendCmd("autoskill set ${ids.joinToString(",")}")
+                              prefs.setAutoAfkSkillSelection(ids.joinToString(","))
+                          }
+                          vm.sendCmd("autoafk on")
+                      }
+                      onDismiss()
+                  }
+              ) {
+                  val remain = formatCountdown(stats?.autoFullTrialRemainingSec)
+                  Text(if (!svipActive && trialAvailable && !autoFullEnabled) "智能挂机(试用 $remain)" else if (autoFullEnabled) "关闭智能挂机" else "智能挂机")
+              }
+          }
         }
-      }
-  }
+    }
 
 @Composable
 private fun DropsDialog(onDismiss: () -> Unit) {
