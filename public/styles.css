@@ -1270,6 +1270,23 @@ body.log-collapsed .game-layout {
   cursor: pointer;
 }
 
+.status-row.yuanbao-row .mini-select {
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  cursor: pointer;
+}
+
+.status-row.yuanbao-row .mini-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .status-row.cultivation-row .mini-btn:hover,
 .status-row.yuanbao-row .mini-btn:hover {
   filter: brightness(1.1);

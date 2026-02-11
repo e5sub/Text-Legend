@@ -435,6 +435,28 @@
             </div>
 
             <div style="border-top: 1px solid #ddd; padding-top: 20px;">
+              <h3>SVIP 开通设置</h3>
+              <div class="input-with-unit">
+                <input id="svip-price-month" type="number" min="0" value="100">
+                <span class="unit">元宝/月卡</span>
+              </div>
+              <div class="input-with-unit">
+                <input id="svip-price-quarter" type="number" min="0" value="260">
+                <span class="unit">元宝/季卡</span>
+              </div>
+              <div class="input-with-unit">
+                <input id="svip-price-year" type="number" min="0" value="900">
+                <span class="unit">元宝/年卡</span>
+              </div>
+              <div class="input-with-unit">
+                <input id="svip-price-permanent" type="number" min="0" value="3000">
+                <span class="unit">元宝/永久</span>
+              </div>
+              <button id="svip-save-btn">保存设置</button>
+              <div id="svip-msg" class="msg"></div>
+            </div>
+
+            <div style="border-top: 1px solid #ddd; padding-top: 20px;">
               <h3>元宝卡密管理</h3>
               <div class="input-with-unit">
                 <input id="recharge-count" type="number" min="1" max="200" value="5">
@@ -1273,6 +1295,6 @@
     </div>
   </div>
 
-  <script src="admin.js?v=7"></script>
+  <script src="admin.js?v=9"></script>
 </body>
 </html>

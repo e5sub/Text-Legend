@@ -18,7 +18,7 @@ import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from '.
 import { sendMail, listMail, listSentMail, markMailRead, markMailClaimed, deleteMail } from './db/mail.js';
 import { createVipCodes, listVipCodes, countVipCodes, useVipCode } from './db/vip.js';
 import { createRechargeCards, listRechargeCards, countRechargeCards, useRechargeCard } from './db/recharge.js';
-import { getSetting, setSetting, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb, getEquipSkillDropChance as getEquipSkillDropChanceDb, setEquipSkillDropChance as setEquipSkillDropChanceDb, getCmdRateLimits, setCmdRateLimits, getCmdCooldowns, setCmdCooldowns } from './db/settings.js';
+import { getSetting, setSetting, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getSvipPrices, setSvipPrices, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb, getEquipSkillDropChance as getEquipSkillDropChanceDb, setEquipSkillDropChance as setEquipSkillDropChanceDb, getCmdRateLimits, setCmdRateLimits, getCmdCooldowns, setCmdCooldowns } from './db/settings.js';
 import { listRealms, getRealmById, updateRealmName, createRealm } from './db/realms.js';
 import {
   listMobRespawns,
@@ -862,6 +862,22 @@ app.post('/admin/vip/self-claim-toggle', async (req, res) => {
   const { enabled } = req.body || {};
   await setVipSelfClaimEnabled(enabled === true);
   res.json({ ok: true, enabled: enabled === true });
+});
+
+app.get('/admin/svip-settings', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const prices = await getSvipPrices();
+  res.json({ ok: true, prices });
+});
+
+app.post('/admin/svip-settings/update', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const prices = req.body?.prices || {};
+  await setSvipPrices(prices);
+  const next = await getSvipPrices();
+  res.json({ ok: true, prices: next });
 });
 
 app.get('/admin/loot-log-status', async (req, res) => {
@@ -4382,6 +4398,41 @@ const rechargeApi = {
   }
 };
 
+const svipApi = {
+  async open(player, plan = 'month') {
+    if (!player) return { ok: false, msg: '角色不存在。' };
+    if (!player.flags) player.flags = {};
+    const { prices } = await getSvipSettingsCached();
+    const normalizedPlan = String(plan || '').trim().toLowerCase();
+    const planMap = {
+      month: { days: 30, label: '月' },
+      quarter: { days: 90, label: '季' },
+      year: { days: 365, label: '年' },
+      permanent: { days: 0, label: '永久' }
+    };
+    const picked = planMap[normalizedPlan] ? normalizedPlan : 'month';
+    const days = planMap[picked].days;
+    const cost = Math.max(0, Math.floor(Number(prices?.[picked] || 0)));
+    const currentYuanbao = Math.max(0, Math.floor(Number(player.yuanbao || 0)));
+    if (currentYuanbao < cost) {
+      return { ok: false, msg: `元宝不足，开通SVIP需要 ${cost} 元宝。` };
+    }
+    player.yuanbao = currentYuanbao - cost;
+    const now = Date.now();
+    if (days <= 0) {
+      player.flags.svip = true;
+      player.flags.svipExpiresAt = null;
+    } else {
+      const currentExpiresAt = Number(player.flags.svipExpiresAt || 0);
+      const base = currentExpiresAt && currentExpiresAt > now ? currentExpiresAt : now;
+      player.flags.svip = true;
+      player.flags.svipExpiresAt = base + days * 24 * 60 * 60 * 1000;
+    }
+    player.forceStateRefresh = true;
+    return { ok: true, msg: days <= 0 ? 'SVIP开通成功（永久）。' : `SVIP开通成功（${planMap[picked].label}卡，${days}天）。` };
+  }
+};
+
 async function cleanupExpiredConsignments(realmId = 1) {
   if (consignCleanupRunning) return;
   consignCleanupRunning = true;
@@ -4861,6 +4912,9 @@ function isInvincible(target) {
 }
 
 const AUTO_DAILY_LIMIT_MS = 4 * 60 * 60 * 1000;
+const AUTO_FULL_MOVE_COOLDOWN_MS = 5000;
+const AUTO_FULL_ROOM_CACHE_TTL = 15000;
+const autoFullRoomCache = new Map();
 
 function getAutoDailyKey(now = Date.now()) {
   const date = new Date(now);
@@ -4885,8 +4939,23 @@ function isVipActive(player) {
   return normalizeVipStatus(player);
 }
 
+function normalizeSvipStatus(player) {
+  if (!player) return false;
+  if (!player.flags) player.flags = {};
+  const expiresAt = Number(player.flags.svipExpiresAt || 0);
+  if (player.flags.svip && expiresAt && expiresAt <= Date.now()) {
+    player.flags.svip = false;
+    player.flags.svipExpiresAt = null;
+  }
+  return Boolean(player.flags.svip);
+}
+
+function isSvipActive(player) {
+  return normalizeSvipStatus(player);
+}
+
 function isVipAutoEnabled(player) {
-  if (isVipActive(player)) return true;
+  if (isVipActive(player) || isSvipActive(player)) return true;
   if (!player) return false;
   if (!player.flags) player.flags = {};
   const dayKey = getAutoDailyKey();
@@ -4901,7 +4970,7 @@ function isVipAutoEnabled(player) {
 function updateAutoDailyUsage(player) {
   if (!player) return;
   if (!player.flags) player.flags = {};
-  if (isVipActive(player)) {
+  if (isVipActive(player) || isSvipActive(player)) {
     player.flags.autoDailyDay = null;
     player.flags.autoDailyMs = null;
     player.flags.autoDailyLastAt = null;
@@ -4931,6 +5000,114 @@ function updateAutoDailyUsage(player) {
     player.flags.autoDailyLastAt = null;
     player.send('今日挂机时长已达上限（4小时）。');
   }
+}
+
+function canEnterRoomByCultivation(player, zoneId, roomId) {
+  const room = WORLD[zoneId]?.rooms?.[roomId];
+  if (!room) return false;
+  if (room.minCultivationLevel != null) {
+    const level = getCultivationLevel(player);
+    if (Number.isNaN(level) || level !== room.minCultivationLevel) return false;
+  }
+  return true;
+}
+
+function computeRoomAvgExp(room) {
+  if (!room || !Array.isArray(room.spawns) || room.spawns.length === 0) return null;
+  let sum = 0;
+  let count = 0;
+  for (const id of room.spawns) {
+    const tpl = MOB_TEMPLATES[id];
+    if (!tpl) continue;
+    if (isBossMob(tpl)) return null;
+    const exp = Number(tpl.exp || 0);
+    if (exp > 0) {
+      sum += exp;
+      count += 1;
+    }
+  }
+  if (count === 0) return null;
+  return sum / count;
+}
+
+function getAutoFullBestRoom(player) {
+  const levelKey = `cultivation:${getCultivationLevel(player)}`;
+  const cached = autoFullRoomCache.get(levelKey);
+  const now = Date.now();
+  if (cached && now - cached.at < AUTO_FULL_ROOM_CACHE_TTL) return cached.room;
+  let best = null;
+  for (const [zoneId, zone] of Object.entries(WORLD)) {
+    if (!zone || !zone.rooms) continue;
+    if (CROSS_REALM_ZONES.has(zoneId)) continue;
+    for (const [roomId, room] of Object.entries(zone.rooms)) {
+      if (!room?.spawns?.length) continue;
+      if (!canEnterRoomByCultivation(player, zoneId, roomId)) continue;
+      const avg = computeRoomAvgExp(room);
+      if (avg == null) continue;
+      if (!best || avg > best.avgExp) {
+        best = { zoneId, roomId, avgExp: avg };
+      }
+    }
+  }
+  autoFullRoomCache.set(levelKey, { at: now, room: best });
+  return best;
+}
+
+function findBossInRoom(roomMobs) {
+  if (!Array.isArray(roomMobs)) return null;
+  for (const mob of roomMobs) {
+    const tpl = MOB_TEMPLATES[mob.templateId];
+    if (tpl && isBossMob(tpl)) return mob;
+  }
+  return null;
+}
+
+function movePlayerToRoom(player, zoneId, roomId) {
+  if (!player || !player.position) return false;
+  if (player.position.zone === zoneId && player.position.room === roomId) return false;
+  if (!WORLD[zoneId]?.rooms?.[roomId]) return false;
+  if (!canEnterRoomByCultivation(player, zoneId, roomId)) return false;
+  const fromRoom = { zone: player.position.zone, room: player.position.room };
+  player.position.zone = zoneId;
+  player.position.room = roomId;
+  player.forceStateRefresh = true;
+  if (typeof player.send === 'function') {
+    const zoneName = WORLD[zoneId]?.name || zoneId;
+    const roomName = WORLD[zoneId]?.rooms?.[roomId]?.name || roomId;
+    player.send(`智能挂机前往 ${zoneName} - ${roomName}。`);
+  }
+  sendRoomState(fromRoom.zone, fromRoom.room, player.realmId || 1);
+  sendRoomState(zoneId, roomId, player.realmId || 1);
+  return true;
+}
+
+function tryAutoFullAction(player, roomMobs) {
+  if (!player?.flags?.autoFullEnabled) return null;
+  if (!isSvipActive(player)) {
+    if (player.flags.autoFullEnabled) {
+      player.flags.autoFullEnabled = false;
+      if (typeof player.send === 'function') {
+        player.send('SVIP已到期，智能挂机已关闭。');
+      }
+    }
+    return null;
+  }
+  const bossMob = findBossInRoom(roomMobs);
+  if (bossMob) {
+    player.combat = { targetId: bossMob.id, targetType: 'mob', skillId: null };
+    return 'engaged';
+  }
+  const now = Date.now();
+  const lastMoveAt = Number(player.flags.autoFullLastMoveAt || 0);
+  if (now - lastMoveAt < AUTO_FULL_MOVE_COOLDOWN_MS) return null;
+  const best = getAutoFullBestRoom(player);
+  if (!best) return null;
+  if (player.position.zone === best.zoneId && player.position.room === best.roomId) return null;
+  if (movePlayerToRoom(player, best.zoneId, best.roomId)) {
+    player.flags.autoFullLastMoveAt = now;
+    return 'moved';
+  }
+  return null;
 }
 
 function pickPlayerBonusConfig(playerBonusConfig, playerCount) {
@@ -5237,6 +5414,8 @@ const STATE_THROTTLE_CACHE_TTL = 10000; // 状态节流缓存10秒
 const DAILY_LUCKY_CACHE_TTL = 30000; // 每日幸运玩家缓存30秒
 let vipSelfClaimCachedValue = null;
 let vipSelfClaimLastUpdate = 0;
+let svipSettingsCache = { prices: { month: 100, quarter: 260, year: 900, permanent: 3000 }, at: 0 };
+const SVIP_SETTINGS_CACHE_TTL = 10 * 1000;
 let stateThrottleCachedValue = null;
 let stateThrottleLastUpdate = 0;
 let stateThrottleIntervalCachedValue = null;
@@ -5290,6 +5469,15 @@ async function getStateThrottleSettingsCached() {
     intervalSec: Math.max(1, Number(stateThrottleIntervalCachedValue) || 10),
     overrideServerAllowed: Boolean(stateThrottleOverrideAllowedCachedValue)
   };
+}
+
+async function getSvipSettingsCached() {
+  const now = Date.now();
+  if (now - svipSettingsCache.at > SVIP_SETTINGS_CACHE_TTL) {
+    const prices = await getSvipPrices();
+    svipSettingsCache = { prices, at: now };
+  }
+  return svipSettingsCache;
 }
 
 async function getConsignExpireHoursCached() {
@@ -5546,6 +5734,7 @@ function getRoomCommonState(zoneId, roomId, realmId = 1) {
 
 async function buildState(player) {
   normalizeVipStatus(player);
+  normalizeSvipStatus(player);
   computeDerived(player);
   const realmId = player.realmId || 1;
   const roomRealmId = getRoomRealmId(player.position.zone, player.position.room, realmId);
@@ -5700,6 +5889,7 @@ async function buildState(player) {
 
   // 获取锻造材料数量配置
   const refineMaterialCount = getRefineMaterialCount();
+  const svipSettings = await getSvipSettingsCached();
 
   // 获取特效重置配置
   const effectResetSuccessRate = getEffectResetSuccessRate();
@@ -5744,12 +5934,15 @@ async function buildState(player) {
       pk: player.flags?.pkValue || 0,
       vip: isVipActive(player),
       vip_expires_at: player.flags?.vipExpiresAt || null,
+      svip: isSvipActive(player),
+      svip_expires_at: player.flags?.svipExpiresAt || null,
       dodge: Math.round((player.evadeChance || 0) * 100),
       cultivation_level: Math.floor(Number(player.flags?.cultivationLevel ?? -1)),
       cultivation_bonus: Math.floor(Number(player.flags?.cultivationLevel ?? -1)) >= 0
         ? (Math.floor(Number(player.flags?.cultivationLevel ?? -1)) + 1) * 100
         : 0,
       autoSkillId: player.flags?.autoSkillId || null,
+      autoFullEnabled: Boolean(player.flags?.autoFullEnabled),
       guild_bonus: guildBonus,
       set_bonus: Boolean(player.flags?.setBonusActive),
       exp_gold_bonus_pct: (() => {
@@ -5812,6 +6005,9 @@ async function buildState(player) {
     bossRespawn: nextRespawn,
     server_time: Date.now(),
     vip_self_claim_enabled: vipSelfClaimEnabled,
+    svip_settings: {
+      prices: svipSettings.prices
+    },
     state_throttle_enabled: stateThrottleEnabled,
     state_throttle_interval_sec: stateThrottleIntervalSec,
     state_throttle_override_server_allowed: overrideServerAllowed,
@@ -7036,17 +7232,18 @@ io.on('connection', (socket) => {
       source: inputSource,
       send: (msg) => sendTo(player, msg),
       realmId: player.realmId || 1,
-      emitAnnouncement: (text, color, location) => emitAnnouncement(text, color, location, player.realmId || 1),
-      onMove: ({ from, to }) => {
-        if (from && from.zone && from.room) {
-          sendRoomState(from.zone, from.room, player.realmId || 1);
-        }
-        if (to && to.zone && to.room) {
-          sendRoomState(to.zone, to.room, player.realmId || 1);
-        }
-      },
-      logLoot,
-      partyApi: {
+        emitAnnouncement: (text, color, location) => emitAnnouncement(text, color, location, player.realmId || 1),
+        onMove: ({ from, to }) => {
+          if (from && from.zone && from.room) {
+            sendRoomState(from.zone, from.room, player.realmId || 1);
+          }
+          if (to && to.zone && to.room) {
+            sendRoomState(to.zone, to.room, player.realmId || 1);
+          }
+        },
+        logLoot,
+        svipApi,
+        partyApi: {
         parties: getRealmState(player.realmId || 1).parties,
         invites: getRealmState(player.realmId || 1).partyInvites,
         followInvites: getRealmState(player.realmId || 1).partyFollowInvites,
@@ -8714,6 +8911,12 @@ async function combatTick() {
         );
         if (enemy) {
           player.combat = { targetId: enemy.name, targetType: 'player', skillId: null };
+        }
+      }
+      if (!player.combat && player.flags?.autoFullEnabled) {
+        const autoFullResult = tryAutoFullAction(player, roomMobs);
+        if (autoFullResult === 'moved') {
+          continue;
         }
       }
       if (player.flags?.autoSkillId && isVipAutoEnabled(player)) {

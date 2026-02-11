@@ -31,6 +31,12 @@ const rechargeCodesPage = document.getElementById('recharge-codes-page');
 const vipSelfClaimStatus = document.getElementById('vip-self-claim-status');
 const vipSelfClaimMsg = document.getElementById('vip-self-claim-msg');
 const vipSelfClaimToggle = document.getElementById('vip-self-claim-toggle');
+const svipPriceMonthInput = document.getElementById('svip-price-month');
+const svipPriceQuarterInput = document.getElementById('svip-price-quarter');
+const svipPriceYearInput = document.getElementById('svip-price-year');
+const svipPricePermanentInput = document.getElementById('svip-price-permanent');
+const svipSaveBtn = document.getElementById('svip-save-btn');
+const svipMsg = document.getElementById('svip-msg');
 const usersPaginationInfo = document.getElementById('users-pagination-info');
 const backupMsg = document.getElementById('backup-msg');
 const importFileInput = document.getElementById('import-file');
@@ -1263,13 +1269,14 @@ async function login() {
       username: document.getElementById('admin-user').value.trim(),
       password: document.getElementById('admin-pass').value.trim()
     });
-    adminToken = data.token;
-    localStorage.setItem('adminToken', adminToken);
-    showDashboard();
-    await refreshUsers();
-    await refreshVipSelfClaimStatus();
-    await refreshLootLogStatus();
-    await refreshStateThrottleStatus();
+      adminToken = data.token;
+      localStorage.setItem('adminToken', adminToken);
+      showDashboard();
+      await refreshUsers();
+      await refreshVipSelfClaimStatus();
+      await loadSvipSettings();
+      await refreshLootLogStatus();
+      await refreshStateThrottleStatus();
     await refreshConsignExpireStatus();
     await refreshRoomVariantStatus();
     await refreshRealms();
@@ -2243,6 +2250,56 @@ async function refreshVipSelfClaimStatus() {
     if (vipSelfClaimToggle) vipSelfClaimToggle.checked = data.enabled === true;
   } catch (err) {
     vipSelfClaimStatus.textContent = '加载失败';
+  }
+}
+
+async function loadSvipSettings() {
+  if (!svipPriceMonthInput || !svipPriceQuarterInput || !svipPriceYearInput || !svipPricePermanentInput) return;
+  if (svipMsg) svipMsg.textContent = '';
+  try {
+    const data = await api('/admin/svip-settings', 'GET');
+    const prices = data.prices || {};
+    if (svipPriceMonthInput) svipPriceMonthInput.value = prices.month ?? 0;
+    if (svipPriceQuarterInput) svipPriceQuarterInput.value = prices.quarter ?? 0;
+    if (svipPriceYearInput) svipPriceYearInput.value = prices.year ?? 0;
+    if (svipPricePermanentInput) svipPricePermanentInput.value = prices.permanent ?? 0;
+    if (svipMsg) {
+      svipMsg.textContent = '加载成功';
+      svipMsg.style.color = 'green';
+      setTimeout(() => {
+        svipMsg.textContent = '';
+      }, 2000);
+    }
+  } catch (err) {
+    if (svipMsg) {
+      svipMsg.textContent = `加载失败: ${err.message}`;
+      svipMsg.style.color = 'red';
+    }
+  }
+}
+
+async function saveSvipSettings() {
+  if (!svipPriceMonthInput || !svipPriceQuarterInput || !svipPriceYearInput || !svipPricePermanentInput || !svipMsg) return;
+  svipMsg.textContent = '';
+  try {
+    const month = Number(svipPriceMonthInput.value || 0);
+    const quarter = Number(svipPriceQuarterInput.value || 0);
+    const year = Number(svipPriceYearInput.value || 0);
+    const permanent = Number(svipPricePermanentInput.value || 0);
+    const values = { month, quarter, year, permanent };
+    for (const [key, value] of Object.entries(values)) {
+      if (Number.isNaN(value) || value < 0) {
+        svipMsg.textContent = `SVIP价格(${key})必须为不小于0的数字`;
+        svipMsg.style.color = 'red';
+        return;
+      }
+    }
+    await api('/admin/svip-settings/update', 'POST', { prices: values });
+    svipMsg.textContent = 'SVIP设置已保存';
+    svipMsg.style.color = 'green';
+  } catch (err) {
+    svipMsg.textContent = err.message;
+    svipMsg.style.color = 'red';
   }
 }
 
@@ -5300,11 +5357,12 @@ async function saveTrainingSettings() {
 
 async function initDashboard() {
   if (adminToken) {
-    showDashboard();
-    refreshUsers();
-    refreshVipSelfClaimStatus();
-    refreshLootLogStatus();
-    refreshStateThrottleStatus();
+      showDashboard();
+      refreshUsers();
+      refreshVipSelfClaimStatus();
+      loadSvipSettings();
+      refreshLootLogStatus();
+      refreshStateThrottleStatus();
     refreshConsignExpireStatus();
     refreshRoomVariantStatus();
     loadCmdRateSettings();
@@ -5511,6 +5569,9 @@ if (rechargeCodesNext) {
 }
 if (vipSelfClaimToggle) {
   vipSelfClaimToggle.addEventListener('change', () => toggleVipSelfClaim(vipSelfClaimToggle.checked));
+}
+if (svipSaveBtn) {
+  svipSaveBtn.addEventListener('click', saveSvipSettings);
 }
 if (lootLogToggle) {
   lootLogToggle.addEventListener('change', () => toggleLootLog(lootLogToggle.checked));

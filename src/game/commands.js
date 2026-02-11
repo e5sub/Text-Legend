@@ -122,6 +122,17 @@ function normalizeVipStatus(player) {
   return Boolean(player.flags.vip);
 }
 
+function normalizeSvipStatus(player) {
+  if (!player) return false;
+  if (!player.flags) player.flags = {};
+  const expiresAt = Number(player.flags.svipExpiresAt || 0);
+  if (player.flags.svip && expiresAt && expiresAt <= Date.now()) {
+    player.flags.svip = false;
+    player.flags.svipExpiresAt = null;
+  }
+  return Boolean(player.flags.svip);
+}
+
 function resolveVipDurationFromCode(codeRow) {
   const type = String(codeRow?.duration_type || '').trim().toLowerCase();
   const days = Number(codeRow?.duration_days || 0);
@@ -167,6 +178,16 @@ function formatVipStatus(player) {
   const remainingMs = Math.max(0, expiresAt - Date.now());
   const remainingDays = Math.ceil(remainingMs / (24 * 60 * 60 * 1000));
   return `VIP: 已开通(剩余${remainingDays}天)`;
+}
+
+function formatSvipStatus(player) {
+  const active = normalizeSvipStatus(player);
+  if (!active) return 'SVIP: 未开通';
+  const expiresAt = Number(player.flags.svipExpiresAt || 0);
+  if (!expiresAt) return 'SVIP: 已开通(永久)';
+  const remainingMs = Math.max(0, expiresAt - Date.now());
+  const remainingDays = Math.ceil(remainingMs / (24 * 60 * 60 * 1000));
+  return `SVIP: 已开通(剩余${remainingDays}天)`;
 }
 
 // 负载均衡：选择玩家最少的房间
@@ -773,7 +794,7 @@ function partyStatus(party) {
   return `队伍成员: ${party.members.join(', ')}`;
 }
 
-export async function handleCommand({ player, players, allCharacters, playersByName, input, source, send, partyApi, guildApi, tradeApi, rechargeApi, mailApi, consignApi, onMove, logLoot, realmId, emitAnnouncement }) {
+export async function handleCommand({ player, players, allCharacters, playersByName, input, source, send, partyApi, guildApi, tradeApi, rechargeApi, svipApi, mailApi, consignApi, onMove, logLoot, realmId, emitAnnouncement }) {
   const [cmdRaw, ...rest] = input.trim().split(' ');
   const cmd = (cmdRaw || '').toLowerCase();
   const args = rest.join(' ').trim();
@@ -1852,10 +1873,41 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       if (!player.flags) player.flags = {};
       player.flags.autoSkillId = skill.id;
       if (player.flags.autoHpPct == null) player.flags.autoHpPct = 50;
-      if (player.flags.autoMpPct == null) player.flags.autoMpPct = 50;
-      send(`已设置自动技能: ${skill.name}。`);
-      return;
-    }
+        if (player.flags.autoMpPct == null) player.flags.autoMpPct = 50;
+        send(`已设置自动技能: ${skill.name}。`);
+        return;
+      }
+      case 'autoafk': {
+        const sub = String(args || '').trim().toLowerCase();
+        if (!sub) {
+          if (!normalizeSvipStatus(player)) {
+            send('SVIP未开通或已到期，无法使用智能挂机。');
+            return;
+          }
+          player.flags.autoFullEnabled = !player.flags.autoFullEnabled;
+          player.forceStateRefresh = true;
+          send(player.flags.autoFullEnabled ? '已开启智能挂机。' : '已关闭智能挂机。');
+          return;
+        }
+        if (['on', 'start', 'enable'].includes(sub)) {
+          if (!normalizeSvipStatus(player)) {
+            send('SVIP未开通或已到期，无法使用智能挂机。');
+            return;
+          }
+          player.flags.autoFullEnabled = true;
+          player.forceStateRefresh = true;
+          send('已开启智能挂机。');
+          return;
+        }
+        if (['off', 'stop', 'disable'].includes(sub)) {
+          player.flags.autoFullEnabled = false;
+          player.forceStateRefresh = true;
+          send('已关闭智能挂机。');
+          return;
+        }
+        send('用法: autoafk on/off');
+        return;
+      }
     case 'autopotion': {
       if (!args) {
         const hp = player.flags?.autoHpPct;
@@ -3142,11 +3194,11 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       }
       return;
     }
-    case 'vip': {
-      const [subCmd, ...restArgs] = args.split(' ').filter(Boolean);
-      const sub = (subCmd || 'status').toLowerCase();
-      if (sub === 'status') {
-        send(formatVipStatus(player));
+      case 'vip': {
+        const [subCmd, ...restArgs] = args.split(' ').filter(Boolean);
+        const sub = (subCmd || 'status').toLowerCase();
+        if (sub === 'status') {
+          send(formatVipStatus(player));
         return;
       }
       if (sub === 'activate') {
@@ -3190,10 +3242,27 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           send(`VIP 激活码领取成功！激活码: ${codes[0]}，已自动激活(${days}天)。`);
         }
         return;
+        }
+        return;
       }
-      return;
-    }
-    case 'mail': {
+      case 'svip': {
+        const [subCmd, ...restArgs] = String(args || '').trim().split(/\s+/).filter(Boolean);
+        const sub = (subCmd || 'status').toLowerCase();
+        if (sub === 'status') {
+          send(formatSvipStatus(player));
+          return;
+        }
+        if (['open', 'activate', 'buy'].includes(sub)) {
+          if (!svipApi) return send('SVIP功能不可用。');
+          const plan = String(restArgs[0] || 'month').trim().toLowerCase();
+          const res = await svipApi.open(player, plan);
+          send(res.msg);
+          return;
+        }
+        send('用法: svip status | svip open <month|quarter|year|permanent>');
+        return;
+      }
+      case 'mail': {
       if (!mailApi) return send('邮件系统不可用。');
       const [subCmd, ...restArgs] = args.split(' ').filter(Boolean);
       const sub = (subCmd || 'list').toLowerCase();

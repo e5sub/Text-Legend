@@ -33,6 +33,32 @@ export async function setVipSelfClaimEnabled(enabled) {
   await setSetting('vip_self_claim_enabled', enabled ? 'true' : 'false');
 }
 
+export async function getSvipPrices() {
+  const month = await getSetting('svip_price_month', '100');
+  const quarter = await getSetting('svip_price_quarter', '260');
+  const year = await getSetting('svip_price_year', '900');
+  const permanent = await getSetting('svip_price_permanent', '3000');
+  const parse = (value, fallback) => {
+    const parsed = parseInt(value, 10);
+    return Number.isFinite(parsed) ? Math.max(0, parsed) : fallback;
+  };
+  return {
+    month: parse(month, 100),
+    quarter: parse(quarter, 260),
+    year: parse(year, 900),
+    permanent: parse(permanent, 3000)
+  };
+}
+
+export async function setSvipPrices(prices) {
+  const normalize = (value) => Math.max(0, Math.floor(Number(value) || 0));
+  const next = prices || {};
+  await setSetting('svip_price_month', String(normalize(next.month)));
+  await setSetting('svip_price_quarter', String(normalize(next.quarter)));
+  await setSetting('svip_price_year', String(normalize(next.year)));
+  await setSetting('svip_price_permanent', String(normalize(next.permanent)));
+}
+
 /**
  * 获取掉落日志开关
  */

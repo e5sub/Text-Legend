@@ -103,6 +103,13 @@
                   <span>元宝</span>
                   <strong id="ui-yuanbao">0</strong>
                   <button id="ui-recharge" class="mini-btn" type="button">充值</button>
+                  <select id="ui-svip-plan" class="mini-select" title="开通SVIP">
+                    <option value="">开通SVIP</option>
+                    <option value="month">月卡</option>
+                    <option value="quarter">季卡</option>
+                    <option value="year">年卡</option>
+                    <option value="permanent">永久</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -572,11 +579,11 @@
       <div class="modal-title">挂机技能</div>
       <div class="modal-text">点击技能即可自动释放</div>
       <div id="afk-skill-list" class="afk-skill-list"></div>
-      <div class="modal-actions">
-        <button id="afk-start">开始挂机</button>
-        <button id="afk-auto">自动最强</button>
-        <button id="afk-close">取消</button>
-      </div>
+        <div class="modal-actions">
+          <button id="afk-start">开始挂机</button>
+          <button id="afk-auto-full" class="hidden">智能挂机</button>
+          <button id="afk-close">取消</button>
+        </div>
     </div>
   </div>
 
@@ -817,7 +824,7 @@
 })();
 </script>
   <script src="/socket.io/socket.io.js"></script>
-  <script src="app.js?v=13"></script>
+  <script src="app.js?v=19"></script>
 </body>
 </html>
 

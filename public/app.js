@@ -12,6 +12,20 @@ let serverTimeBase = null;
 let serverTimeLocal = null;
 let serverTimeTimer = null;
 let vipSelfClaimEnabled = true;
+let svipSettings = { prices: { month: 100, quarter: 260, year: 900, permanent: 3000 } };
+
+function updateSvipPlanOptions() {
+  if (!ui.svipPlan) return;
+  const prices = svipSettings.prices || {};
+  const label = (key, fallback) => `${fallback}(${prices[key] ?? 0}元宝)`;
+  const options = Array.from(ui.svipPlan.options);
+  options.forEach((opt) => {
+    if (opt.value === 'month') opt.textContent = label('month', '月卡');
+    if (opt.value === 'quarter') opt.textContent = label('quarter', '季卡');
+    if (opt.value === 'year') opt.textContent = label('year', '年卡');
+    if (opt.value === 'permanent') opt.textContent = label('permanent', '永久');
+  });
+}
 let stateThrottleEnabled = false;
 let pendingState = null;
 let stateThrottleTimer = null;
@@ -318,6 +332,7 @@ const ui = {
   gold: document.getElementById('ui-gold'),
   yuanbao: document.getElementById('ui-yuanbao'),
   recharge: document.getElementById('ui-recharge'),
+  svipPlan: document.getElementById('ui-svip-plan'),
   cultivation: document.getElementById('ui-cultivation'),
   cultivationUpgrade: document.getElementById('ui-cultivation-upgrade'),
   hpValue: document.getElementById('ui-hp'),
@@ -624,7 +639,7 @@ const afkUi = {
   modal: document.getElementById('afk-modal'),
   list: document.getElementById('afk-skill-list'),
   start: document.getElementById('afk-start'),
-  auto: document.getElementById('afk-auto'),
+  autoFull: document.getElementById('afk-auto-full'),
   close: document.getElementById('afk-close')
 };
 const playerUi = {
@@ -4809,6 +4824,18 @@ function renderState(state) {
   if (state.vip_self_claim_enabled !== undefined) {
     vipSelfClaimEnabled = state.vip_self_claim_enabled;
   }
+  if (state.svip_settings && state.svip_settings.prices) {
+    const prices = state.svip_settings.prices || {};
+    svipSettings = {
+      prices: {
+        month: Number(prices.month ?? svipSettings.prices.month),
+        quarter: Number(prices.quarter ?? svipSettings.prices.quarter),
+        year: Number(prices.year ?? svipSettings.prices.year),
+        permanent: Number(prices.permanent ?? svipSettings.prices.permanent)
+      }
+    };
+    updateSvipPlanOptions();
+  }
   if (state.player) {
     // 如果当前 realmId 不在列表中，使用第一个可用服务器
     const realm = realmList.find(r => r.id === currentRealmId) || realmList[0];
@@ -4846,11 +4873,30 @@ function renderState(state) {
       ui.exp.style.display = 'none';
     }
 
-    ui.gold.textContent = state.stats.gold;
-    if (ui.yuanbao) ui.yuanbao.textContent = state.stats.yuanbao ?? 0;
-    if (ui.cultivation) {
-      const levelValue = state.stats?.cultivation_level ?? state.player?.cultivation_level ?? -1;
-      const info = getCultivationInfo(levelValue);
+      ui.gold.textContent = state.stats.gold;
+      if (ui.yuanbao) ui.yuanbao.textContent = state.stats.yuanbao ?? 0;
+      const svipActive = Boolean(state.stats.svip);
+      if (ui.svipPlan) {
+        ui.svipPlan.disabled = svipActive;
+        if (svipActive) {
+          ui.svipPlan.value = '';
+          ui.svipPlan.options[0].textContent = `SVIP已开通(余额:${state.stats.yuanbao ?? 0})`;
+        } else {
+          ui.svipPlan.options[0].textContent = `开通SVIP(余额:${state.stats.yuanbao ?? 0})`;
+        }
+        updateSvipPlanOptions();
+      }
+      if (afkUi.autoFull) {
+        if (svipActive) {
+          afkUi.autoFull.classList.remove('hidden');
+          afkUi.autoFull.textContent = state.stats.autoFullEnabled ? '关闭智能挂机' : '智能挂机';
+        } else {
+          afkUi.autoFull.classList.add('hidden');
+        }
+      }
+      if (ui.cultivation) {
+        const levelValue = state.stats?.cultivation_level ?? state.player?.cultivation_level ?? -1;
+        const info = getCultivationInfo(levelValue);
       ui.cultivation.textContent = info.bonus > 0
         ? `${info.name}（所有属性+${info.bonus}）`
         : info.name;
@@ -6950,6 +6996,16 @@ if (ui.recharge) {
     socket.emit('cmd', { text: `recharge ${code}` });
   });
 }
+
+if (ui.svipPlan) {
+  ui.svipPlan.addEventListener('change', () => {
+    if (!socket) return;
+    const plan = ui.svipPlan.value;
+    if (!plan) return;
+    socket.emit('cmd', { text: `svip open ${plan}` });
+    ui.svipPlan.value = '';
+  });
+}
 if (mailUi.refresh) {
   mailUi.refresh.addEventListener('click', () => {
     if (socket) socket.emit('mail_list');
@@ -7349,9 +7405,11 @@ if (afkUi.start) {
     if (afkUi.modal) afkUi.modal.classList.add('hidden');
   });
 }
-if (afkUi.auto) {
-  afkUi.auto.addEventListener('click', () => {
-    if (socket) socket.emit('cmd', { text: 'autoskill all' });
+if (afkUi.autoFull) {
+  afkUi.autoFull.addEventListener('click', () => {
+    if (!socket) return;
+    const enabled = Boolean(lastState?.stats?.autoFullEnabled);
+    socket.emit('cmd', { text: `autoafk ${enabled ? 'off' : 'on'}` });
     if (afkUi.modal) afkUi.modal.classList.add('hidden');
   });
 }
