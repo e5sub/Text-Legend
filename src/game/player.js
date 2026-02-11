@@ -250,6 +250,7 @@ export function computeDerived(player) {
       id: 'rochie_war',
       bonusRate: 2.0,
       weapon: 'sword_rochie',
+      chest: 'armor_rochie_war',
       head: 'helm_rochie_war',
       waist: 'belt_rochie_war',
       feet: 'boots_rochie_war',
@@ -261,6 +262,7 @@ export function computeDerived(player) {
       id: 'rochie_mage',
       bonusRate: 2.0,
       weapon: 'staff_rochie',
+      chest: 'armor_rochie_mage',
       head: 'helm_rochie_mage',
       waist: 'belt_rochie_mage',
       feet: 'boots_rochie_mage',
@@ -272,6 +274,7 @@ export function computeDerived(player) {
       id: 'rochie_tao',
       bonusRate: 2.0,
       weapon: 'sword_rochie_tao',
+      chest: 'armor_rochie_tao',
       head: 'helm_rochie_tao',
       waist: 'belt_rochie_tao',
       feet: 'boots_rochie_tao',
@@ -283,6 +286,7 @@ export function computeDerived(player) {
       id: 'caiya_war',
       bonusRate: 4.0,
       weapon: 'sword_caiya',
+      chest: 'armor_caiya_war',
       head: 'helm_caiya_war',
       waist: 'belt_caiya_war',
       feet: 'boots_caiya_war',
@@ -294,6 +298,7 @@ export function computeDerived(player) {
       id: 'caiya_mage',
       bonusRate: 4.0,
       weapon: 'staff_caiya',
+      chest: 'armor_caiya_mage',
       head: 'helm_caiya_mage',
       waist: 'belt_caiya_mage',
       feet: 'boots_caiya_mage',
@@ -305,6 +310,7 @@ export function computeDerived(player) {
       id: 'caiya_tao',
       bonusRate: 4.0,
       weapon: 'sword_caiya_tao',
+      chest: 'armor_caiya_tao',
       head: 'helm_caiya_tao',
       waist: 'belt_caiya_tao',
       feet: 'boots_caiya_tao',
@@ -324,6 +330,7 @@ export function computeDerived(player) {
   SET_DEFS.forEach((setDef) => {
     const partialSet =
       (!setDef.weapon || equipped.weapon?.id === setDef.weapon) &&
+      (!setDef.chest || equipped.chest?.id === setDef.chest) &&
       equipped.head?.id === setDef.head &&
       equipped.waist?.id === setDef.waist &&
       equipped.feet?.id === setDef.feet &&
@@ -335,6 +342,7 @@ export function computeDerived(player) {
       const bonusRate = setDef.bonusRate || SET_BONUS_RATE;
       [
         setDef.weapon,
+        setDef.chest,
         setDef.head,
         setDef.waist,
         setDef.feet,
