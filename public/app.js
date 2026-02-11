@@ -1,4 +1,4 @@
-let token = null;
+﻿let token = null;
 let socket = null;
 let activeChar = null;
 const classNames = { warrior: '战士', mage: '法师', taoist: '道士' };
@@ -1225,7 +1225,7 @@ function appendLine(payload) {
       if (targetIsPlayer) {
         spawnDamageFloatOnPlayer(targetName, amount, kind, label);
       } else if (targetName === selfName) {
-        // 不要飘召唤物或其他玩家的血
+        // 不要飘召唤兽或其他玩家的血
       } else {
         spawnDamageFloatOnMob(targetName, amount, kind, label, selectedMobId);
       }
@@ -5054,11 +5054,12 @@ function renderState(state) {
         ui.svipPlan.disabled = svipActive;
         if (svipActive) {
           ui.svipPlan.value = '';
-          ui.svipPlan.options[0].textContent = `SVIP已开通(余额:${state.stats.yuanbao ?? 0})`;
+          ui.svipPlan.classList.add('hidden');
         } else {
+          ui.svipPlan.classList.remove('hidden');
           ui.svipPlan.options[0].textContent = `开通SVIP(余额:${state.stats.yuanbao ?? 0})`;
+          updateSvipPlanOptions();
         }
-        updateSvipPlanOptions();
       }
       if (afkUi.autoFull) {
         const trialAvailable = Boolean(state.stats.autoFullTrialAvailable);
@@ -5409,34 +5410,30 @@ function renderState(state) {
 
   if (ui.summon) {
     const summonBlock = ui.summon.closest('.action-group');
-    if (state.player && state.player.classId === 'warrior') {
-      if (summonBlock) summonBlock.classList.add('hidden');
+    if (summonBlock) summonBlock.classList.remove('hidden');
+    const summons = Array.isArray(state.summons) && state.summons.length
+      ? state.summons
+      : (state.summon ? [state.summon] : []);
+    if (summons.length) {
+      const summonEntries = summons.map((summon, index) => ({
+        id: summon.id || `summon-${index}`,
+        label: `${summon.name} Lv${summon.level}/${summon.levelMax || 8}`,
+        raw: summon
+      }));
+      const activeId = selectedSummonId && summonEntries.some((entry) => entry.id === selectedSummonId)
+        ? selectedSummonId
+        : summonEntries[0].id;
+      const active = summonEntries.find((entry) => entry.id === activeId) || summonEntries[0];
+      renderChips(ui.summon, summonEntries, (entry) => {
+        selectedSummonId = entry.id;
+        renderSummonDetails(entry.raw, entry.raw.levelMax || 8);
+      }, activeId);
+      renderSummonDetails(active.raw, active.raw.levelMax || 8);
     } else {
-      if (summonBlock) summonBlock.classList.remove('hidden');
-      const summons = Array.isArray(state.summons) && state.summons.length
-        ? state.summons
-        : (state.summon ? [state.summon] : []);
-      if (summons.length) {
-        const summonEntries = summons.map((summon, index) => ({
-          id: summon.id || `summon-${index}`,
-          label: `${summon.name} Lv${summon.level}/${summon.levelMax || 8}`,
-          raw: summon
-        }));
-        const activeId = selectedSummonId && summonEntries.some((entry) => entry.id === selectedSummonId)
-          ? selectedSummonId
-          : summonEntries[0].id;
-        const active = summonEntries.find((entry) => entry.id === activeId) || summonEntries[0];
-        renderChips(ui.summon, summonEntries, (entry) => {
-          selectedSummonId = entry.id;
-          renderSummonDetails(entry.raw, entry.raw.levelMax || 8);
-        }, activeId);
-        renderSummonDetails(active.raw, active.raw.levelMax || 8);
-      } else {
-        ui.summon.textContent = '\u65e0';
-        if (ui.summonDetails) {
-          ui.summonDetails.classList.add('hidden');
-          ui.summonDetails.innerHTML = '';
-        }
+      ui.summon.textContent = '\u65e0';
+      if (ui.summonDetails) {
+        ui.summonDetails.classList.add('hidden');
+        ui.summonDetails.innerHTML = '';
       }
     }
   }
@@ -6872,10 +6869,10 @@ function showObserveModal(data) {
     html += '</div>';
   }
 
-  // 召唤物信息
+  // 召唤兽信息
   if (data.summons && data.summons.length > 0) {
     html += '<div class="observe-section">';
-    html += '<div class="observe-section-title">召唤物</div>';
+    html += '<div class="observe-section-title">召唤兽</div>';
     html += '<div class="observe-summon-list">';
     data.summons.forEach(summon => {
       html += '<div class="observe-summon-item">';

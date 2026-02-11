@@ -7272,7 +7272,7 @@ io.on('connection', (socket) => {
       stateThrottleLastInBoss.delete(throttleKey);
     }
 
-    // 自动恢复召唤物
+    // 自动恢复召唤兽
     const savedSummons = Array.isArray(loaded.flags.savedSummons)
       ? loaded.flags.savedSummons
       : (loaded.flags.savedSummon ? [loaded.flags.savedSummon] : []);
@@ -7289,7 +7289,7 @@ io.on('connection', (socket) => {
           loaded.send(`${restored.name} 已重新召唤 (等级 ${restored.level})。`);
         }
       });
-      // 清除保存的召唤物数据
+      // 清除保存的召唤兽数据
       delete loaded.flags.savedSummon;
       delete loaded.flags.savedSummons;
     }
@@ -8307,7 +8307,7 @@ function tryAutoBuff(player) {
       if (buffSkill.cooldown) {
         player.status.skillCooldowns[buffSkill.id] = Date.now();
       }
-      player.send(`自动施放 ${buffSkill.name}，自己和召唤物 ${duration} 秒内免疫所有伤害，道术提升100%。`);
+      player.send(`自动施放 ${buffSkill.name}，自己和召唤兽 ${duration} 秒内免疫所有伤害，道术提升100%。`);
       return true;
     }
     if (buffSkill.type === 'buff_magic_shield_group') {
@@ -8377,7 +8377,7 @@ function pickCombatSkillId(player, combatSkillId) {
         const cooldownRemaining = lastUse + skill.cooldown - now;
         if (cooldownRemaining > 0) return false;
       }
-      // 召唤技能：如果召唤物还存活，跳过该技能
+      // 召唤技能：如果召唤兽还存活，跳过该技能
       if (skill.type === 'summon' && hasAliveSummon(player, skill.id)) {
         return false;
       }
@@ -8472,7 +8472,7 @@ function autoResummon(player, desiredSkillId = null) {
   const skillLevel = getSkillLevel(player, summonSkill.id);
   const summon = summonStats(player, summonSkill, skillLevel);
   addOrReplaceSummon(player, { ...summon, exp: 0 });
-  player.send(`召唤物被击败，自动召唤 ${summon.name} (等级 ${summon.level})。`);
+  player.send(`召唤兽被击败，自动召唤 ${summon.name} (等级 ${summon.level})。`);
   return true;
 }
 

@@ -740,7 +740,7 @@ private fun BattleTab(
             val summons = state?.summons.orEmpty()
             if (summons.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(10.dp))
-                Text("召唤物", color = textMain)
+                Text("召唤兽", color = textMain)
                 Spacer(modifier = Modifier.height(6.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(summons) { summon ->
@@ -1844,7 +1844,9 @@ private fun ActionsTab(
     if (state?.stats?.vip == false) {
         vip.add(ActionItem("VIP激活", "vip activate", R.drawable.ic_vip))
     }
-    if (state?.stats?.svip == false) {
+    val svipExpiresAt = state?.stats?.svip_expires_at ?: 0L
+    val svipActive = state?.stats?.svip == true || (svipExpiresAt > System.currentTimeMillis())
+    if (!svipActive) {
         val prices = state?.svip_settings?.prices
         val monthPrice = prices?.month ?: 0
         val quarterPrice = prices?.quarter ?: 0
@@ -1861,7 +1863,7 @@ private fun ActionsTab(
         } else {
             add(ActionItem("挂机", "afk", R.drawable.ic_afk))
         }
-        val svipActive = state?.stats?.svip == true
+        val svipActive = state?.stats?.svip == true || (svipExpiresAt > System.currentTimeMillis())
         val trialAvailable = state?.stats?.autoFullTrialAvailable == true
         if (svipActive || trialAvailable) {
             val autoFullEnabled = state?.stats?.autoFullEnabled == true

@@ -1,4 +1,4 @@
-import knex from './index.js';
+﻿import knex from './index.js';
 import { normalizeInventory, normalizeEquipment, normalizeWarehouse } from '../game/player.js';
 
 function parseJson(value, fallback) {
@@ -84,7 +84,7 @@ export async function saveCharacter(userId, player, realmId = 1) {
   const resolvedRealmId = Number(player?.realmId ?? realmId ?? 1) || 1;
   normalizeInventory(player);
   normalizeWarehouse(player);
-  // 保存召唤物信息到flags中（只有在召唤物存在且活着时保存）
+  // 保存召唤兽信息到flags中（只有在召唤兽存在且活着时保存）
   if (!player.flags) player.flags = {};
   const summons = Array.isArray(player.summons)
     ? player.summons

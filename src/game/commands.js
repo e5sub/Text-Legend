@@ -1256,7 +1256,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         });
       }
       
-      // 召唤物信息
+      // 召唤兽信息
       const targetSummons = getAliveSummons(target);
       targetSummons.forEach((summon) => {
         observeData.summons.push({
@@ -1718,7 +1718,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       }
       if (skill.type === 'summon') {
         if (player.mp < skill.mp) return send('魔法不足。');
-        if (hasAliveSummon(player, skill.id)) return send('该召唤物已存在。');
+        if (hasAliveSummon(player, skill.id)) return send('该召唤兽已存在。');
         player.mp -= skill.mp;
         const summon = summonStats(player, skill, skillLevel);
         addOrReplaceSummon(player, { ...summon, exp: 0 });
@@ -1893,7 +1893,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           if (!player.status.skillCooldowns) player.status.skillCooldowns = {};
           player.status.skillCooldowns[skill.id] = Date.now();
         }
-        send(`你施放了 ${skill.name}，自己和召唤物 ${duration} 秒内免疫所有伤害，道术提升100%。`);
+        send(`你施放了 ${skill.name}，自己和召唤兽 ${duration} 秒内免疫所有伤害，道术提升100%。`);
         notifyMastery(player, skill);
         return;
       }
