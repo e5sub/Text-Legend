@@ -17,6 +17,7 @@ const config = {
     }
   },
   sessionTtlMin: Number(process.env.SESSION_TTL_MIN || 120),
+  adminPath: process.env.ADMIN_PATH || 'admin',
   adminBootstrapSecret: process.env.ADMIN_BOOTSTRAP_SECRET || '',
   adminBootstrapUser: process.env.ADMIN_BOOTSTRAP_USER || ''
 };

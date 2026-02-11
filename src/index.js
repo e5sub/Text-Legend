@@ -138,9 +138,23 @@ const io = new Server(server, {
 });
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ADMIN_BASE = (() => {
+  const raw = String(config.adminPath || 'admin').trim();
+  const cleaned = raw.replace(/^\/+|\/+$/g, '');
+  return cleaned ? `/${cleaned}` : '/admin';
+})();
 app.use(express.json({ limit: '20mb' }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
+app.use(ADMIN_BASE, express.static(path.join(__dirname, '..', 'public', 'admin')));
 app.use('/img', express.static(path.join(__dirname, '..', 'img')));
+if (ADMIN_BASE !== '/admin') {
+  app.use((req, res, next) => {
+    if (req.url.startsWith(`${ADMIN_BASE}/`)) {
+      req.url = `/admin${req.url.slice(ADMIN_BASE.length)}`;
+    }
+    next();
+  });
+}
 
 const CAPTCHA_TTL_MS = 5 * 60 * 1000;
 const captchaStore = new Map();

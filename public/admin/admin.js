@@ -1,4 +1,4 @@
-﻿const loginSection = document.getElementById('login');
+﻿const ADMIN_BASE = (() => {\n  if (window.__ADMIN_BASE__) return String(window.__ADMIN_BASE__);\n  const parts = window.location.pathname.split('/').filter(Boolean);\n  const first = parts[0] || 'admin';\n  return /;\n})();\nfunction adminPath(path) {\n  if (!path) return ADMIN_BASE;\n  if (path.startsWith('/admin')) {\n    return ${ADMIN_BASE};\n  }\n  if (path.startsWith('/')) return ${ADMIN_BASE}public/admin/admin.js;\n  return ${ADMIN_BASE}/public/admin/admin.js;\n}\n\nconst loginSection = document.getElementById('login');
 const dashboardSection = document.getElementById('dashboard');
 const loginMsg = document.getElementById('login-msg');
 const usersList = document.getElementById('users-list');
@@ -1212,7 +1212,7 @@ async function saveTrainingSettings() {
 }
 
 async function api(path, method, body) {
-  const res = await fetch(path, {
+  const res = await fetch(adminPath(path), {
     method,
     headers: {
       'Content-Type': 'application/json',
@@ -2986,7 +2986,7 @@ async function saveTrainingSettings() {
 async function downloadBackup() {
   backupMsg.textContent = '';
   try {
-    const res = await fetch('/admin/backup', {
+    const res = await fetch(adminPath('/admin/backup'), {
       headers: {
         Authorization: adminToken ? `Bearer ${adminToken}` : ''
       }
@@ -3594,7 +3594,7 @@ async function mergeRealms() {
   try {
     mergeMsg.textContent = '正在创建备份并执行合区，请稍候...';
 
-    const res = await fetch('/admin/realms/merge', {
+    const res = await fetch(adminPath('/admin/realms/merge'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -6291,4 +6291,5 @@ if (importSelectAll) {
     checkboxes.forEach(cb => cb.checked = e.target.checked);
   });
 }
+
 
