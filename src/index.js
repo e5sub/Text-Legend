@@ -479,6 +479,17 @@ function chunkArray(rows, size) {
   return chunks;
 }
 
+if (ADMIN_BASE !== '/admin') {
+  app.use('/admin', (req, res, next) => {
+    const original = String(req.originalUrl || req.url || '');
+    const fromCustomBase = original === ADMIN_BASE || original.startsWith(`${ADMIN_BASE}/`);
+    if (!fromCustomBase) {
+      return res.status(404).json({ error: 'Not Found' });
+    }
+    return next();
+  });
+}
+
 app.post('/admin/login', async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) return res.status(400).json({ error: '账号或密码缺失。' });
