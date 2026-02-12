@@ -5493,6 +5493,7 @@ function renderState(state) {
     const inWorldBossRoom = state.room && state.room.zoneId === 'wb' && state.room.roomId === 'lair';
     const inCrossBossRoom = state.room && state.room.zoneId === 'crb' && state.room.roomId === 'arena';
     const inCrossRankRoom = state.room && state.room.zoneId === 'crr' && state.room.roomId === 'arena';
+    const inZhuxianTowerZone = state.room && state.room.zoneId === 'zxft';
     const inMolongRoom = state.room && state.room.zoneId === 'molong' && state.room.roomId === 'deep';
     const inSabakBossRoom = state.room && state.room.zoneId === 'sb_guild' && state.room.roomId === 'sanctum';
     const inDarkWomaRoom = state.room && state.room.zoneId === 'dark_bosses' && state.room.roomId === 'dark_woma_lair';
@@ -5503,12 +5504,14 @@ function renderState(state) {
     const inDarkSkeletonRoom = state.room && state.room.zoneId === 'dark_bosses' && state.room.roomId === 'dark_skeleton_lair';
     const inCultivationBossRoom = state.room && state.room.zoneId === 'cultivation' && String(state.room.roomId || '').startsWith('boss_');
     const inSpecialBossRoom = inWorldBossRoom || inCrossBossRoom || inMolongRoom || inSabakBossRoom || inDarkWomaRoom || inDarkZumaRoom || inDarkHongmoRoom || inDarkHuangquanRoom || inDarkDoubleheadRoom || inDarkSkeletonRoom || inCultivationBossRoom;
-    const inRankRoom = inSpecialBossRoom || inCrossRankRoom;
+    const inRankRoom = inSpecialBossRoom || inCrossRankRoom || inZhuxianTowerZone;
     const rankBlock = ui.worldBossRank.closest('.action-group');
 
     // 根据所在的BOSS房间设置不同的标题
     if (ui.worldBossRankTitle) {
-      if (inWorldBossRoom) {
+      if (inZhuxianTowerZone) {
+        ui.worldBossRankTitle.textContent = '诛仙浮图塔层数排行';
+      } else if (inWorldBossRoom) {
         ui.worldBossRankTitle.textContent = '世界BOSS·炎龙伤害排行';
       } else if (inCrossBossRoom) {
         ui.worldBossRankTitle.textContent = '跨服BOSS·白虎伤害排行';
@@ -5589,6 +5592,8 @@ function renderState(state) {
       const nextRespawn = state.worldBossNextRespawn;
       const crossRank = state.crossRank || null;
       const isCrossRankActive = Boolean(crossRank && crossRank.active);
+      const towerRankTop10 = Array.isArray(state.zhuxian_tower_rank_top10) ? state.zhuxian_tower_rank_top10 : [];
+      const towerInfo = state.zhuxian_tower || null;
       if (ui.worldBossRank) {
         const respawnNodes = ui.worldBossRank.querySelectorAll('.boss-respawn-time');
         if (respawnNodes.length > 1) {
@@ -5605,7 +5610,39 @@ function renderState(state) {
       }
 
       // 如果有下次刷新时间，显示刷新倒计时
-        if (inCrossRankRoom) {
+        if (inZhuxianTowerZone) {
+          resetBossRespawn();
+          resetCrossRankTimer();
+          if (ui.worldBossRank) ui.worldBossRank.innerHTML = '';
+          const summary = document.createElement('div');
+          summary.className = 'rank-subtitle';
+          const bestFloor = Math.max(0, Number(towerInfo?.bestFloor || 0));
+          const challengeFloor = Math.max(1, Number(towerInfo?.currentChallengeFloor || 1));
+          summary.textContent = `个人最高层: ${bestFloor}  当前挑战层: ${challengeFloor}`;
+          ui.worldBossRank.appendChild(summary);
+          if (!towerRankTop10.length) {
+            const empty = document.createElement('div');
+            empty.textContent = '暂无排行';
+            ui.worldBossRank.appendChild(empty);
+            return;
+          }
+          towerRankTop10.forEach((entry, idx) => {
+            const row = document.createElement('div');
+            row.className = 'rank-item';
+            const name = document.createElement('span');
+            name.textContent = `${entry.name}`;
+            const floor = document.createElement('span');
+            floor.textContent = `第${entry.floor}层`;
+            const pos = document.createElement('span');
+            pos.className = 'rank-pos';
+            pos.textContent = `#${idx + 1}`;
+            row.appendChild(pos);
+            row.appendChild(name);
+            row.appendChild(floor);
+            ui.worldBossRank.appendChild(row);
+          });
+          return;
+        } else if (inCrossRankRoom) {
           resetBossRespawn();
           if (ui.worldBossRank) ui.worldBossRank.innerHTML = '';
           const ensureCrossRankTimer = (label, target) => {

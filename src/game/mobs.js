@@ -1918,6 +1918,78 @@ export const MOB_TEMPLATES = {
     gold: [12000, 19200],
     drops: CULTIVATION_DROPS.tianxian
   },
+  zxft_mob_1: {
+    id: 'zxft_mob_1',
+    name: '浮图塔灵兵',
+    level: 70,
+    hp: 7200,
+    atk: 248,
+    def: 142,
+    mdef: 142,
+    exp: 62000,
+    gold: [13000, 18000],
+    drops: []
+  },
+  zxft_mob_2: {
+    id: 'zxft_mob_2',
+    name: '浮图塔邪侍',
+    level: 71,
+    hp: 7400,
+    atk: 252,
+    def: 144,
+    mdef: 144,
+    exp: 62000,
+    gold: [13000, 18000],
+    drops: []
+  },
+  zxft_mob_3: {
+    id: 'zxft_mob_3',
+    name: '浮图塔禁卫',
+    level: 72,
+    hp: 7600,
+    atk: 256,
+    def: 146,
+    mdef: 146,
+    exp: 62000,
+    gold: [13000, 18000],
+    drops: []
+  },
+  zxft_mob_4: {
+    id: 'zxft_mob_4',
+    name: '浮图塔妖将',
+    level: 73,
+    hp: 7800,
+    atk: 260,
+    def: 148,
+    mdef: 148,
+    exp: 62000,
+    gold: [13000, 18000],
+    drops: []
+  },
+  zxft_mob_5: {
+    id: 'zxft_mob_5',
+    name: '浮图塔魔将',
+    level: 74,
+    hp: 8000,
+    atk: 264,
+    def: 150,
+    mdef: 150,
+    exp: 62000,
+    gold: [13000, 18000],
+    drops: []
+  },
+  zxft_boss: {
+    id: 'zxft_boss',
+    name: '浮图塔镇层魔君',
+    level: 80,
+    hp: 18000,
+    atk: 360,
+    def: 220,
+    mdef: 220,
+    exp: 160000,
+    gold: [30000, 45000],
+    drops: []
+  },
   mob_summon_skeleton: {
     id: 'mob_summon_skeleton',
     name: '召唤骷髅',

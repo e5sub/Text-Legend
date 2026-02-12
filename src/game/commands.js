@@ -1,5 +1,5 @@
 ﻿import knex from '../db/index.js';
-import { WORLD, NPCS } from './world.js';
+import { WORLD, NPCS, ensureZhuxianTowerRoom } from './world.js';
 import { ITEM_TEMPLATES, SHOP_STOCKS } from './items.js';
 import { MOB_TEMPLATES } from './mobs.js';
 import {
@@ -84,9 +84,10 @@ function getCultivationInfo(levelValue) {
   return { name, bonus, idx };
 }
 
-function generateRandomEffects(count) {
+function generateRandomEffects(count, options = {}) {
   const effects = {};
-  const available = [...ALLOWED_EFFECTS];
+  const excludeSet = new Set(Array.isArray(options.exclude) ? options.exclude : []);
+  const available = ALLOWED_EFFECTS.filter((name) => !excludeSet.has(name));
   for (let i = 0; i < count && available.length > 0; i++) {
     const randomIndex = Math.floor(Math.random() * available.length);
     const effectName = available[randomIndex];
@@ -372,6 +373,8 @@ const TRAINING_ALIASES = {
   dex: 'dex',
   敏捷: 'dex'
 };
+const ZHUXIAN_TOWER_ZONE_ID = 'zxft';
+const ZHUXIAN_TOWER_FLOOR_PATTERN = /^floor_(\d+)_x(?:__u_(.+))?$/;
 
 function dirLabel(dir) {
   return DIR_LABELS[dir] || dir;
@@ -392,6 +395,77 @@ function canEnterCultivationRoom(player, zoneId, roomId) {
   if (!Number.isFinite(cultivationLevel) || cultivationLevel < 0) return false;
   // 严格匹配：修真等级必须完全匹配
   return cultivationLevel === room.minCultivationLevel;
+}
+
+function getWeekMondayKey(now = Date.now()) {
+  const date = new Date(now);
+  const day = date.getDay();
+  const diff = day === 0 ? -6 : (1 - day);
+  date.setDate(date.getDate() + diff);
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function normalizeZhuxianTowerProgress(player, now = Date.now()) {
+  if (!player) return { highestClearedFloor: 0, weekKey: getWeekMondayKey(now) };
+  if (!player.flags) player.flags = {};
+  if (!player.flags.zxft || typeof player.flags.zxft !== 'object') {
+    player.flags.zxft = {};
+  }
+  const weekKey = getWeekMondayKey(now);
+  if (player.flags.zxft.weekKey !== weekKey) {
+    player.flags.zxft.weekKey = weekKey;
+    player.flags.zxft.highestClearedFloor = 0;
+  }
+  player.flags.zxft.highestClearedFloor = Math.max(0, Math.floor(Number(player.flags.zxft.highestClearedFloor || 0)));
+  return player.flags.zxft;
+}
+
+function canEnterZhuxianTowerRoom(player, zoneId, roomId) {
+  if (zoneId !== ZHUXIAN_TOWER_ZONE_ID) return true;
+  ensureZhuxianTowerRoom(roomId);
+  const room = WORLD[zoneId]?.rooms?.[roomId];
+  if (!room || room.towerFloor == null) return true;
+  const ownerKey = String(room.towerOwnerKey || '').trim();
+  const playerOwnerKey = String(player?.userId || player?.name || '').trim();
+  if (ownerKey && playerOwnerKey && ownerKey !== playerOwnerKey) return false;
+  const floor = Math.max(1, Math.floor(Number(room.towerFloor || 1)));
+  const progress = normalizeZhuxianTowerProgress(player);
+  return floor <= (progress.highestClearedFloor + 1);
+}
+
+function getPlayerTowerOwnerKey(player) {
+  return String(player?.userId || player?.name || '').trim();
+}
+
+function toPlayerTowerRoomId(player, roomId) {
+  const raw = String(roomId || '').trim();
+  const match = raw.match(ZHUXIAN_TOWER_FLOOR_PATTERN);
+  if (!match) return raw;
+  const floor = String(Math.max(1, Math.floor(Number(match[1] || 1)))).padStart(2, '0');
+  const ownerKey = getPlayerTowerOwnerKey(player);
+  return ownerKey ? `floor_${floor}_x__u_${ownerKey}` : `floor_${floor}_x`;
+}
+
+function getPlayerTowerHighestChallengeRoomId(player) {
+  const progress = normalizeZhuxianTowerProgress(player);
+  const floor = Math.max(1, Math.floor(Number(progress.highestClearedFloor || 0)) + 1);
+  return toPlayerTowerRoomId(player, `floor_${String(floor).padStart(2, '0')}_x`);
+}
+
+function checkRoomAccess(player, zoneId, roomId, onlinePlayers = []) {
+  if (zoneId === ZHUXIAN_TOWER_ZONE_ID) {
+    ensureZhuxianTowerRoom(roomId);
+  }
+  if (!canEnterCultivationRoom(player, zoneId, roomId)) {
+    return { ok: false, msg: '修真等级不符，无法进入该区域。' };
+  }
+  if (!canEnterZhuxianTowerRoom(player, zoneId, roomId)) {
+    return { ok: false, msg: '该浮图塔层不属于你，或层数未解锁。' };
+  }
+  return { ok: true, msg: '' };
 }
 
 function roomLabel(player) {
@@ -863,6 +937,15 @@ export async function handleCommand({ player, players, allCharacters, playersByN
   const args = rest.join(' ').trim();
 
   if (!cmd) return;
+  normalizeZhuxianTowerProgress(player);
+  if (player.position?.zone === ZHUXIAN_TOWER_ZONE_ID) {
+    const personalRoomId = toPlayerTowerRoomId(player, player.position.room);
+    if (personalRoomId !== player.position.room) {
+      ensureZhuxianTowerRoom(personalRoomId);
+      player.position.room = personalRoomId;
+      player.forceStateRefresh = true;
+    }
+  }
   if (source !== 'ui' && cmd !== 'say') return;
 
   switch (cmd) {
@@ -908,6 +991,12 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       const dest = room.exits[dir];
       if (dest.includes(':')) {
         let [zoneId, roomId] = dest.split(':');
+        if (zoneId === ZHUXIAN_TOWER_ZONE_ID && roomId === 'entry') {
+          roomId = getPlayerTowerHighestChallengeRoomId(player);
+        }
+        if (zoneId === ZHUXIAN_TOWER_ZONE_ID) {
+          roomId = toPlayerTowerRoomId(player, roomId);
+        }
 
         // 检查目标房间是否为指定了数字后缀的房间（如 plains1, plains2, plains3）
         // 如果已经指定了数字后缀，则直接使用该房间，不进行负载均衡
@@ -930,11 +1019,12 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           }
         }
 
-        const targetRoom = WORLD[zoneId]?.rooms?.[roomId];
-        if (!canEnterCultivationRoom(player, zoneId, roomId)) {
-          send('修真等级不符，无法进入该区域。');
+        const access = checkRoomAccess(player, zoneId, roomId, players);
+        if (!access.ok) {
+          send(access.msg);
           return;
         }
+        const targetRoom = WORLD[zoneId]?.rooms?.[roomId];
         if (targetRoom?.sabakOnly) {
           if (!player.guild || !guildApi?.sabakState?.ownerGuildId || String(player.guild.id) !== String(guildApi.sabakState.ownerGuildId)) {
             send('只有沙巴克城主行会成员可以进入该区域。');
@@ -946,6 +1036,9 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       } else {
         let roomId = dest;
         const zoneId = player.position.zone;
+        if (zoneId === ZHUXIAN_TOWER_ZONE_ID) {
+          roomId = toPlayerTowerRoomId(player, roomId);
+        }
         const hasNumberSuffix = /\d$/.test(roomId);
         if (!hasNumberSuffix) {
           const baseRoomId = roomId.replace(/\d+$/, '');
@@ -961,11 +1054,12 @@ export async function handleCommand({ player, players, allCharacters, playersByN
             roomId = selectLeastPopulatedRoom(zoneId, roomId, players, player, partyApi);
           }
         }
-        const targetRoom = WORLD[zoneId]?.rooms?.[roomId];
-        if (!canEnterCultivationRoom(player, zoneId, roomId)) {
-          send('修真等级不符，无法进入该区域。');
+        const access = checkRoomAccess(player, zoneId, roomId, players);
+        if (!access.ok) {
+          send(access.msg);
           return;
         }
+        const targetRoom = WORLD[zoneId]?.rooms?.[roomId];
         if (targetRoom?.sabakOnly) {
           if (!player.guild || !guildApi?.sabakState?.ownerGuildId || String(player.guild.id) !== String(guildApi.sabakState.ownerGuildId)) {
             send('只有沙巴克城主行会成员可以进入该区域。');
@@ -1000,6 +1094,13 @@ export async function handleCommand({ player, players, allCharacters, playersByN
 
       // 检查房间是否存在，如果不存在则查找变种房间
       let targetRoomId = roomId;
+      if (zoneId === ZHUXIAN_TOWER_ZONE_ID) {
+        if (targetRoomId === 'entry') {
+          targetRoomId = getPlayerTowerHighestChallengeRoomId(player);
+        }
+        targetRoomId = toPlayerTowerRoomId(player, targetRoomId);
+        ensureZhuxianTowerRoom(targetRoomId);
+      }
       if (!WORLD[zoneId].rooms[roomId]) {
         // 检查是否是变种房间（带数字后缀）
         const match = roomId.match(/^(.*?)(\d+)$/);
@@ -1017,9 +1118,6 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         }
       }
 
-      if (!canEnterCultivationRoom(player, zoneId, targetRoomId)) {
-        return send('修真等级不符，无法进入该区域。');
-      }
       if (isSabakBossRoom(zoneId, targetRoomId)) {
         // 检查是否是沙巴克行会成员
         const sabakOwner = guildApi.sabakState.ownerGuildId;
@@ -1046,8 +1144,9 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         }
       }
 
-      if (!canEnterCultivationRoom(player, zoneId, targetRoomId)) {
-        return send('修真等级不符，无法进入该区域。');
+      const access = checkRoomAccess(player, zoneId, targetRoomId, players);
+      if (!access.ok) {
+        return send(access.msg);
       }
 
       player.position.zone = zoneId;
@@ -1073,8 +1172,9 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       const target = players.find((p) => p.name === args);
       console.log('Target player found:', target ? target.name : 'null');
       if (!target) return send('玩家不在线。');
-      if (!canEnterCultivationRoom(player, target.position.zone, target.position.room)) {
-        return send('修真等级不符，无法进入该区域。');
+      const access = checkRoomAccess(player, target.position.zone, target.position.room, players);
+      if (!access.ok) {
+        return send(access.msg);
       }
       player.position.zone = target.position.zone;
       player.position.room = target.position.room;
@@ -1386,9 +1486,17 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         send('位置无效。');
         return;
       }
+      if (zoneId === ZHUXIAN_TOWER_ZONE_ID) {
+        if (roomId === 'entry') {
+          roomId = getPlayerTowerHighestChallengeRoomId(player);
+        }
+        roomId = toPlayerTowerRoomId(player, roomId);
+        ensureZhuxianTowerRoom(roomId);
+      }
       const fromRoom = { zone: player.position.zone, room: player.position.room };
-      if (!canEnterCultivationRoom(player, zoneId, roomId)) {
-        send('修真等级不符，无法进入该区域。');
+      const access = checkRoomAccess(player, zoneId, roomId, players);
+      if (!access.ok) {
+        send(access.msg);
         return;
       }
       player.position.zone = zoneId;
@@ -1521,9 +1629,10 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         const targetPos = (item.teleport.zone === 'bq_town' && item.teleport.room === 'gate')
           ? { ...getStartPosition() }
           : { ...item.teleport };
-        if (!canEnterCultivationRoom(player, targetPos.zone, targetPos.room)) {
+        const access = checkRoomAccess(player, targetPos.zone, targetPos.room, players);
+        if (!access.ok) {
           addItem(player, item.id, 1);
-          return send('修真等级不符，无法进入该区域。');
+          return send(access.msg);
         }
         player.position = targetPos;
         player.forceStateRefresh = true;
@@ -2720,7 +2829,11 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       let newEffects = null;
 
       if (success) {
-        newEffects = generateRandomEffects(effectCount);
+        const excludeEffects = [];
+        // 主件原有禁疗时，重置成功后排除禁疗，改为随机其它特效
+        if (originalEffects?.healblock) excludeEffects.push('healblock');
+        newEffects = generateRandomEffects(effectCount, { exclude: excludeEffects });
+        if (!newEffects) newEffects = {};
 
         // 如果原有装备有元素攻击,特效重置后继续保留(因为元素攻击只能通过装备合成获得)
         if (originalElementAtk > 0) {
@@ -3063,8 +3176,9 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           if (!invite || (leaderName && invite.from !== leaderName)) return send('没有跟随邀请。');
           const leader = players.find((p) => p.name === invite.from);
           if (!leader) return send('队长不在线。');
-          if (!canEnterCultivationRoom(player, leader.position.zone, leader.position.room)) {
-            return send('修真等级不符，无法跟随进入该区域。');
+          const access = checkRoomAccess(player, leader.position.zone, leader.position.room, players);
+          if (!access.ok) {
+            return send(access.msg);
           }
           player.position.zone = leader.position.zone;
           player.position.room = leader.position.room;
@@ -3078,8 +3192,9 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           const leader = players.find((p) => p.name === targetName);
           if (!leader) return send('队长不在线。');
           if (!party.members.includes(player.name)) return send('你不在队伍中。');
-          if (!canEnterCultivationRoom(player, leader.position.zone, leader.position.room)) {
-            return send('修真等级不符，无法跟随进入该区域。');
+          const access = checkRoomAccess(player, leader.position.zone, leader.position.room, players);
+          if (!access.ok) {
+            return send(access.msg);
           }
           player.position.zone = leader.position.zone;
           player.position.room = leader.position.room;

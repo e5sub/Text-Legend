@@ -367,28 +367,28 @@ export const WORLD = {
         id: 'gate',
         name: '盟重入口',
         desc: '黄沙漫天，通往各大地图。',
-        exits: { south: 'wgc:deep', north: 'mg_town:gate', west: 'sm:entrance', east: 'fm:gate', northwest: 'brm:gate', northeast: 'sb_town:gate', cultivation: 'cultivation:entry' },
+        exits: { south: 'wgc:deep', north: 'mg_town:gate', west: 'sm:entrance', east: 'fm:gate', northwest: 'brm:gate', northeast: 'sb_town:gate', cultivation: 'cultivation:entry', tower: 'zxft:entry' },
         spawns: ['half_orc', 'half_orc', 'half_orc', 'half_orc_warrior', 'half_orc_warrior']
       },
       gate1: {
         id: 'gate1',
         name: '盟重入口1',
         desc: '黄沙漫天，通往各大地图。',
-        exits: { south: 'wgc:deep1', north: 'mg_town:gate', west: 'sm:entrance1', east: 'fm:gate1', northwest: 'brm:gate1', northeast: 'sb_town:gate', cultivation: 'cultivation:entry' },
+        exits: { south: 'wgc:deep1', north: 'mg_town:gate', west: 'sm:entrance1', east: 'fm:gate1', northwest: 'brm:gate1', northeast: 'sb_town:gate', cultivation: 'cultivation:entry', tower: 'zxft:entry' },
         spawns: ['half_orc', 'half_orc', 'half_orc', 'half_orc_warrior', 'half_orc_warrior']
       },
       gate2: {
         id: 'gate2',
         name: '盟重入口2',
         desc: '黄沙漫天，通往各大地图。',
-        exits: { south: 'wgc:deep2', north: 'mg_town:gate', west: 'sm:entrance2', east: 'fm:gate2', northwest: 'brm:gate2', northeast: 'sb_town:gate', cultivation: 'cultivation:entry' },
+        exits: { south: 'wgc:deep2', north: 'mg_town:gate', west: 'sm:entrance2', east: 'fm:gate2', northwest: 'brm:gate2', northeast: 'sb_town:gate', cultivation: 'cultivation:entry', tower: 'zxft:entry' },
         spawns: ['half_orc', 'half_orc', 'half_orc', 'half_orc_warrior', 'half_orc_warrior']
       },
       gate3: {
         id: 'gate3',
         name: '盟重入口3',
         desc: '黄沙漫天，通往各大地图。',
-        exits: { south: 'wgc:deep3', north: 'mg_town:gate', west: 'sm:entrance3', east: 'fm:gate3', northwest: 'brm:gate3', northeast: 'sb_town:gate', cultivation: 'cultivation:entry' },
+        exits: { south: 'wgc:deep3', north: 'mg_town:gate', west: 'sm:entrance3', east: 'fm:gate3', northwest: 'brm:gate3', northeast: 'sb_town:gate', cultivation: 'cultivation:entry', tower: 'zxft:entry' },
         spawns: ['half_orc', 'half_orc', 'half_orc', 'half_orc_warrior', 'half_orc_warrior']
       }
     }
@@ -993,6 +993,20 @@ export const WORLD = {
         desc: '魔龙教主在此守望。',
         exits: { south: 'gate' },
         spawns: ['molong_boss']
+      }
+    }
+  }
+  ,
+  zxft: {
+    id: 'zxft',
+    name: '诛仙浮图塔',
+    rooms: {
+      entry: {
+        id: 'entry',
+        name: '浮图塔入口',
+        desc: '古老浮屠直入云霄，塔内每层都更危险。',
+        exits: { south: 'mg_plains:gate', north: 'floor_01_x' },
+        spawns: []
       }
     }
   }
@@ -1616,6 +1630,81 @@ export const WORLD = {
     }
   }
 };
+
+function formatTowerFloor(value) {
+  return String(value).padStart(2, '0');
+}
+
+function towerFloorRoomId(floor) {
+  return `floor_${formatTowerFloor(floor)}_x`;
+}
+
+function normalizeTowerFloorValue(value) {
+  const floor = Math.floor(Number(value) || 0);
+  return floor > 0 ? floor : 1;
+}
+
+function towerFloorFromRoomId(roomId) {
+  const match = String(roomId || '').match(/^floor_(\d+)_x(?:__u_(.+))?$/);
+  if (!match) return 0;
+  return normalizeTowerFloorValue(match[1]);
+}
+
+function towerOwnerKeyFromRoomId(roomId) {
+  const match = String(roomId || '').match(/^floor_(\d+)_x(?:__u_(.+))?$/);
+  if (!match) return '';
+  return (match[2] || '').trim();
+}
+
+function towerFloorRoomInstanceId(floor, ownerKey = '') {
+  const base = towerFloorRoomId(floor);
+  const owner = String(ownerKey || '').trim();
+  return owner ? `${base}__u_${owner}` : base;
+}
+
+function buildZhuxianTowerRoom(floor, ownerKey = '') {
+  const normalizedFloor = normalizeTowerFloorValue(floor);
+  const roomId = towerFloorRoomInstanceId(normalizedFloor, ownerKey);
+  const isBossFloor = normalizedFloor % 10 === 0;
+  return {
+    id: roomId,
+    name: `浮图塔第${normalizedFloor}层`,
+    desc: isBossFloor
+      ? `浮图塔第${normalizedFloor}层，镇层魔君坐镇，击败后方可继续登塔。`
+      : `塔内灵压沉重，第${normalizedFloor}层妖灵盘踞。`,
+    exits: {
+      south: 'entry',
+      north: towerFloorRoomInstanceId(normalizedFloor + 1, ownerKey)
+    },
+    spawns: isBossFloor
+      ? ['zxft_boss']
+      : ['zxft_mob_1', 'zxft_mob_2', 'zxft_mob_3', 'zxft_mob_4', 'zxft_mob_5'],
+    towerFloor: normalizedFloor,
+    towerBossFloor: isBossFloor,
+    towerOwnerKey: String(ownerKey || '').trim() || null
+  };
+}
+
+export function ensureZhuxianTowerRoom(worldOrRoomId, maybeRoomId) {
+  const world = maybeRoomId === undefined ? WORLD : worldOrRoomId;
+  const roomValue = maybeRoomId === undefined ? worldOrRoomId : maybeRoomId;
+  const zone = world?.zxft;
+  if (!zone || !zone.rooms) return null;
+  const floor = typeof roomValue === 'number'
+    ? normalizeTowerFloorValue(roomValue)
+    : towerFloorFromRoomId(roomValue);
+  const ownerKey = typeof roomValue === 'string'
+    ? towerOwnerKeyFromRoomId(roomValue)
+    : '';
+  if (!floor) return null;
+  const roomId = towerFloorRoomInstanceId(floor, ownerKey);
+  if (!zone.rooms[roomId]) {
+    zone.rooms[roomId] = buildZhuxianTowerRoom(floor, ownerKey);
+  }
+  return roomId;
+}
+
+ensureZhuxianTowerRoom(WORLD, 1);
 
 export function expandRoomVariants(world) {
   const extraCount = Math.max(0, ROOM_VARIANT_COUNT - 3);

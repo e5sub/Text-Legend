@@ -15,7 +15,8 @@
   scroll_random: { id: 'scroll_random', name: '随机卷', type: 'consumable', teleport: { zone: 'bq_plains', room: 'plains' }, price: 220 },
   scroll_recall: { id: 'scroll_recall', name: '转职令牌', type: 'consumable', price: 380, worldBossOnly: true },
 
-  training_fruit: { id: 'training_fruit', name: '修炼果', type: 'consumable', price: 1800, untradable: true, unconsignable: true },
+  training_fruit: { id: 'training_fruit', name: '修炼果', type: 'consumable', price: 1800, untradable: true, unconsignable: true, unmail: true },
+  treasure_exp_material: { id: 'treasure_exp_material', name: '法宝经验丹', type: 'material', price: 0, untradable: true, unconsignable: true, unmail: true },
   woma_horn: { id: 'woma_horn', name: '沃玛号角', type: 'material', price: 3000 },
   gold_bar: { id: 'gold_bar', name: '金条', type: 'material', price: 100000, rarity: 'epic' },
   book_war_basic: { id: 'book_war_basic', name: '技能书: 基本剑术', type: 'book', price: 800, rarity: 'common' },

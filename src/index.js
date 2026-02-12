@@ -116,7 +116,7 @@ import {
 } from './game/skills.js';
 import { MOB_TEMPLATES } from './game/mobs.js';
 import { ITEM_TEMPLATES, SHOP_STOCKS } from './game/items.js';
-import { WORLD, expandRoomVariants, shrinkRoomVariants } from './game/world.js';
+import { WORLD, expandRoomVariants, shrinkRoomVariants, ensureZhuxianTowerRoom } from './game/world.js';
 import { getRoomMobs, getAliveMobs, spawnMobs, removeMob, seedRespawnCache, setRespawnStore, getAllAliveMobs, incrementWorldBossKills, setWorldBossKillCount as setWorldBossKillCountState, incrementSpecialBossKills, setSpecialBossKillCount as setSpecialBossKillCountState, incrementCultivationBossKills, setCultivationBossKillCount as setCultivationBossKillCountState } from './game/state.js';
 import { calcHitChance, calcDamage, applyDamage, applyHealing, applyPoison, tickStatus, getDefenseMultiplier, consumeFirestrikeCrit } from './game/combat.js';
 import { randInt, clamp } from './game/utils.js';
@@ -2767,6 +2767,9 @@ const CROSS_REALM_REALM_ID = 0;
 const CROSS_REALM_ZONES = new Set([CROSS_REALM_ZONE_ID, CROSS_RANK_ZONE_ID]);
 const CULTIVATION_ZONE_ID = 'cultivation';
 const CULTIVATION_BOSS_ROOM_PREFIX = 'boss_';
+const ZHUXIAN_TOWER_ZONE_ID = 'zxft';
+const ZHUXIAN_TOWER_ENTRY_ROOM_ID = 'entry';
+const ZHUXIAN_TOWER_REWARD_ITEM_ID = 'treasure_exp_material';
 
 const CROSS_RANK_EVENT_STATE = {
   active: false,
@@ -3198,6 +3201,98 @@ function isCrossRankRoom(zoneId, roomId) {
 
 function isCultivationRoom(zoneId) {
   return zoneId === 'cultivation';
+}
+
+function getWeekMondayKey(now = Date.now()) {
+  const date = new Date(now);
+  const day = date.getDay();
+  const diff = day === 0 ? -6 : (1 - day);
+  date.setDate(date.getDate() + diff);
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function normalizeZhuxianTowerProgress(player, now = Date.now()) {
+  if (!player) return { weekKey: getWeekMondayKey(now), highestClearedFloor: 0 };
+  if (!player.flags) player.flags = {};
+  if (!player.flags.zxft || typeof player.flags.zxft !== 'object') {
+    player.flags.zxft = {};
+  }
+  const weekKey = getWeekMondayKey(now);
+  if (player.flags.zxft.weekKey !== weekKey) {
+    player.flags.zxft.weekKey = weekKey;
+    player.flags.zxft.highestClearedFloor = 0;
+  }
+  player.flags.zxft.highestClearedFloor = Math.max(0, Math.floor(Number(player.flags.zxft.highestClearedFloor || 0)));
+  player.flags.zxft.bestFloor = Math.max(
+    player.flags.zxft.highestClearedFloor,
+    Math.floor(Number(player.flags.zxft.bestFloor || 0))
+  );
+  return player.flags.zxft;
+}
+
+function getZhuxianTowerBestFloorFromFlags(flags) {
+  if (!flags || typeof flags !== 'object') return 0;
+  const zxft = flags.zxft;
+  if (!zxft || typeof zxft !== 'object') return 0;
+  const best = Math.floor(Number(zxft.bestFloor || 0));
+  const highest = Math.floor(Number(zxft.highestClearedFloor || 0));
+  return Math.max(0, best, highest);
+}
+
+function getZhuxianTowerFloor(zoneId, roomId) {
+  if (zoneId !== ZHUXIAN_TOWER_ZONE_ID) return 0;
+  ensureZhuxianTowerRoom(roomId);
+  const room = WORLD[zoneId]?.rooms?.[roomId];
+  if (!room || room.towerFloor == null) return 0;
+  return Math.max(1, Math.floor(Number(room.towerFloor || 1)));
+}
+
+function getPlayerZhuxianTowerRoomId(player, roomId) {
+  const match = String(roomId || '').match(/^floor_(\d+)_x(?:__u_(.+))?$/);
+  if (!match) return String(roomId || '');
+  const floor = String(Math.max(1, Math.floor(Number(match[1] || 1)))).padStart(2, '0');
+  const ownerKey = String(player?.userId || player?.name || '').trim();
+  return ownerKey ? `floor_${floor}_x__u_${ownerKey}` : `floor_${floor}_x`;
+}
+
+function ensureZhuxianTowerPosition(player, now = Date.now()) {
+  if (!player || player.position?.zone !== ZHUXIAN_TOWER_ZONE_ID) return false;
+  const personalRoomId = getPlayerZhuxianTowerRoomId(player, player.position.room);
+  if (personalRoomId && personalRoomId !== player.position.room) {
+    ensureZhuxianTowerRoom(personalRoomId);
+    player.position.room = personalRoomId;
+  }
+  const floor = getZhuxianTowerFloor(player.position.zone, player.position.room);
+  if (!floor) return false;
+  const progress = normalizeZhuxianTowerProgress(player, now);
+  const maxUnlocked = progress.highestClearedFloor + 1;
+  if (floor <= maxUnlocked) return false;
+  player.position = { zone: ZHUXIAN_TOWER_ZONE_ID, room: ZHUXIAN_TOWER_ENTRY_ROOM_ID };
+  player.combat = null;
+  player.send('浮图塔层数已在本周重置，已返回浮图塔入口。');
+  return true;
+}
+
+function grantZhuxianTowerClearReward(player, floor, now = Date.now()) {
+  if (!player || floor <= 0) return { granted: false, qty: 0 };
+  const progress = normalizeZhuxianTowerProgress(player, now);
+  if (floor <= progress.highestClearedFloor) return { granted: false, qty: 0 };
+  progress.highestClearedFloor = floor;
+  progress.bestFloor = Math.max(Math.floor(Number(progress.bestFloor || 0)), floor);
+  zhuxianTowerRankCache.delete(player.realmId || 1);
+  const isBossFloor = floor % 10 === 0;
+  const rewardQty = isBossFloor ? 10 : randInt(1, 10);
+  addItem(player, ZHUXIAN_TOWER_REWARD_ITEM_ID, rewardQty);
+  if (isBossFloor) {
+    player.send(`诛仙浮图塔第${floor}层（BOSS层）通关，必掉 法宝经验丹 x10。`);
+  } else {
+    player.send(`诛仙浮图塔第${floor}层通关，获得 法宝经验丹 x${rewardQty}。`);
+  }
+  player.send(`已解锁诛仙浮图塔第${floor + 1}层。`);
+  return { granted: true, qty: rewardQty };
 }
 
 function pickEquipmentByRarity(targetRarity) {
@@ -5739,6 +5834,7 @@ const ROOM_STATE_TTL = 100; // 100ms缓存时间
 const VIP_SELF_CLAIM_CACHE_TTL = 10000; // VIP自领缓存10秒
 const STATE_THROTTLE_CACHE_TTL = 10000; // 状态节流缓存10秒
 const DAILY_LUCKY_CACHE_TTL = 30000; // 每日幸运玩家缓存30秒
+const ZHUXIAN_TOWER_RANK_CACHE_TTL = 30000; // 浮图塔排行榜缓存30秒
 let vipSelfClaimCachedValue = null;
 let vipSelfClaimLastUpdate = 0;
 let svipSettingsCache = { prices: { month: 100, quarter: 260, year: 900, permanent: 3000 }, at: 0 };
@@ -5753,6 +5849,7 @@ let consignExpireHoursCachedValue = null;
 let consignExpireHoursLastUpdate = 0;
 let lootLogEnabled = false;
 const dailyLuckyCache = new Map();
+const zhuxianTowerRankCache = new Map();
 const stateThrottleLastSent = new Map();
 const stateThrottleLastExits = new Map();
 const stateThrottleLastRoom = new Map();
@@ -5843,6 +5940,49 @@ async function getDailyLuckyInfoCached(realmId) {
 
   dailyLuckyCache.set(realmId, { at: now, value });
   return value;
+}
+
+async function getZhuxianTowerRankTop10Cached(realmId) {
+  const now = Date.now();
+  const cached = zhuxianTowerRankCache.get(realmId);
+  if (cached && now - cached.at < ZHUXIAN_TOWER_RANK_CACHE_TTL) {
+    return cached.value;
+  }
+  const rows = await knex('characters')
+    .select('name', 'class', 'level', 'flags_json')
+    .where({ realm_id: realmId });
+  const ranked = rows
+    .map((row) => {
+      let flags = null;
+      try {
+        flags = row.flags_json ? JSON.parse(row.flags_json) : null;
+      } catch {
+        flags = null;
+      }
+      const floor = getZhuxianTowerBestFloorFromFlags(flags);
+      return {
+        name: row.name,
+        classId: row.class,
+        level: Math.max(1, Math.floor(Number(row.level || 1))),
+        floor
+      };
+    })
+    .filter((entry) => entry.floor > 0)
+    .sort((a, b) => {
+      if (b.floor !== a.floor) return b.floor - a.floor;
+      if (b.level !== a.level) return b.level - a.level;
+      return String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hans-CN');
+    })
+    .slice(0, 10)
+    .map((entry, idx) => ({
+      rank: idx + 1,
+      name: entry.name,
+      classId: entry.classId,
+      level: entry.level,
+      floor: entry.floor
+    }));
+  zhuxianTowerRankCache.set(realmId, { at: now, value: ranked });
+  return ranked;
 }
 
 function logLoot(message) {
@@ -6166,6 +6306,8 @@ async function buildState(player) {
   const guildBonus = Boolean(player.guild);
   const onlineCount = listOnlinePlayers(realmId).length;
   const dailyLuckyInfo = await getDailyLuckyInfoCached(realmId);
+  const zhuxianTowerProgress = normalizeZhuxianTowerProgress(player);
+  const zhuxianTowerRankTop10 = await getZhuxianTowerRankTop10Cached(realmId);
   
   // VIP自领状态缓存
   let vipSelfClaimEnabled;
@@ -6270,6 +6412,12 @@ async function buildState(player) {
     training: player.flags?.training || { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 },
     online: { count: onlineCount },
     daily_lucky: dailyLuckyInfo,
+    zhuxian_tower: {
+      highestClearedFloor: Math.max(0, Math.floor(Number(zhuxianTowerProgress.highestClearedFloor || 0))),
+      currentChallengeFloor: Math.max(1, Math.floor(Number(zhuxianTowerProgress.highestClearedFloor || 0)) + 1),
+      bestFloor: Math.max(0, Math.floor(Number(zhuxianTowerProgress.bestFloor || 0)))
+    },
+    zhuxian_tower_rank_top10: zhuxianTowerRankTop10,
     anti: {
       key: player.socket?.data?.antiKey || null,
       seq: player.socket?.data?.antiSeq || 0
@@ -7476,6 +7624,8 @@ io.on('connection', (socket) => {
     if (member && member.guild) {
       loaded.guild = { id: member.guild.id, name: member.guild.name, role: member.role };
     }
+    normalizeZhuxianTowerProgress(loaded);
+    ensureZhuxianTowerPosition(loaded);
 
     players.set(socket.id, loaded);
     loaded.send(`欢迎回来，${loaded.name}。`);
@@ -7668,7 +7818,7 @@ io.on('connection', (socket) => {
           if (!slot) return socket.emit('mail_send_result', { ok: false, msg: '背包里没有该物品。' });
           const item = ITEM_TEMPLATES[slot.id];
           if (!item) return socket.emit('mail_send_result', { ok: false, msg: '物品不存在。' });
-          if (item.untradable || item.unconsignable) {
+          if (item.untradable || item.unconsignable || item.unmail) {
             return socket.emit('mail_send_result', { ok: false, msg: '该物品无法通过邮件赠送。' });
           }
           if (item.type === 'currency') return socket.emit('mail_send_result', { ok: false, msg: '金币无法赠送。' });
@@ -8727,6 +8877,11 @@ async function processMobDeath(player, mob, online) {
   if (template?.summoned || mob.summoned || mob.status?.summoned) {
     return;
   }
+  const towerFloor = getZhuxianTowerFloor(mobZoneId, mobRoomId);
+  const towerRoomCleared = towerFloor > 0 && getAliveMobs(mobZoneId, mobRoomId, roomRealmId).length === 0;
+  const towerClearOwner = towerRoomCleared
+    ? (playersByName(lastHitSnapshot || player?.name, roomRealmId) || player)
+    : null;
   gainSummonExp(player);
   let exp = template.exp;
   let gold = randInt(template.gold[0], template.gold[1]);
@@ -9104,6 +9259,38 @@ async function processMobDeath(player, mob, online) {
       }
     });
 
+  if (towerRoomCleared && towerClearOwner) {
+    const reward = grantZhuxianTowerClearReward(towerClearOwner, towerFloor);
+    if (reward.granted && towerClearOwner.userId) {
+      lootOwnersToSave.add(towerClearOwner);
+    }
+    if (
+      reward.granted &&
+      towerClearOwner.position?.zone === mobZoneId &&
+      towerClearOwner.position?.room === mobRoomId
+    ) {
+      const currentRoom = WORLD[mobZoneId]?.rooms?.[mobRoomId];
+      const nextRoomRaw = currentRoom?.exits?.north;
+      if (nextRoomRaw) {
+        let nextZoneId = mobZoneId;
+        let nextRoomId = nextRoomRaw;
+        if (String(nextRoomRaw).includes(':')) {
+          const [zid, rid] = String(nextRoomRaw).split(':');
+          nextZoneId = zid;
+          nextRoomId = rid;
+        }
+        if (nextZoneId === ZHUXIAN_TOWER_ZONE_ID && nextRoomId) {
+          ensureZhuxianTowerRoom(nextRoomId);
+          towerClearOwner.position.zone = nextZoneId;
+          towerClearOwner.position.room = nextRoomId;
+          towerClearOwner.combat = null;
+          towerClearOwner.forceStateRefresh = true;
+          towerClearOwner.send(`已自动进入诛仙浮图塔第${towerFloor + 1}层。`);
+        }
+      }
+    }
+  }
+
   if (lootOwnersToSave.size > 0) {
     await Promise.all(
       Array.from(lootOwnersToSave).map((p) => savePlayer(p).catch(() => {}))
@@ -9201,6 +9388,8 @@ async function combatTick() {
     updateRedNameAutoClear(player);
     updateAutoDailyUsage(player);
     tryRestoreAutoFullAfterManualDowngrade(player);
+    normalizeZhuxianTowerProgress(player);
+    ensureZhuxianTowerPosition(player);
     const realmId = player.realmId || 1;
     const roomRealmId = getRoomRealmId(player.position.zone, player.position.room, realmId);
     const roomKey = `${roomRealmId}:${player.position.zone}:${player.position.room}`;

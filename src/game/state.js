@@ -28,6 +28,13 @@ function isBossTemplate(tpl) {
   );
 }
 
+function getZhuxianTowerFloorScale(zoneId, roomId) {
+  if (zoneId !== 'zxft') return 1;
+  const room = getRoom(zoneId, roomId);
+  const floor = Math.max(1, Math.floor(Number(room?.towerFloor || 1)));
+  return 1 + (floor - 1) * 0.05;
+}
+
 function scaledStats(tpl, realmId = 1, zoneId, roomId) {
   if (!tpl) return { hp: 0, atk: 0, def: 0, mdef: 0 };
 
@@ -70,6 +77,7 @@ function scaledStats(tpl, realmId = 1, zoneId, roomId) {
   // 普通怪物
   if (!isBossTemplate(tpl)) {
     let cultivationLevelScale = 1;
+    const towerFloorScale = getZhuxianTowerFloorScale(zoneId, roomId);
     // 修真普通怪物：根据地图等级成长（每级 +50%）
     if (tpl.id && tpl.id.startsWith('cultivation_') && zoneId === 'cultivation' && roomId) {
       const room = getRoom(zoneId, roomId);
@@ -78,10 +86,11 @@ function scaledStats(tpl, realmId = 1, zoneId, roomId) {
       }
     }
 
-    const def = Math.floor(tpl.def * MOB_STAT_SCALE * MOB_DEF_SCALE * cultivationLevelScale);
+    const roomScale = cultivationLevelScale * towerFloorScale;
+    const def = Math.floor(tpl.def * MOB_STAT_SCALE * MOB_DEF_SCALE * roomScale);
     return {
-      hp: Math.floor(tpl.hp * MOB_HP_SCALE * MOB_STAT_SCALE * cultivationLevelScale),
-      atk: Math.floor(tpl.atk * MOB_STAT_SCALE * cultivationLevelScale),
+      hp: Math.floor(tpl.hp * MOB_HP_SCALE * MOB_STAT_SCALE * roomScale),
+      atk: Math.floor(tpl.atk * MOB_STAT_SCALE * roomScale),
       def,
       mdef: Math.floor(def * 0.5)
     };
