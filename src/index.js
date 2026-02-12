@@ -6394,6 +6394,20 @@ function buildRoomExits(zoneId, roomId, player = null) {
     if (dest.includes(':')) {
       [destZoneId, destRoomId] = dest.split(':');
     }
+    if (
+      player &&
+      zoneId === ZHUXIAN_TOWER_ZONE_ID &&
+      roomId === ZHUXIAN_TOWER_ENTRY_ROOM_ID &&
+      dir === 'north' &&
+      destZoneId === ZHUXIAN_TOWER_ZONE_ID &&
+      destRoomId === 'floor_01_x'
+    ) {
+      const progress = normalizeZhuxianTowerProgress(player);
+      const challengeFloor = Math.max(1, Math.floor(Number(progress.highestClearedFloor || 0)) + 1);
+      const roomToken = `floor_${String(challengeFloor).padStart(2, '0')}_x`;
+      destRoomId = getPlayerZhuxianTowerRoomId(player, roomToken);
+      ensureZhuxianTowerRoom(destRoomId);
+    }
     const destZone = WORLD[destZoneId];
     const destRoom = destZone?.rooms?.[destRoomId];
     // 只添加目标房间存在的出口,过滤掉无效的变种出口

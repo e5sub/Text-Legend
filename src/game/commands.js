@@ -1177,6 +1177,9 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         let roomId = dest;
         const zoneId = player.position.zone;
         if (zoneId === ZHUXIAN_TOWER_ZONE_ID) {
+          if (player.position.room === 'entry' && roomId === 'floor_01_x') {
+            roomId = getPlayerTowerHighestChallengeRoomId(player);
+          }
           roomId = toPlayerTowerRoomId(player, roomId);
         }
         const hasNumberSuffix = /\d$/.test(roomId);
