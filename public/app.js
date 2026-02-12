@@ -6129,13 +6129,13 @@ function renderState(state) {
     { id: 'repair', label: '\u4FEE\u7406' },
     { id: 'consign', label: '\u5BC4\u552E' },
     { id: 'changeclass', label: '\u8f6c\u804c' },
+    { id: 'treasure', label: '\u6CD5\u5B9D' },
     { id: 'forge', label: '\u88C5\u5907\u5408\u6210' },
     { id: 'refine', label: '\u88C5\u5907\u953B\u9020' },
     { id: 'effect', label: '\u7279\u6548\u91CD\u7F6E' },
-    { id: 'treasure', label: '\u6CD5\u5B9D' },
     { id: 'drops', label: '\u5957\u88c5\u6389\u843d' },
     { id: 'switch', label: '\u5207\u6362\u89d2\u8272' },
-    { id: 'logout', label: '\u9000\u51fa\u6e38\u620f' }
+    { id: 'rank', label: '\u73a9\u5bb6\u6392\u884c' }
   ];
   // 只对非VIP玩家显示VIP激活按钮，并且自助领取功能开启时显示领取按钮
   if (!state.stats || !state.stats.vip) {
@@ -6144,7 +6144,6 @@ function renderState(state) {
     }
     actions.splice(actions.length, 0, { id: 'vip activate', label: 'VIP\u6fc0\u6d3b' });
   }
-  actions.push({ id: 'rank', label: '\u73a9\u5bb6\u6392\u884c' });
   let afkLabel = '\u6302\u673a';
   if (state.stats && state.stats.autoFullEnabled) {
     afkLabel = '\u505c\u6b62\u667a\u80fd\u6302\u673a';
@@ -6189,10 +6188,6 @@ function renderState(state) {
       });
       if (!code) return;
       socket.emit('cmd', { text: `vip activate ${code.trim()}` });
-      return;
-    }
-    if (a.id === 'logout') {
-      exitGame();
       return;
     }
     if (a.id === 'train') {
@@ -7114,6 +7109,12 @@ function showObserveModal(data) {
 document.getElementById('login-btn').addEventListener('click', login);
 document.getElementById('register-btn').addEventListener('click', register);
 document.getElementById('create-char-btn').addEventListener('click', createCharacter);
+const exitGameBtn = document.getElementById('exit-game-btn');
+if (exitGameBtn) {
+  exitGameBtn.addEventListener('click', () => {
+    exitGame();
+  });
+}
 if (realmSelect) {
   realmSelect.addEventListener('change', () => {
     const username = localStorage.getItem('rememberedUser');

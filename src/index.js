@@ -2804,6 +2804,8 @@ const CULTIVATION_BOSS_ROOM_PREFIX = 'boss_';
 const ZHUXIAN_TOWER_ZONE_ID = 'zxft';
 const ZHUXIAN_TOWER_ENTRY_ROOM_ID = 'entry';
 const ZHUXIAN_TOWER_REWARD_ITEM_ID = 'treasure_exp_material';
+const ZHUXIAN_TOWER_XUANMING_DROP_CHANCE = 0.2;
+const ZHUXIAN_TOWER_XUANMING_DROPS = ['treasure_xuanwu_core', 'treasure_taiyin_mirror', 'treasure_guiyuan_bead'];
 
 const CROSS_RANK_EVENT_STATE = {
   active: false,
@@ -3325,6 +3327,12 @@ function grantZhuxianTowerClearReward(player, floor, now = Date.now()) {
   addItem(player, ZHUXIAN_TOWER_REWARD_ITEM_ID, rewardQty);
   if (isBossFloor) {
     player.send(`诛仙浮图塔第${floor}层（BOSS层）通关，必掉 法宝经验丹 x10。`);
+    if (Math.random() < ZHUXIAN_TOWER_XUANMING_DROP_CHANCE) {
+      const dropId = ZHUXIAN_TOWER_XUANMING_DROPS[randInt(0, ZHUXIAN_TOWER_XUANMING_DROPS.length - 1)];
+      addItem(player, dropId, 1);
+      const dropName = ITEM_TEMPLATES[dropId]?.name || dropId;
+      player.send(`浮图塔额外掉落：${dropName} x1。`);
+    }
   } else {
     player.send(`诛仙浮图塔第${floor}层通关，获得 法宝经验丹 x${rewardQty}。`);
   }
@@ -5108,8 +5116,8 @@ const TREASURE_SETS = [
   {
     id: 'xuanming',
     name: '玄冥·守御系',
-    role: '生存',
-    source: '世界BOSS、跨服BOSS',
+    role: '生存型',
+    source: '诛仙浮图塔每10层概率掉落',
     treasures: [
       { id: 'treasure_xuanwu_core', name: '玄武甲心', effect: '纯被动：防御与魔御提升（自动生效）' },
       { id: 'treasure_taiyin_mirror', name: '太阴镜', effect: '纯被动：生命与防御提升（自动生效）' },
@@ -5118,8 +5126,8 @@ const TREASURE_SETS = [
   },
   {
     id: 'youluo',
-    name: '幽罗·禁制系',
-    role: '控制',
+    name: '幽罗·禁制系（控制/克制型）',
+    role: '控制/克制型',
     source: '世界BOSS、跨服BOSS',
     treasures: [
       { id: 'treasure_youluo_lamp', name: '幽罗锁魂灯', effect: '纯被动：命中与道术提升（自动生效）' },

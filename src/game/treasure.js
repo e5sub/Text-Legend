@@ -103,8 +103,7 @@ export function getTreasureLevel(player, itemId) {
 }
 
 export function getTreasureUpgradeCost(level) {
-  const lv = Math.max(1, Math.floor(Number(level || 1)));
-  return lv * 10;
+  return 2;
 }
 
 export function getTreasureAdvanceCount(player, itemId) {
