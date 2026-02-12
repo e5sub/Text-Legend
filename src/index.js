@@ -5240,6 +5240,17 @@ function findAliveBossTarget(player) {
       if (zoneId === CROSS_REALM_ZONE_ID && roomId === 'arena' && crossBossCooldownUntil > Date.now()) {
         continue;
       }
+      if (tpl.id === 'cross_world_boss') {
+        const lastSeenCrossBossId = String(player.flags?.autoFullCrossBossSeenId || '');
+        const awaitingCrossBossRespawn = Boolean(player.flags?.autoFullCrossBossAwaitRespawn);
+        // 离开跨服BOSS房后，仅在检测到“新一轮刷新(新mob.id)”时才允许再次跳回
+        if (awaitingCrossBossRespawn && lastSeenCrossBossId && String(mob.id) === lastSeenCrossBossId) {
+          continue;
+        }
+        if (awaitingCrossBossRespawn && (!lastSeenCrossBossId || String(mob.id) !== lastSeenCrossBossId)) {
+          player.flags.autoFullCrossBossAwaitRespawn = false;
+        }
+      }
       if (zoneId === CROSS_RANK_ZONE_ID) continue;
       if (!WORLD[zoneId]?.rooms?.[roomId]) continue;
       if (!canEnterRoomByCultivation(player, zoneId, roomId)) continue;
@@ -5375,6 +5386,11 @@ function tryAutoFullAction(player, roomMobs) {
   if (bossMove === 'moved') return 'moved';
   const bossMob = findBossInRoom(roomMobs, player);
   if (bossMob) {
+    const tpl = MOB_TEMPLATES[bossMob.templateId];
+    if (tpl?.id === 'cross_world_boss') {
+      player.flags.autoFullCrossBossSeenId = bossMob.id;
+      player.flags.autoFullCrossBossAwaitRespawn = false;
+    }
     if (!player.flags.lastBossRoom) {
       player.flags.lastBossRoom = { zoneId: player.position.zone, roomId: player.position.room };
     } else {
@@ -5397,6 +5413,10 @@ function tryAutoFullAction(player, roomMobs) {
   }
   const best = getAutoFullBestRoom(player);
   if (best && canMove) {
+    if (player.position.zone === CROSS_REALM_ZONE_ID && player.position.room === 'arena') {
+      // 跨服BOSS当前不在场时，标记等待下一轮刷新，避免重复回跳
+      player.flags.autoFullCrossBossAwaitRespawn = true;
+    }
     const targetRoomId = selectLeastPopulatedRoomAuto(best.zoneId, best.roomId, player.realmId || 1);
     if (player.position.zone !== best.zoneId || player.position.room !== targetRoomId) {
       if (movePlayerToRoom(player, best.zoneId, targetRoomId)) {
