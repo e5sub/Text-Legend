@@ -32,7 +32,7 @@ function getZhuxianTowerFloorScale(zoneId, roomId) {
   if (zoneId !== 'zxft') return 1;
   const room = getRoom(zoneId, roomId);
   const floor = Math.max(1, Math.floor(Number(room?.towerFloor || 1)));
-  return 1 + (floor - 1) * 0.05;
+  return 1 + (floor - 1) * 0.01;
 }
 
 function scaledStats(tpl, realmId = 1, zoneId, roomId) {
