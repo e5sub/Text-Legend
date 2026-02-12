@@ -5241,14 +5241,15 @@ function findAliveBossTarget(player) {
         continue;
       }
       if (tpl.id === 'cross_world_boss') {
-        const lastSeenCrossBossId = String(player.flags?.autoFullCrossBossSeenId || '');
+        const blockedCrossBossId = String(player.flags?.autoFullCrossBossBlockedId || player.flags?.autoFullCrossBossSeenId || '');
         const awaitingCrossBossRespawn = Boolean(player.flags?.autoFullCrossBossAwaitRespawn);
         // 离开跨服BOSS房后，仅在检测到“新一轮刷新(新mob.id)”时才允许再次跳回
-        if (awaitingCrossBossRespawn && lastSeenCrossBossId && String(mob.id) === lastSeenCrossBossId) {
+        if (awaitingCrossBossRespawn && blockedCrossBossId && String(mob.id) === blockedCrossBossId) {
           continue;
         }
-        if (awaitingCrossBossRespawn && (!lastSeenCrossBossId || String(mob.id) !== lastSeenCrossBossId)) {
+        if (awaitingCrossBossRespawn && blockedCrossBossId && String(mob.id) !== blockedCrossBossId) {
           player.flags.autoFullCrossBossAwaitRespawn = false;
+          player.flags.autoFullCrossBossBlockedId = null;
         }
       }
       if (zoneId === CROSS_RANK_ZONE_ID) continue;
@@ -5257,7 +5258,7 @@ function findAliveBossTarget(player) {
       if (player.position.zone === zoneId && player.position.room === roomId) continue;
       const exp = Number(tpl.exp || 0);
       if (!best || exp > best.exp) {
-        best = { zoneId, roomId, exp };
+        best = { zoneId, roomId, exp, mobId: mob.id, templateId: tpl.id };
       }
     }
   }
@@ -5329,6 +5330,11 @@ function tryAutoFullBossMove(player) {
   if (!canMoveForBoss) return null;
   const bossTarget = findAliveBossTarget(player);
   if (bossTarget && movePlayerToRoom(player, bossTarget.zoneId, bossTarget.roomId)) {
+    if (bossTarget.templateId === 'cross_world_boss') {
+      player.flags.autoFullCrossBossSeenId = bossTarget.mobId || null;
+      player.flags.autoFullCrossBossAwaitRespawn = false;
+      player.flags.autoFullCrossBossBlockedId = null;
+    }
     player.flags.autoFullLastMoveAt = now;
     return 'moved';
   }
@@ -5390,6 +5396,7 @@ function tryAutoFullAction(player, roomMobs) {
     if (tpl?.id === 'cross_world_boss') {
       player.flags.autoFullCrossBossSeenId = bossMob.id;
       player.flags.autoFullCrossBossAwaitRespawn = false;
+      player.flags.autoFullCrossBossBlockedId = null;
     }
     if (!player.flags.lastBossRoom) {
       player.flags.lastBossRoom = { zoneId: player.position.zone, roomId: player.position.room };
@@ -5416,6 +5423,7 @@ function tryAutoFullAction(player, roomMobs) {
     if (player.position.zone === CROSS_REALM_ZONE_ID && player.position.room === 'arena') {
       // 跨服BOSS当前不在场时，标记等待下一轮刷新，避免重复回跳
       player.flags.autoFullCrossBossAwaitRespawn = true;
+      player.flags.autoFullCrossBossBlockedId = player.flags.autoFullCrossBossSeenId || player.flags.autoFullCrossBossBlockedId || null;
     }
     const targetRoomId = selectLeastPopulatedRoomAuto(best.zoneId, best.roomId, player.realmId || 1);
     if (player.position.zone !== best.zoneId || player.position.room !== targetRoomId) {
