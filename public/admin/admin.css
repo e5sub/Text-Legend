@@ -283,6 +283,21 @@ body.theme-dark .admin-switch input:checked + .admin-switch-slider {
   min-width: 720px;
 }
 
+.treasure-config-table {
+  min-width: 420px !important;
+  table-layout: fixed;
+}
+
+.treasure-config-table th:first-child,
+.treasure-config-table td:first-child {
+  width: 50%;
+}
+
+.treasure-config-table th:last-child,
+.treasure-config-table td:last-child {
+  width: 50%;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
