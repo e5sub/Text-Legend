@@ -140,7 +140,8 @@ import {
   getTreasureDef,
   getTreasureLevel,
   getTreasureAdvanceCount,
-  getTreasureStageByAdvanceCount
+  getTreasureStageByAdvanceCount,
+  getTreasureRandomAttrById
 } from './game/treasure.js';
 
 const app = express();
@@ -5108,9 +5109,9 @@ const TREASURE_SETS = [
     role: '输出',
     source: '世界BOSS、跨服BOSS',
     treasures: [
-      { id: 'treasure_fentian_mark', name: '焚天战印', effect: '纯被动：攻击与元素攻击提升（自动生效）' },
-      { id: 'treasure_blood_blade', name: '血煞魔刃', effect: '纯被动：攻击与生存能力提升（自动生效）' },
-      { id: 'treasure_chixiao_talisman', name: '赤霄神符', effect: '纯被动：主属性提升（自动生效）' }
+      { id: 'treasure_fentian_mark', name: '焚天战印', effect: '被动：攻/魔/道与元素攻击提升（自动生效）' },
+      { id: 'treasure_blood_blade', name: '血煞魔刃', effect: '被动：攻/魔/道与生存能力提升（自动生效）' },
+      { id: 'treasure_chixiao_talisman', name: '赤霄神符', effect: '被动：主属性提升（自动生效）' }
     ]
   },
   {
@@ -5119,9 +5120,9 @@ const TREASURE_SETS = [
     role: '生存型',
     source: '诛仙浮图塔每10层概率掉落',
     treasures: [
-      { id: 'treasure_xuanwu_core', name: '玄武甲心', effect: '纯被动：防御与魔御提升（自动生效）' },
-      { id: 'treasure_taiyin_mirror', name: '太阴镜', effect: '纯被动：生命与防御提升（自动生效）' },
-      { id: 'treasure_guiyuan_bead', name: '归元珠', effect: '纯被动：生命与法力上限提升（自动生效）' }
+      { id: 'treasure_xuanwu_core', name: '玄武甲心', effect: '被动：防御与魔御提升（自动生效）' },
+      { id: 'treasure_taiyin_mirror', name: '太阴镜', effect: '被动：生命与防御提升（自动生效）' },
+      { id: 'treasure_guiyuan_bead', name: '归元珠', effect: '被动：生命与法力上限提升（自动生效）' }
     ]
   },
   {
@@ -5130,9 +5131,9 @@ const TREASURE_SETS = [
     role: '控制/克制型',
     source: '世界BOSS、跨服BOSS',
     treasures: [
-      { id: 'treasure_youluo_lamp', name: '幽罗锁魂灯', effect: '纯被动：命中与道术提升（自动生效）' },
-      { id: 'treasure_shigou_nail', name: '蚀骨钉', effect: '纯被动：元素攻击与攻击提升（自动生效）' },
-      { id: 'treasure_shehun_banner', name: '摄魂幡', effect: '纯被动：闪避与敏捷提升（自动生效）' }
+      { id: 'treasure_youluo_lamp', name: '幽罗锁魂灯', effect: '被动：命中与道术提升（自动生效）' },
+      { id: 'treasure_shigou_nail', name: '蚀骨钉', effect: '被动：元素攻击与攻/魔/道提升（自动生效）' },
+      { id: 'treasure_shehun_banner', name: '摄魂幡', effect: '被动：闪避与敏捷提升（自动生效）' }
     ]
   },
   {
@@ -5141,9 +5142,9 @@ const TREASURE_SETS = [
     role: '成长',
     source: '修真BOSS',
     treasures: [
-      { id: 'treasure_taiyi_disc', name: '太一灵盘', effect: '纯被动：打怪经验与法力上限提升（自动生效）' },
-      { id: 'treasure_zhoutian_jade', name: '周天玉简', effect: '纯被动：法术与道术提升（自动生效）' },
-      { id: 'treasure_hongmeng_seal', name: '鸿蒙道印', effect: '纯被动：综合属性提升（自动生效）' }
+      { id: 'treasure_taiyi_disc', name: '太一灵盘', effect: '被动：打怪经验与法力上限提升（自动生效）' },
+      { id: 'treasure_zhoutian_jade', name: '周天玉简', effect: '被动：法术与道术提升（自动生效）' },
+      { id: 'treasure_hongmeng_seal', name: '鸿蒙道印', effect: '被动：攻/魔/道与综合属性提升（自动生效）' }
     ]
   }
 ];
@@ -6427,6 +6428,7 @@ async function buildState(player) {
   const treasureEquipped = (treasureState.equipped || []).map((id, index) => {
     const def = getTreasureDef(id);
     const advanceCount = getTreasureAdvanceCount(player, id);
+    const randomAttr = getTreasureRandomAttrById(player, id);
     return {
       slot: index + 1,
       id,
@@ -6434,8 +6436,16 @@ async function buildState(player) {
       level: getTreasureLevel(player, id),
       advanceCount,
       stage: getTreasureStageByAdvanceCount(advanceCount),
-      effectBonusPct: Math.max(0, Number((advanceCount * TREASURE_ADVANCE_EFFECT_BONUS_PER_STACK * 100).toFixed(1)))
+      effectBonusPct: Math.max(0, Number((advanceCount * TREASURE_ADVANCE_EFFECT_BONUS_PER_STACK * 100).toFixed(1))),
+      randomAttr
     };
+  });
+  const treasureRandomAttrTotal = { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 };
+  treasureEquipped.forEach((entry) => {
+    const attrs = entry.randomAttr || {};
+    Object.keys(treasureRandomAttrTotal).forEach((key) => {
+      treasureRandomAttrTotal[key] += Math.max(0, Math.floor(Number(attrs[key] || 0)));
+    });
   });
   const treasureExpMaterial = Math.floor((player.inventory || []).find((slot) => slot.id === TREASURE_EXP_ITEM_ID)?.qty || 0);
   
@@ -6556,7 +6566,7 @@ async function buildState(player) {
       advancePerStage: TREASURE_ADVANCE_PER_STAGE,
       equipped: treasureEquipped,
       expMaterial: treasureExpMaterial,
-      randomAttr: treasureState.randomAttr || { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 }
+      randomAttr: treasureRandomAttrTotal
     },
     anti: {
       key: player.socket?.data?.antiKey || null,

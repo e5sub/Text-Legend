@@ -2720,6 +2720,24 @@ function renderTreasureModal() {
   const advanceConsume = Math.max(1, Number(data.advanceConsume || 3));
   const advancePerStage = Math.max(1, Number(data.advancePerStage || 10));
   const equipped = Array.isArray(data.equipped) ? data.equipped : [];
+  const treasurePassiveById = (() => {
+    const map = new Map();
+    const sets = Array.isArray(lastState?.treasure_sets) ? lastState.treasure_sets : [];
+    sets.forEach((setEntry) => {
+      const treasures = Array.isArray(setEntry?.treasures) ? setEntry.treasures : [];
+      treasures.forEach((t) => {
+        if (!t || !t.id) return;
+        map.set(
+          t.id,
+          String(t.effect || '')
+            .replace(/^纯被动：/, '被动：')
+            .replace(/^被动：被动：/, '被动：')
+            .trim()
+        );
+      });
+    });
+    return map;
+  })();
   const bagItems = getTreasureBagItems();
   const occupiedIds = new Set(equipped.map((entry) => entry.id));
   const hasEmptySlot = equipped.length < slotCount;
@@ -2746,8 +2764,17 @@ function renderTreasureModal() {
     }
     card.innerHTML = `
       <div>${entry.name || entry.id}</div>
+      <div class="forge-item-meta">${treasurePassiveById.get(entry.id) || '被动：暂无说明'}</div>
       <div class="forge-item-meta">Lv${entry.level}/${maxLevel} | 阶${Math.floor(Number(entry.stage || 0))} 段${Math.floor(Number(entry.advanceCount || 0))}</div>
       <div class="forge-item-meta">效果加成 +${Number(entry.effectBonusPct || 0).toFixed(1)}%</div>
+      <div class="forge-item-meta">${(() => {
+        const labels = { hp: '生命上限', mp: '魔法上限', atk: '攻击', def: '防御', mag: '魔法', mdef: '魔御', spirit: '道术', dex: '敏捷' };
+        const attrs = entry.randomAttr || {};
+        const parts = Object.entries(attrs)
+          .filter(([, v]) => Number(v || 0) > 0)
+          .map(([k, v]) => `${labels[k] || k}+${Math.floor(Number(v || 0))}`);
+        return parts.length ? `绑定属性: ${parts.join('，')}` : '绑定属性: 无';
+      })()}</div>
       <div class="treasure-actions">
         <button type="button" data-action="upgrade" data-slot="${slot}">升级</button>
         <button type="button" data-action="advance" data-slot="${slot}">升段</button>
@@ -2794,6 +2821,7 @@ function renderTreasureModal() {
     const equippedAlready = occupiedIds.has(item.id);
     card.innerHTML = `
       <div>${formatItemName(item)} x${Math.floor(Number(item.qty || 0))}</div>
+      <div class="forge-item-meta">${treasurePassiveById.get(item.id) || '被动：暂无说明'}</div>
       <div class="treasure-actions">
         <button type="button" data-action="equip" data-id="${item.id}">装备</button>
       </div>

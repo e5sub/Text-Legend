@@ -50,7 +50,8 @@ export function normalizeTreasureState(player) {
   const equippedRaw = Array.isArray(state.equipped) ? state.equipped : [];
   const levelsRaw = state.levels && typeof state.levels === 'object' ? state.levels : {};
   const advancesRaw = state.advances && typeof state.advances === 'object' ? state.advances : {};
-  const randomAttrRaw = state.randomAttr && typeof state.randomAttr === 'object' ? state.randomAttr : {};
+  const randomAttrByIdRaw = state.randomAttrById && typeof state.randomAttrById === 'object' ? state.randomAttrById : {};
+  const legacyRandomAttrRaw = state.randomAttr && typeof state.randomAttr === 'object' ? state.randomAttr : null;
 
   const seen = new Set();
   const equipped = [];
@@ -84,14 +85,31 @@ export function normalizeTreasureState(player) {
   });
   state.advances = advances;
 
-  const randomAttr = {
-    hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0
+  const emptyAttrs = () => ({ hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 });
+  const normalizeAttrObject = (raw) => {
+    const out = emptyAttrs();
+    Object.keys(out).forEach((key) => {
+      const parsed = Math.max(0, Math.floor(Number(raw?.[key] || 0)));
+      out[key] = Number.isFinite(parsed) ? parsed : 0;
+    });
+    return out;
   };
-  Object.keys(randomAttr).forEach((key) => {
-    const parsed = Math.max(0, Math.floor(Number(randomAttrRaw[key] || 0)));
-    randomAttr[key] = Number.isFinite(parsed) ? parsed : 0;
+  const randomAttrById = {};
+  Object.entries(randomAttrByIdRaw).forEach(([id, raw]) => {
+    if (!isTreasureItemId(id)) return;
+    randomAttrById[id] = normalizeAttrObject(raw);
   });
-  state.randomAttr = randomAttr;
+  // 兼容历史全局随机属性：合并到当前第一个已装备法宝，避免已有数值丢失
+  if (legacyRandomAttrRaw && state.equipped.length > 0) {
+    const firstId = state.equipped[0];
+    if (!randomAttrById[firstId]) randomAttrById[firstId] = emptyAttrs();
+    const legacy = normalizeAttrObject(legacyRandomAttrRaw);
+    Object.keys(legacy).forEach((key) => {
+      randomAttrById[firstId][key] += legacy[key];
+    });
+  }
+  state.randomAttrById = randomAttrById;
+  if (state.randomAttr) delete state.randomAttr;
   return state;
 }
 
@@ -119,15 +137,29 @@ export function getTreasureStageByAdvanceCount(advanceCount) {
 
 export function getTreasureRandomAttrBonus(player) {
   const state = normalizeTreasureState(player);
+  const result = { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 };
+  (state.equipped || []).forEach((id) => {
+    const attrs = state.randomAttrById?.[id];
+    if (!attrs) return;
+    Object.keys(result).forEach((key) => {
+      result[key] += Math.max(0, Math.floor(Number(attrs[key] || 0)));
+    });
+  });
+  return result;
+}
+
+export function getTreasureRandomAttrById(player, itemId) {
+  const state = normalizeTreasureState(player);
+  const attrs = state.randomAttrById?.[itemId] || {};
   return {
-    hp: Math.max(0, Math.floor(Number(state.randomAttr?.hp || 0))),
-    mp: Math.max(0, Math.floor(Number(state.randomAttr?.mp || 0))),
-    atk: Math.max(0, Math.floor(Number(state.randomAttr?.atk || 0))),
-    def: Math.max(0, Math.floor(Number(state.randomAttr?.def || 0))),
-    mag: Math.max(0, Math.floor(Number(state.randomAttr?.mag || 0))),
-    mdef: Math.max(0, Math.floor(Number(state.randomAttr?.mdef || 0))),
-    spirit: Math.max(0, Math.floor(Number(state.randomAttr?.spirit || 0))),
-    dex: Math.max(0, Math.floor(Number(state.randomAttr?.dex || 0)))
+    hp: Math.max(0, Math.floor(Number(attrs.hp || 0))),
+    mp: Math.max(0, Math.floor(Number(attrs.mp || 0))),
+    atk: Math.max(0, Math.floor(Number(attrs.atk || 0))),
+    def: Math.max(0, Math.floor(Number(attrs.def || 0))),
+    mag: Math.max(0, Math.floor(Number(attrs.mag || 0))),
+    mdef: Math.max(0, Math.floor(Number(attrs.mdef || 0))),
+    spirit: Math.max(0, Math.floor(Number(attrs.spirit || 0))),
+    dex: Math.max(0, Math.floor(Number(attrs.dex || 0)))
   };
 }
 

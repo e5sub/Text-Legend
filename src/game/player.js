@@ -556,11 +556,12 @@ export function computeDerived(player) {
   const treasureBonus = getTreasureBonus(player);
   const treasureRandomAttr = getTreasureRandomAttrBonus(player);
   const applyPct = (value, pct) => Math.floor(value * (1 + Math.max(0, Number(pct) || 0)));
-  player.atk = applyPct(player.atk, treasureBonus.atkPct);
+  const treasureSharedAtkPct = Math.max(0, Number(treasureBonus.atkPct) || 0);
+  player.atk = applyPct(player.atk, treasureSharedAtkPct);
   player.def = applyPct(player.def, treasureBonus.defPct);
   player.mdef = applyPct(player.mdef, treasureBonus.mdefPct);
-  player.mag = applyPct(player.mag, treasureBonus.magPct);
-  player.spirit = applyPct(player.spirit, treasureBonus.spiritPct);
+  player.mag = applyPct(player.mag, treasureSharedAtkPct);
+  player.spirit = applyPct(player.spirit, treasureSharedAtkPct);
   player.dex = applyPct(player.dex, treasureBonus.dexPct);
   player.max_hp = applyPct(player.max_hp, treasureBonus.maxHpPct);
   player.max_mp = applyPct(player.max_mp, treasureBonus.maxMpPct);

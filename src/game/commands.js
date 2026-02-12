@@ -44,7 +44,8 @@ import {
   getTreasureUpgradeCost,
   getTreasureBonus,
   getTreasureAdvanceCount,
-  getTreasureStageByAdvanceCount
+  getTreasureStageByAdvanceCount,
+  getTreasureRandomAttrById
 } from './treasure.js';
 
 // 特效重置：生成随机特效（不包含elementAtk，因为元素攻击只能通过装备合成获得）
@@ -1508,7 +1509,12 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           const nextCost = `下级消耗法宝经验丹 x${getTreasureUpgradeCost(lv)}`;
           const advanceMod = advanceCount % TREASURE_ADVANCE_PER_STAGE;
           const nextStageRemain = advanceMod === 0 ? TREASURE_ADVANCE_PER_STAGE : (TREASURE_ADVANCE_PER_STAGE - advanceMod);
+          const attrs = getTreasureRandomAttrById(player, id);
+          const attrParts = Object.entries(attrs)
+            .filter(([, v]) => Number(v || 0) > 0)
+            .map(([k, v]) => `${treasureRandomAttrLabel(k)}+${Math.floor(Number(v || 0))}`);
           lines.push(`[${i + 1}] ${def?.name || id} Lv${lv} 阶${stage} 段${advanceCount} (${nextCost}，升段+0.1%/次，距下阶${nextStageRemain}次)`);
+          lines.push(`  绑定随机属性: ${attrParts.length ? attrParts.join('，') : '无'}`);
         }
         const bagTreasures = (player.inventory || [])
           .filter((slot) => isTreasureItemId(slot.id))
@@ -1528,19 +1534,25 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         lines.push(`背包法宝: ${bagTreasures.length ? bagTreasures.join('，') : '无'}`);
         lines.push(`法宝经验丹: ${expMatCount}`);
         lines.push(`当前加成: ${bonusParts.length ? bonusParts.join('，') : '无'}`);
-        const randomAttr = state.randomAttr || {};
-        const randomParts = Object.entries(randomAttr)
+        const equippedRandomAttrTotal = { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 };
+        (state.equipped || []).forEach((id) => {
+          const attrs = getTreasureRandomAttrById(player, id);
+          Object.keys(equippedRandomAttrTotal).forEach((key) => {
+            equippedRandomAttrTotal[key] += Math.max(0, Math.floor(Number(attrs[key] || 0)));
+          });
+        });
+        const randomParts = Object.entries(equippedRandomAttrTotal)
           .filter(([, v]) => Number(v || 0) > 0)
           .map(([k, v]) => `${treasureRandomAttrLabel(k)}+${Math.floor(Number(v || 0))}`);
-        lines.push(`升级随机属性累计: ${randomParts.length ? randomParts.join('，') : '无'}`);
-        lines.push('用法: treasure list | treasure equip <法宝名/ID> | treasure unequip <槽位/法宝名/ID> | treasure upgrade <槽位/法宝名/ID> | treasure advance <槽位/法宝名/ID>');
+        lines.push(`已装备法宝随机属性总计: ${randomParts.length ? randomParts.join('，') : '无'}`);
+        lines.push('请在【法宝】面板中进行装备、升级、升段与卸下操作。');
         send(lines.join('\n'));
         return;
       }
       if (sub === 'equip') {
         const target = parts.slice(1).join(' ').trim();
         if (!target) {
-          send('用法: treasure equip <法宝名/ID>');
+          send('请在【法宝】面板中选择背包法宝进行装备。');
           return;
         }
         const resolved = resolveInventoryItem(player, target);
@@ -1584,7 +1596,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       if (sub === 'unequip') {
         const target = parts.slice(1).join(' ').trim();
         if (!target) {
-          send('用法: treasure unequip <槽位/法宝名/ID>');
+          send('请在【法宝】面板中选择已装备法宝进行卸下。');
           return;
         }
         const equipped = resolveEquippedTreasure(player, target);
@@ -1607,7 +1619,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       if (sub === 'upgrade') {
         const target = parts.slice(1).join(' ').trim();
         if (!target) {
-          send('用法: treasure upgrade <槽位/法宝名/ID>');
+          send('请在【法宝】面板中点击已装备法宝的【升级】按钮。');
           return;
         }
         const equipped = resolveEquippedTreasure(player, target);
@@ -1629,10 +1641,16 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         }
         state.levels[equipped.id] = level + 1;
         const attrKey = rollTreasureRandomAttrKey();
-        if (!state.randomAttr || typeof state.randomAttr !== 'object') {
-          state.randomAttr = { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 };
+        if (!state.randomAttrById || typeof state.randomAttrById !== 'object') {
+          state.randomAttrById = {};
         }
-        state.randomAttr[attrKey] = Math.max(0, Math.floor(Number(state.randomAttr[attrKey] || 0))) + 1;
+        if (!state.randomAttrById[equipped.id] || typeof state.randomAttrById[equipped.id] !== 'object') {
+          state.randomAttrById[equipped.id] = { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 };
+        }
+        state.randomAttrById[equipped.id][attrKey] = Math.max(
+          0,
+          Math.floor(Number(state.randomAttrById[equipped.id][attrKey] || 0))
+        ) + 1;
         computeDerived(player);
         player.forceStateRefresh = true;
         const def = getTreasureDef(equipped.id);
@@ -1642,7 +1660,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       if (sub === 'advance' || sub === '升段') {
         const target = parts.slice(1).join(' ').trim();
         if (!target) {
-          send('用法: treasure advance <槽位/法宝名/ID>');
+          send('请在【法宝】面板中点击已装备法宝的【升段】按钮。');
           return;
         }
         const equipped = resolveEquippedTreasure(player, target);
@@ -1674,7 +1692,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         send(`法宝升段成功：${def?.name || equipped.id} 段数 ${oldAdvance} -> ${newAdvance}（每段效果+${(TREASURE_ADVANCE_EFFECT_BONUS_PER_STACK * 100).toFixed(1)}%${stageUpText}）。`);
         return;
       }
-      send('用法: treasure list | treasure equip <法宝名/ID> | treasure unequip <槽位/法宝名/ID> | treasure upgrade <槽位/法宝名/ID> | treasure advance <槽位/法宝名/ID>');
+      send('请在【法宝】面板中操作法宝。');
       return;
     }
     case 'equip': {
