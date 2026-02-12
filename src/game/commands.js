@@ -496,9 +496,11 @@ function bootstrapZhuxianTowerWeeklyProgress(player, now = Date.now()) {
   const targetHighestCleared = Math.max(0, targetChallengeFloor - 1);
   const previousHighest = Math.max(0, Math.floor(Number(progress.highestClearedFloor || 0)));
   const autoTreasureDrops = [];
+  let autoTreasureExpQty = 0;
 
   if (targetHighestCleared > previousHighest) {
     for (let floor = previousHighest + 1; floor <= targetHighestCleared; floor += 1) {
+      autoTreasureExpQty += 1;
       if (floor % 10 === 0) {
         if (Math.random() < TREASURE_TOWER_XUANMING_DROP_CHANCE) {
           const dropId = ZHUXIAN_TOWER_XUANMING_DROPS[randInt(0, ZHUXIAN_TOWER_XUANMING_DROPS.length - 1)];
@@ -508,16 +510,22 @@ function bootstrapZhuxianTowerWeeklyProgress(player, now = Date.now()) {
       }
     }
     progress.highestClearedFloor = targetHighestCleared;
+    if (autoTreasureExpQty > 0) {
+      addItem(player, TREASURE_EXP_ITEM_ID, autoTreasureExpQty);
+    }
   }
 
   progress.bootstrapWeekKey = weekKey;
 
-  player.send(`浮图塔周重置后已按个人最高层第${targetChallengeFloor}层恢复挑战（不补发经验/金币）。`);
+  player.send(`浮图塔周重置后已按个人最高层第${targetChallengeFloor}层恢复挑战（不补发人物经验/金币）。`);
   if (autoTreasureDrops.length > 0) {
     const dropLabel = autoTreasureDrops
       .map((id) => ITEM_TEMPLATES[id]?.name || id)
       .join('、');
     player.send(`浮图塔周补发额外掉落：${dropLabel}。`);
+  }
+  if (autoTreasureExpQty > 0) {
+    player.send(`浮图塔周补发法宝经验丹 x${autoTreasureExpQty}（每层1个）。`);
   }
 
   return progress;
