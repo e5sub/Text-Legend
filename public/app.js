@@ -4377,6 +4377,44 @@ async function renderSponsorContent() {
 
 function renderDropsContent(setId) {
   if (!dropsUi.content) return;
+  if (setId === 'treasure') {
+    const treasureSets = Array.isArray(lastState?.treasure_sets) ? lastState.treasure_sets : [];
+    dropsUi.content.innerHTML = '<div class="drops-header">法宝掉落</div>';
+
+    if (!treasureSets.length) {
+      const empty = document.createElement('div');
+      empty.className = 'drops-item';
+      empty.innerHTML = '<div class="drops-item-name">暂无法宝掉落数据</div>';
+      dropsUi.content.appendChild(empty);
+      return;
+    }
+
+    treasureSets.forEach((setEntry) => {
+      const sourceText = String(setEntry?.source || '未知来源');
+      const section = document.createElement('div');
+      section.className = 'drops-item';
+      section.innerHTML = `
+        <div class="drops-item-name">${setEntry?.name || '法宝系列'}</div>
+        <div class="drops-item-mobs"><span class="drops-drop">来源: ${sourceText}</span></div>
+      `;
+      dropsUi.content.appendChild(section);
+
+      const treasures = Array.isArray(setEntry?.treasures) ? setEntry.treasures : [];
+      treasures.forEach((item) => {
+        const row = document.createElement('div');
+        row.className = 'drops-item';
+        row.innerHTML = `
+          <div class="drops-item-name">${item?.name || item?.id || '未知法宝'}</div>
+          <div class="drops-item-mobs">
+            <span class="drops-drop">${item?.effect || '被动：暂无说明'}</span>
+          </div>
+        `;
+        dropsUi.content.appendChild(row);
+      });
+    });
+    return;
+  }
+
   const setData = SET_DROPS[setId];
   if (!setData) return;
 
