@@ -848,3 +848,103 @@ export async function setEquipSkillDropChance(rate) {
   await setSetting('equip_skill_drop_chance', String(normalized));
 }
 
+// 法宝系统配置
+export async function getTreasureSlotCount() {
+  const value = await getSetting('treasure_slot_count', '6');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 6;
+}
+
+export async function setTreasureSlotCount(count) {
+  const normalized = Math.max(1, Math.floor(Number(count) || 6));
+  await setSetting('treasure_slot_count', String(normalized));
+}
+
+export async function getTreasureMaxLevel() {
+  const value = await getSetting('treasure_max_level', '999999');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 999999;
+}
+
+export async function setTreasureMaxLevel(level) {
+  const normalized = Math.max(1, Math.floor(Number(level) || 999999));
+  await setSetting('treasure_max_level', String(normalized));
+}
+
+export async function getTreasureUpgradeConsume() {
+  const value = await getSetting('treasure_upgrade_consume', '2');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 2;
+}
+
+export async function setTreasureUpgradeConsume(consume) {
+  const normalized = Math.max(1, Math.floor(Number(consume) || 2));
+  await setSetting('treasure_upgrade_consume', String(normalized));
+}
+
+export async function getTreasureAdvanceConsume() {
+  const value = await getSetting('treasure_advance_consume', '1');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 1;
+}
+
+export async function setTreasureAdvanceConsume(consume) {
+  const normalized = Math.max(1, Math.floor(Number(consume) || 1));
+  await setSetting('treasure_advance_consume', String(normalized));
+}
+
+export async function getTreasureAdvancePerStage() {
+  const value = await getSetting('treasure_advance_per_stage', '10');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 10;
+}
+
+export async function setTreasureAdvancePerStage(count) {
+  const normalized = Math.max(1, Math.floor(Number(count) || 10));
+  await setSetting('treasure_advance_per_stage', String(normalized));
+}
+
+export async function getTreasureAdvanceEffectBonusPerStack() {
+  const value = await getSetting('treasure_advance_effect_bonus_per_stack', '0.001');
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 0.001;
+}
+
+export async function setTreasureAdvanceEffectBonusPerStack(bonus) {
+  const normalized = Math.max(0, Number(bonus) || 0.001);
+  await setSetting('treasure_advance_effect_bonus_per_stack', String(normalized));
+}
+
+export async function getTreasureWorldBossDropMultiplier() {
+  const value = await getSetting('treasure_world_boss_drop_multiplier', '1');
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 1;
+}
+
+export async function setTreasureWorldBossDropMultiplier(multiplier) {
+  const normalized = Math.max(0, Number(multiplier) || 1);
+  await setSetting('treasure_world_boss_drop_multiplier', String(normalized));
+}
+
+export async function getTreasureCrossWorldBossDropMultiplier() {
+  const value = await getSetting('treasure_cross_world_boss_drop_multiplier', '1');
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 1;
+}
+
+export async function setTreasureCrossWorldBossDropMultiplier(multiplier) {
+  const normalized = Math.max(0, Number(multiplier) || 1);
+  await setSetting('treasure_cross_world_boss_drop_multiplier', String(normalized));
+}
+
+export async function getTreasureTowerXuanmingDropChance() {
+  const value = await getSetting('treasure_tower_xuanming_drop_chance', '0.2');
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? Math.max(0, Math.min(1, parsed)) : 0.2;
+}
+
+export async function setTreasureTowerXuanmingDropChance(chance) {
+  const normalized = Math.max(0, Math.min(1, Number(chance) || 0.2));
+  await setSetting('treasure_tower_xuanming_drop_chance', String(normalized));
+}
+

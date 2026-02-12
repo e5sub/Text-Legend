@@ -127,6 +127,19 @@ const effectDropDoubleChanceInput = document.getElementById('effect-drop-double-
 const equipSkillDropChanceInput = document.getElementById('equip-skill-drop-chance');
 const effectResetSaveBtn = document.getElementById('effect-reset-save-btn');
 
+// 法宝配置相关
+const treasureMsg = document.getElementById('treasure-msg');
+const treasureSlotCountInput = document.getElementById('treasure-slot-count');
+const treasureMaxLevelInput = document.getElementById('treasure-max-level');
+const treasureUpgradeConsumeInput = document.getElementById('treasure-upgrade-consume');
+const treasureAdvanceConsumeInput = document.getElementById('treasure-advance-consume');
+const treasureAdvancePerStageInput = document.getElementById('treasure-advance-per-stage');
+const treasureAdvanceBonusPerStackInput = document.getElementById('treasure-advance-bonus-per-stack');
+const treasureWorldBossDropMultiplierInput = document.getElementById('treasure-world-boss-drop-multiplier');
+const treasureCrossBossDropMultiplierInput = document.getElementById('treasure-cross-boss-drop-multiplier');
+const treasureTowerXuanmingDropChanceInput = document.getElementById('treasure-tower-xuanming-drop-chance');
+const treasureSaveBtn = document.getElementById('treasure-save-btn');
+
 // 世界BOSS相关
 const wbMsg = document.getElementById('wb-msg');
 const wbPlayerBonusList = document.getElementById('wb-player-bonus-list');
@@ -5355,6 +5368,64 @@ async function saveTrainingSettings() {
   }
 }
 
+async function loadTreasureSettings() {
+  if (!treasureMsg) return;
+  treasureMsg.textContent = '';
+  try {
+    const data = await api('/admin/treasure-settings', 'GET');
+    if (treasureSlotCountInput) treasureSlotCountInput.value = data.slotCount ?? '';
+    if (treasureMaxLevelInput) treasureMaxLevelInput.value = data.maxLevel ?? '';
+    if (treasureUpgradeConsumeInput) treasureUpgradeConsumeInput.value = data.upgradeConsume ?? '';
+    if (treasureAdvanceConsumeInput) treasureAdvanceConsumeInput.value = data.advanceConsume ?? '';
+    if (treasureAdvancePerStageInput) treasureAdvancePerStageInput.value = data.advancePerStage ?? '';
+    if (treasureAdvanceBonusPerStackInput) treasureAdvanceBonusPerStackInput.value = data.advanceEffectBonusPerStack ?? '';
+    if (treasureWorldBossDropMultiplierInput) treasureWorldBossDropMultiplierInput.value = data.worldBossDropMultiplier ?? '';
+    if (treasureCrossBossDropMultiplierInput) treasureCrossBossDropMultiplierInput.value = data.crossWorldBossDropMultiplier ?? '';
+    if (treasureTowerXuanmingDropChanceInput) treasureTowerXuanmingDropChanceInput.value = data.towerXuanmingDropChance ?? '';
+    treasureMsg.textContent = '加载成功';
+    treasureMsg.style.color = 'green';
+    setTimeout(() => { treasureMsg.textContent = ''; }, 1500);
+  } catch (err) {
+    treasureMsg.textContent = `加载失败: ${err.message}`;
+    treasureMsg.style.color = 'red';
+  }
+}
+
+async function saveTreasureSettings() {
+  if (!treasureMsg) return;
+  treasureMsg.textContent = '';
+  try {
+    const payload = {
+      slotCount: Number(treasureSlotCountInput?.value),
+      maxLevel: Number(treasureMaxLevelInput?.value),
+      upgradeConsume: Number(treasureUpgradeConsumeInput?.value),
+      advanceConsume: Number(treasureAdvanceConsumeInput?.value),
+      advancePerStage: Number(treasureAdvancePerStageInput?.value),
+      advanceEffectBonusPerStack: Number(treasureAdvanceBonusPerStackInput?.value),
+      worldBossDropMultiplier: Number(treasureWorldBossDropMultiplierInput?.value),
+      crossWorldBossDropMultiplier: Number(treasureCrossBossDropMultiplierInput?.value),
+      towerXuanmingDropChance: Number(treasureTowerXuanmingDropChanceInput?.value)
+    };
+    if (!Number.isFinite(payload.slotCount) || payload.slotCount < 1) throw new Error('法宝槽位必须为正整数');
+    if (!Number.isFinite(payload.maxLevel) || payload.maxLevel < 1) throw new Error('法宝等级上限必须为正整数');
+    if (!Number.isFinite(payload.upgradeConsume) || payload.upgradeConsume < 1) throw new Error('升级消耗必须为正整数');
+    if (!Number.isFinite(payload.advanceConsume) || payload.advanceConsume < 1) throw new Error('升段消耗必须为正整数');
+    if (!Number.isFinite(payload.advancePerStage) || payload.advancePerStage < 1) throw new Error('每阶所需段数必须为正整数');
+    if (!Number.isFinite(payload.advanceEffectBonusPerStack) || payload.advanceEffectBonusPerStack < 0) throw new Error('每段效果加成必须大于等于0');
+    if (!Number.isFinite(payload.worldBossDropMultiplier) || payload.worldBossDropMultiplier < 0) throw new Error('世界BOSS法宝掉率倍率必须大于等于0');
+    if (!Number.isFinite(payload.crossWorldBossDropMultiplier) || payload.crossWorldBossDropMultiplier < 0) throw new Error('跨服BOSS法宝掉率倍率必须大于等于0');
+    if (!Number.isFinite(payload.towerXuanmingDropChance) || payload.towerXuanmingDropChance < 0 || payload.towerXuanmingDropChance > 1) throw new Error('浮图塔玄冥掉率必须在0到1之间');
+
+    await api('/admin/treasure-settings/update', 'POST', payload);
+    treasureMsg.textContent = '保存成功，立即生效';
+    treasureMsg.style.color = 'green';
+    setTimeout(() => { treasureMsg.textContent = ''; }, 2000);
+  } catch (err) {
+    treasureMsg.textContent = `保存失败: ${err.message}`;
+    treasureMsg.style.color = 'red';
+  }
+}
+
 async function initDashboard() {
   if (adminToken) {
       showDashboard();
@@ -5376,6 +5447,7 @@ async function initDashboard() {
     loadTrainingFruitSettings();
     loadTrainingSettings();
     loadRefineSettings();
+    loadTreasureSettings();
     loadEffectResetSettings();
   }
 }
@@ -5700,6 +5772,11 @@ if (trainingSaveBtn) {
 // 锻造系统配置事件
 if (refineSaveBtn) {
   refineSaveBtn.addEventListener('click', saveRefineSettings);
+}
+
+// 法宝配置事件
+if (treasureSaveBtn) {
+  treasureSaveBtn.addEventListener('click', saveTreasureSettings);
 }
 
 // 特效重置配置事件

@@ -37,6 +37,7 @@ import {
   TREASURE_ADVANCE_CONSUME,
   TREASURE_ADVANCE_EFFECT_BONUS_PER_STACK,
   TREASURE_ADVANCE_PER_STAGE,
+  TREASURE_TOWER_XUANMING_DROP_CHANCE,
   isTreasureItemId,
   getTreasureDef,
   normalizeTreasureState,
@@ -398,7 +399,6 @@ const TRAINING_ALIASES = {
 };
 const ZHUXIAN_TOWER_ZONE_ID = 'zxft';
 const ZHUXIAN_TOWER_FLOOR_PATTERN = /^floor_(\d+)_x(?:__u_(.+))?$/;
-const ZHUXIAN_TOWER_XUANMING_DROP_CHANCE = 0.2;
 const ZHUXIAN_TOWER_XUANMING_DROPS = [
   'treasure_xuanwu_core',
   'treasure_taiyin_mirror',
@@ -500,7 +500,7 @@ function bootstrapZhuxianTowerWeeklyProgress(player, now = Date.now()) {
   if (targetHighestCleared > previousHighest) {
     for (let floor = previousHighest + 1; floor <= targetHighestCleared; floor += 1) {
       if (floor % 10 === 0) {
-        if (Math.random() < ZHUXIAN_TOWER_XUANMING_DROP_CHANCE) {
+        if (Math.random() < TREASURE_TOWER_XUANMING_DROP_CHANCE) {
           const dropId = ZHUXIAN_TOWER_XUANMING_DROPS[randInt(0, ZHUXIAN_TOWER_XUANMING_DROPS.length - 1)];
           addItem(player, dropId, 1);
           autoTreasureDrops.push(dropId);

@@ -774,6 +774,79 @@
 
         <div class="block" data-collapsible>
           <div class="block-title">
+            <h2>法宝配置</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <p style="color: #666; margin-bottom: 12px; font-size: 13px;">
+              控制法宝系统全局参数（立即生效）。<br>
+              每段效果加成填写小数：`0.001 = 0.1%`
+            </p>
+            <div class="table-container">
+              <table style="font-size: 12px;">
+                <thead>
+                  <tr>
+                    <th style="padding: 6px 8px;">属性</th>
+                    <th style="padding: 6px 8px;">值</th>
+                    <th style="padding: 6px 8px;">说明</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>法宝槽位数</td>
+                    <td><input id="treasure-slot-count" type="number" min="1" step="1" style="width: 100px;"></td>
+                    <td>可装备法宝数量</td>
+                  </tr>
+                  <tr>
+                    <td>法宝等级上限</td>
+                    <td><input id="treasure-max-level" type="number" min="1" step="1" style="width: 100px;"></td>
+                    <td>单件法宝最高等级</td>
+                  </tr>
+                  <tr>
+                    <td>升级消耗(经验丹)</td>
+                    <td><input id="treasure-upgrade-consume" type="number" min="1" step="1" style="width: 100px;"></td>
+                    <td>法宝升级每次消耗</td>
+                  </tr>
+                  <tr>
+                    <td>升段消耗(同名)</td>
+                    <td><input id="treasure-advance-consume" type="number" min="1" step="1" style="width: 100px;"></td>
+                    <td>法宝升段每次消耗</td>
+                  </tr>
+                  <tr>
+                    <td>每阶所需段数</td>
+                    <td><input id="treasure-advance-per-stage" type="number" min="1" step="1" style="width: 100px;"></td>
+                    <td>累计多少段提升1阶</td>
+                  </tr>
+                  <tr>
+                    <td>每段效果加成</td>
+                    <td><input id="treasure-advance-bonus-per-stack" type="number" min="0" step="0.0001" style="width: 100px;"></td>
+                    <td>例如 0.001 代表每段+0.1%</td>
+                  </tr>
+                  <tr>
+                    <td>世界BOSS法宝掉率倍率</td>
+                    <td><input id="treasure-world-boss-drop-multiplier" type="number" min="0" step="0.1" style="width: 100px;"></td>
+                    <td>1=默认，2=双倍，0=关闭</td>
+                  </tr>
+                  <tr>
+                    <td>跨服BOSS法宝掉率倍率</td>
+                    <td><input id="treasure-cross-boss-drop-multiplier" type="number" min="0" step="0.1" style="width: 100px;"></td>
+                    <td>仅作用跨服BOSS法宝掉落</td>
+                  </tr>
+                  <tr>
+                    <td>浮图塔玄冥掉率</td>
+                    <td><input id="treasure-tower-xuanming-drop-chance" type="number" min="0" max="1" step="0.01" style="width: 100px;"></td>
+                    <td>0~1 之间，例如 0.2=20%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <button id="treasure-save-btn" class="btn-small">保存设置</button>
+            <div id="treasure-msg" class="msg"></div>
+          </div>
+        </div>
+
+        <div class="block" data-collapsible>
+          <div class="block-title">
             <h2>特效重置配置</h2>
             <button class="btn-small block-toggle">折叠</button>
           </div>

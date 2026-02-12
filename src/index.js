@@ -1,4 +1,4 @@
-﻿import express from 'express';
+import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 import path from 'node:path';
@@ -18,7 +18,7 @@ import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from '.
 import { sendMail, listMail, listSentMail, markMailRead, markMailClaimed, deleteMail } from './db/mail.js';
 import { createVipCodes, listVipCodes, countVipCodes, useVipCode } from './db/vip.js';
 import { createRechargeCards, listRechargeCards, countRechargeCards, useRechargeCard } from './db/recharge.js';
-import { getSetting, setSetting, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getSvipPrices, setSvipPrices, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb, getEquipSkillDropChance as getEquipSkillDropChanceDb, setEquipSkillDropChance as setEquipSkillDropChanceDb, getCmdRateLimits, setCmdRateLimits, getCmdCooldowns, setCmdCooldowns } from './db/settings.js';
+import { getSetting, setSetting, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getSvipPrices, setSvipPrices, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb, getEquipSkillDropChance as getEquipSkillDropChanceDb, setEquipSkillDropChance as setEquipSkillDropChanceDb, getTreasureSlotCount as getTreasureSlotCountDb, setTreasureSlotCount as setTreasureSlotCountDb, getTreasureMaxLevel as getTreasureMaxLevelDb, setTreasureMaxLevel as setTreasureMaxLevelDb, getTreasureUpgradeConsume as getTreasureUpgradeConsumeDb, setTreasureUpgradeConsume as setTreasureUpgradeConsumeDb, getTreasureAdvanceConsume as getTreasureAdvanceConsumeDb, setTreasureAdvanceConsume as setTreasureAdvanceConsumeDb, getTreasureAdvancePerStage as getTreasureAdvancePerStageDb, setTreasureAdvancePerStage as setTreasureAdvancePerStageDb, getTreasureAdvanceEffectBonusPerStack as getTreasureAdvanceEffectBonusPerStackDb, setTreasureAdvanceEffectBonusPerStack as setTreasureAdvanceEffectBonusPerStackDb, getTreasureWorldBossDropMultiplier as getTreasureWorldBossDropMultiplierDb, setTreasureWorldBossDropMultiplier as setTreasureWorldBossDropMultiplierDb, getTreasureCrossWorldBossDropMultiplier as getTreasureCrossWorldBossDropMultiplierDb, setTreasureCrossWorldBossDropMultiplier as setTreasureCrossWorldBossDropMultiplierDb, getTreasureTowerXuanmingDropChance as getTreasureTowerXuanmingDropChanceDb, setTreasureTowerXuanmingDropChance as setTreasureTowerXuanmingDropChanceDb, getCmdRateLimits, setCmdRateLimits, getCmdCooldowns, setCmdCooldowns } from './db/settings.js';
 import { listRealms, getRealmById, updateRealmName, createRealm } from './db/realms.js';
 import {
   listMobRespawns,
@@ -130,18 +130,32 @@ import {
   setTrainingPerLevelConfig as setTrainingPerLevelConfigMem
 } from './game/settings.js';
 import {
+  isTreasureItemId,
   TREASURE_SLOT_COUNT,
   TREASURE_MAX_LEVEL,
+  TREASURE_UPGRADE_CONSUME,
   TREASURE_EXP_ITEM_ID,
   TREASURE_ADVANCE_CONSUME,
   TREASURE_ADVANCE_PER_STAGE,
   TREASURE_ADVANCE_EFFECT_BONUS_PER_STACK,
+  TREASURE_WORLD_BOSS_DROP_MULTIPLIER,
+  TREASURE_CROSS_WORLD_BOSS_DROP_MULTIPLIER,
+  TREASURE_TOWER_XUANMING_DROP_CHANCE,
   normalizeTreasureState,
   getTreasureDef,
   getTreasureLevel,
   getTreasureAdvanceCount,
   getTreasureStageByAdvanceCount,
-  getTreasureRandomAttrById
+  getTreasureRandomAttrById,
+  setTreasureSlotCount,
+  setTreasureMaxLevel,
+  setTreasureUpgradeConsume,
+  setTreasureAdvanceConsume,
+  setTreasureAdvancePerStage,
+  setTreasureAdvanceEffectBonusPerStack,
+  setTreasureWorldBossDropMultiplier,
+  setTreasureCrossWorldBossDropMultiplier,
+  setTreasureTowerXuanmingDropChance
 } from './game/treasure.js';
 
 const app = express();
@@ -1276,6 +1290,151 @@ app.post('/admin/refine-settings/update', async (req, res) => {
   setRefineMaterialCount(newMaterialCount);
   setRefineBonusPerLevel(newBonusPerLevel);
   res.json({ ok: true, baseSuccessRate: newBaseSuccessRate, decayRate: newDecayRate, materialCount: newMaterialCount, bonusPerLevel: newBonusPerLevel });
+});
+
+// 法宝系统配置
+app.get('/admin/treasure-settings', async (req, res) => {
+  try {
+    const admin = await requireAdmin(req);
+    if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+    const slotCount = await getTreasureSlotCountDb();
+    const maxLevel = await getTreasureMaxLevelDb();
+    const upgradeConsume = await getTreasureUpgradeConsumeDb();
+    const advanceConsume = await getTreasureAdvanceConsumeDb();
+    const advancePerStage = await getTreasureAdvancePerStageDb();
+    const advanceEffectBonusPerStack = await getTreasureAdvanceEffectBonusPerStackDb();
+    const worldBossDropMultiplier = await getTreasureWorldBossDropMultiplierDb();
+    const crossWorldBossDropMultiplier = await getTreasureCrossWorldBossDropMultiplierDb();
+    const towerXuanmingDropChance = await getTreasureTowerXuanmingDropChanceDb();
+    res.json({
+      ok: true,
+      slotCount,
+      maxLevel,
+      upgradeConsume,
+      advanceConsume,
+      advancePerStage,
+      advanceEffectBonusPerStack,
+      worldBossDropMultiplier,
+      crossWorldBossDropMultiplier,
+      towerXuanmingDropChance
+    });
+  } catch (err) {
+    console.error('法宝配置加载失败:', err);
+    res.status(500).json({ error: err.message || '加载失败' });
+  }
+});
+
+app.post('/admin/treasure-settings/update', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const {
+    slotCount,
+    maxLevel,
+    upgradeConsume,
+    advanceConsume,
+    advancePerStage,
+    advanceEffectBonusPerStack,
+    worldBossDropMultiplier,
+    crossWorldBossDropMultiplier,
+    towerXuanmingDropChance
+  } = req.body || {};
+
+  if (slotCount !== undefined) {
+    const parsed = Number(slotCount);
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      return res.status(400).json({ error: '法宝槽位必须为正整数' });
+    }
+    await setTreasureSlotCountDb(parsed);
+  }
+  if (maxLevel !== undefined) {
+    const parsed = Number(maxLevel);
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      return res.status(400).json({ error: '法宝等级上限必须为正整数' });
+    }
+    await setTreasureMaxLevelDb(parsed);
+  }
+  if (upgradeConsume !== undefined) {
+    const parsed = Number(upgradeConsume);
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      return res.status(400).json({ error: '法宝升级消耗必须为正整数' });
+    }
+    await setTreasureUpgradeConsumeDb(parsed);
+  }
+  if (advanceConsume !== undefined) {
+    const parsed = Number(advanceConsume);
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      return res.status(400).json({ error: '法宝升段消耗必须为正整数' });
+    }
+    await setTreasureAdvanceConsumeDb(parsed);
+  }
+  if (advancePerStage !== undefined) {
+    const parsed = Number(advancePerStage);
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      return res.status(400).json({ error: '每阶所需段数必须为正整数' });
+    }
+    await setTreasureAdvancePerStageDb(parsed);
+  }
+  if (advanceEffectBonusPerStack !== undefined) {
+    const parsed = Number(advanceEffectBonusPerStack);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      return res.status(400).json({ error: '每段加成必须为大于等于0的数字' });
+    }
+    await setTreasureAdvanceEffectBonusPerStackDb(parsed);
+  }
+  if (worldBossDropMultiplier !== undefined) {
+    const parsed = Number(worldBossDropMultiplier);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      return res.status(400).json({ error: '世界BOSS法宝掉率倍率必须为大于等于0的数字' });
+    }
+    await setTreasureWorldBossDropMultiplierDb(parsed);
+  }
+  if (crossWorldBossDropMultiplier !== undefined) {
+    const parsed = Number(crossWorldBossDropMultiplier);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      return res.status(400).json({ error: '跨服BOSS法宝掉率倍率必须为大于等于0的数字' });
+    }
+    await setTreasureCrossWorldBossDropMultiplierDb(parsed);
+  }
+  if (towerXuanmingDropChance !== undefined) {
+    const parsed = Number(towerXuanmingDropChance);
+    if (!Number.isFinite(parsed) || parsed < 0 || parsed > 1) {
+      return res.status(400).json({ error: '浮图塔玄冥掉率必须在0到1之间' });
+    }
+    await setTreasureTowerXuanmingDropChanceDb(parsed);
+  }
+
+  const newSlotCount = await getTreasureSlotCountDb();
+  const newMaxLevel = await getTreasureMaxLevelDb();
+  const newUpgradeConsume = await getTreasureUpgradeConsumeDb();
+  const newAdvanceConsume = await getTreasureAdvanceConsumeDb();
+  const newAdvancePerStage = await getTreasureAdvancePerStageDb();
+  const newAdvanceEffectBonusPerStack = await getTreasureAdvanceEffectBonusPerStackDb();
+  const newWorldBossDropMultiplier = await getTreasureWorldBossDropMultiplierDb();
+  const newCrossWorldBossDropMultiplier = await getTreasureCrossWorldBossDropMultiplierDb();
+  const newTowerXuanmingDropChance = await getTreasureTowerXuanmingDropChanceDb();
+
+  setTreasureSlotCount(newSlotCount);
+  setTreasureMaxLevel(newMaxLevel);
+  setTreasureUpgradeConsume(newUpgradeConsume);
+  setTreasureAdvanceConsume(newAdvanceConsume);
+  setTreasureAdvancePerStage(newAdvancePerStage);
+  setTreasureAdvanceEffectBonusPerStack(newAdvanceEffectBonusPerStack);
+  setTreasureWorldBossDropMultiplier(newWorldBossDropMultiplier);
+  setTreasureCrossWorldBossDropMultiplier(newCrossWorldBossDropMultiplier);
+  setTreasureTowerXuanmingDropChance(newTowerXuanmingDropChance);
+
+  res.json({
+    ok: true,
+    slotCount: newSlotCount,
+    maxLevel: newMaxLevel,
+    upgradeConsume: newUpgradeConsume,
+    advanceConsume: newAdvanceConsume,
+    advancePerStage: newAdvancePerStage,
+    advanceEffectBonusPerStack: newAdvanceEffectBonusPerStack,
+    worldBossDropMultiplier: newWorldBossDropMultiplier,
+    crossWorldBossDropMultiplier: newCrossWorldBossDropMultiplier,
+    towerXuanmingDropChance: newTowerXuanmingDropChance
+  });
 });
 
 // 特效重置配置
@@ -2811,7 +2970,6 @@ const ZHUXIAN_TOWER_ZONE_ID = 'zxft';
 const ZHUXIAN_TOWER_ENTRY_ROOM_ID = 'entry';
 const ZHUXIAN_TOWER_REWARD_ITEM_ID = 'treasure_exp_material';
 const ZHUXIAN_TOWER_TOP1_TITLE = '我是爬塔小能手';
-const ZHUXIAN_TOWER_XUANMING_DROP_CHANCE = 0.2;
 const ZHUXIAN_TOWER_XUANMING_DROPS = ['treasure_xuanwu_core', 'treasure_taiyin_mirror', 'treasure_guiyuan_bead', 'treasure_xuanshuang_wall', 'treasure_beiming_armor', 'treasure_hanyuan_stone'];
 
 const CROSS_RANK_EVENT_STATE = {
@@ -3397,7 +3555,7 @@ async function grantZhuxianTowerClearReward(player, floor, now = Date.now()) {
   addItem(player, ZHUXIAN_TOWER_REWARD_ITEM_ID, rewardQty);
   if (isBossFloor) {
     player.send(`诛仙浮图塔第${floor}层（BOSS层）通关，必掉 法宝经验丹 x10。`);
-    if (Math.random() < ZHUXIAN_TOWER_XUANMING_DROP_CHANCE) {
+    if (Math.random() < TREASURE_TOWER_XUANMING_DROP_CHANCE) {
       const dropId = ZHUXIAN_TOWER_XUANMING_DROPS[randInt(0, ZHUXIAN_TOWER_XUANMING_DROPS.length - 1)];
       addItem(player, dropId, 1);
       const dropName = ITEM_TEMPLATES[dropId]?.name || dropId;
@@ -3654,6 +3812,17 @@ function isSpecialBoss(mobTemplate) {
 
 function isWorldBossDropMob(mobTemplate) {
   return Boolean(mobTemplate?.worldBoss || isCultivationBoss(mobTemplate));
+}
+
+function getTreasureDropMultiplierForMob(mobTemplate) {
+  if (!mobTemplate) return 1;
+  if (mobTemplate.id === 'cross_world_boss') {
+    return Math.max(0, Number(TREASURE_CROSS_WORLD_BOSS_DROP_MULTIPLIER || 1));
+  }
+  if (mobTemplate.worldBoss) {
+    return Math.max(0, Number(TREASURE_WORLD_BOSS_DROP_MULTIPLIER || 1));
+  }
+  return 1;
 }
 
 const SPLASH_BOSS_IDS = new Set([
@@ -3983,7 +4152,10 @@ function dropLoot(mobTemplate, bonus = 1) {
           return;
         }
       }
-      const chance = Math.min(1, (drop.chance || 0) * finalBonus);
+      let chance = Math.min(1, (drop.chance || 0) * finalBonus);
+      if (isTreasureItemId(drop.id)) {
+        chance = Math.min(1, chance * getTreasureDropMultiplierForMob(mobTemplate));
+      }
       if (Math.random() <= chance) {
         loot.push({ id: drop.id, effects: rollEquipmentEffects(drop.id) });
       }
@@ -4798,7 +4970,10 @@ function distributeLootWithBonus(party, partyMembers, mobTemplate, bonusResolver
       }
       const target = partyMembers[randInt(0, partyMembers.length - 1)];
       const finalBonus = resolveFinalBonus(target);
-      const chance = Math.min(1, (drop.chance || 0) * finalBonus);
+      let chance = Math.min(1, (drop.chance || 0) * finalBonus);
+      if (isTreasureItemId(drop.id)) {
+        chance = Math.min(1, chance * getTreasureDropMultiplierForMob(mobTemplate));
+      }
       if (Math.random() <= chance) {
         const effects = rollEquipmentEffects(drop.id);
         addItem(target, drop.id, 1, effects);
@@ -6645,8 +6820,12 @@ async function buildState(player) {
     treasure: {
       slotCount: TREASURE_SLOT_COUNT,
       maxLevel: TREASURE_MAX_LEVEL,
+      upgradeConsume: TREASURE_UPGRADE_CONSUME,
       advanceConsume: TREASURE_ADVANCE_CONSUME,
       advancePerStage: TREASURE_ADVANCE_PER_STAGE,
+      worldBossDropMultiplier: TREASURE_WORLD_BOSS_DROP_MULTIPLIER,
+      crossWorldBossDropMultiplier: TREASURE_CROSS_WORLD_BOSS_DROP_MULTIPLIER,
+      towerXuanmingDropChance: TREASURE_TOWER_XUANMING_DROP_CHANCE,
       equipped: treasureEquipped,
       expMaterial: treasureExpMaterial,
       randomAttr: treasureRandomAttrTotal
@@ -10964,6 +11143,26 @@ async function start() {
   setRefineMaterialCount(refineMaterialCount);
   const refineBonusPerLevel = await getRefineBonusPerLevelDb();
   setRefineBonusPerLevel(refineBonusPerLevel);
+
+  // 加载法宝系统配置
+  const treasureSlotCount = await getTreasureSlotCountDb();
+  setTreasureSlotCount(treasureSlotCount);
+  const treasureMaxLevel = await getTreasureMaxLevelDb();
+  setTreasureMaxLevel(treasureMaxLevel);
+  const treasureUpgradeConsume = await getTreasureUpgradeConsumeDb();
+  setTreasureUpgradeConsume(treasureUpgradeConsume);
+  const treasureAdvanceConsume = await getTreasureAdvanceConsumeDb();
+  setTreasureAdvanceConsume(treasureAdvanceConsume);
+  const treasureAdvancePerStage = await getTreasureAdvancePerStageDb();
+  setTreasureAdvancePerStage(treasureAdvancePerStage);
+  const treasureAdvanceEffectBonusPerStack = await getTreasureAdvanceEffectBonusPerStackDb();
+  setTreasureAdvanceEffectBonusPerStack(treasureAdvanceEffectBonusPerStack);
+  const treasureWorldBossDropMultiplier = await getTreasureWorldBossDropMultiplierDb();
+  setTreasureWorldBossDropMultiplier(treasureWorldBossDropMultiplier);
+  const treasureCrossWorldBossDropMultiplier = await getTreasureCrossWorldBossDropMultiplierDb();
+  setTreasureCrossWorldBossDropMultiplier(treasureCrossWorldBossDropMultiplier);
+  const treasureTowerXuanmingDropChance = await getTreasureTowerXuanmingDropChanceDb();
+  setTreasureTowerXuanmingDropChance(treasureTowerXuanmingDropChance);
 
   // 加载特效重置配置
   const effectResetSuccessRate = await getEffectResetSuccessRateDb();

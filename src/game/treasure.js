@@ -1,11 +1,15 @@
 import { ITEM_TEMPLATES } from './items.js';
 
 export const TREASURE_EXP_ITEM_ID = 'treasure_exp_material';
-export const TREASURE_SLOT_COUNT = 6;
-export const TREASURE_MAX_LEVEL = 999999;
-export const TREASURE_ADVANCE_CONSUME = 3;
-export const TREASURE_ADVANCE_EFFECT_BONUS_PER_STACK = 0.001; // 每次升段+0.1%
-export const TREASURE_ADVANCE_PER_STAGE = 10;
+export let TREASURE_SLOT_COUNT = 6;
+export let TREASURE_MAX_LEVEL = 999999;
+export let TREASURE_UPGRADE_CONSUME = 2;
+export let TREASURE_ADVANCE_CONSUME = 1;
+export let TREASURE_ADVANCE_EFFECT_BONUS_PER_STACK = 0.001; // 每次升段 +0.1%
+export let TREASURE_ADVANCE_PER_STAGE = 10;
+export let TREASURE_WORLD_BOSS_DROP_MULTIPLIER = 1;
+export let TREASURE_CROSS_WORLD_BOSS_DROP_MULTIPLIER = 1;
+export let TREASURE_TOWER_XUANMING_DROP_CHANCE = 0.2;
 
 const TREASURE_EFFECTS = {
   treasure_fentian_mark: { atkPctPerLevel: 0.008, elementAtkPerLevel: 3 },
@@ -133,7 +137,7 @@ export function getTreasureLevel(player, itemId) {
 }
 
 export function getTreasureUpgradeCost(level) {
-  return 2;
+  return TREASURE_UPGRADE_CONSUME;
 }
 
 export function getTreasureAdvanceCount(player, itemId) {
@@ -210,4 +214,59 @@ export function getTreasureBonus(player) {
     totals.elementAtkFlat += Math.floor((def.elementAtkPerLevel || 0) * effectMult);
   });
   return totals;
+}
+
+
+export function setTreasureSlotCount(value) {
+  const parsed = Math.floor(Number(value));
+  if (!Number.isFinite(parsed)) return;
+  TREASURE_SLOT_COUNT = Math.max(1, parsed);
+}
+
+export function setTreasureMaxLevel(value) {
+  const parsed = Math.floor(Number(value));
+  if (!Number.isFinite(parsed)) return;
+  TREASURE_MAX_LEVEL = Math.max(1, parsed);
+}
+
+export function setTreasureUpgradeConsume(value) {
+  const parsed = Math.floor(Number(value));
+  if (!Number.isFinite(parsed)) return;
+  TREASURE_UPGRADE_CONSUME = Math.max(1, parsed);
+}
+
+export function setTreasureAdvanceConsume(value) {
+  const parsed = Math.floor(Number(value));
+  if (!Number.isFinite(parsed)) return;
+  TREASURE_ADVANCE_CONSUME = Math.max(1, parsed);
+}
+
+export function setTreasureAdvancePerStage(value) {
+  const parsed = Math.floor(Number(value));
+  if (!Number.isFinite(parsed)) return;
+  TREASURE_ADVANCE_PER_STAGE = Math.max(1, parsed);
+}
+
+export function setTreasureAdvanceEffectBonusPerStack(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return;
+  TREASURE_ADVANCE_EFFECT_BONUS_PER_STACK = Math.max(0, parsed);
+}
+
+export function setTreasureWorldBossDropMultiplier(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return;
+  TREASURE_WORLD_BOSS_DROP_MULTIPLIER = Math.max(0, parsed);
+}
+
+export function setTreasureCrossWorldBossDropMultiplier(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return;
+  TREASURE_CROSS_WORLD_BOSS_DROP_MULTIPLIER = Math.max(0, parsed);
+}
+
+export function setTreasureTowerXuanmingDropChance(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return;
+  TREASURE_TOWER_XUANMING_DROP_CHANCE = Math.max(0, Math.min(1, parsed));
 }
