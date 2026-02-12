@@ -999,11 +999,11 @@ export const WORLD = {
   ,
   zxft: {
     id: 'zxft',
-    name: '诛仙浮图塔',
+    name: '诛仙浮屠塔',
     rooms: {
       entry: {
         id: 'entry',
-        name: '浮图塔入口',
+        name: '入口',
         desc: '古老浮屠直入云霄，塔内每层都更危险。',
         exits: { south: 'mg_plains:gate', north: 'floor_01_x' },
         spawns: []
