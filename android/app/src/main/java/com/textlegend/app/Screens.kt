@@ -3092,7 +3092,7 @@ private fun ShopDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Un
                 vm.sendCmd("forge ${mainSelection}|${secondarySelection}")
             }
         }) { Text("合成") }
-        Text("说明：需要两件相同装备，主件为已穿戴，副件自动匹配背包内符合条件的装备。")
+        Text("说明：主件为已穿戴装备，副件可不同名，但必须与主件稀有度一致。")
         Text("仅支持传说及以上装备合成，合成后提升元素攻击。")
     }
 }
@@ -3886,14 +3886,41 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
 
 @Composable
 private fun TreasureDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Unit) {
+    data class UpgradeBatchState(
+        val slot: Int,
+        val name: String,
+        val currentLevel: Int,
+        val maxTimes: Int,
+        val costPerUpgrade: Int
+    )
+    data class AdvanceBatchState(
+        val slot: Int,
+        val name: String,
+        val costPerAdvance: Int,
+        val options: List<Triple<String, String, Int>>
+    )
+
     val treasure = state?.treasure
     val slotCount = (treasure?.slotCount ?: 6).coerceAtLeast(1)
     val maxLevel = (treasure?.maxLevel ?: 20).coerceAtLeast(1)
+    val upgradeConsume = (treasure?.upgradeConsume ?: 1).coerceAtLeast(1)
     val advanceConsume = (treasure?.advanceConsume ?: 3).coerceAtLeast(1)
     val advancePerStage = (treasure?.advancePerStage ?: 10).coerceAtLeast(1)
+    val expMaterial = (treasure?.expMaterial ?: 0).coerceAtLeast(0)
     val equipped = treasure?.equipped.orEmpty()
     val bagItems = state?.items.orEmpty().filter { item ->
         item.id.startsWith("treasure_") && item.id != "treasure_exp_material"
+    }
+    val bagTreasureTotals = remember(bagItems) {
+        bagItems
+            .groupBy { it.id }
+            .mapNotNull { (id, list) ->
+                val totalQty = list.sumOf { (it.qty).coerceAtLeast(0) }
+                if (totalQty <= 0) return@mapNotNull null
+                val displayName = list.firstOrNull()?.name?.takeIf { it.isNotBlank() } ?: id
+                Triple(id, displayName, totalQty)
+            }
+            .sortedBy { it.second }
     }
     val occupiedIds = remember(equipped) { equipped.map { it.id }.toSet() }
     val hasEmptySlot = equipped.size < slotCount
@@ -3914,6 +3941,10 @@ private fun TreasureDialog(vm: GameViewModel, state: GameState?, onDismiss: () -
             .map { (k, v) -> "${treasureRandomAttrLabel(k)}+$v" }
         if (parts.isEmpty()) "无" else parts.joinToString("，")
     }
+    var upgradeBatchState by remember { mutableStateOf<UpgradeBatchState?>(null) }
+    var upgradeBatchInput by remember { mutableStateOf("") }
+    var advanceBatchState by remember { mutableStateOf<AdvanceBatchState?>(null) }
+    var advanceSelectedIds by remember { mutableStateOf(setOf<String>()) }
 
     ScreenScaffold(title = "法宝", onBack = onDismiss) {
         Text("法宝经验丹: ${treasure?.expMaterial ?: 0}")
@@ -3945,12 +3976,50 @@ private fun TreasureDialog(vm: GameViewModel, state: GameState?, onDismiss: () -
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(modifier = Modifier.weight(1f), onClick = { vm.sendCmd("treasure upgrade $slot") }) { Text("升级") }
-                            Button(modifier = Modifier.weight(1f), onClick = { vm.sendCmd("treasure advance $slot") }) { Text("升段") }
+                            val levelGap = (maxLevel - entry.level).coerceAtLeast(0)
+                            val maxUpgradeByExp = expMaterial / upgradeConsume
+                            val maxUpgradeTimes = minOf(levelGap, maxUpgradeByExp)
+                            Button(
+                                modifier = Modifier.weight(1f),
+                                onClick = {
+                                    if (maxUpgradeTimes <= 0) return@Button
+                                    upgradeBatchState = UpgradeBatchState(
+                                        slot = slot,
+                                        name = entry.name.ifBlank { entry.id },
+                                        currentLevel = entry.level,
+                                        maxTimes = maxUpgradeTimes,
+                                        costPerUpgrade = upgradeConsume
+                                    )
+                                    upgradeBatchInput = maxUpgradeTimes.toString()
+                                },
+                                enabled = maxUpgradeTimes > 0
+                            ) { Text("升级") }
+                            Button(
+                                modifier = Modifier.weight(1f),
+                                onClick = {
+                                    if (bagTreasureTotals.isEmpty()) return@Button
+                                    val options = bagTreasureTotals
+                                    val maxTimes = options.sumOf { it.third } / advanceConsume
+                                    if (maxTimes <= 0) return@Button
+                                    advanceBatchState = AdvanceBatchState(
+                                        slot = slot,
+                                        name = entry.name.ifBlank { entry.id },
+                                        costPerAdvance = advanceConsume,
+                                        options = options
+                                    )
+                                    advanceSelectedIds = options.map { it.first }.toSet()
+                                },
+                                enabled = bagTreasureTotals.sumOf { it.third } >= advanceConsume
+                            ) { Text("升段") }
                             Button(modifier = Modifier.weight(1f), onClick = { vm.sendCmd("treasure unequip $slot") }) { Text("卸下") }
                         }
                         Text(
-                            "升段消耗同名法宝 x$advanceConsume，每${advancePerStage}段升1阶",
+                            "升段消耗任意法宝 x$advanceConsume，每${advancePerStage}段升1阶",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            "升级消耗法宝经验丹 x$upgradeConsume（当前可升最多 ${(minOf((maxLevel - entry.level).coerceAtLeast(0), expMaterial / upgradeConsume)).coerceAtLeast(0)} 次）",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -3986,6 +4055,103 @@ private fun TreasureDialog(vm: GameViewModel, state: GameState?, onDismiss: () -
                 }
             }
         }
+    }
+
+    val currentUpgrade = upgradeBatchState
+    if (currentUpgrade != null) {
+        AlertDialog(
+            onDismissRequest = { upgradeBatchState = null },
+            title = { Text("法宝一键升级") },
+            text = {
+                Column {
+                    Text("${currentUpgrade.name}（槽位 ${currentUpgrade.slot}）")
+                    Text("当前等级: Lv${currentUpgrade.currentLevel}")
+                    Text("每次消耗: 法宝经验丹 x${currentUpgrade.costPerUpgrade}")
+                    Text("最多可升: ${currentUpgrade.maxTimes} 次")
+                    Spacer(modifier = Modifier.height(6.dp))
+                    OutlinedTextField(
+                        value = upgradeBatchInput,
+                        onValueChange = { upgradeBatchInput = it.filter { ch -> ch.isDigit() } },
+                        label = { Text("升级次数") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val input = upgradeBatchInput.toIntOrNull() ?: currentUpgrade.maxTimes
+                        val times = input.coerceIn(1, currentUpgrade.maxTimes)
+                        repeat(times) {
+                            vm.sendCmd("treasure upgrade ${currentUpgrade.slot}")
+                        }
+                        upgradeBatchState = null
+                    }
+                ) { Text("确认升级") }
+            },
+            dismissButton = {
+                TextButton(onClick = { upgradeBatchState = null }) { Text("取消") }
+            }
+        )
+    }
+
+    val currentAdvance = advanceBatchState
+    if (currentAdvance != null) {
+        val selectedQty = currentAdvance.options
+            .filter { (id, _, _) -> advanceSelectedIds.contains(id) }
+            .sumOf { it.third }
+        val maxAdvanceTimes = selectedQty / currentAdvance.costPerAdvance
+        AlertDialog(
+            onDismissRequest = { advanceBatchState = null },
+            title = { Text("法宝升段") },
+            text = {
+                Column {
+                    Text("${currentAdvance.name}（槽位 ${currentAdvance.slot}）")
+                    Text("每次升段消耗: 法宝 x${currentAdvance.costPerAdvance}")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("选择消耗法宝（可多选）", style = MaterialTheme.typography.bodySmall)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    currentAdvance.options.forEach { (id, displayName, qty) ->
+                        val checked = advanceSelectedIds.contains(id)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    advanceSelectedIds = if (checked) {
+                                        advanceSelectedIds - id
+                                    } else {
+                                        advanceSelectedIds + id
+                                    }
+                                },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = checked,
+                                onCheckedChange = { next ->
+                                    advanceSelectedIds = if (next) advanceSelectedIds + id else advanceSelectedIds - id
+                                }
+                            )
+                            Text("${displayName} x$qty")
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (maxAdvanceTimes <= 0 || advanceSelectedIds.isEmpty()) return@Button
+                        val selectedText = advanceSelectedIds.joinToString(",")
+                        vm.sendCmd("treasure advance ${currentAdvance.slot}|$selectedText|1")
+                        advanceBatchState = null
+                    },
+                    enabled = maxAdvanceTimes > 0 && advanceSelectedIds.isNotEmpty()
+                ) { Text("确认升段") }
+            },
+            dismissButton = {
+                TextButton(onClick = { advanceBatchState = null }) { Text("取消") }
+            }
+        )
     }
 }
 
@@ -4179,10 +4345,17 @@ private fun hasSpecialEffects(effects: JsonObject?): Boolean {
       if (state == null || mainSelection.isBlank() || !mainSelection.startsWith("equip:")) return emptyList()
       val slot = mainSelection.removePrefix("equip:").trim()
       val mainEq = state.equipment.firstOrNull { it.slot == slot } ?: return emptyList()
-      val mainId = mainEq.item?.id ?: return emptyList()
+      val mainRarity = mainEq.item?.rarity ?: return emptyList()
+      val mainRarityRank = rarityRank(mainRarity)
+      if (mainRarityRank < 4) return emptyList()
       return state.items.orEmpty()
-          .filter { it.id == mainId || it.key == mainId }
-          .filter { isLegendaryOrAbove(it.rarity) }
+          .filter { item ->
+              val isEquip = !item.slot.isNullOrBlank() || item.type == "weapon" || item.type == "armor" || item.type == "accessory"
+              val sameRarity = rarityRank(item.rarity) == mainRarityRank
+              val qtyOk = item.qty > 0
+              val noElementAtk = (item.effects?.get("elementAtk")?.jsonPrimitive?.doubleOrNull ?: 0.0) <= 0.0
+              isEquip && sameRarity && qtyOk && noElementAtk
+          }
           .map { item ->
               val key = if (item.key.isNotBlank()) item.key else item.id
               key to "${item.name} x${item.qty}"

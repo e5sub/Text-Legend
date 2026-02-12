@@ -1867,6 +1867,106 @@ function promptDualModal({
   });
 }
 
+function promptMultiSelectModal({ title, text, options, selectedValues }) {
+  if (!promptUi.modal || !promptUi.input || !promptUi.options) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    const selected = new Set(Array.isArray(selectedValues) ? selectedValues : []);
+    const onCancel = () => {
+      cleanup();
+      resolve(null);
+    };
+    const onOk = () => {
+      const result = Array.from(selected);
+      cleanup();
+      resolve(result);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Enter') onOk();
+      if (e.key === 'Escape') onCancel();
+    };
+    const onBackdrop = (e) => {
+      if (e.target === promptUi.modal) onCancel();
+    };
+    const cleanup = () => {
+      promptUi.ok.removeEventListener('click', onOk);
+      promptUi.cancel.removeEventListener('click', onCancel);
+      promptUi.modal.removeEventListener('keydown', onKey);
+      promptUi.modal.removeEventListener('click', onBackdrop);
+      promptUi.modal.classList.add('hidden');
+      if (promptUi.label) {
+        promptUi.label.classList.add('hidden');
+        promptUi.label.textContent = '';
+      }
+      if (promptUi.secondaryRow) {
+        promptUi.secondaryRow.classList.add('hidden');
+      }
+      promptUi.input.classList.remove('hidden');
+      promptUi.input.value = '';
+      promptUi.input.placeholder = '';
+      if (promptUi.inputSecondary) {
+        promptUi.inputSecondary.classList.remove('hidden');
+        promptUi.inputSecondary.value = '';
+        promptUi.inputSecondary.placeholder = '';
+      }
+      if (promptUi.labelSecondary) {
+        promptUi.labelSecondary.textContent = '';
+      }
+      if (promptUi.options) {
+        promptUi.options.classList.add('hidden');
+        promptUi.options.innerHTML = '';
+      }
+      if (promptUi.extra) {
+        promptUi.extra.classList.add('hidden');
+        promptUi.extra.textContent = '';
+      }
+    };
+
+    promptUi.title.textContent = title || '选择';
+    promptUi.text.textContent = text || '';
+    promptUi.input.classList.add('hidden');
+    if (promptUi.label) {
+      promptUi.label.classList.add('hidden');
+      promptUi.label.textContent = '';
+    }
+    if (promptUi.secondaryRow) {
+      promptUi.secondaryRow.classList.add('hidden');
+    }
+    if (promptUi.extra) {
+      promptUi.extra.classList.add('hidden');
+      promptUi.extra.textContent = '';
+    }
+    promptUi.options.classList.remove('hidden');
+    promptUi.options.innerHTML = '';
+
+    (options || []).forEach((opt) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'prompt-option';
+      btn.textContent = opt.label;
+      if (selected.has(opt.value)) {
+        btn.classList.add('active');
+      }
+      btn.addEventListener('click', () => {
+        if (selected.has(opt.value)) {
+          selected.delete(opt.value);
+          btn.classList.remove('active');
+        } else {
+          selected.add(opt.value);
+          btn.classList.add('active');
+        }
+      });
+      promptUi.options.appendChild(btn);
+    });
+
+    promptUi.ok.addEventListener('click', onOk);
+    promptUi.cancel.addEventListener('click', onCancel);
+    promptUi.modal.addEventListener('keydown', onKey);
+    promptUi.modal.addEventListener('click', onBackdrop);
+    promptUi.modal.classList.remove('hidden');
+    setTimeout(() => promptUi.ok.focus(), 0);
+  });
+}
+
 function confirmModal({ title, text }) {
   if (!promptUi.modal || !promptUi.ok || !promptUi.cancel) return Promise.resolve(false);
   return new Promise((resolve) => {
@@ -2311,31 +2411,34 @@ function showChangeClassModal(currentClassId) {
 let forgeSelection = null;
 let refineSelection = null;
 
-function listForgeSecondaries(itemId, items) {
+function listForgeSecondaries(mainItem, items) {
+  if (!mainItem) return [];
+  const mainRarity = normalizeRarityKey(mainItem.rarity);
   return (items || []).filter((item) =>
-    item.id === itemId &&
+    ['weapon', 'armor', 'accessory'].includes(item.type) &&
     ['legendary', 'supreme', 'ultimate'].includes(item.rarity) &&
+    normalizeRarityKey(item.rarity) === mainRarity &&
     (item.qty || 0) > 0 &&
     !(item.effects && item.effects.elementAtk) // 排除带元素属性的物品
   );
 }
 
-function renderForgeSecondaryList(itemId) {
+function renderForgeSecondaryList(mainItem) {
   if (!forgeUi.secondaryList || !forgeUi.secondary || !forgeUi.confirm) return;
   forgeUi.secondaryList.innerHTML = '';
   forgeSelection = forgeSelection ? { ...forgeSelection, secondary: null, secondaryKey: null } : null;
   forgeUi.secondary.textContent = '副件: 请选择';
   forgeUi.confirm.disabled = true;
-  if (!itemId) {
+  if (!mainItem) {
     const empty = document.createElement('div');
     empty.textContent = '请先选择主件';
     forgeUi.secondaryList.appendChild(empty);
     return;
   }
-  const candidates = listForgeSecondaries(itemId, lastState?.items || []);
+  const candidates = listForgeSecondaries(mainItem, lastState?.items || []);
   if (!candidates.length) {
     const empty = document.createElement('div');
-    empty.textContent = '背包没有符合条件的副件（传说及以上、不带元素属性）';
+    empty.textContent = '背包没有符合条件的副件（与主件同稀有度且不带元素属性）';
     forgeUi.secondaryList.appendChild(empty);
     return;
   }
@@ -2435,7 +2538,7 @@ function renderForgeModal() {
         secondaryKey: null
       };
       forgeUi.main.textContent = `主件: ${formatItemName(item)}`;
-      renderForgeSecondaryList(item.id);
+      renderForgeSecondaryList(item);
     });
     forgeUi.list.appendChild(btn);
   });
@@ -2712,6 +2815,7 @@ function renderTreasureModal() {
   const data = lastState?.treasure || {
     slotCount: 6,
     maxLevel: 999999,
+    upgradeConsume: 1,
     advanceConsume: 3,
     advancePerStage: 10,
     equipped: [],
@@ -2720,8 +2824,10 @@ function renderTreasureModal() {
   };
   const slotCount = Math.max(1, Number(data.slotCount || 6));
   const maxLevel = Math.max(1, Number(data.maxLevel || 20));
+  const upgradeConsume = Math.max(1, Number(data.upgradeConsume || 1));
   const advanceConsume = Math.max(1, Number(data.advanceConsume || 3));
   const advancePerStage = Math.max(1, Number(data.advancePerStage || 10));
+  const expMaterial = Math.max(0, Math.floor(Number(data.expMaterial || 0)));
   const equipped = Array.isArray(data.equipped) ? data.equipped : [];
   const treasurePassiveById = (() => {
     const map = new Map();
@@ -2742,6 +2848,20 @@ function renderTreasureModal() {
     return map;
   })();
   const bagItems = getTreasureBagItems();
+  const treasureMaterialMap = new Map();
+  bagItems.forEach((item) => {
+    const id = String(item.id || '').trim();
+    if (!id) return;
+    const qty = Math.max(0, Math.floor(Number(item.qty || 0)));
+    if (qty <= 0) return;
+    const prev = treasureMaterialMap.get(id) || { id, name: formatItemName(item), qty: 0 };
+    prev.qty += qty;
+    if (!prev.name || prev.name === prev.id) {
+      prev.name = formatItemName(item) || id;
+    }
+    treasureMaterialMap.set(id, prev);
+  });
+  const treasureMaterials = Array.from(treasureMaterialMap.values());
   const occupiedIds = new Set(equipped.map((entry) => entry.id));
   const hasEmptySlot = equipped.length < slotCount;
 
@@ -2788,16 +2908,72 @@ function renderTreasureModal() {
     const advanceBtn = card.querySelector('button[data-action="advance"]');
     const unequipBtn = card.querySelector('button[data-action="unequip"]');
     if (upgradeBtn) {
-      upgradeBtn.addEventListener('click', () => {
+      const level = Math.max(1, Math.floor(Number(entry.level || 1)));
+      const maxByLevel = Math.max(0, maxLevel - level);
+      const maxByMat = Math.floor(expMaterial / upgradeConsume);
+      const maxUpgradeTimes = Math.max(0, Math.min(maxByLevel, maxByMat));
+      upgradeBtn.disabled = maxUpgradeTimes <= 0;
+      upgradeBtn.title = `每次消耗法宝经验丹 x${upgradeConsume}，最多可升 ${maxUpgradeTimes} 次`;
+      upgradeBtn.addEventListener('click', async () => {
         if (!socket) return;
-        socket.emit('cmd', { text: `treasure upgrade ${slot}`, source: 'ui' });
+        if (maxUpgradeTimes <= 0) return;
+        const timesText = await promptModal({
+          title: '法宝一键升级',
+          text: `${entry.name || entry.id} 当前 Lv${level}，每次消耗法宝经验丹 x${upgradeConsume}，最多可升 ${maxUpgradeTimes} 次`,
+          placeholder: '升级次数',
+          value: String(maxUpgradeTimes),
+          type: 'number'
+        });
+        if (timesText == null) return;
+        let times = Math.floor(Number(timesText || maxUpgradeTimes));
+        if (!Number.isFinite(times) || times <= 0) return;
+        times = Math.min(times, maxUpgradeTimes);
+        for (let i = 0; i < times; i += 1) {
+          socket.emit('cmd', { text: `treasure upgrade ${slot}`, source: 'ui' });
+        }
       });
     }
     if (advanceBtn) {
-      advanceBtn.title = `消耗同名法宝 x${advanceConsume}，每${advancePerStage}段提升1阶`;
-      advanceBtn.addEventListener('click', () => {
+      const totalQty = treasureMaterials.reduce((sum, mat) => sum + mat.qty, 0);
+      const canAdvance = totalQty >= advanceConsume;
+      advanceBtn.disabled = !canAdvance;
+      advanceBtn.title = `消耗任意法宝 x${advanceConsume}，每${advancePerStage}段提升1阶`;
+      advanceBtn.addEventListener('click', async () => {
         if (!socket) return;
-        socket.emit('cmd', { text: `treasure advance ${slot}`, source: 'ui' });
+        if (!canAdvance) return;
+
+        const materialListText = treasureMaterials.length
+          ? treasureMaterials
+            .map((mat, idx) => `${idx + 1}. ${mat.name || mat.id} x${mat.qty}`)
+            .join('\n')
+          : '无';
+        const selectedIds = await promptMultiSelectModal({
+          title: '选择升段材料',
+          text: `可选法宝：\n${materialListText}\n点击选择要消耗的法宝（可多选）`,
+          options: treasureMaterials.map((mat, idx) => ({
+            value: mat.id,
+            label: `${idx + 1}. ${mat.name || mat.id} x${mat.qty}`
+          })),
+          selectedValues: treasureMaterials.map((mat) => mat.id)
+        });
+        if (selectedIds == null) return;
+        if (!selectedIds.length) {
+          showToast('请至少选择一个法宝材料');
+          return;
+        }
+
+        const selectedQty = treasureMaterials
+          .filter((mat) => selectedIds.includes(mat.id))
+          .reduce((sum, mat) => sum + mat.qty, 0);
+        const maxBySelected = Math.floor(selectedQty / advanceConsume);
+        if (maxBySelected <= 0) {
+          showToast('所选法宝数量不足');
+          return;
+        }
+        socket.emit('cmd', {
+          text: `treasure advance ${slot}|${selectedIds.join(',')}|1`,
+          source: 'ui'
+        });
       });
     }
     if (unequipBtn) {

@@ -904,6 +904,19 @@ function isBelowEpic(rarity) {
   return ['common', 'uncommon', 'rare'].includes(rarity);
 }
 
+function rarityRankForForge(rarity) {
+  const order = {
+    common: 0,
+    uncommon: 1,
+    rare: 2,
+    epic: 3,
+    legendary: 4,
+    supreme: 5,
+    ultimate: 6
+  };
+  return order[String(rarity || '').toLowerCase()] ?? -1;
+}
+
 function skillByName(player, name) {
   if (!name) return null;
   const list = getLearnedSkills(player);
@@ -1748,7 +1761,9 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         return;
       }
       if (sub === 'advance' || sub === '升段') {
-        const target = parts.slice(1).join(' ').trim();
+        const rawAdvance = parts.slice(1).join(' ').trim();
+        const [targetRaw, selectedRaw = '', timesRaw = ''] = rawAdvance.split('|');
+        const target = String(targetRaw || '').trim();
         if (!target) {
           send('请在【法宝】面板中点击已装备法宝的【升段】按钮。');
           return;
@@ -1759,19 +1774,57 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           return;
         }
         const need = TREASURE_ADVANCE_CONSUME;
-        const hasSameTreasure = validatePlayerHasItem(player, equipped.id, need);
-        if (!hasSameTreasure.ok) {
-          const def = getTreasureDef(equipped.id);
-          send(`升段失败：需要同名法宝 x${need}（${def?.name || equipped.id}）。`);
+        const selectedMaterialIds = String(selectedRaw || '')
+          .split(',')
+          .map((id) => String(id || '').trim())
+          .filter(Boolean);
+        const selectedSet = selectedMaterialIds.length ? new Set(selectedMaterialIds) : null;
+        const requestedTimes = Math.max(1, Math.floor(Number(timesRaw || 1) || 1));
+        const treasureMaterials = (player.inventory || [])
+          .filter((slot) => {
+            if (!slot || !slot.id || Number(slot.qty || 0) <= 0) return false;
+            const isTreasure = String(slot.id).startsWith('treasure_') && slot.id !== TREASURE_EXP_ITEM_ID;
+            if (!isTreasure) return false;
+            if (!selectedSet) return true;
+            return selectedSet.has(String(slot.id));
+          });
+        const totalTreasureQty = treasureMaterials.reduce((sum, slot) => sum + Math.max(0, Number(slot.qty || 0)), 0);
+        const maxTimesByMaterial = Math.floor(totalTreasureQty / need);
+        const finalTimes = Math.min(requestedTimes, maxTimesByMaterial);
+        if (finalTimes <= 0) {
+          if (selectedSet) {
+            send(`升段失败：所选法宝不足，至少需要 x${need}。`);
+          } else {
+            send(`升段失败：需要任意法宝 x${need}。`);
+          }
           return;
         }
-        const removedSameTreasure = removeItem(player, equipped.id, need);
-        if (!removedSameTreasure) {
+        let remainingNeed = finalTimes * need;
+        for (const slot of treasureMaterials) {
+          if (remainingNeed <= 0) break;
+          const take = Math.min(remainingNeed, Math.max(0, Number(slot.qty || 0)));
+          if (take <= 0) continue;
+          const removed = removeItem(
+            player,
+            slot.id,
+            take,
+            slot.effects || null,
+            slot.durability ?? null,
+            slot.max_durability ?? null,
+            slot.refine_level ?? null
+          );
+          if (!removed) {
+            send('升段失败：材料扣除异常，请重试。');
+            return;
+          }
+          remainingNeed -= take;
+        }
+        if (remainingNeed > 0) {
           send('升段失败：材料扣除异常，请重试。');
           return;
         }
         const oldAdvance = getTreasureAdvanceCount(player, equipped.id);
-        const newAdvance = oldAdvance + 1;
+        const newAdvance = oldAdvance + finalTimes;
         state.advances[equipped.id] = newAdvance;
         const oldStage = getTreasureStageByAdvanceCount(oldAdvance);
         const newStage = getTreasureStageByAdvanceCount(newAdvance);
@@ -1779,7 +1832,8 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         player.forceStateRefresh = true;
         const def = getTreasureDef(equipped.id);
         const stageUpText = newStage > oldStage ? `，阶位提升：${oldStage}阶 -> ${newStage}阶` : '';
-        send(`法宝升段成功：${def?.name || equipped.id} 段数 ${oldAdvance} -> ${newAdvance}（每段效果+${(TREASURE_ADVANCE_EFFECT_BONUS_PER_STACK * 100).toFixed(1)}%${stageUpText}）。`);
+        const consumedCount = finalTimes * need;
+        send(`法宝升段成功：${def?.name || equipped.id} 段数 ${oldAdvance} -> ${newAdvance}（本次升段 ${finalTimes} 次，消耗法宝 x${consumedCount}，每段效果+${(TREASURE_ADVANCE_EFFECT_BONUS_PER_STACK * 100).toFixed(1)}%${stageUpText}）。`);
         return;
       }
       send('请在【法宝】面板中操作法宝。');
@@ -2824,9 +2878,6 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       }
       const secondaryResolved = resolveInventoryItem(player, secondaryRaw);
       if (!secondaryResolved.slot || !secondaryResolved.item) return send('背包里没有副件装备。');
-      if (mainResolved.slot.id !== secondaryResolved.slot.id) {
-        return send('只能使用两件相同装备合成。');
-      }
       const item = mainResolved.item;
       if (!item.slot || !['weapon', 'armor', 'accessory'].includes(item.type)) {
         return send('只能合成装备。');
@@ -2834,6 +2885,14 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       const rarity = rarityByPrice(item);
       if (!['legendary', 'supreme', 'ultimate'].includes(rarity)) {
         return send('仅支持传说及以上装备合成。');
+      }
+      const secondaryItem = secondaryResolved.item;
+      if (!secondaryItem.slot || !['weapon', 'armor', 'accessory'].includes(secondaryItem.type)) {
+        return send('副件必须是装备。');
+      }
+      const secondaryRarity = rarityByPrice(secondaryItem);
+      if (rarityRankForForge(secondaryRarity) !== rarityRankForForge(rarity)) {
+        return send('副件稀有度必须与主件一致。');
       }
       if (mainEquippedSlot) {
         secondaryResolved.slot.qty -= 1;
