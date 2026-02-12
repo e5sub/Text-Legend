@@ -1962,6 +1962,9 @@ export async function handleCommand({ player, players, allCharacters, playersByN
             player.flags.autoSkillId = null;
             player.flags.autoHpPct = null;
             player.flags.autoMpPct = null;
+            player.flags.autoFullManualDowngraded = false;
+            player.flags.autoFullManualMoveAt = null;
+            player.flags.autoFullManualRestoreAt = null;
           }
           send('已关闭自动技能与自动喝药。');
           return;
@@ -1970,6 +1973,9 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           if (!player.flags) player.flags = {};
           player.flags.autoFullEnabled = false;
           player.flags.autoSkillId = 'all';
+          player.flags.autoFullManualDowngraded = false;
+          player.flags.autoFullManualMoveAt = null;
+          player.flags.autoFullManualRestoreAt = null;
           if (player.flags.autoHpPct == null) player.flags.autoHpPct = 50;
           if (player.flags.autoMpPct == null) player.flags.autoMpPct = 50;
           send(`已设置自动技能: 全部技能。自动喝药阈值: HP ${player.flags.autoHpPct}% / MP ${player.flags.autoMpPct}%`);
@@ -1983,6 +1989,9 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           if (!player.flags) player.flags = {};
           player.flags.autoFullEnabled = false;
           player.flags.autoSkillId = skills.map((s) => s.id);
+          player.flags.autoFullManualDowngraded = false;
+          player.flags.autoFullManualMoveAt = null;
+          player.flags.autoFullManualRestoreAt = null;
           if (player.flags.autoHpPct == null) player.flags.autoHpPct = 50;
           if (player.flags.autoMpPct == null) player.flags.autoMpPct = 50;
           send(`已设置自动技能: ${skills.map((s) => s.name).join('、')}。`);
@@ -1993,6 +2002,9 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         if (!player.flags) player.flags = {};
         player.flags.autoFullEnabled = false;
         player.flags.autoSkillId = skill.id;
+        player.flags.autoFullManualDowngraded = false;
+        player.flags.autoFullManualMoveAt = null;
+        player.flags.autoFullManualRestoreAt = null;
         if (player.flags.autoHpPct == null) player.flags.autoHpPct = 50;
         if (player.flags.autoMpPct == null) player.flags.autoMpPct = 50;
         send(`已设置自动技能: ${skill.name}。`);
@@ -2029,6 +2041,9 @@ export async function handleCommand({ player, players, allCharacters, playersByN
             } else if (wasEnabled) {
               player.flags.autoSkillId = null;
             }
+            player.flags.autoFullManualDowngraded = false;
+            player.flags.autoFullManualMoveAt = null;
+            player.flags.autoFullManualRestoreAt = null;
             player.forceStateRefresh = true;
             send(player.flags.autoFullEnabled ? '已开启智能挂机。' : '已关闭智能挂机。');
             return;
@@ -2087,6 +2102,9 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           if (!player.flags.autoSkillId) {
             player.flags.autoSkillId = 'all';
           }
+          player.flags.autoFullManualDowngraded = false;
+          player.flags.autoFullManualMoveAt = null;
+          player.flags.autoFullManualRestoreAt = null;
           if (player.flags.autoHpPct == null) player.flags.autoHpPct = 50;
           if (player.flags.autoMpPct == null) player.flags.autoMpPct = 50;
           player.forceStateRefresh = true;
@@ -2100,6 +2118,9 @@ export async function handleCommand({ player, players, allCharacters, playersByN
             if (wasEnabled) {
               player.flags.autoSkillId = null;
             }
+            player.flags.autoFullManualDowngraded = false;
+            player.flags.autoFullManualMoveAt = null;
+            player.flags.autoFullManualRestoreAt = null;
             player.forceStateRefresh = true;
             send('已关闭智能挂机。');
             return;

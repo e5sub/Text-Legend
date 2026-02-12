@@ -4950,6 +4950,7 @@ function isInvincible(target) {
 
 const AUTO_DAILY_LIMIT_MS = 4 * 60 * 60 * 1000;
 const AUTO_FULL_TRIAL_MS = 10 * 60 * 1000;
+const AUTO_FULL_MANUAL_RESTORE_MS = 10 * 60 * 1000;
 const AUTO_FULL_MOVE_COOLDOWN_MS = 5000;
 const AUTO_FULL_BOSS_MOVE_COOLDOWN_MS = 1000;
 const AUTO_FULL_CROSS_BOSS_COOLDOWN_MS = 30000;
@@ -5045,6 +5046,68 @@ function isVipAutoEnabled(player) {
     player.flags.autoDailyLastAt = null;
   }
   return Number(player.flags.autoDailyMs || 0) < AUTO_DAILY_LIMIT_MS;
+}
+
+function clearAutoFullManualDowngrade(player) {
+  if (!player?.flags) return;
+  player.flags.autoFullManualDowngraded = false;
+  player.flags.autoFullManualMoveAt = null;
+  player.flags.autoFullManualRestoreAt = null;
+}
+
+function markAutoFullManualMove(player, fromZone, fromRoom, toZone, toRoom, now = Date.now()) {
+  if (!player) return;
+  if (!player.flags) player.flags = {};
+  if (fromZone === toZone && fromRoom === toRoom) return;
+  const shouldTrack = Boolean(player.flags.autoFullEnabled || player.flags.autoFullManualDowngraded);
+  if (!shouldTrack) return;
+
+  player.flags.autoFullManualDowngraded = true;
+  player.flags.autoFullManualMoveAt = now;
+  player.flags.autoFullManualRestoreAt = now + AUTO_FULL_MANUAL_RESTORE_MS;
+
+  if (player.flags.autoFullEnabled) {
+    player.flags.autoFullEnabled = false;
+    player.forceStateRefresh = true;
+    if (typeof player.send === 'function') {
+      player.send('检测到手动切换房间，已降级为普通挂机。10分钟无移动后将自动恢复智能挂机。');
+    }
+  }
+}
+
+function tryRestoreAutoFullAfterManualDowngrade(player, now = Date.now()) {
+  if (!player?.flags?.autoFullManualDowngraded) return;
+  if (player.flags.autoFullEnabled) {
+    clearAutoFullManualDowngrade(player);
+    return;
+  }
+  const restoreAt = Number(player.flags.autoFullManualRestoreAt || 0);
+  if (!restoreAt || restoreAt > now) return;
+  if (!player.flags.autoSkillId) {
+    clearAutoFullManualDowngrade(player);
+    return;
+  }
+  if (!isSvipActive(player)) {
+    const trialInfo = getAutoFullTrialInfo(player, now);
+    if (!trialInfo.available) {
+      clearAutoFullManualDowngrade(player);
+      return;
+    }
+    const expiresAt = Number(player.flags.autoFullTrialExpiresAt || 0);
+    if (expiresAt <= now) {
+      clearAutoFullManualDowngrade(player);
+      return;
+    }
+  }
+  player.flags.autoFullEnabled = true;
+  if (!player.flags.autoSkillId) player.flags.autoSkillId = 'all';
+  if (player.flags.autoHpPct == null) player.flags.autoHpPct = 50;
+  if (player.flags.autoMpPct == null) player.flags.autoMpPct = 50;
+  clearAutoFullManualDowngrade(player);
+  player.forceStateRefresh = true;
+  if (typeof player.send === 'function') {
+    player.send('10分钟内未移动，已自动恢复智能挂机。');
+  }
 }
 
 function updateAutoDailyUsage(player) {
@@ -7512,6 +7575,13 @@ io.on('connection', (socket) => {
         markMailRead
       }
     });
+    markAutoFullManualMove(
+      player,
+      prevZone,
+      prevRoom,
+      player.position.zone,
+      player.position.room
+    );
     if (
       (player.position.zone !== prevZone || player.position.room !== prevRoom) &&
       isSabakZone(player.position.zone)
@@ -9101,6 +9171,7 @@ async function combatTick() {
     processPotionRegen(player);
     updateRedNameAutoClear(player);
     updateAutoDailyUsage(player);
+    tryRestoreAutoFullAfterManualDowngrade(player);
     const realmId = player.realmId || 1;
     const roomRealmId = getRoomRealmId(player.position.zone, player.position.room, realmId);
     const roomKey = `${roomRealmId}:${player.position.zone}:${player.position.room}`;
