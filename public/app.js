@@ -3589,7 +3589,7 @@ function showAutoFullBossModal() {
       `生命: ${stats.hp || 0}/${stats.max_hp || 0}  魔法: ${stats.mp || 0}/${stats.max_mp || 0}`,
       `攻击: ${stats.atk || 0}  防御: ${stats.def || 0}  魔法: ${stats.mag || 0}`,
       `道术: ${stats.spirit || 0}  魔御: ${stats.mdef || 0}  金币: ${stats.gold || 0}  元宝: ${stats.yuanbao || 0}`,
-      `PK值: ${stats.pk || 0}  VIP: ${formatVipDisplay(stats)}  行会加成: ${stats.guild_bonus ? '已生效' : '无'}  套装加成: ${stats.set_bonus ? '已激活' : '无'}`
+      `PK值: ${stats.pk || 0}  VIP: ${formatVipDisplay(stats)}  套装加成: ${stats.set_bonus ? '已激活' : '无'}`
     ];
     if (statsUi.summary) statsUi.summary.textContent = summaryLines.join('\n');
 
@@ -5162,17 +5162,16 @@ function renderState(state) {
     ui.pk.textContent = `${state.stats.pk} (${state.stats.pk >= 100 ? '红名' : '正常'})`;
     ui.vip.textContent = formatVipDisplay(state.stats);
     if (ui.bonusLine) {
-      const guildText = state.stats.guild_bonus ? '已生效' : '无';
       const setText = state.stats.set_bonus ? '已激活' : '无';
       const bonusPct = Math.max(0, Math.round(Number(state.stats?.exp_gold_bonus_pct || 0)));
-      ui.bonusLine.textContent = `行会加成：${guildText} | 套装加成：${setText} | 经验/金币加成：${bonusPct}%`;
+      ui.bonusLine.textContent = `套装加成：${setText} | 经验/金币加成：${bonusPct}%`;
     }
     if (ui.luckyLine) {
       const lucky = state.daily_lucky;
       console.log('[DailyLucky] state.daily_lucky =', JSON.stringify(lucky), 'type:', typeof lucky);
       const luckyText = lucky && typeof lucky === 'object' && lucky.name
-        ? `每日幸运玩家：${lucky.name}${lucky.attr ? `（${lucky.attr}+100%）` : ''}`
-        : '每日幸运玩家：无';
+        ? `幸运玩家：${lucky.name}${lucky.attr ? `（${lucky.attr}+100%）` : ''}`
+        : '幸运玩家：无';
       ui.luckyLine.textContent = luckyText;
     }
     if (ui.svipExpireRow && ui.svipExpire) {
