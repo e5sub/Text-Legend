@@ -5624,7 +5624,6 @@ function renderState(state) {
             const empty = document.createElement('div');
             empty.textContent = '暂无排行';
             ui.worldBossRank.appendChild(empty);
-            return;
           }
           towerRankTop10.forEach((entry, idx) => {
             const row = document.createElement('div');
@@ -5641,7 +5640,6 @@ function renderState(state) {
             row.appendChild(floor);
             ui.worldBossRank.appendChild(row);
           });
-          return;
         } else if (inCrossRankRoom) {
           resetBossRespawn();
           if (ui.worldBossRank) ui.worldBossRank.innerHTML = '';
@@ -5694,7 +5692,6 @@ function renderState(state) {
             const empty = document.createElement('div');
             empty.textContent = '暂无排行';
             ui.worldBossRank.appendChild(empty);
-            return;
           }
           crossRank.entries.forEach((entry, idx) => {
             const row = document.createElement('div');

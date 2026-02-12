@@ -143,6 +143,16 @@ const ADMIN_BASE = (() => {
   const cleaned = raw.replace(/^\/+|\/+$/g, '');
   return cleaned ? `/${cleaned}` : '/admin';
 })();
+
+if (ADMIN_BASE !== '/admin') {
+  app.use((req, res, next) => {
+    const reqPath = String(req.path || req.url || '');
+    if (reqPath === '/admin' || reqPath.startsWith('/admin/')) {
+      return res.status(404).send('Not Found');
+    }
+    return next();
+  });
+}
 app.use(express.json({ limit: '20mb' }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use(ADMIN_BASE, express.static(path.join(__dirname, '..', 'public', 'admin')));
