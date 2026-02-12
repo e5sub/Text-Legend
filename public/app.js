@@ -4391,26 +4391,33 @@ function renderDropsContent(setId) {
 
     treasureSets.forEach((setEntry) => {
       const sourceText = String(setEntry?.source || '未知来源');
+      const roleText = String(setEntry?.role || '').trim();
       const section = document.createElement('div');
-      section.className = 'drops-item';
+      section.className = 'drops-item drops-treasure-set';
       section.innerHTML = `
         <div class="drops-item-name">${setEntry?.name || '法宝系列'}</div>
-        <div class="drops-item-mobs"><span class="drops-drop">来源: ${sourceText}</span></div>
+        <div class="drops-item-mobs">
+          ${roleText ? `<span class="drops-drop">定位: ${roleText}</span>` : ''}
+          <span class="drops-drop">来源: ${sourceText}</span>
+        </div>
+        <div class="drops-treasure-list"></div>
       `;
-      dropsUi.content.appendChild(section);
 
+      const listEl = section.querySelector('.drops-treasure-list');
       const treasures = Array.isArray(setEntry?.treasures) ? setEntry.treasures : [];
-      treasures.forEach((item) => {
+      treasures.forEach((item, idx) => {
         const row = document.createElement('div');
-        row.className = 'drops-item';
+        row.className = 'drops-treasure-entry';
         row.innerHTML = `
-          <div class="drops-item-name">${item?.name || item?.id || '未知法宝'}</div>
+          <div class="drops-treasure-title">${idx + 1}. ${item?.name || item?.id || '未知法宝'}</div>
           <div class="drops-item-mobs">
             <span class="drops-drop">${item?.effect || '被动：暂无说明'}</span>
           </div>
         `;
-        dropsUi.content.appendChild(row);
+        listEl.appendChild(row);
       });
+
+      dropsUi.content.appendChild(section);
     });
     return;
   }

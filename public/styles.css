@@ -498,6 +498,16 @@ body.dark .drops-drop {
   background: #3a3028;
   border-color: #4a3828;
 }
+body.dark .drops-treasure-list {
+  border-left-color: rgba(180, 135, 80, 0.35);
+}
+body.dark .drops-treasure-entry {
+  background: #2c251f;
+  border-color: rgba(180, 135, 80, 0.22);
+}
+body.dark .drops-treasure-title {
+  color: #d2b996;
+}
 
 body.dark .rank-item {
   background: #3a3028;
@@ -5802,6 +5812,28 @@ li {
   padding: 4px 8px;
   border-radius: 6px;
   border: 1px solid rgba(118, 70, 22, 0.1);
+}
+.drops-treasure-set {
+  padding: 12px;
+}
+.drops-treasure-list {
+  margin-top: 10px;
+  padding-left: 10px;
+  border-left: 2px solid rgba(118, 70, 22, 0.2);
+  display: grid;
+  gap: 8px;
+}
+.drops-treasure-entry {
+  background: #fff8ee;
+  border: 1px solid rgba(118, 70, 22, 0.12);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.drops-treasure-title {
+  font-weight: 600;
+  color: #5b3a1c;
+  font-size: 0.88rem;
+  margin-bottom: 6px;
 }
 
 #drops-modal .modal-card {
