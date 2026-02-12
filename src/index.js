@@ -5205,6 +5205,26 @@ function tryRestoreAutoFullAfterManualDowngrade(player, now = Date.now()) {
   }
 }
 
+function downgradeAutoFullInZhuxianTower(player) {
+  if (!player) return;
+  if (!player.flags) player.flags = {};
+  const inTower = player.position?.zone === ZHUXIAN_TOWER_ZONE_ID;
+  if (inTower) {
+    if (player.flags.autoFullEnabled) {
+      player.flags.autoFullEnabled = false;
+      player.forceStateRefresh = true;
+      if (typeof player.send === 'function') {
+        player.send('浮屠塔内智能挂机已自动降级为普通挂机。');
+      }
+    }
+    player.flags.autoFullTowerDowngraded = true;
+    return;
+  }
+  if (player.flags.autoFullTowerDowngraded) {
+    player.flags.autoFullTowerDowngraded = false;
+  }
+}
+
 function updateAutoDailyUsage(player) {
   if (!player) return;
   if (!player.flags) player.flags = {};
@@ -5277,6 +5297,7 @@ function getAutoFullBestRoom(player) {
   for (const [zoneId, zone] of Object.entries(WORLD)) {
     if (!zone || !zone.rooms) continue;
     if (CROSS_REALM_ZONES.has(zoneId)) continue;
+    if (zoneId === ZHUXIAN_TOWER_ZONE_ID) continue;
     for (const [roomId, room] of Object.entries(zone.rooms)) {
       if (!room?.spawns?.length) continue;
       if (!canEnterRoomByCultivation(player, zoneId, roomId)) continue;
@@ -5332,6 +5353,7 @@ function findAliveBossTarget(player) {
       const zoneId = mob.zoneId;
       const roomId = mob.roomId;
       if (!zoneId || !roomId) continue;
+      if (zoneId === ZHUXIAN_TOWER_ZONE_ID) continue;
       if (zoneId === CROSS_REALM_ZONE_ID && roomId === 'arena' && crossBossCooldownUntil > Date.now()) {
         continue;
       }
@@ -5372,6 +5394,7 @@ function findBossInRoom(roomMobs, player) {
 
 function movePlayerToRoom(player, zoneId, roomId) {
   if (!player || !player.position) return false;
+  if (zoneId === ZHUXIAN_TOWER_ZONE_ID) return false;
   if (player.position.zone === zoneId && player.position.room === roomId) return false;
   if (!WORLD[zoneId]?.rooms?.[roomId]) return false;
   if (!canEnterRoomByCultivation(player, zoneId, roomId)) return false;
@@ -9388,6 +9411,7 @@ async function combatTick() {
     updateRedNameAutoClear(player);
     updateAutoDailyUsage(player);
     tryRestoreAutoFullAfterManualDowngrade(player);
+    downgradeAutoFullInZhuxianTower(player);
     normalizeZhuxianTowerProgress(player);
     ensureZhuxianTowerPosition(player);
     const realmId = player.realmId || 1;
