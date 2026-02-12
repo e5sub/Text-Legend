@@ -7522,7 +7522,7 @@ function calcTaoistDamageFromValue(value, target) {
 
 function calcPoisonTickDamage(target) {
   const maxHp = Math.max(1, target.max_hp || 1);
-  const total = Math.max(1, Math.floor(maxHp * 0.4));  // 提升到40%
+  const total = Math.max(1, Math.floor(maxHp * 0.2));
   return Math.max(1, Math.floor(total / 30));
 }
 
@@ -9878,11 +9878,32 @@ async function combatTick() {
           target.combat = { targetId: player.name, targetType: 'player', skillId: 'slash' };
         }
       if (skill && skill.type === 'dot') {
-        if (!target.status) target.status = {};
-        applyPoison(target, 30, calcPoisonTickDamage(target), player.name);
-        applyPoisonDebuff(target);
-        player.send('施毒成功。');
-        target.send('你中了施毒术。');
+        if (skill.id === 'poison') {
+          const poisonTargets = online.filter((p) =>
+            p.name !== player.name &&
+            p.position.zone === player.position.zone &&
+            p.position.room === player.position.room &&
+            p.hp > 0 &&
+            !((inCultivationRoom || inCrossBossRoom || inCrossRankRoom) && (p.realmId || 1) === (player.realmId || 1)) &&
+            !(isSabakZone(player.position.zone) && player.guild && p.guild && String(player.guild.id) === String(p.guild.id)) &&
+            !(myParty && myParty.members.includes(p.name))
+          );
+          let successCount = 0;
+          poisonTargets.forEach((poisonTarget) => {
+            if (!poisonTarget.status) poisonTarget.status = {};
+            applyPoison(poisonTarget, 30, calcPoisonTickDamage(poisonTarget), player.name);
+            applyPoisonDebuff(poisonTarget);
+            poisonTarget.send('你中了施毒术。');
+            successCount += 1;
+          });
+          player.send(successCount > 0 ? `施毒成功，命中 ${successCount} 个目标。` : '施毒失败。');
+        } else {
+          if (!target.status) target.status = {};
+          applyPoison(target, 30, calcPoisonTickDamage(target), player.name);
+          applyPoisonDebuff(target);
+          player.send('施毒成功。');
+          target.send('你中了施毒术。');
+        }
       } else if (tryApplyPoisonEffect(player, target)) {
         target.send('你中了毒特效。');
         player.send(`你的毒特效作用于 ${target.name}。`);
@@ -10106,7 +10127,7 @@ async function combatTick() {
 
 
       if (skill && skill.type === 'aoe') {
-        const hasFalloff = skill.id === 'earth_spike' || skill.id === 'thunder' || skill.id === 'thunderstorm';
+        const hasFalloff = skill.id === 'earth_spike' || skill.id === 'thunder' || skill.id === 'thunderstorm' || skill.id === 'savage';
         mobs.forEach((target) => {
           // AOE伤害应该对每个目标独立计算，而不是使用主目标的伤害
           let aoeDmg = 0;
@@ -10223,10 +10244,23 @@ async function combatTick() {
         player.send(`破防戒指生效，${mob.name} 防御降低20%！`);
       }
       if (skill && skill.type === 'dot') {
-        if (!mob.status) mob.status = {};
-        applyPoison(mob, 30, calcPoisonTickDamage(mob), player.name);
-        applyPoisonDebuff(mob);
-        player.send(`施毒成功：${mob.name} 中毒。`);
+        if (skill.id === 'poison') {
+          let successCount = 0;
+          mobs.forEach((poisonMob) => {
+            const immune = enforceSpecialBossDebuffImmunity(poisonMob, roomRealmId);
+            if (immune) return;
+            if (!poisonMob.status) poisonMob.status = {};
+            applyPoison(poisonMob, 30, calcPoisonTickDamage(poisonMob), player.name);
+            applyPoisonDebuff(poisonMob);
+            successCount += 1;
+          });
+          player.send(successCount > 0 ? `施毒成功，命中 ${successCount} 个怪物。` : '施毒失败。');
+        } else {
+          if (!mob.status) mob.status = {};
+          applyPoison(mob, 30, calcPoisonTickDamage(mob), player.name);
+          applyPoisonDebuff(mob);
+          player.send(`施毒成功：${mob.name} 中毒。`);
+        }
       } else if (tryApplyPoisonEffect(player, mob)) {
         player.send(`你的毒特效作用于 ${mob.name}。`);
       }

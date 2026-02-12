@@ -111,11 +111,14 @@ export function applyPoison(target, turns, tickDamage, sourceName = null) {
   if (target.status.poisonsBySource) {
     delete target.status.poisonsBySource;
   }
-  // 不允许叠加毒
+  // 不叠加：已有中毒时仅重置持续时间
+  const cappedDamage = Math.min(1000, Math.max(1, Math.floor(tickDamage || 0)));
   if (target.status.poison) {
+    target.status.poison.turns = Math.max(1, Math.floor(Number(turns || 1)));
+    target.status.poison.tickDamage = cappedDamage;
+    target.status.poison.sourceName = sourceName;
     return false;
   }
-  const cappedDamage = Math.min(1000, Math.max(1, Math.floor(tickDamage || 0)));
   target.status.poison = { turns, tickDamage: cappedDamage, sourceName };
   return true;
 }
