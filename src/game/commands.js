@@ -646,6 +646,19 @@ function formatEquipment(player) {
     .join(', ');
 }
 
+function formatTreasureEquipped(player) {
+  const state = normalizeTreasureState(player);
+  const equipped = Array.isArray(state.equipped) ? state.equipped : [];
+  if (!equipped.length) return '无';
+  return equipped.map((id) => {
+    const def = getTreasureDef(id);
+    const lv = getTreasureLevel(player, id);
+    const advanceCount = getTreasureAdvanceCount(player, id);
+    const stage = getTreasureStageByAdvanceCount(advanceCount);
+    return `${def?.name || id}(Lv${lv}/阶${stage})`;
+  }).join('，');
+}
+
 function isRedName(player) {
   return (player.flags?.pkValue || 0) >= 100;
 }
@@ -683,7 +696,8 @@ function formatStats(player, partyApi) {
     `VIP: ${vip}`,
     `行会: ${player.guild ? player.guild.name : '无'}`,
     `队伍: ${partyInfo}`,
-    `装备: ${formatEquipment(player)}`
+    `装备: ${formatEquipment(player)}`,
+    `法宝穿戴: ${formatTreasureEquipped(player)}`
   ].join('\n');
 }
 
@@ -1435,6 +1449,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         spirit: Math.floor(target.spirit || 0),
         evade: Math.round((target.evadeChance || 0) * 100),
         equipment: [],
+        treasures: [],
         summons: []
       };
       
@@ -1468,6 +1483,23 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           }
         });
       }
+
+      // 法宝穿戴信息
+      const treasureState = normalizeTreasureState(target);
+      const equippedTreasures = Array.isArray(treasureState.equipped) ? treasureState.equipped : [];
+      equippedTreasures.forEach((id) => {
+        const def = getTreasureDef(id);
+        const level = getTreasureLevel(target, id);
+        const advanceCount = getTreasureAdvanceCount(target, id);
+        const stage = getTreasureStageByAdvanceCount(advanceCount);
+        observeData.treasures.push({
+          id,
+          name: def?.name || id,
+          level,
+          stage,
+          advanceCount
+        });
+      });
       
       // 召唤兽信息
       const targetSummons = getAliveSummons(target);

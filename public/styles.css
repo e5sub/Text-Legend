@@ -5638,7 +5638,12 @@ body.dark .changeclass-options .chip:disabled {
   color: var(--accent);
 }
 
-.observe-equipment-list,
+.observe-equipment-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
 .observe-summon-list {
   display: flex;
   flex-direction: column;
@@ -5666,6 +5671,12 @@ body.dark .changeclass-options .chip:disabled {
   font-size: 0.85rem;
   color: var(--ink);
   opacity: 0.7;
+}
+
+@media (max-width: 820px) {
+  .observe-equipment-list {
+    grid-template-columns: 1fr;
+  }
 }
 
 .target-label {

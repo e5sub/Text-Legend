@@ -3513,7 +3513,10 @@ function hideItemTooltip() {
 function handleItemAction(item) {
   if (!item || !socket) return;
   const itemKey = item.key || item.id;
-  if (item.type === 'consumable' || item.type === 'book') {
+  const isTreasure = typeof item.id === 'string' && item.id.startsWith('treasure_') && item.id !== 'treasure_exp_material';
+  if (isTreasure) {
+    socket.emit('cmd', { text: `treasure equip ${item.id}`, source: 'ui' });
+  } else if (item.type === 'consumable' || item.type === 'book') {
     socket.emit('cmd', { text: `use ${itemKey}` });
   } else if (item.slot) {
     socket.emit('cmd', { text: `equip ${itemKey}` });
@@ -7149,9 +7152,6 @@ function showObserveModal(data) {
     data.equipment.forEach(eq => {
       html += '<div class="observe-equipment-item">';
       html += `<span class="observe-equipment-name">${eq.slot}: ${eq.name}</span>`;
-      if (eq.durability != null) {
-        html += `<span class="observe-equipment-durability">[${Math.floor(eq.durability)}/${Math.floor(eq.maxDurability)}]</span>`;
-      }
       html += '</div>';
     });
     html += '</div>';
@@ -7160,6 +7160,21 @@ function showObserveModal(data) {
     html += '<div class="observe-section">';
     html += '<div class="observe-section-title">装备</div>';
     html += '<div style="color: var(--ink); opacity: 0.6; padding: 8px;">无装备</div>';
+    html += '</div>';
+  }
+
+  // 法宝穿戴信息
+  if (data.treasures && data.treasures.length > 0) {
+    html += '<div class="observe-section">';
+    html += '<div class="observe-section-title">法宝穿戴</div>';
+    html += '<div class="observe-equipment-list">';
+    data.treasures.forEach((t) => {
+      html += '<div class="observe-equipment-item">';
+      html += `<span class="observe-equipment-name">${t.name}</span>`;
+      html += `<span class="observe-equipment-durability">Lv${Math.floor(Number(t.level || 1))} / 阶${Math.floor(Number(t.stage || 0))} / 段${Math.floor(Number(t.advanceCount || 0))}</span>`;
+      html += '</div>';
+    });
+    html += '</div>';
     html += '</div>';
   }
 
