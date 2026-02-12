@@ -2147,6 +2147,11 @@ async function updateRankTitles() {
         console.error(`[Rank] 更新${realm.name} ${cls.name}排行榜失败:`, err);
       }
     }
+    try {
+      await syncZhuxianTowerTopTitleForRealm(realm.id);
+    } catch (err) {
+      console.error(`[Rank] 更新${realm.name} 浮图塔第一称号失败:`, err);
+    }
   }
 
   console.log('[Rank] 排行榜称号更新完成');
@@ -2805,8 +2810,9 @@ const CULTIVATION_BOSS_ROOM_PREFIX = 'boss_';
 const ZHUXIAN_TOWER_ZONE_ID = 'zxft';
 const ZHUXIAN_TOWER_ENTRY_ROOM_ID = 'entry';
 const ZHUXIAN_TOWER_REWARD_ITEM_ID = 'treasure_exp_material';
+const ZHUXIAN_TOWER_TOP1_TITLE = '我是爬塔小能手';
 const ZHUXIAN_TOWER_XUANMING_DROP_CHANCE = 0.2;
-const ZHUXIAN_TOWER_XUANMING_DROPS = ['treasure_xuanwu_core', 'treasure_taiyin_mirror', 'treasure_guiyuan_bead'];
+const ZHUXIAN_TOWER_XUANMING_DROPS = ['treasure_xuanwu_core', 'treasure_taiyin_mirror', 'treasure_guiyuan_bead', 'treasure_xuanshuang_wall', 'treasure_beiming_armor', 'treasure_hanyuan_stone'];
 
 const CROSS_RANK_EVENT_STATE = {
   active: false,
@@ -3314,7 +3320,70 @@ function ensureZhuxianTowerPosition(player, now = Date.now()) {
   return true;
 }
 
-function grantZhuxianTowerClearReward(player, floor, now = Date.now()) {
+async function syncZhuxianTowerTopTitleForRealm(realmId) {
+  const rows = await knex('characters')
+    .select('id', 'name', 'flags_json')
+    .where({ realm_id: realmId });
+  if (!rows || rows.length === 0) return null;
+
+  const parsed = rows.map((row) => {
+    let flags = {};
+    try {
+      flags = row.flags_json ? JSON.parse(row.flags_json) : {};
+    } catch {
+      flags = {};
+    }
+    const floor = getZhuxianTowerBestFloorFromFlags(flags);
+    return { id: row.id, name: row.name, flags, floor };
+  });
+
+  const ranked = parsed
+    .filter((entry) => entry.floor > 0)
+    .sort((a, b) => {
+      if (b.floor !== a.floor) return b.floor - a.floor;
+      return String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hans-CN');
+    });
+
+  const topName = ranked.length > 0 ? String(ranked[0].name || '') : '';
+  const updates = [];
+
+  parsed.forEach((entry) => {
+    const hasTitle = String(entry.flags?.zhuxianTowerTitle || '') === ZHUXIAN_TOWER_TOP1_TITLE;
+    const shouldHave = topName && entry.name === topName;
+    if (hasTitle === shouldHave) return;
+
+    if (!entry.flags || typeof entry.flags !== 'object') entry.flags = {};
+    if (shouldHave) {
+      entry.flags.zhuxianTowerTitle = ZHUXIAN_TOWER_TOP1_TITLE;
+    } else {
+      delete entry.flags.zhuxianTowerTitle;
+    }
+    updates.push({ id: entry.id, flagsJson: JSON.stringify(entry.flags), name: entry.name, gained: shouldHave });
+  });
+
+  if (updates.length > 0) {
+    await Promise.all(
+      updates.map((u) => knex('characters').where({ id: u.id }).update({ flags_json: u.flagsJson, updated_at: knex.fn.now() }))
+    );
+  }
+
+  updates.forEach((u) => {
+    const online = playersByName(u.name, realmId);
+    if (!online) return;
+    if (!online.flags || typeof online.flags !== 'object') online.flags = {};
+    if (u.gained) {
+      online.flags.zhuxianTowerTitle = ZHUXIAN_TOWER_TOP1_TITLE;
+      online.send(`你已成为浮图塔层数排行榜第一名，获得称号：${ZHUXIAN_TOWER_TOP1_TITLE}`);
+    } else {
+      delete online.flags.zhuxianTowerTitle;
+      online.send('你已失去浮图塔层数排行榜第一名，称号已被收回。');
+    }
+  });
+
+  return topName || null;
+}
+
+async function grantZhuxianTowerClearReward(player, floor, now = Date.now()) {
   if (!player || floor <= 0) return { granted: false, qty: 0 };
   const progress = normalizeZhuxianTowerProgress(player, now);
   if (floor <= progress.highestClearedFloor) return { granted: false, qty: 0 };
@@ -3337,6 +3406,7 @@ function grantZhuxianTowerClearReward(player, floor, now = Date.now()) {
   } else {
     player.send(`诛仙浮图塔第${floor}层通关，获得 法宝经验丹 x${rewardQty}。`);
   }
+  await syncZhuxianTowerTopTitleForRealm(player.realmId || 1);
   player.send(`已解锁诛仙浮图塔第${floor + 1}层。`);
   return { granted: true, qty: rewardQty };
 }
@@ -5111,7 +5181,10 @@ const TREASURE_SETS = [
     treasures: [
       { id: 'treasure_fentian_mark', name: '焚天战印', effect: '被动：攻/魔/道与元素攻击提升（自动生效）' },
       { id: 'treasure_blood_blade', name: '血煞魔刃', effect: '被动：攻/魔/道与生存能力提升（自动生效）' },
-      { id: 'treasure_chixiao_talisman', name: '赤霄神符', effect: '被动：主属性提升（自动生效）' }
+      { id: 'treasure_chixiao_talisman', name: '赤霄神符', effect: '被动：主属性提升（自动生效）' },
+      { id: 'treasure_cangyan_flag', name: '苍焰战旗', effect: '被动：攻/魔/道与元素攻击提升（自动生效）' },
+      { id: 'treasure_fenyu_wheel', name: '焚狱天轮', effect: '被动：攻/魔/道与元素攻击提升（自动生效）' },
+      { id: 'treasure_jiehuo_token', name: '劫火兵符', effect: '被动：攻/魔/道与命中提升（自动生效）' }
     ]
   },
   {
@@ -5122,7 +5195,10 @@ const TREASURE_SETS = [
     treasures: [
       { id: 'treasure_xuanwu_core', name: '玄武甲心', effect: '被动：防御与魔御提升（自动生效）' },
       { id: 'treasure_taiyin_mirror', name: '太阴镜', effect: '被动：生命与防御提升（自动生效）' },
-      { id: 'treasure_guiyuan_bead', name: '归元珠', effect: '被动：生命与法力上限提升（自动生效）' }
+      { id: 'treasure_guiyuan_bead', name: '归元珠', effect: '被动：生命与法力上限提升（自动生效）' },
+      { id: 'treasure_xuanshuang_wall', name: '玄霜壁', effect: '被动：生命、防御、魔御提升（自动生效）' },
+      { id: 'treasure_beiming_armor', name: '北溟玄甲', effect: '被动：生命、防御、魔御提升（自动生效）' },
+      { id: 'treasure_hanyuan_stone', name: '寒渊镇石', effect: '被动：生命与闪避提升（自动生效）' }
     ]
   },
   {
@@ -5133,7 +5209,10 @@ const TREASURE_SETS = [
     treasures: [
       { id: 'treasure_youluo_lamp', name: '幽罗锁魂灯', effect: '被动：命中与道术提升（自动生效）' },
       { id: 'treasure_shigou_nail', name: '蚀骨钉', effect: '被动：元素攻击与攻/魔/道提升（自动生效）' },
-      { id: 'treasure_shehun_banner', name: '摄魂幡', effect: '被动：闪避与敏捷提升（自动生效）' }
+      { id: 'treasure_shehun_banner', name: '摄魂幡', effect: '被动：闪避与敏捷提升（自动生效）' },
+      { id: 'treasure_shiling_chain', name: '噬灵锁', effect: '被动：命中、闪避与敏捷提升（自动生效）' },
+      { id: 'treasure_duanpo_bell', name: '断魄铃', effect: '被动：命中与敏捷提升（自动生效）' },
+      { id: 'treasure_fushen_lu', name: '缚神箓', effect: '被动：命中、闪避与攻/魔/道提升（自动生效）' }
     ]
   },
   {
@@ -5144,7 +5223,10 @@ const TREASURE_SETS = [
     treasures: [
       { id: 'treasure_taiyi_disc', name: '太一灵盘', effect: '被动：打怪经验与法力上限提升（自动生效）' },
       { id: 'treasure_zhoutian_jade', name: '周天玉简', effect: '被动：法术与道术提升（自动生效）' },
-      { id: 'treasure_hongmeng_seal', name: '鸿蒙道印', effect: '被动：攻/魔/道与综合属性提升（自动生效）' }
+      { id: 'treasure_hongmeng_seal', name: '鸿蒙道印', effect: '被动：攻/魔/道与综合属性提升（自动生效）' },
+      { id: 'treasure_taichu_scroll', name: '太初灵卷', effect: '被动：打怪经验、法力上限与道术提升（自动生效）' },
+      { id: 'treasure_ziwei_disc', name: '紫微星盘', effect: '被动：打怪经验与法力上限提升（自动生效）' },
+      { id: 'treasure_taixu_script', name: '太虚道简', effect: '被动：打怪经验、法力上限与攻/魔/道提升（自动生效）' }
     ]
   }
 ];
@@ -5979,7 +6061,8 @@ function getDisplayTitle(player) {
   const baseTitle = player?.rankTitle || '';
   const luckyTitle = player?.flags?.dailyLuckyTitle || '';
   const caiyaTitle = player?.flags?.caiyaTitle || '';
-  const parts = [baseTitle, luckyTitle, caiyaTitle].filter((t) => t && String(t).trim());
+  const towerTitle = player?.flags?.zhuxianTowerTitle || '';
+  const parts = [baseTitle, luckyTitle, caiyaTitle, towerTitle].filter((t) => t && String(t).trim());
   return parts.length ? parts.join('·') : '';
 }
 
@@ -9412,7 +9495,7 @@ async function processMobDeath(player, mob, online) {
     });
 
   if (towerRoomCleared && towerClearOwner) {
-    const reward = grantZhuxianTowerClearReward(towerClearOwner, towerFloor);
+    const reward = await grantZhuxianTowerClearReward(towerClearOwner, towerFloor);
     if (reward.granted && towerClearOwner.userId) {
       lootOwnersToSave.add(towerClearOwner);
     }

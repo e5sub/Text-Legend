@@ -2707,7 +2707,7 @@ function getTreasureBagItems() {
 function renderTreasureModal() {
   if (!treasureUi.equippedList || !treasureUi.bagList || !treasureUi.exp) return;
   const data = lastState?.treasure || {
-    slotCount: 3,
+    slotCount: 6,
     maxLevel: 999999,
     advanceConsume: 3,
     advancePerStage: 10,
@@ -2715,7 +2715,7 @@ function renderTreasureModal() {
     expMaterial: 0,
     randomAttr: {}
   };
-  const slotCount = Math.max(1, Number(data.slotCount || 3));
+  const slotCount = Math.max(1, Number(data.slotCount || 6));
   const maxLevel = Math.max(1, Number(data.maxLevel || 20));
   const advanceConsume = Math.max(1, Number(data.advanceConsume || 3));
   const advancePerStage = Math.max(1, Number(data.advancePerStage || 10));

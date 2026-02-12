@@ -1,7 +1,7 @@
 import { ITEM_TEMPLATES } from './items.js';
 
 export const TREASURE_EXP_ITEM_ID = 'treasure_exp_material';
-export const TREASURE_SLOT_COUNT = 3;
+export const TREASURE_SLOT_COUNT = 6;
 export const TREASURE_MAX_LEVEL = 999999;
 export const TREASURE_ADVANCE_CONSUME = 3;
 export const TREASURE_ADVANCE_EFFECT_BONUS_PER_STACK = 0.001; // 每次升段+0.1%
@@ -11,18 +11,30 @@ const TREASURE_EFFECTS = {
   treasure_fentian_mark: { atkPctPerLevel: 0.008, elementAtkPerLevel: 3 },
   treasure_blood_blade: { atkPctPerLevel: 0.006, maxHpPctPerLevel: 0.004 },
   treasure_chixiao_talisman: { atkPctPerLevel: 0.005, magPctPerLevel: 0.005, spiritPctPerLevel: 0.005 },
+  treasure_cangyan_flag: { atkPctPerLevel: 0.006, elementAtkPerLevel: 5 },
+  treasure_fenyu_wheel: { atkPctPerLevel: 0.007, elementAtkPerLevel: 4 },
+  treasure_jiehuo_token: { atkPctPerLevel: 0.006, hitPctPerLevel: 0.004 },
 
   treasure_xuanwu_core: { defPctPerLevel: 0.01, mdefPctPerLevel: 0.01 },
   treasure_taiyin_mirror: { maxHpPctPerLevel: 0.012, defPctPerLevel: 0.004 },
   treasure_guiyuan_bead: { maxHpPctPerLevel: 0.01, maxMpPctPerLevel: 0.008 },
+  treasure_xuanshuang_wall: { maxHpPctPerLevel: 0.008, defPctPerLevel: 0.008, mdefPctPerLevel: 0.008 },
+  treasure_beiming_armor: { maxHpPctPerLevel: 0.01, defPctPerLevel: 0.006, mdefPctPerLevel: 0.006 },
+  treasure_hanyuan_stone: { maxHpPctPerLevel: 0.008, evadePctPerLevel: 0.004 },
 
   treasure_youluo_lamp: { hitPctPerLevel: 0.005, spiritPctPerLevel: 0.005 },
   treasure_shigou_nail: { elementAtkPerLevel: 4, atkPctPerLevel: 0.004 },
   treasure_shehun_banner: { evadePctPerLevel: 0.004, dexPctPerLevel: 0.008 },
+  treasure_shiling_chain: { hitPctPerLevel: 0.006, evadePctPerLevel: 0.003, dexPctPerLevel: 0.004 },
+  treasure_duanpo_bell: { hitPctPerLevel: 0.006, dexPctPerLevel: 0.006 },
+  treasure_fushen_lu: { hitPctPerLevel: 0.005, evadePctPerLevel: 0.004, atkPctPerLevel: 0.003 },
 
   treasure_taiyi_disc: { expPctPerLevel: 0.01, maxMpPctPerLevel: 0.008 },
   treasure_zhoutian_jade: { magPctPerLevel: 0.008, spiritPctPerLevel: 0.008 },
-  treasure_hongmeng_seal: { atkPctPerLevel: 0.004, defPctPerLevel: 0.004, mdefPctPerLevel: 0.004, maxHpPctPerLevel: 0.004 }
+  treasure_hongmeng_seal: { atkPctPerLevel: 0.004, defPctPerLevel: 0.004, mdefPctPerLevel: 0.004, maxHpPctPerLevel: 0.004 },
+  treasure_taichu_scroll: { expPctPerLevel: 0.008, maxMpPctPerLevel: 0.01, spiritPctPerLevel: 0.004 },
+  treasure_ziwei_disc: { expPctPerLevel: 0.01, maxMpPctPerLevel: 0.01 },
+  treasure_taixu_script: { expPctPerLevel: 0.008, atkPctPerLevel: 0.004, maxMpPctPerLevel: 0.006 }
 };
 
 export const TREASURE_IDS = Object.keys(TREASURE_EFFECTS);

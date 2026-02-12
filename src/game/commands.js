@@ -391,6 +391,15 @@ const TRAINING_ALIASES = {
 };
 const ZHUXIAN_TOWER_ZONE_ID = 'zxft';
 const ZHUXIAN_TOWER_FLOOR_PATTERN = /^floor_(\d+)_x(?:__u_(.+))?$/;
+const ZHUXIAN_TOWER_XUANMING_DROP_CHANCE = 0.2;
+const ZHUXIAN_TOWER_XUANMING_DROPS = [
+  'treasure_xuanwu_core',
+  'treasure_taiyin_mirror',
+  'treasure_guiyuan_bead',
+  'treasure_xuanshuang_wall',
+  'treasure_beiming_armor',
+  'treasure_hanyuan_stone'
+];
 
 function dirLabel(dir) {
   return DIR_LABELS[dir] || dir;
@@ -436,6 +445,10 @@ function normalizeZhuxianTowerProgress(player, now = Date.now()) {
     player.flags.zxft.highestClearedFloor = 0;
   }
   player.flags.zxft.highestClearedFloor = Math.max(0, Math.floor(Number(player.flags.zxft.highestClearedFloor || 0)));
+  player.flags.zxft.bestFloor = Math.max(
+    player.flags.zxft.highestClearedFloor,
+    Math.floor(Number(player.flags.zxft.bestFloor || 0))
+  );
   return player.flags.zxft;
 }
 
@@ -465,8 +478,55 @@ function toPlayerTowerRoomId(player, roomId) {
   return ownerKey ? `floor_${floor}_x__u_${ownerKey}` : `floor_${floor}_x`;
 }
 
+function bootstrapZhuxianTowerWeeklyProgress(player, now = Date.now()) {
+  const progress = normalizeZhuxianTowerProgress(player, now);
+  const weekKey = String(progress.weekKey || getWeekMondayKey(now));
+  const alreadyBootstrapped = String(progress.bootstrapWeekKey || '') === weekKey;
+  if (alreadyBootstrapped) return progress;
+
+  const bestFloor = Math.max(0, Math.floor(Number(progress.bestFloor || 0)));
+  const targetChallengeFloor = Math.max(1, bestFloor);
+  const targetHighestCleared = Math.max(0, targetChallengeFloor - 1);
+  const previousHighest = Math.max(0, Math.floor(Number(progress.highestClearedFloor || 0)));
+  let autoRewardQty = 0;
+  const autoTreasureDrops = [];
+
+  if (targetHighestCleared > previousHighest) {
+    for (let floor = previousHighest + 1; floor <= targetHighestCleared; floor += 1) {
+      if (floor % 10 === 0) {
+        autoRewardQty += 10;
+        if (Math.random() < ZHUXIAN_TOWER_XUANMING_DROP_CHANCE) {
+          const dropId = ZHUXIAN_TOWER_XUANMING_DROPS[randInt(0, ZHUXIAN_TOWER_XUANMING_DROPS.length - 1)];
+          addItem(player, dropId, 1);
+          autoTreasureDrops.push(dropId);
+        }
+      } else {
+        autoRewardQty += randInt(1, 10);
+      }
+    }
+    progress.highestClearedFloor = targetHighestCleared;
+  }
+
+  progress.bootstrapWeekKey = weekKey;
+
+  if (autoRewardQty > 0) {
+    addItem(player, TREASURE_EXP_ITEM_ID, autoRewardQty);
+    player.send(`浮图塔周重置后已按个人最高层第${targetChallengeFloor}层恢复挑战，并自动领取 法宝经验丹 x${autoRewardQty}。`);
+    if (autoTreasureDrops.length > 0) {
+      const dropLabel = autoTreasureDrops
+        .map((id) => ITEM_TEMPLATES[id]?.name || id)
+        .join('、');
+      player.send(`浮图塔周补发额外掉落：${dropLabel}。`);
+    }
+  } else {
+    player.send(`浮图塔周重置后已按个人最高层第${targetChallengeFloor}层恢复挑战。`);
+  }
+
+  return progress;
+}
+
 function getPlayerTowerHighestChallengeRoomId(player) {
-  const progress = normalizeZhuxianTowerProgress(player);
+  const progress = bootstrapZhuxianTowerWeeklyProgress(player);
   const floor = Math.max(1, Math.floor(Number(progress.highestClearedFloor || 0)) + 1);
   return toPlayerTowerRoomId(player, `floor_${String(floor).padStart(2, '0')}_x`);
 }

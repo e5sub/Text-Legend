@@ -168,6 +168,9 @@ const CULTIVATION_BOSS_DROP_ITEMS = {
     'treasure_taiyi_disc',
     'treasure_zhoutian_jade',
     'treasure_hongmeng_seal',
+    'treasure_taichu_scroll',
+    'treasure_ziwei_disc',
+    'treasure_taixu_script',
   ],
   ultimate: [
     'sword_caiya',
@@ -839,12 +842,18 @@ export const MOB_TEMPLATES = {
       { id: 'treasure_fentian_mark', chance: 0.01 },
       { id: 'treasure_blood_blade', chance: 0.01 },
       { id: 'treasure_chixiao_talisman', chance: 0.01 },
+      { id: 'treasure_cangyan_flag', chance: 0.01 },
+      { id: 'treasure_fenyu_wheel', chance: 0.01 },
+      { id: 'treasure_jiehuo_token', chance: 0.01 },
       { id: 'treasure_xuanwu_core', chance: 0.01 },
       { id: 'treasure_taiyin_mirror', chance: 0.01 },
       { id: 'treasure_guiyuan_bead', chance: 0.01 },
       { id: 'treasure_youluo_lamp', chance: 0.01 },
       { id: 'treasure_shigou_nail', chance: 0.01 },
-      { id: 'treasure_shehun_banner', chance: 0.01 }
+      { id: 'treasure_shehun_banner', chance: 0.01 },
+      { id: 'treasure_shiling_chain', chance: 0.01 },
+      { id: 'treasure_duanpo_bell', chance: 0.01 },
+      { id: 'treasure_fushen_lu', chance: 0.01 }
     ]
   },
   cross_world_boss: {
@@ -979,12 +988,18 @@ export const MOB_TEMPLATES = {
       { id: 'treasure_fentian_mark', chance: 0.015 },
       { id: 'treasure_blood_blade', chance: 0.015 },
       { id: 'treasure_chixiao_talisman', chance: 0.015 },
+      { id: 'treasure_cangyan_flag', chance: 0.015 },
+      { id: 'treasure_fenyu_wheel', chance: 0.015 },
+      { id: 'treasure_jiehuo_token', chance: 0.015 },
       { id: 'treasure_xuanwu_core', chance: 0.015 },
       { id: 'treasure_taiyin_mirror', chance: 0.015 },
       { id: 'treasure_guiyuan_bead', chance: 0.015 },
       { id: 'treasure_youluo_lamp', chance: 0.015 },
       { id: 'treasure_shigou_nail', chance: 0.015 },
-      { id: 'treasure_shehun_banner', chance: 0.015 }
+      { id: 'treasure_shehun_banner', chance: 0.015 },
+      { id: 'treasure_shiling_chain', chance: 0.015 },
+      { id: 'treasure_duanpo_bell', chance: 0.015 },
+      { id: 'treasure_fushen_lu', chance: 0.015 }
     ]
   },
   sabak_boss: {

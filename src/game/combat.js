@@ -3,7 +3,8 @@ import { MOB_TEMPLATES } from './mobs.js';
 
 // 命中率：基于敏捷差的线性区间
 export function calcHitChance(attacker, defender) {
-  const base = 0.75 + (attacker.dex - defender.dex) * 0.01;
+  const treasureHitBonus = Math.max(0, Number(attacker?.flags?.treasureHitBonusPct || 0)) / 100;
+  const base = 0.75 + (attacker.dex - defender.dex) * 0.01 + treasureHitBonus;
   return clamp(base, 0.2, 0.95);
 }
 
