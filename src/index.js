@@ -5246,6 +5246,10 @@ function tryAutoFullBossMove(player) {
   const now = Date.now();
   const pausedUntil = Number(player.flags.autoFullPausedUntil || 0);
   if (pausedUntil > now) return null;
+  const currentRoomRealmId = getRoomRealmId(player.position.zone, player.position.room, player.realmId || 1);
+  const currentRoomMobs = getAliveMobs(player.position.zone, player.position.room, currentRoomRealmId);
+  // 当前房间已有可打BOSS时不切房，避免跨服BOSS与其它房间来回跳转
+  if (findBossInRoom(currentRoomMobs, player)) return null;
   const lastMoveAt = Number(player.flags.autoFullLastMoveAt || 0);
   const canMoveForBoss = now - lastMoveAt >= AUTO_FULL_BOSS_MOVE_COOLDOWN_MS;
   if (!canMoveForBoss) return null;
