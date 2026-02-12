@@ -113,6 +113,13 @@ function generateRandomEffects(count, options = {}) {
   return Object.keys(effects).length > 0 ? effects : null;
 }
 
+function hasEffectResetMaterialEffects(effects) {
+  if (!effects || typeof effects !== 'object') return false;
+  const baseEffects = ['combo', 'fury', 'unbreakable', 'defense', 'dodge', 'poison', 'healblock'];
+  if (baseEffects.some((key) => Boolean(effects[key]))) return true;
+  return typeof effects.skill === 'string' && effects.skill.trim().length > 0;
+}
+
 function getSummons(player) {
   if (!player) return [];
   const list = [];
@@ -3102,8 +3109,8 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       }
 
       // 检查副件是否有特效
-      if (!secondaryResolved.slot.effects || Object.keys(secondaryResolved.slot.effects).length === 0) {
-        return send('副件必须要有特效。');
+      if (!hasEffectResetMaterialEffects(secondaryResolved.slot.effects)) {
+        return send('副件必须带特效或附加技能。');
       }
 
       // 消耗副件装备

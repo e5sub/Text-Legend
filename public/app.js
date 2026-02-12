@@ -2653,7 +2653,10 @@ function updateEffectSelection(selected) {
   const inventoryWithEffect = (lastState?.items || []).filter(slot => {
     if (!slot) return false;
     if (!slot.effects) return false;
-    if (Object.keys(slot.effects).length === 0) return false;
+    const hasBaseEffect = ['combo', 'fury', 'unbreakable', 'defense', 'dodge', 'poison', 'healblock']
+      .some((key) => Boolean(slot.effects[key]));
+    const hasSkillEffect = typeof slot.effects.skill === 'string' && slot.effects.skill.trim().length > 0;
+    if (!hasBaseEffect && !hasSkillEffect) return false;
     const rarityKey = normalizeRarityKey(slot.rarity);
     if (rarityKey === 'supreme' || rarityKey === 'ultimate') return false;
     return true;
