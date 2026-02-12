@@ -999,7 +999,7 @@ export const WORLD = {
   ,
   zxft: {
     id: 'zxft',
-    name: '诛仙浮屠塔',
+    name: '诛仙浮图塔',
     rooms: {
       entry: {
         id: 'entry',

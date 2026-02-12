@@ -5214,7 +5214,7 @@ function downgradeAutoFullInZhuxianTower(player) {
       player.flags.autoFullEnabled = false;
       player.forceStateRefresh = true;
       if (typeof player.send === 'function') {
-        player.send('浮屠塔内智能挂机已自动降级为普通挂机。');
+        player.send('浮图塔内智能挂机已自动降级为普通挂机。');
       }
     }
     player.flags.autoFullTowerDowngraded = true;
