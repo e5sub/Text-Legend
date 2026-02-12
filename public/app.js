@@ -408,6 +408,15 @@ const dropsUi = {
   content: document.getElementById('drops-content'),
   closeBtn: document.getElementById('drops-close')
 };
+const treasureUi = {
+  modal: document.getElementById('treasure-modal'),
+  exp: document.getElementById('treasure-exp'),
+  randomAttr: document.getElementById('treasure-random-attr'),
+  equippedList: document.getElementById('treasure-equipped-list'),
+  bagList: document.getElementById('treasure-bag-list'),
+  refresh: document.getElementById('treasure-refresh'),
+  close: document.getElementById('treasure-close')
+};
 const chat = {
   log: document.getElementById('chat-log'),
   input: document.getElementById('chat-input'),
@@ -2686,6 +2695,126 @@ function showEffectModal() {
   hideItemTooltip();
   renderEffectModal();
   effectUi.modal.classList.remove('hidden');
+}
+
+function getTreasureBagItems() {
+  return (lastState?.items || []).filter((item) => {
+    if (!item || !item.id) return false;
+    return item.id.startsWith('treasure_') && item.id !== 'treasure_exp_material';
+  });
+}
+
+function renderTreasureModal() {
+  if (!treasureUi.equippedList || !treasureUi.bagList || !treasureUi.exp) return;
+  const data = lastState?.treasure || {
+    slotCount: 3,
+    maxLevel: 999999,
+    advanceConsume: 3,
+    advancePerStage: 10,
+    equipped: [],
+    expMaterial: 0,
+    randomAttr: {}
+  };
+  const slotCount = Math.max(1, Number(data.slotCount || 3));
+  const maxLevel = Math.max(1, Number(data.maxLevel || 20));
+  const advanceConsume = Math.max(1, Number(data.advanceConsume || 3));
+  const advancePerStage = Math.max(1, Number(data.advancePerStage || 10));
+  const equipped = Array.isArray(data.equipped) ? data.equipped : [];
+  const bagItems = getTreasureBagItems();
+  const occupiedIds = new Set(equipped.map((entry) => entry.id));
+  const hasEmptySlot = equipped.length < slotCount;
+
+  treasureUi.exp.textContent = `法宝经验丹: ${Math.floor(Number(data.expMaterial || 0))}`;
+  if (treasureUi.randomAttr) {
+    const labels = { hp: '生命上限', mp: '魔法上限', atk: '攻击', def: '防御', mag: '魔法', mdef: '魔御', spirit: '道术', dex: '敏捷' };
+    const attrParts = Object.entries(data.randomAttr || {})
+      .filter(([, v]) => Number(v || 0) > 0)
+      .map(([k, v]) => `${labels[k] || k}+${Math.floor(Number(v || 0))}`);
+    treasureUi.randomAttr.textContent = `随机属性累计: ${attrParts.length ? attrParts.join('，') : '无'}`;
+  }
+  treasureUi.equippedList.innerHTML = '';
+  treasureUi.bagList.innerHTML = '';
+
+  for (let slot = 1; slot <= slotCount; slot += 1) {
+    const entry = equipped.find((item) => Number(item.slot) === slot);
+    const card = document.createElement('div');
+    card.className = 'forge-item';
+    if (!entry) {
+      card.innerHTML = `<div>槽位 ${slot}</div><div class="forge-item-meta">未装备</div>`;
+      treasureUi.equippedList.appendChild(card);
+      continue;
+    }
+    card.innerHTML = `
+      <div>${entry.name || entry.id}</div>
+      <div class="forge-item-meta">Lv${entry.level}/${maxLevel} | 阶${Math.floor(Number(entry.stage || 0))} 段${Math.floor(Number(entry.advanceCount || 0))}</div>
+      <div class="forge-item-meta">效果加成 +${Number(entry.effectBonusPct || 0).toFixed(1)}%</div>
+      <div class="treasure-actions">
+        <button type="button" data-action="upgrade" data-slot="${slot}">升级</button>
+        <button type="button" data-action="advance" data-slot="${slot}">升段</button>
+        <button type="button" data-action="unequip" data-slot="${slot}">卸下</button>
+      </div>
+    `;
+    const upgradeBtn = card.querySelector('button[data-action="upgrade"]');
+    const advanceBtn = card.querySelector('button[data-action="advance"]');
+    const unequipBtn = card.querySelector('button[data-action="unequip"]');
+    if (upgradeBtn) {
+      upgradeBtn.addEventListener('click', () => {
+        if (!socket) return;
+        socket.emit('cmd', { text: `treasure upgrade ${slot}`, source: 'ui' });
+      });
+    }
+    if (advanceBtn) {
+      advanceBtn.title = `消耗同名法宝 x${advanceConsume}，每${advancePerStage}段提升1阶`;
+      advanceBtn.addEventListener('click', () => {
+        if (!socket) return;
+        socket.emit('cmd', { text: `treasure advance ${slot}`, source: 'ui' });
+      });
+    }
+    if (unequipBtn) {
+      unequipBtn.addEventListener('click', () => {
+        if (!socket) return;
+        socket.emit('cmd', { text: `treasure unequip ${slot}`, source: 'ui' });
+      });
+    }
+    treasureUi.equippedList.appendChild(card);
+  }
+
+  if (!bagItems.length) {
+    const empty = document.createElement('div');
+    empty.className = 'forge-item';
+    empty.textContent = '背包暂无法宝';
+    treasureUi.bagList.appendChild(empty);
+    return;
+  }
+
+  bagItems.forEach((item) => {
+    const card = document.createElement('div');
+    card.className = 'forge-item';
+    applyRarityClass(card, item);
+    const equippedAlready = occupiedIds.has(item.id);
+    card.innerHTML = `
+      <div>${formatItemName(item)} x${Math.floor(Number(item.qty || 0))}</div>
+      <div class="treasure-actions">
+        <button type="button" data-action="equip" data-id="${item.id}">装备</button>
+      </div>
+    `;
+    const equipBtn = card.querySelector('button[data-action="equip"]');
+    if (equipBtn) {
+      equipBtn.disabled = equippedAlready || !hasEmptySlot;
+      equipBtn.addEventListener('click', () => {
+        if (!socket) return;
+        socket.emit('cmd', { text: `treasure equip ${item.id}`, source: 'ui' });
+      });
+    }
+    treasureUi.bagList.appendChild(card);
+  });
+}
+
+function showTreasureModal() {
+  if (!treasureUi.modal) return;
+  hideItemTooltip();
+  renderTreasureModal();
+  treasureUi.modal.classList.remove('hidden');
 }
 
 let selectedTrainingType = null;
@@ -5964,6 +6093,9 @@ function renderState(state) {
   if (statsUi.modal && !statsUi.modal.classList.contains('hidden')) {
     renderStatsModal();
   }
+  if (treasureUi.modal && !treasureUi.modal.classList.contains('hidden')) {
+    renderTreasureModal();
+  }
 
   if (ui.training) {
     const training = state.training || { hp: 0, mp: 0, atk: 0, mag: 0, spirit: 0, dex: 0 };
@@ -6000,6 +6132,7 @@ function renderState(state) {
     { id: 'forge', label: '\u88C5\u5907\u5408\u6210' },
     { id: 'refine', label: '\u88C5\u5907\u953B\u9020' },
     { id: 'effect', label: '\u7279\u6548\u91CD\u7F6E' },
+    { id: 'treasure', label: '\u6CD5\u5B9D' },
     { id: 'drops', label: '\u5957\u88c5\u6389\u843d' },
     { id: 'switch', label: '\u5207\u6362\u89d2\u8272' },
     { id: 'logout', label: '\u9000\u51fa\u6e38\u620f' }
@@ -6107,6 +6240,10 @@ function renderState(state) {
     }
     if (a.id === 'effect') {
       showEffectModal();
+      return;
+    }
+    if (a.id === 'treasure') {
+      showTreasureModal();
       return;
     }
     if (a.id === 'drops') {
@@ -7049,6 +7186,7 @@ document.addEventListener('click', (evt) => {
     bagUi?.modal,
     statsUi?.modal,
     afkUi?.modal,
+    treasureUi?.modal,
     playerUi?.modal,
     guildUi?.modal,
     partyUi?.modal,
@@ -7527,6 +7665,28 @@ if (effectUi.modal) {
   effectUi.modal.addEventListener('click', (e) => {
     if (e.target === effectUi.modal) {
       effectUi.modal.classList.add('hidden');
+      hideItemTooltip();
+    }
+  });
+}
+if (treasureUi.refresh) {
+  treasureUi.refresh.addEventListener('click', () => {
+    if (socket && isStateThrottleActive()) {
+      socket.emit('state_request', { reason: 'treasure:refresh' });
+    }
+    renderTreasureModal();
+  });
+}
+if (treasureUi.close) {
+  treasureUi.close.addEventListener('click', () => {
+    if (treasureUi.modal) treasureUi.modal.classList.add('hidden');
+    hideItemTooltip();
+  });
+}
+if (treasureUi.modal) {
+  treasureUi.modal.addEventListener('click', (e) => {
+    if (e.target === treasureUi.modal) {
+      treasureUi.modal.classList.add('hidden');
       hideItemTooltip();
     }
   });

@@ -3,6 +3,7 @@ import { ITEM_TEMPLATES } from './items.js';
 import { DEFAULT_SKILLS } from './skills.js';
 import { clamp } from './utils.js';
 import { getClassLevelBonusConfig as getClassLevelBonusFromConfig, getRefineBonusPerLevel } from './settings.js';
+import { getTreasureBonus, getTreasureRandomAttrBonus, normalizeTreasureState } from './treasure.js';
 
 function rarityByPrice(item) {
   if (!item) return 'common';
@@ -166,7 +167,11 @@ export function newCharacter(name, classId) {
       autoHpPct: null,
       autoMpPct: null,
       training: { hp: 0, mp: 0, atk: 0, mag: 0, spirit: 0, dex: 0 },
-      cultivationLevel: -1
+      cultivationLevel: -1,
+      treasure: {
+        equipped: [],
+        levels: {}
+      }
     },
     status: {}
   };
@@ -183,6 +188,7 @@ export function computeDerived(player) {
     // 修炼果记录：存储的是修炼果数量，每次计算时乘以系数
     player.flags.trainingFruit = { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 };
   }
+  normalizeTreasureState(player);
   // 修炼果系数：从后台配置读取
   const TRAINING_FRUIT_COEFFICIENT = getTrainingFruitCoefficient();
   const SET_BONUS_RATE = 1.2;
@@ -547,6 +553,28 @@ export function computeDerived(player) {
   player.spirit = stats.spirit + trainingBonus.spirit + trainingFruitBonus.spirit + bonusSpirit;
   player.mdef = stats.spirit + trainingBonus.mdef + trainingFruitBonus.mdef + mdefBonus + bonusMdef;
   player.elementAtk = elementAtk;
+  const treasureBonus = getTreasureBonus(player);
+  const treasureRandomAttr = getTreasureRandomAttrBonus(player);
+  const applyPct = (value, pct) => Math.floor(value * (1 + Math.max(0, Number(pct) || 0)));
+  player.atk = applyPct(player.atk, treasureBonus.atkPct);
+  player.def = applyPct(player.def, treasureBonus.defPct);
+  player.mdef = applyPct(player.mdef, treasureBonus.mdefPct);
+  player.mag = applyPct(player.mag, treasureBonus.magPct);
+  player.spirit = applyPct(player.spirit, treasureBonus.spiritPct);
+  player.dex = applyPct(player.dex, treasureBonus.dexPct);
+  player.max_hp = applyPct(player.max_hp, treasureBonus.maxHpPct);
+  player.max_mp = applyPct(player.max_mp, treasureBonus.maxMpPct);
+  player.max_hp += Math.max(0, treasureRandomAttr.hp || 0);
+  player.max_mp += Math.max(0, treasureRandomAttr.mp || 0);
+  player.atk += Math.max(0, treasureRandomAttr.atk || 0);
+  player.def += Math.max(0, treasureRandomAttr.def || 0);
+  player.mag += Math.max(0, treasureRandomAttr.mag || 0);
+  player.mdef += Math.max(0, treasureRandomAttr.mdef || 0);
+  player.spirit += Math.max(0, treasureRandomAttr.spirit || 0);
+  player.dex += Math.max(0, treasureRandomAttr.dex || 0);
+  player.elementAtk = Math.floor((player.elementAtk || 0) + (treasureBonus.elementAtkFlat || 0));
+  player.flags.treasureExpBonusPct = Math.max(0, Math.floor((treasureBonus.expPct || 0) * 100));
+  player.flags.treasureHitBonusPct = Math.max(0, Math.floor((treasureBonus.hitPct || 0) * 100));
   // 装备附加技能：激活条件与套装一致
   let equipSkillId = '';
   for (const setDef of activeSets) {
@@ -577,7 +605,7 @@ export function computeDerived(player) {
   } else {
     delete player.flags.equipSkillId;
   }
-  player.evadeChance = evadeChance + (player.dex || 0) * 0.0001; // 1点敏捷增加0.0001闪避
+  player.evadeChance = evadeChance + (player.dex || 0) * 0.0001 + Math.max(0, treasureBonus.evadePct || 0); // 1点敏捷增加0.0001闪避
 
   const dailyLucky = player.flags?.dailyLucky;
   if (dailyLucky && dailyLucky.attr && Number(dailyLucky.multiplier) > 1) {

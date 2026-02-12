@@ -129,6 +129,19 @@ import {
   setTrainingFruitDropRate as setTrainingFruitDropRateConfig,
   setTrainingPerLevelConfig as setTrainingPerLevelConfigMem
 } from './game/settings.js';
+import {
+  TREASURE_SLOT_COUNT,
+  TREASURE_MAX_LEVEL,
+  TREASURE_EXP_ITEM_ID,
+  TREASURE_ADVANCE_CONSUME,
+  TREASURE_ADVANCE_PER_STAGE,
+  TREASURE_ADVANCE_EFFECT_BONUS_PER_STACK,
+  normalizeTreasureState,
+  getTreasureDef,
+  getTreasureLevel,
+  getTreasureAdvanceCount,
+  getTreasureStageByAdvanceCount
+} from './game/treasure.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -3003,12 +3016,13 @@ function cultivationRewardMultiplier(player) {
   return 1 + (level + 1) * 0.1;
 }
 
-function totalRewardMultiplier({ vipActive, guildActive, cultivationMult = 1, partyMult = 1 }) {
+function totalRewardMultiplier({ vipActive, guildActive, cultivationMult = 1, partyMult = 1, treasureExpPct = 0 }) {
   const vipBonus = vipActive ? 1 : 0;
   const guildBonus = guildActive ? 1 : 0;
   const cultivationBonus = Math.max(0, (Number(cultivationMult) || 1) - 1);
   const partyBonus = Math.max(0, (Number(partyMult) || 1) - 1);
-  return 1 + vipBonus + guildBonus + cultivationBonus + partyBonus;
+  const treasureBonus = Math.max(0, Number(treasureExpPct || 0) / 100);
+  return 1 + vipBonus + guildBonus + cultivationBonus + partyBonus + treasureBonus;
 }
 
 function buildItemView(itemId, effects = null, durability = null, max_durability = null, refine_level = 0) {
@@ -3305,7 +3319,9 @@ function grantZhuxianTowerClearReward(player, floor, now = Date.now()) {
   progress.bestFloor = Math.max(Math.floor(Number(progress.bestFloor || 0)), floor);
   zhuxianTowerRankCache.delete(player.realmId || 1);
   const isBossFloor = floor % 10 === 0;
-  const rewardQty = isBossFloor ? 10 : randInt(1, 10);
+  // 法宝经验丹固定发放：不受VIP/行会/修真/队伍/经验加成等任何倍率影响
+  const baseRewardQty = isBossFloor ? 10 : randInt(1, 10);
+  const rewardQty = Math.max(1, Math.floor(baseRewardQty));
   addItem(player, ZHUXIAN_TOWER_REWARD_ITEM_ID, rewardQty);
   if (isBossFloor) {
     player.send(`诛仙浮图塔第${floor}层（BOSS层）通关，必掉 法宝经验丹 x10。`);
@@ -5077,6 +5093,52 @@ const AUTO_FULL_BOSS_LIST = Array.from(new Set(
     .filter((tpl) => tpl && tpl.name && isBossMob(tpl))
     .map((tpl) => String(tpl.name))
 )).sort((a, b) => a.localeCompare(b, 'zh-CN'));
+const TREASURE_SETS = [
+  {
+    id: 'fentian',
+    name: '焚天·战魂系',
+    role: '输出',
+    source: '世界BOSS、跨服BOSS',
+    treasures: [
+      { id: 'treasure_fentian_mark', name: '焚天战印', effect: '纯被动：攻击与元素攻击提升（自动生效）' },
+      { id: 'treasure_blood_blade', name: '血煞魔刃', effect: '纯被动：攻击与生存能力提升（自动生效）' },
+      { id: 'treasure_chixiao_talisman', name: '赤霄神符', effect: '纯被动：主属性提升（自动生效）' }
+    ]
+  },
+  {
+    id: 'xuanming',
+    name: '玄冥·守御系',
+    role: '生存',
+    source: '世界BOSS、跨服BOSS',
+    treasures: [
+      { id: 'treasure_xuanwu_core', name: '玄武甲心', effect: '纯被动：防御与魔御提升（自动生效）' },
+      { id: 'treasure_taiyin_mirror', name: '太阴镜', effect: '纯被动：生命与防御提升（自动生效）' },
+      { id: 'treasure_guiyuan_bead', name: '归元珠', effect: '纯被动：生命与法力上限提升（自动生效）' }
+    ]
+  },
+  {
+    id: 'youluo',
+    name: '幽罗·禁制系',
+    role: '控制',
+    source: '世界BOSS、跨服BOSS',
+    treasures: [
+      { id: 'treasure_youluo_lamp', name: '幽罗锁魂灯', effect: '纯被动：命中与道术提升（自动生效）' },
+      { id: 'treasure_shigou_nail', name: '蚀骨钉', effect: '纯被动：元素攻击与攻击提升（自动生效）' },
+      { id: 'treasure_shehun_banner', name: '摄魂幡', effect: '纯被动：闪避与敏捷提升（自动生效）' }
+    ]
+  },
+  {
+    id: 'taiyi',
+    name: '太一·修真系',
+    role: '成长',
+    source: '修真BOSS',
+    treasures: [
+      { id: 'treasure_taiyi_disc', name: '太一灵盘', effect: '纯被动：打怪经验与法力上限提升（自动生效）' },
+      { id: 'treasure_zhoutian_jade', name: '周天玉简', effect: '纯被动：法术与道术提升（自动生效）' },
+      { id: 'treasure_hongmeng_seal', name: '鸿蒙道印', effect: '纯被动：综合属性提升（自动生效）' }
+    ]
+  }
+];
 
 function getAutoDailyKey(now = Date.now()) {
   const date = new Date(now);
@@ -5826,7 +5888,8 @@ function applyOfflineRewards(player) {
     vipActive: isVipActive(player),
     guildActive: Boolean(player.guild),
     cultivationMult,
-    partyMult: 1
+    partyMult: 1,
+    treasureExpPct: Number(player.flags?.treasureExpBonusPct || 0)
   });
   const expGain = Math.floor(offlineMinutes * player.level * offlineMultiplier * rewardMult);
   const goldGain = Math.floor(offlineMinutes * player.level * offlineMultiplier * rewardMult);
@@ -6352,6 +6415,21 @@ async function buildState(player) {
   const dailyLuckyInfo = await getDailyLuckyInfoCached(realmId);
   const zhuxianTowerProgress = normalizeZhuxianTowerProgress(player);
   const zhuxianTowerRankTop10 = await getZhuxianTowerRankTop10Cached(realmId);
+  const treasureState = normalizeTreasureState(player);
+  const treasureEquipped = (treasureState.equipped || []).map((id, index) => {
+    const def = getTreasureDef(id);
+    const advanceCount = getTreasureAdvanceCount(player, id);
+    return {
+      slot: index + 1,
+      id,
+      name: def?.name || id,
+      level: getTreasureLevel(player, id),
+      advanceCount,
+      stage: getTreasureStageByAdvanceCount(advanceCount),
+      effectBonusPct: Math.max(0, Number((advanceCount * TREASURE_ADVANCE_EFFECT_BONUS_PER_STACK * 100).toFixed(1)))
+    };
+  });
+  const treasureExpMaterial = Math.floor((player.inventory || []).find((slot) => slot.id === TREASURE_EXP_ITEM_ID)?.qty || 0);
   
   // VIP自领状态缓存
   let vipSelfClaimEnabled;
@@ -6441,7 +6519,8 @@ async function buildState(player) {
           vipActive: isVipActive(player),
           guildActive: Boolean(player.guild),
           cultivationMult,
-          partyMult
+          partyMult,
+          treasureExpPct: Number(player.flags?.treasureExpBonusPct || 0)
         });
         return Math.max(0, Math.round((rewardMult - 1) * 100));
       })()
@@ -6462,6 +6541,15 @@ async function buildState(player) {
       bestFloor: Math.max(0, Math.floor(Number(zhuxianTowerProgress.bestFloor || 0)))
     },
     zhuxian_tower_rank_top10: zhuxianTowerRankTop10,
+    treasure: {
+      slotCount: TREASURE_SLOT_COUNT,
+      maxLevel: TREASURE_MAX_LEVEL,
+      advanceConsume: TREASURE_ADVANCE_CONSUME,
+      advancePerStage: TREASURE_ADVANCE_PER_STAGE,
+      equipped: treasureEquipped,
+      expMaterial: treasureExpMaterial,
+      randomAttr: treasureState.randomAttr || { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 }
+    },
     anti: {
       key: player.socket?.data?.antiKey || null,
       seq: player.socket?.data?.antiSeq || 0
@@ -6503,6 +6591,7 @@ async function buildState(player) {
     svip_settings: {
       prices: svipSettings.prices
     },
+    treasure_sets: TREASURE_SETS,
     auto_full_boss_list: AUTO_FULL_BOSS_LIST,
     state_throttle_enabled: stateThrottleEnabled,
     state_throttle_interval_sec: stateThrottleIntervalSec,
@@ -9017,7 +9106,8 @@ async function processMobDeath(player, mob, online) {
         vipActive: isVipActive(member),
         guildActive: Boolean(member.guild),
         cultivationMult,
-        partyMult
+        partyMult,
+        treasureExpPct: Number(member.flags?.treasureExpBonusPct || 0)
       });
       const finalExp = Math.floor(shareExp * rewardMult);
       const finalGold = Math.floor(shareGold * rewardMult);

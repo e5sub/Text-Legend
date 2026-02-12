@@ -4448,6 +4448,28 @@ body.dark .mail-tab.active {
   gap: 4px;
 }
 
+.treasure-actions {
+  margin-top: 6px;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.treasure-actions button {
+  border-radius: 999px;
+  border: 1px solid rgba(118, 70, 22, 0.25);
+  background: #f7e2c6;
+  padding: 3px 10px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  color: #3a2311;
+}
+
+.treasure-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .bag-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -17,6 +17,23 @@
 
   training_fruit: { id: 'training_fruit', name: '修炼果', type: 'consumable', price: 1800, untradable: true, unconsignable: true, unmail: true },
   treasure_exp_material: { id: 'treasure_exp_material', name: '法宝经验丹', type: 'material', price: 0, untradable: true, unconsignable: true, unmail: true },
+  // 法宝（第一期）
+  // 焚天·战魂系（输出）
+  treasure_fentian_mark: { id: 'treasure_fentian_mark', name: '焚天战印', type: 'material', rarity: 'supreme', price: 0, untradable: true, unconsignable: true, unmail: true },
+  treasure_blood_blade: { id: 'treasure_blood_blade', name: '血煞魔刃', type: 'material', rarity: 'supreme', price: 0, untradable: true, unconsignable: true, unmail: true },
+  treasure_chixiao_talisman: { id: 'treasure_chixiao_talisman', name: '赤霄神符', type: 'material', rarity: 'supreme', price: 0, untradable: true, unconsignable: true, unmail: true },
+  // 玄冥·守御系（生存）
+  treasure_xuanwu_core: { id: 'treasure_xuanwu_core', name: '玄武甲心', type: 'material', rarity: 'supreme', price: 0, untradable: true, unconsignable: true, unmail: true },
+  treasure_taiyin_mirror: { id: 'treasure_taiyin_mirror', name: '太阴镜', type: 'material', rarity: 'supreme', price: 0, untradable: true, unconsignable: true, unmail: true },
+  treasure_guiyuan_bead: { id: 'treasure_guiyuan_bead', name: '归元珠', type: 'material', rarity: 'supreme', price: 0, untradable: true, unconsignable: true, unmail: true },
+  // 幽罗·禁制系（控制）
+  treasure_youluo_lamp: { id: 'treasure_youluo_lamp', name: '幽罗锁魂灯', type: 'material', rarity: 'supreme', price: 0, untradable: true, unconsignable: true, unmail: true },
+  treasure_shigou_nail: { id: 'treasure_shigou_nail', name: '蚀骨钉', type: 'material', rarity: 'supreme', price: 0, untradable: true, unconsignable: true, unmail: true },
+  treasure_shehun_banner: { id: 'treasure_shehun_banner', name: '摄魂幡', type: 'material', rarity: 'supreme', price: 0, untradable: true, unconsignable: true, unmail: true },
+  // 太一·修真系（成长）
+  treasure_taiyi_disc: { id: 'treasure_taiyi_disc', name: '太一灵盘', type: 'material', rarity: 'supreme', price: 0, untradable: true, unconsignable: true, unmail: true },
+  treasure_zhoutian_jade: { id: 'treasure_zhoutian_jade', name: '周天玉简', type: 'material', rarity: 'supreme', price: 0, untradable: true, unconsignable: true, unmail: true },
+  treasure_hongmeng_seal: { id: 'treasure_hongmeng_seal', name: '鸿蒙道印', type: 'material', rarity: 'supreme', price: 0, untradable: true, unconsignable: true, unmail: true },
   woma_horn: { id: 'woma_horn', name: '沃玛号角', type: 'material', price: 3000 },
   gold_bar: { id: 'gold_bar', name: '金条', type: 'material', price: 100000, rarity: 'epic' },
   book_war_basic: { id: 'book_war_basic', name: '技能书: 基本剑术', type: 'book', price: 800, rarity: 'common' },

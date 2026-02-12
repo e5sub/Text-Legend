@@ -31,6 +31,21 @@ import {
   getEffectResetQuintupleRate
 } from './settings.js';
 import { getRealmById } from '../db/realms.js';
+import {
+  TREASURE_EXP_ITEM_ID,
+  TREASURE_SLOT_COUNT,
+  TREASURE_ADVANCE_CONSUME,
+  TREASURE_ADVANCE_EFFECT_BONUS_PER_STACK,
+  TREASURE_ADVANCE_PER_STAGE,
+  isTreasureItemId,
+  getTreasureDef,
+  normalizeTreasureState,
+  getTreasureLevel,
+  getTreasureUpgradeCost,
+  getTreasureBonus,
+  getTreasureAdvanceCount,
+  getTreasureStageByAdvanceCount
+} from './treasure.js';
 
 // 特效重置：生成随机特效（不包含elementAtk，因为元素攻击只能通过装备合成获得）
 const ALLOWED_EFFECTS = ['combo', 'fury', 'unbreakable', 'defense', 'dodge', 'poison', 'healblock'];
@@ -723,6 +738,45 @@ function resolveWarehouseItem(player, raw) {
     return { slot: byName, item: ITEM_TEMPLATES[byName.id], keyMatch: false };
   }
   return { slot: null, item: null, keyMatch: false };
+}
+
+function resolveEquippedTreasure(player, raw) {
+  const state = normalizeTreasureState(player);
+  const equipped = Array.isArray(state.equipped) ? state.equipped : [];
+  const text = String(raw || '').trim();
+  if (!text) return { id: null, index: -1 };
+  const slotNo = Math.floor(Number(text));
+  if (Number.isFinite(slotNo) && slotNo >= 1 && slotNo <= equipped.length) {
+    return { id: equipped[slotNo - 1], index: slotNo - 1 };
+  }
+  const byIdIndex = equipped.findIndex((id) => id === text);
+  if (byIdIndex >= 0) return { id: equipped[byIdIndex], index: byIdIndex };
+  const lower = text.toLowerCase();
+  const byNameIndex = equipped.findIndex((id) => {
+    const def = getTreasureDef(id);
+    return def && def.name.toLowerCase() === lower;
+  });
+  if (byNameIndex >= 0) return { id: equipped[byNameIndex], index: byNameIndex };
+  return { id: null, index: -1 };
+}
+
+function rollTreasureRandomAttrKey() {
+  const keys = ['hp', 'mp', 'atk', 'def', 'mag', 'mdef', 'spirit', 'dex'];
+  return keys[randInt(0, keys.length - 1)];
+}
+
+function treasureRandomAttrLabel(key) {
+  const labels = {
+    hp: '生命上限',
+    mp: '魔法上限',
+    atk: '攻击',
+    def: '防御',
+    mag: '魔法',
+    mdef: '魔御',
+    spirit: '道术',
+    dex: '敏捷'
+  };
+  return labels[key] || key;
 }
 
 const WAREHOUSE_LIMIT = 5000;
@@ -1430,6 +1484,197 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         send(`已取出仓库：${resolved.item.name} x${finalQty}`);
         return;
       }
+      return;
+    }
+    case 'treasure':
+    case '法宝': {
+      const parts = String(args || '').split(/\s+/).filter(Boolean);
+      const sub = (parts[0] || 'list').toLowerCase();
+      const state = normalizeTreasureState(player);
+      if (sub === 'list' || sub === 'status') {
+        const equipped = Array.isArray(state.equipped) ? state.equipped : [];
+        const lines = [];
+        lines.push(`法宝槽位: ${equipped.length}/${TREASURE_SLOT_COUNT}`);
+        for (let i = 0; i < TREASURE_SLOT_COUNT; i += 1) {
+          const id = equipped[i];
+          if (!id) {
+            lines.push(`[${i + 1}] 空`);
+            continue;
+          }
+          const def = getTreasureDef(id);
+          const lv = getTreasureLevel(player, id);
+          const advanceCount = getTreasureAdvanceCount(player, id);
+          const stage = getTreasureStageByAdvanceCount(advanceCount);
+          const nextCost = `下级消耗法宝经验丹 x${getTreasureUpgradeCost(lv)}`;
+          const advanceMod = advanceCount % TREASURE_ADVANCE_PER_STAGE;
+          const nextStageRemain = advanceMod === 0 ? TREASURE_ADVANCE_PER_STAGE : (TREASURE_ADVANCE_PER_STAGE - advanceMod);
+          lines.push(`[${i + 1}] ${def?.name || id} Lv${lv} 阶${stage} 段${advanceCount} (${nextCost}，升段+0.1%/次，距下阶${nextStageRemain}次)`);
+        }
+        const bagTreasures = (player.inventory || [])
+          .filter((slot) => isTreasureItemId(slot.id))
+          .map((slot) => {
+            const def = getTreasureDef(slot.id);
+            return `${def?.name || slot.id} x${slot.qty}`;
+          });
+        const expMatCount = Math.floor((player.inventory || []).find((slot) => slot.id === TREASURE_EXP_ITEM_ID)?.qty || 0);
+        const bonus = getTreasureBonus(player);
+        const bonusParts = [];
+        if (bonus.atkPct > 0) bonusParts.push(`攻击+${Math.floor(bonus.atkPct * 100)}%`);
+        if (bonus.defPct > 0) bonusParts.push(`防御+${Math.floor(bonus.defPct * 100)}%`);
+        if (bonus.mdefPct > 0) bonusParts.push(`魔御+${Math.floor(bonus.mdefPct * 100)}%`);
+        if (bonus.maxHpPct > 0) bonusParts.push(`生命+${Math.floor(bonus.maxHpPct * 100)}%`);
+        if (bonus.expPct > 0) bonusParts.push(`经验+${Math.floor(bonus.expPct * 100)}%`);
+        if (bonus.elementAtkFlat > 0) bonusParts.push(`元素攻击+${Math.floor(bonus.elementAtkFlat)}`);
+        lines.push(`背包法宝: ${bagTreasures.length ? bagTreasures.join('，') : '无'}`);
+        lines.push(`法宝经验丹: ${expMatCount}`);
+        lines.push(`当前加成: ${bonusParts.length ? bonusParts.join('，') : '无'}`);
+        const randomAttr = state.randomAttr || {};
+        const randomParts = Object.entries(randomAttr)
+          .filter(([, v]) => Number(v || 0) > 0)
+          .map(([k, v]) => `${treasureRandomAttrLabel(k)}+${Math.floor(Number(v || 0))}`);
+        lines.push(`升级随机属性累计: ${randomParts.length ? randomParts.join('，') : '无'}`);
+        lines.push('用法: treasure list | treasure equip <法宝名/ID> | treasure unequip <槽位/法宝名/ID> | treasure upgrade <槽位/法宝名/ID> | treasure advance <槽位/法宝名/ID>');
+        send(lines.join('\n'));
+        return;
+      }
+      if (sub === 'equip') {
+        const target = parts.slice(1).join(' ').trim();
+        if (!target) {
+          send('用法: treasure equip <法宝名/ID>');
+          return;
+        }
+        const resolved = resolveInventoryItem(player, target);
+        if (!resolved.slot || !resolved.item) {
+          send('背包里没有该法宝。');
+          return;
+        }
+        if (!isTreasureItemId(resolved.slot.id)) {
+          send('该物品不是法宝。');
+          return;
+        }
+        if ((state.equipped || []).includes(resolved.slot.id)) {
+          send('该法宝已装备。');
+          return;
+        }
+        if ((state.equipped || []).length >= TREASURE_SLOT_COUNT) {
+          send(`法宝槽已满（最多${TREASURE_SLOT_COUNT}个）。`);
+          return;
+        }
+        const removed = removeItem(
+          player,
+          resolved.slot.id,
+          1,
+          resolved.slot.effects || null,
+          resolved.slot.durability ?? null,
+          resolved.slot.max_durability ?? null,
+          resolved.slot.refine_level ?? null
+        );
+        if (!removed) {
+          send('装备失败：背包物品状态已变更，请重试。');
+          return;
+        }
+        state.equipped.push(resolved.slot.id);
+        if (!state.levels[resolved.slot.id]) state.levels[resolved.slot.id] = 1;
+        computeDerived(player);
+        player.forceStateRefresh = true;
+        const def = getTreasureDef(resolved.slot.id);
+        send(`已装备法宝：${def?.name || resolved.slot.id}。`);
+        return;
+      }
+      if (sub === 'unequip') {
+        const target = parts.slice(1).join(' ').trim();
+        if (!target) {
+          send('用法: treasure unequip <槽位/法宝名/ID>');
+          return;
+        }
+        const equipped = resolveEquippedTreasure(player, target);
+        if (!equipped.id || equipped.index < 0) {
+          send('未找到已装备的法宝。');
+          return;
+        }
+        if (!canAddToListWithLimit(player.inventory, bagLimit(player), { id: equipped.id, effects: null, durability: null, max_durability: null, refine_level: 0 })) {
+          send('背包已满，无法卸下法宝。');
+          return;
+        }
+        state.equipped.splice(equipped.index, 1);
+        addItem(player, equipped.id, 1);
+        computeDerived(player);
+        player.forceStateRefresh = true;
+        const def = getTreasureDef(equipped.id);
+        send(`已卸下法宝：${def?.name || equipped.id}。`);
+        return;
+      }
+      if (sub === 'upgrade') {
+        const target = parts.slice(1).join(' ').trim();
+        if (!target) {
+          send('用法: treasure upgrade <槽位/法宝名/ID>');
+          return;
+        }
+        const equipped = resolveEquippedTreasure(player, target);
+        if (!equipped.id || equipped.index < 0) {
+          send('未找到已装备的法宝。');
+          return;
+        }
+        const level = getTreasureLevel(player, equipped.id);
+        const need = getTreasureUpgradeCost(level);
+        const hasMat = validatePlayerHasItem(player, TREASURE_EXP_ITEM_ID, need);
+        if (!hasMat.ok) {
+          send(`法宝经验丹不足，升级需要 x${need}。`);
+          return;
+        }
+        const removed = removeItem(player, TREASURE_EXP_ITEM_ID, need);
+        if (!removed) {
+          send('升级失败：材料扣除异常，请重试。');
+          return;
+        }
+        state.levels[equipped.id] = level + 1;
+        const attrKey = rollTreasureRandomAttrKey();
+        if (!state.randomAttr || typeof state.randomAttr !== 'object') {
+          state.randomAttr = { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 };
+        }
+        state.randomAttr[attrKey] = Math.max(0, Math.floor(Number(state.randomAttr[attrKey] || 0))) + 1;
+        computeDerived(player);
+        player.forceStateRefresh = true;
+        const def = getTreasureDef(equipped.id);
+        send(`法宝升级成功：${def?.name || equipped.id} Lv${level} -> Lv${level + 1}（消耗法宝经验丹 x${need}，随机属性 ${treasureRandomAttrLabel(attrKey)}+1）。`);
+        return;
+      }
+      if (sub === 'advance' || sub === '升段') {
+        const target = parts.slice(1).join(' ').trim();
+        if (!target) {
+          send('用法: treasure advance <槽位/法宝名/ID>');
+          return;
+        }
+        const equipped = resolveEquippedTreasure(player, target);
+        if (!equipped.id || equipped.index < 0) {
+          send('未找到已装备的法宝。');
+          return;
+        }
+        const need = TREASURE_ADVANCE_CONSUME;
+        const hasSameTreasure = validatePlayerHasItem(player, equipped.id, need);
+        if (!hasSameTreasure.ok) {
+          const def = getTreasureDef(equipped.id);
+          send(`升段失败：需要同名法宝 x${need}（${def?.name || equipped.id}）。`);
+          return;
+        }
+        const removedSameTreasure = removeItem(player, equipped.id, need);
+        if (!removedSameTreasure) {
+          send('升段失败：材料扣除异常，请重试。');
+          return;
+        }
+        const oldAdvance = getTreasureAdvanceCount(player, equipped.id);
+        const newAdvance = oldAdvance + 1;
+        state.advances[equipped.id] = newAdvance;
+        const oldStage = getTreasureStageByAdvanceCount(oldAdvance);
+        const newStage = getTreasureStageByAdvanceCount(newAdvance);
+        computeDerived(player);
+        player.forceStateRefresh = true;
+        const def = getTreasureDef(equipped.id);
+        const stageUpText = newStage > oldStage ? `，阶位提升：${oldStage}阶 -> ${newStage}阶` : '';
+        send(`法宝升段成功：${def?.name || equipped.id} 段数 ${oldAdvance} -> ${newAdvance}（每段效果+${(TREASURE_ADVANCE_EFFECT_BONUS_PER_STACK * 100).toFixed(1)}%${stageUpText}）。`);
+        return;
+      }
+      send('用法: treasure list | treasure equip <法宝名/ID> | treasure unequip <槽位/法宝名/ID> | treasure upgrade <槽位/法宝名/ID> | treasure advance <槽位/法宝名/ID>');
       return;
     }
     case 'equip': {

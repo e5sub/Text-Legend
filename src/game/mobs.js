@@ -165,6 +165,9 @@ const CULTIVATION_BOSS_DROP_ITEMS = {
     'bracelet_rochie_war',
     'bracelet_rochie_mage',
     'bracelet_rochie_tao',
+    'treasure_taiyi_disc',
+    'treasure_zhoutian_jade',
+    'treasure_hongmeng_seal',
   ],
   ultimate: [
     'sword_caiya',
@@ -832,7 +835,16 @@ export const MOB_TEMPLATES = {
       { id: 'book_tao_white_tiger', chance: 0.03 },
       { id: 'book_war_tiangang', chance: 0.03 },
       { id: 'book_mage_group_shield', chance: 0.03 },
-      { id: 'book_tao_moon_fairy', chance: 0.03 }
+      { id: 'book_tao_moon_fairy', chance: 0.03 },
+      { id: 'treasure_fentian_mark', chance: 0.01 },
+      { id: 'treasure_blood_blade', chance: 0.01 },
+      { id: 'treasure_chixiao_talisman', chance: 0.01 },
+      { id: 'treasure_xuanwu_core', chance: 0.01 },
+      { id: 'treasure_taiyin_mirror', chance: 0.01 },
+      { id: 'treasure_guiyuan_bead', chance: 0.01 },
+      { id: 'treasure_youluo_lamp', chance: 0.01 },
+      { id: 'treasure_shigou_nail', chance: 0.01 },
+      { id: 'treasure_shehun_banner', chance: 0.01 }
     ]
   },
   cross_world_boss: {
@@ -963,7 +975,16 @@ export const MOB_TEMPLATES = {
       { id: 'book_tao_white_tiger', chance: 0.03 },
       { id: 'book_war_tiangang', chance: 0.03 },
       { id: 'book_mage_group_shield', chance: 0.03 },
-      { id: 'book_tao_moon_fairy', chance: 0.03 }
+      { id: 'book_tao_moon_fairy', chance: 0.03 },
+      { id: 'treasure_fentian_mark', chance: 0.015 },
+      { id: 'treasure_blood_blade', chance: 0.015 },
+      { id: 'treasure_chixiao_talisman', chance: 0.015 },
+      { id: 'treasure_xuanwu_core', chance: 0.015 },
+      { id: 'treasure_taiyin_mirror', chance: 0.015 },
+      { id: 'treasure_guiyuan_bead', chance: 0.015 },
+      { id: 'treasure_youluo_lamp', chance: 0.015 },
+      { id: 'treasure_shigou_nail', chance: 0.015 },
+      { id: 'treasure_shehun_banner', chance: 0.015 }
     ]
   },
   sabak_boss: {
