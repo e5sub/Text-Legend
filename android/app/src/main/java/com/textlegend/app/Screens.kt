@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.RectangleShape
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.font.FontWeight
@@ -53,6 +54,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.contentOrNull
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
 import java.text.SimpleDateFormat
@@ -441,6 +443,7 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                                     "vip claim" -> vm.sendCmd("vip claim")
                                     "afk" -> innerNav.navigate("afk")
                                     "autoskill off" -> vm.sendCmd("autoskill off")
+                                    "autoafk on" -> innerNav.navigate("afk")
                                     "autoafk off" -> {
                                         vm.sendCmd("autoafk off")
                                         vm.sendCmd("autoskill off")
@@ -455,6 +458,7 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                                     "repair" -> innerNav.navigate("repair")
                                     "changeclass" -> innerNav.navigate("changeclass")
                                     "drops" -> innerNav.navigate("drops")
+                                    "treasure" -> innerNav.navigate("treasure")
                                     "rank" -> innerNav.navigate("rank")
                                     "train" -> innerNav.navigate("train")
                                     "settings" -> innerNav.navigate("settings")
@@ -488,6 +492,7 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
             composable("repair") { RepairDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
             composable("changeclass") { ChangeClassDialog(vm = vm, onDismiss = { innerNav.popBackStack() }) }
             composable("drops") { DropsDialog(state = state, onDismiss = { innerNav.popBackStack() }) }
+            composable("treasure") { TreasureDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
             composable("rank") { RankDialog(state = state, vm = vm, onDismiss = { innerNav.popBackStack() }) }
             composable("train") { TrainingDialog(vm = vm, onDismiss = { innerNav.popBackStack() }) }
             composable("vip_activate") { PromptDialog(title = "VIP激活", label = "激活码", onConfirm = {
@@ -994,13 +999,13 @@ private fun BattleMobCard(
       val primaryText = if (isDark) Color(0xFFF4E8D6) else MaterialTheme.colorScheme.onSurface
       val secondaryText = if (isDark) Color(0xFFE0D2C1) else MaterialTheme.colorScheme.onSurfaceVariant
       val filterOptions = listOf(
-          "all" to "全部",
-          "weapon" to "武器",
-          "armor" to "防具",
-          "accessory" to "饰品",
-          "material" to "材料",
-          "consumable" to "消耗",
-          "book" to "书籍"
+          "全部" to "all",
+          "武器" to "weapon",
+          "防具" to "armor",
+          "饰品" to "accessory",
+          "材料" to "material",
+          "消耗品" to "consumable",
+          "技能书" to "book"
       )
       LaunchedEffect(warehouseAction) {
           warehouseQty = warehouseAction?.item?.qty?.coerceAtLeast(1)?.toString().orEmpty()
@@ -1140,7 +1145,7 @@ private fun BattleMobCard(
                           warehouseMode = it
                           warehousePage = 0
                       },
-                      selectedLabel = if (warehouseMode == "deposit") "存入" else "取出"
+                      selectedValue = warehouseMode
                   )
                   Spacer(modifier = Modifier.height(4.dp))
                   FlowRow(
@@ -1149,7 +1154,7 @@ private fun BattleMobCard(
                           warehouseFilter = it
                           warehousePage = 0
                       },
-                      selectedLabel = filterOptions.firstOrNull { it.first == warehouseFilter }?.second
+                      selectedValue = warehouseFilter
                   )
                   Spacer(modifier = Modifier.height(6.dp))
                   Text(
@@ -1828,6 +1833,7 @@ private fun ActionsTab(
         ActionItem("转职", "changeclass", R.drawable.ic_hat),
         ActionItem("装备合成", "forge", R.drawable.ic_forge),
         ActionItem("装备锻造", "refine", R.drawable.ic_refine),
+        ActionItem("法宝", "treasure", R.drawable.ic_magic),
         ActionItem("特效重置", "effect", R.drawable.ic_magic),
         ActionItem("套装掉落", "drops", R.drawable.ic_drops),
         ActionItem("修炼", "train", R.drawable.ic_train)
@@ -2115,6 +2121,25 @@ private fun hasAutoSkill(stats: StatsInfo?): Boolean {
     }
 }
 
+private fun parseAutoFullBossFilter(value: JsonElement?): List<String>? {
+    return when (value) {
+        null, is JsonNull -> null
+        is JsonArray -> value.mapNotNull { node ->
+            val text = (node as? JsonPrimitive)?.contentOrNull?.trim().orEmpty()
+            text.takeIf { it.isNotBlank() }
+        }
+        is JsonPrimitive -> {
+            if (!value.isString) emptyList() else {
+                value.content
+                    .split(",")
+                    .map { it.trim() }
+                    .filter { it.isNotBlank() }
+            }
+        }
+        else -> emptyList()
+    }
+}
+
 @Composable
 private fun SettingsScreen(vm: GameViewModel, onDismiss: () -> Unit) {
     val themeMode by vm.themeMode.collectAsState()
@@ -2143,6 +2168,7 @@ private fun SettingsScreen(vm: GameViewModel, onDismiss: () -> Unit) {
           val player = state?.player
           Card(
               modifier = Modifier.fillMaxWidth(),
+              shape = RectangleShape,
               colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
               elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
           ) {
@@ -2206,6 +2232,8 @@ private fun SettingsScreen(vm: GameViewModel, onDismiss: () -> Unit) {
                       val cultivationName = cultivationNameByLevel(cultivationLevel)
                       val cultivationBonus = stats.cultivation_bonus
                       val isMaxCultivation = cultivationLevel >= CULTIVATION_RANKS.size - 1
+                      val playerLevel = state?.player?.level ?: 0
+                      val canUpgradeCultivation = playerLevel > 200 && !isMaxCultivation
                       Row(
                           modifier = Modifier.fillMaxWidth(),
                           verticalAlignment = Alignment.CenterVertically
@@ -2222,8 +2250,15 @@ private fun SettingsScreen(vm: GameViewModel, onDismiss: () -> Unit) {
                           Spacer(modifier = Modifier.width(8.dp))
                           Button(
                               onClick = { vm.sendCmd("修真") },
-                              enabled = !isMaxCultivation
+                              enabled = canUpgradeCultivation
                           ) { Text("提升修真") }
+                      }
+                      if (!isMaxCultivation && playerLevel <= 200) {
+                          Text(
+                              text = "提升修真需要等级大于 200，当前等级 $playerLevel",
+                              style = MaterialTheme.typography.bodySmall,
+                              color = MaterialTheme.colorScheme.onSurfaceVariant
+                          )
                       }
                   }
               }
@@ -3405,7 +3440,7 @@ private fun formatTimestamp(value: Long): String {
   ) {
       Surface(
           modifier = modifier.height(66.dp),
-          shape = RoundedCornerShape(10.dp),
+          shape = RectangleShape,
           color = MaterialTheme.colorScheme.surfaceVariant,
           border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
       ) {
@@ -3414,7 +3449,7 @@ private fun formatTimestamp(value: Long): String {
               verticalAlignment = Alignment.CenterVertically
           ) {
               Surface(
-                  shape = RoundedCornerShape(8.dp),
+                  shape = RectangleShape,
                   color = tint.copy(alpha = 0.15f)
               ) {
                   Image(
@@ -3631,9 +3666,13 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
 @Composable
   private fun AfkDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Unit) {
       val skills = state?.skills.orEmpty()
+      val bosses = state?.auto_full_boss_list.orEmpty()
+      val stats = state?.stats
       val context = LocalContext.current
       val prefs = remember { AppPreferences(context) }
       val selected = remember { mutableStateListOf<String>() }
+      val selectedBosses = remember { mutableStateListOf<String>() }
+      var bossSelectionInitialized by remember { mutableStateOf(false) }
       LaunchedEffect(skills) {
           if (skills.isEmpty()) return@LaunchedEffect
           if (selected.isNotEmpty()) return@LaunchedEffect
@@ -3647,6 +3686,29 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
           } else {
               selected.addAll(skills.map { it.id })
           }
+      }
+      LaunchedEffect(bosses, stats?.autoFullBossFilter) {
+          if (bosses.isEmpty()) return@LaunchedEffect
+          if (bossSelectionInitialized) return@LaunchedEffect
+          selectedBosses.clear()
+          val filterFromState = parseAutoFullBossFilter(stats?.autoFullBossFilter)
+          when {
+              filterFromState == null -> selectedBosses.addAll(bosses)
+              filterFromState.isNotEmpty() -> selectedBosses.addAll(filterFromState.filter { it in bosses })
+              else -> {
+                  val saved = prefs.getAutoAfkBossSelection()
+                      ?.split(",")
+                      ?.map { it.trim() }
+                      ?.filter { it.isNotBlank() && it in bosses }
+                      .orEmpty()
+                  if (saved.isNotEmpty()) {
+                      selectedBosses.addAll(saved)
+                  } else {
+                      selectedBosses.addAll(bosses)
+                  }
+              }
+          }
+          bossSelectionInitialized = true
       }
       ScreenScaffold(title = "挂机技能", onBack = onDismiss) {
           if (skills.isEmpty()) {
@@ -3705,7 +3767,6 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
               ) { Text("清空") }
           }
           Spacer(modifier = Modifier.height(8.dp))
-          val stats = state?.stats
           val svipExpiresAt = stats?.svip_expires_at ?: 0L
           val svipActive = stats?.svip == true || (svipExpiresAt > System.currentTimeMillis())
           val autoFullEnabled = stats?.autoFullEnabled == true
@@ -3727,6 +3788,63 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
           val trialAvailable = stats?.autoFullTrialAvailable == true
           if (svipActive || trialAvailable) {
               Spacer(modifier = Modifier.height(8.dp))
+              Text(
+                  text = "智能挂机BOSS筛选",
+                  style = MaterialTheme.typography.titleSmall
+              )
+              Spacer(modifier = Modifier.height(6.dp))
+              if (bosses.isEmpty()) {
+                  Text("暂无BOSS列表，将按默认策略处理", color = MaterialTheme.colorScheme.onSurfaceVariant)
+              } else {
+                  val rows = bosses.chunked(3)
+                  Column {
+                      rows.forEach { row ->
+                          Row(
+                              modifier = Modifier.fillMaxWidth(),
+                              horizontalArrangement = Arrangement.spacedBy(8.dp)
+                          ) {
+                              row.forEach { bossName ->
+                                  val checked = selectedBosses.contains(bossName)
+                                  Surface(
+                                      modifier = Modifier
+                                          .weight(1f)
+                                          .clickable {
+                                              if (checked) selectedBosses.remove(bossName) else selectedBosses.add(bossName)
+                                          },
+                                      shape = RoundedCornerShape(10.dp),
+                                      color = if (checked) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant,
+                                      border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+                                  ) {
+                                      Text(
+                                          text = bossName,
+                                          modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                          maxLines = 2,
+                                          overflow = TextOverflow.Ellipsis
+                                      )
+                                  }
+                              }
+                              repeat(3 - row.size) {
+                                  Spacer(modifier = Modifier.weight(1f))
+                              }
+                          }
+                          Spacer(modifier = Modifier.height(6.dp))
+                      }
+                  }
+                  Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                      Button(
+                          modifier = Modifier.weight(1f),
+                          onClick = {
+                              selectedBosses.clear()
+                              selectedBosses.addAll(bosses)
+                          }
+                      ) { Text("全选BOSS") }
+                      Button(
+                          modifier = Modifier.weight(1f),
+                          onClick = { selectedBosses.clear() }
+                      ) { Text("清空选择") }
+                  }
+              }
+              Spacer(modifier = Modifier.height(8.dp))
               Button(
                   modifier = Modifier.fillMaxWidth(),
                   onClick = {
@@ -3739,6 +3857,20 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
                               vm.sendCmd("autoskill set ${ids.joinToString(",")}")
                               prefs.setAutoAfkSkillSelection(ids.joinToString(","))
                           }
+                          if (bosses.isNotEmpty()) {
+                              val uniqueSelectedBosses = selectedBosses
+                                  .filter { it in bosses }
+                                  .distinct()
+                              val useAllBosses = uniqueSelectedBosses.isEmpty() || uniqueSelectedBosses.size == bosses.size
+                              prefs.setAutoAfkBossSelection(uniqueSelectedBosses.joinToString(","))
+                              vm.sendCmd(
+                                  if (useAllBosses) {
+                                      "autoafk boss all"
+                                  } else {
+                                      "autoafk boss ${uniqueSelectedBosses.joinToString(",")}"
+                                  }
+                              )
+                          }
                           vm.sendCmd("autoafk on")
                       }
                       onDismiss()
@@ -3750,6 +3882,123 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
           }
         }
     }
+
+@Composable
+private fun TreasureDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Unit) {
+    val treasure = state?.treasure
+    val slotCount = (treasure?.slotCount ?: 6).coerceAtLeast(1)
+    val maxLevel = (treasure?.maxLevel ?: 20).coerceAtLeast(1)
+    val advanceConsume = (treasure?.advanceConsume ?: 3).coerceAtLeast(1)
+    val advancePerStage = (treasure?.advancePerStage ?: 10).coerceAtLeast(1)
+    val equipped = treasure?.equipped.orEmpty()
+    val bagItems = state?.items.orEmpty().filter { item ->
+        item.id.startsWith("treasure_") && item.id != "treasure_exp_material"
+    }
+    val occupiedIds = remember(equipped) { equipped.map { it.id }.toSet() }
+    val hasEmptySlot = equipped.size < slotCount
+    val passiveById = remember(state?.treasure_sets) {
+        val map = mutableMapOf<String, String>()
+        state?.treasure_sets.orEmpty().forEach { set ->
+            set.treasures.forEach { item ->
+                if (item.id.isNotBlank()) {
+                    map[item.id] = item.effect ?: "被动：暂无说明"
+                }
+            }
+        }
+        map
+    }
+    val randomAttrText = remember(treasure?.randomAttr) {
+        val parts = treasure?.randomAttr.orEmpty()
+            .filterValues { it > 0 }
+            .map { (k, v) -> "${treasureRandomAttrLabel(k)}+$v" }
+        if (parts.isEmpty()) "无" else parts.joinToString("，")
+    }
+
+    ScreenScaffold(title = "法宝", onBack = onDismiss) {
+        Text("法宝经验丹: ${treasure?.expMaterial ?: 0}")
+        Text("随机属性累计: $randomAttrText")
+        Spacer(modifier = Modifier.height(8.dp))
+        Text("已装备法宝", style = MaterialTheme.typography.titleSmall)
+        Spacer(modifier = Modifier.height(6.dp))
+
+        (1..slotCount).forEach { slot ->
+            val entry = equipped.firstOrNull { it.slot == slot }
+            Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    if (entry == null) {
+                        Text("槽位 $slot")
+                        Text("未装备", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    } else {
+                        val attrParts = entry.randomAttr
+                            .filterValues { it > 0 }
+                            .map { (k, v) -> "${treasureRandomAttrLabel(k)}+$v" }
+                        Text(entry.name.ifBlank { entry.id }, fontWeight = FontWeight.SemiBold)
+                        Text(passiveById[entry.id] ?: "被动：暂无说明", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            "Lv${entry.level}/$maxLevel | 阶${entry.stage} 段${entry.advanceCount} | 效果+${"%.1f".format(entry.effectBonusPct)}%",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            if (attrParts.isEmpty()) "绑定属性: 无" else "绑定属性: ${attrParts.joinToString("，")}",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(modifier = Modifier.weight(1f), onClick = { vm.sendCmd("treasure upgrade $slot") }) { Text("升级") }
+                            Button(modifier = Modifier.weight(1f), onClick = { vm.sendCmd("treasure advance $slot") }) { Text("升段") }
+                            Button(modifier = Modifier.weight(1f), onClick = { vm.sendCmd("treasure unequip $slot") }) { Text("卸下") }
+                        }
+                        Text(
+                            "升段消耗同名法宝 x$advanceConsume，每$advancePerStage段升1阶",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+        Text("背包法宝", style = MaterialTheme.typography.titleSmall)
+        Spacer(modifier = Modifier.height(6.dp))
+        if (bagItems.isEmpty()) {
+            Text("背包暂无法宝", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else {
+            bagItems.forEach { item ->
+                val equippedAlready = occupiedIds.contains(item.id)
+                val canEquip = !equippedAlready && hasEmptySlot
+                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("${item.name} x${item.qty}", fontWeight = FontWeight.SemiBold)
+                            Text(passiveById[item.id] ?: "被动：暂无说明", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Button(
+                            onClick = { vm.sendCmd("treasure equip ${item.id}") },
+                            enabled = canEquip
+                        ) { Text("装备") }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun treasureRandomAttrLabel(key: String): String = when (key) {
+    "hp" -> "生命上限"
+    "mp" -> "魔法上限"
+    "atk" -> "攻击"
+    "def" -> "防御"
+    "mag" -> "魔法"
+    "mdef" -> "魔御"
+    "spirit" -> "道术"
+    "dex" -> "敏捷"
+    else -> key
+}
 
 @Composable
 private fun DropsDialog(state: GameState?, onDismiss: () -> Unit) {
@@ -4056,7 +4305,7 @@ private fun PromptDialog(title: String, label: String, onConfirm: (String) -> Un
 private fun <T> FlowRow(
     items: List<Pair<String, T>>,
     onClick: (T) -> Unit,
-    selectedLabel: String? = null
+    selectedValue: T? = null
 ) {
     if (items.isEmpty()) {
         Text("暂无")
@@ -4067,11 +4316,15 @@ private fun <T> FlowRow(
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 rowItems.forEach { entry ->
                     val label = entry.first
-                    val isSelected = selectedLabel != null && selectedLabel == label
+                    val isSelected = selectedValue != null && selectedValue == entry.second
                     Button(
+                        modifier = Modifier.weight(1f),
                         onClick = { onClick(entry.second) },
                         colors = if (isSelected) ButtonDefaults.buttonColors(containerColor = Color(0xFF1B3A57)) else ButtonDefaults.buttonColors()
                     ) { Text(label) }
+                }
+                repeat(3 - rowItems.size) {
+                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
             Spacer(modifier = Modifier.height(6.dp))

@@ -64,6 +64,12 @@ class AppPreferences(private val context: Context) {
         prefs.edit().putString(KEY_AUTOAFK_SKILLS, value).apply()
     }
 
+    fun getAutoAfkBossSelection(): String? = prefs.getString(KEY_AUTOAFK_BOSSES, null)
+
+    fun setAutoAfkBossSelection(value: String?) {
+        prefs.edit().putString(KEY_AUTOAFK_BOSSES, value).apply()
+    }
+
     companion object {
         private const val KEY_SERVER_URL = "server_url"
         private const val KEY_TOKEN = "token"
@@ -74,5 +80,6 @@ class AppPreferences(private val context: Context) {
         private const val KEY_THEME_MODE = "theme_mode"
         private const val KEY_BATTLE_PANEL_PREFIX = "battle_panel_"
         private const val KEY_AUTOAFK_SKILLS = "autoafk_skill_selection"
+        private const val KEY_AUTOAFK_BOSSES = "autoafk_boss_selection"
     }
 }

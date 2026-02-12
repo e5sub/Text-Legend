@@ -82,7 +82,33 @@ data class GameState(
     val refine_config: RefineConfig? = null,
     val anti: AntiInfo? = null,
     val effect_reset_config: EffectResetConfig? = null,
-    val treasure_sets: List<TreasureSetInfo> = emptyList()
+    val treasure_sets: List<TreasureSetInfo> = emptyList(),
+    val auto_full_boss_list: List<String> = emptyList(),
+    val treasure: TreasureStateInfo? = null
+)
+
+@Serializable
+data class TreasureStateInfo(
+    val slotCount: Int = 6,
+    val maxLevel: Int = 20,
+    val upgradeConsume: Int = 10,
+    val advanceConsume: Int = 3,
+    val advancePerStage: Int = 10,
+    val equipped: List<TreasureEquippedInfo> = emptyList(),
+    val expMaterial: Int = 0,
+    val randomAttr: Map<String, Int> = emptyMap()
+)
+
+@Serializable
+data class TreasureEquippedInfo(
+    val slot: Int = 0,
+    val id: String = "",
+    val name: String = "",
+    val level: Int = 1,
+    val stage: Int = 0,
+    val advanceCount: Int = 0,
+    val effectBonusPct: Double = 0.0,
+    val randomAttr: Map<String, Int> = emptyMap()
 )
 
 @Serializable
@@ -215,6 +241,7 @@ data class StatsInfo(
     val autoFullEnabled: Boolean = false,
     val autoFullTrialAvailable: Boolean = false,
     val autoFullTrialRemainingSec: Int? = null,
+    val autoFullBossFilter: JsonElement? = null,
     val sabak_bonus: Boolean = false,
     val set_bonus: Boolean = false
 )
