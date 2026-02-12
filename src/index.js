@@ -5243,11 +5243,12 @@ function findAliveBossTarget(player) {
       if (tpl.id === 'cross_world_boss') {
         const blockedCrossBossId = String(player.flags?.autoFullCrossBossBlockedId || player.flags?.autoFullCrossBossSeenId || '');
         const awaitingCrossBossRespawn = Boolean(player.flags?.autoFullCrossBossAwaitRespawn);
+        const currentCrossBossId = String(mob.id || '');
         // 离开跨服BOSS房后，仅在检测到“新一轮刷新(新mob.id)”时才允许再次跳回
-        if (awaitingCrossBossRespawn && blockedCrossBossId && String(mob.id) === blockedCrossBossId) {
+        if (awaitingCrossBossRespawn && blockedCrossBossId && currentCrossBossId === blockedCrossBossId) {
           continue;
         }
-        if (awaitingCrossBossRespawn && blockedCrossBossId && String(mob.id) !== blockedCrossBossId) {
+        if (awaitingCrossBossRespawn && blockedCrossBossId && currentCrossBossId && currentCrossBossId !== blockedCrossBossId) {
           player.flags.autoFullCrossBossAwaitRespawn = false;
           player.flags.autoFullCrossBossBlockedId = null;
         }

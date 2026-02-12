@@ -418,6 +418,7 @@ export function getAllAliveMobs(realmId = 1) {
       if (mob.summoned || mob.status?.summoned || tpl?.summoned) continue;
       if (mob.hp > 0) {
         aliveMobs.push({
+          id: mob.id,
           realmId: keyRealmId,
           zoneId,
           roomId,
