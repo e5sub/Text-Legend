@@ -166,6 +166,7 @@ export function getAliveMobs(zoneId, roomId, realmId = 1) {
 export function spawnMobs(zoneId, roomId, realmId = 1) {
   const room = getRoom(zoneId, roomId);
   if (!room || !room.spawns || room.spawns.length === 0) return [];
+  const noRespawn = zoneId === 'zxft';
   const mobList = getRoomMobs(zoneId, roomId, realmId);
   let spawnList = room.spawns.slice();
   const bossIds = spawnList.filter((id) => isBossTemplate(MOB_TEMPLATES[id]));
@@ -196,6 +197,16 @@ export function spawnMobs(zoneId, roomId, realmId = 1) {
     const tpl = MOB_TEMPLATES[templateId];
     const scaled = scaledStats(tpl, realmId, zoneId, roomId);
     const cached = RESPAWN_CACHE.get(respawnKey(realmId, zoneId, roomId, index));
+    if (noRespawn && cached) {
+      RESPAWN_CACHE.delete(respawnKey(realmId, zoneId, roomId, index));
+      if (respawnStore && respawnStore.clear) {
+        respawnStore.clear(realmId, zoneId, roomId, index);
+      }
+    }
+    if (mob && mob.hp <= 0 && noRespawn) {
+      mob.respawnAt = null;
+      return;
+    }
     if (mob && mob.hp <= 0 && !mob.respawnAt) {
       mob.respawnAt = now;
     }
@@ -387,6 +398,14 @@ export function removeMob(zoneId, roomId, mobId, realmId = 1) {
     }
     mob.hp = 0;
     mob.status = {};
+    if (zoneId === 'zxft') {
+      mob.respawnAt = null;
+      RESPAWN_CACHE.delete(respawnKey(realmId, zoneId, roomId, mob.slotIndex));
+      if (respawnStore && respawnStore.clear) {
+        respawnStore.clear(realmId, zoneId, roomId, mob.slotIndex);
+      }
+      return mob;
+    }
     const isSpecial = Boolean(tpl && (tpl.worldBoss || tpl.sabakBoss || tpl.specialBoss));
     const delayMs = tpl && tpl.respawnMs
       ? tpl.respawnMs
