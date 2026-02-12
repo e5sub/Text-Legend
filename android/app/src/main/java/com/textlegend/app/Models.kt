@@ -81,7 +81,24 @@ data class GameState(
     val refine_material_count: Int = 0,
     val refine_config: RefineConfig? = null,
     val anti: AntiInfo? = null,
-    val effect_reset_config: EffectResetConfig? = null
+    val effect_reset_config: EffectResetConfig? = null,
+    val treasure_sets: List<TreasureSetInfo> = emptyList()
+)
+
+@Serializable
+data class TreasureSetInfo(
+    val id: String = "",
+    val name: String = "",
+    val role: String? = null,
+    val source: String? = null,
+    val treasures: List<TreasureItemInfo> = emptyList()
+)
+
+@Serializable
+data class TreasureItemInfo(
+    val id: String = "",
+    val name: String = "",
+    val effect: String? = null
 )
 
 @Serializable

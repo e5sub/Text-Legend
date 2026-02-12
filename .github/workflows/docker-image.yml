@@ -5,10 +5,12 @@ on:
     branches: [ "master" ]
     paths-ignore:
       - "img/**"
+      - "android/**"
   pull_request:
     branches: [ "master" ]
     paths-ignore:
       - "img/**"
+      - "android/**"
 
 jobs:
   build:

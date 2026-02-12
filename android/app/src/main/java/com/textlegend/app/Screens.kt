@@ -487,7 +487,7 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
             composable("effect") { EffectDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
             composable("repair") { RepairDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
             composable("changeclass") { ChangeClassDialog(vm = vm, onDismiss = { innerNav.popBackStack() }) }
-            composable("drops") { DropsDialog(onDismiss = { innerNav.popBackStack() }) }
+            composable("drops") { DropsDialog(state = state, onDismiss = { innerNav.popBackStack() }) }
             composable("rank") { RankDialog(state = state, vm = vm, onDismiss = { innerNav.popBackStack() }) }
             composable("train") { TrainingDialog(vm = vm, onDismiss = { innerNav.popBackStack() }) }
             composable("vip_activate") { PromptDialog(title = "VIP激活", label = "激活码", onConfirm = {
@@ -3752,13 +3752,38 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
     }
 
 @Composable
-private fun DropsDialog(onDismiss: () -> Unit) {
-    var selected by remember { mutableStateOf(DropsData.sets.first().id) }
-    val setIndex = DropsData.sets.indexOfFirst { it.id == selected }.coerceAtLeast(0)
-    val set = DropsData.sets[setIndex]
+private fun DropsDialog(state: GameState?, onDismiss: () -> Unit) {
+    val treasureSets = remember(state?.treasure_sets) {
+        state?.treasure_sets.orEmpty().map { set ->
+            DropSet(
+                id = "treasure_${set.id}",
+                name = set.name.ifBlank { "法宝" },
+                items = set.treasures.map { item ->
+                    DropItem(
+                        id = item.id,
+                        name = item.name.ifBlank { item.id },
+                        drops = listOf(
+                            DropEntry("来源", set.source ?: "未知"),
+                            DropEntry("被动", item.effect ?: "自动生效")
+                        )
+                    )
+                }
+            )
+        }
+    }
+    val allSets = remember(treasureSets) { DropsData.sets + treasureSets }
+    if (allSets.isEmpty()) {
+        ScreenScaffold(title = "套装掉落", onBack = onDismiss) {
+            Text("暂无掉落数据", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        return
+    }
+    var selected by remember(allSets) { mutableStateOf(allSets.first().id) }
+    val setIndex = allSets.indexOfFirst { it.id == selected }.coerceAtLeast(0)
+    val set = allSets[setIndex]
     ScreenScaffold(title = "套装掉落", onBack = onDismiss, scrollable = false) {
         TabRow(selectedTabIndex = setIndex) {
-            DropsData.sets.forEachIndexed { index, entry ->
+            allSets.forEachIndexed { index, entry ->
                 Tab(
                     selected = index == setIndex,
                     onClick = { selected = entry.id },
