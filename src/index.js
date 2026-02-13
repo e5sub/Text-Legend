@@ -518,6 +518,30 @@ function chunkArray(rows, size) {
   return chunks;
 }
 
+function chunkRowsForInsert(rows, options = {}) {
+  const maxRows = Math.max(1, Math.floor(Number(options.maxRows || 200)));
+  const maxBytes = Math.max(64 * 1024, Math.floor(Number(options.maxBytes || 1024 * 1024)));
+  const chunks = [];
+  let current = [];
+  let currentBytes = 0;
+  for (const row of rows) {
+    let rowBytes = 1024;
+    try {
+      rowBytes = Buffer.byteLength(JSON.stringify(row), 'utf8') + 64;
+    } catch {}
+    const shouldFlush = current.length > 0 && (current.length >= maxRows || (currentBytes + rowBytes) > maxBytes);
+    if (shouldFlush) {
+      chunks.push(current);
+      current = [];
+      currentBytes = 0;
+    }
+    current.push(row);
+    currentBytes += rowBytes;
+  }
+  if (current.length > 0) chunks.push(current);
+  return chunks;
+}
+
 if (ADMIN_BASE !== '/admin') {
   app.use('/admin', (req, res, next) => {
     const original = String(req.originalUrl || req.url || '');
@@ -2507,7 +2531,10 @@ app.post('/admin/import', async (req, res) => {
         continue;
       }
       if (!await trx.schema.hasTable(name)) continue;
-      const chunks = chunkArray(rows, 200);
+      const chunks = chunkRowsForInsert(rows, {
+        maxRows: config.db.client === 'sqlite' ? 200 : 100,
+        maxBytes: config.db.client === 'sqlite' ? 2 * 1024 * 1024 : 512 * 1024
+      });
       for (const chunk of chunks) {
         await trx(name).insert(chunk);
       }
