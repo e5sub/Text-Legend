@@ -182,7 +182,7 @@ if (ADMIN_BASE !== '/admin') {
     return next();
   });
 }
-app.use(express.json({ limit: '20mb' }));
+app.use(express.json({ limit: '100mb' }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use(ADMIN_BASE, express.static(path.join(__dirname, '..', 'public', 'admin')));
 app.use('/img', express.static(path.join(__dirname, '..', 'img')));
