@@ -5826,6 +5826,9 @@ const itemsNextPageBtn = document.getElementById('items-next-page');
 const itemsPageInput = document.getElementById('items-page-input');
 const itemsGoPageBtn = document.getElementById('items-go-page');
 const itemsImportBtn = document.getElementById('items-import-btn');
+const itemsExportBtn = document.getElementById('items-export-btn');
+const itemsImportJsonBtn = document.getElementById('items-import-json-btn');
+const itemsImportJsonFile = document.getElementById('items-import-json-file');
 
 const itemsImportModal = document.getElementById('items-import-modal');
 const importItemsList = document.getElementById('import-items-list');
@@ -6102,6 +6105,74 @@ async function importSelectedItems() {
 
   renderImportItems();
   loadItems(itemsCurrentPage, itemsCurrentKeyword);
+}
+
+async function exportAllItems() {
+  try {
+    const res = await fetch(adminPath('/admin/items/export'), {
+      method: 'GET',
+      headers: {
+        Authorization: adminToken ? `Bearer ${adminToken}` : ''
+      }
+    });
+    if (!res.ok) {
+      let detail = '导出装备失败';
+      try {
+        const text = await res.text();
+        const data = text ? JSON.parse(text) : null;
+        detail = data?.error || detail;
+      } catch {}
+      await customAlert('导出失败', detail);
+      return;
+    }
+
+    const blob = await res.blob();
+    const disposition = res.headers.get('Content-Disposition') || '';
+    const match = disposition.match(/filename=\"?([^\";]+)\"?/i);
+    const filename = match?.[1] || `items-export-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    await customAlert('导出失败', err.message || '导出装备失败');
+  }
+}
+
+async function importAllItemsFromJsonFile(file) {
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const parsed = JSON.parse(text);
+    const items = Array.isArray(parsed?.items) ? parsed.items : [];
+    if (!items.length) {
+      await customAlert('导入失败', '文件中未找到 items 列表。');
+      return;
+    }
+    const confirmed = await customConfirm('确认导入', `将导入 ${items.length} 个装备（同 item_id 会更新），是否继续？`);
+    if (!confirmed) return;
+
+    const res = await api('/admin/items/import-all', 'POST', { items });
+    if (!res?.ok) {
+      await customAlert('导入失败', res?.error || '导入装备失败');
+      return;
+    }
+    const r = res.result || {};
+    const failedCount = Array.isArray(r.failed) ? r.failed.length : 0;
+    await customAlert(
+      '导入完成',
+      `新增: ${r.created || 0}\n更新: ${r.updated || 0}\n掉落更新: ${r.dropsUpdated || 0}\n失败: ${failedCount}`
+    );
+    await loadItems(itemsCurrentPage, itemsCurrentKeyword);
+  } catch (err) {
+    await customAlert('导入失败', err.message || '读取JSON文件失败');
+  } finally {
+    if (itemsImportJsonFile) itemsImportJsonFile.value = '';
+  }
 }
 
 function openItemEditModal(item = null) {
@@ -6482,6 +6553,18 @@ if (itemTypeSelect) {
 // 导入装备事件
 if (itemsImportBtn) {
   itemsImportBtn.addEventListener('click', openImportModal);
+}
+
+if (itemsExportBtn) {
+  itemsExportBtn.addEventListener('click', exportAllItems);
+}
+
+if (itemsImportJsonBtn && itemsImportJsonFile) {
+  itemsImportJsonBtn.addEventListener('click', () => itemsImportJsonFile.click());
+  itemsImportJsonFile.addEventListener('change', async (e) => {
+    const file = e.target?.files?.[0];
+    await importAllItemsFromJsonFile(file);
+  });
 }
 
 if (importItemsCancelBtn) {

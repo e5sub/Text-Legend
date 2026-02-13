@@ -83,6 +83,7 @@ import {
   checkImportedItems,
   importItems as importItemsDb,
   getItemsByItemIds,
+  exportAllItems as exportAllItemsDb,
   syncItemsToTemplates,
   syncMobDropsToTemplates
 } from './db/items_admin.js';
@@ -2776,6 +2777,110 @@ app.post('/admin/items/import', async (req, res) => {
     console.error('Import error:', err);
     res.status(500).json({ error: '导入装备失败: ' + err.message });
   }
+});
+
+// 导出全部装备（含掉落配置）
+app.get('/admin/items/export', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+
+  try {
+    const items = await exportAllItemsDb();
+    const payload = {
+      meta: {
+        version: 1,
+        exported_at: new Date().toISOString(),
+        total_items: items.length
+      },
+      items
+    };
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename=\"items-export-${stamp}.json\"`);
+    res.send(JSON.stringify(payload));
+  } catch (err) {
+    res.status(500).json({ error: '导出装备失败: ' + err.message });
+  }
+});
+
+// 从JSON导入全部装备（含掉落配置）
+app.post('/admin/items/import-all', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+
+  const rawItems = Array.isArray(req.body?.items) ? req.body.items : [];
+  if (!rawItems.length) {
+    return res.status(400).json({ error: '导入数据为空或格式错误。' });
+  }
+
+  const result = {
+    created: 0,
+    updated: 0,
+    dropsUpdated: 0,
+    failed: []
+  };
+
+  for (const raw of rawItems) {
+    try {
+      const itemId = String(raw?.item_id || '').trim();
+      const name = String(raw?.name || '').trim();
+      const type = String(raw?.type || '').trim();
+      if (!itemId || !name || !type) {
+        throw new Error('缺少 item_id/name/type');
+      }
+
+      const payload = {
+        item_id: itemId,
+        name,
+        type,
+        slot: raw?.slot ?? null,
+        rarity: raw?.rarity || 'common',
+        atk: Math.floor(Number(raw?.atk || 0)),
+        def: Math.floor(Number(raw?.def || 0)),
+        mag: Math.floor(Number(raw?.mag || 0)),
+        spirit: Math.floor(Number(raw?.spirit || 0)),
+        hp: Math.floor(Number(raw?.hp || 0)),
+        mp: Math.floor(Number(raw?.mp || 0)),
+        mdef: Math.floor(Number(raw?.mdef || 0)),
+        dex: Math.floor(Number(raw?.dex || 0)),
+        price: Math.floor(Number(raw?.price || 0)),
+        untradable: Boolean(raw?.untradable),
+        unconsignable: Boolean(raw?.unconsignable),
+        boss_only: Boolean(raw?.boss_only),
+        world_boss_only: Boolean(raw?.world_boss_only),
+        cross_world_boss_only: Boolean(raw?.cross_world_boss_only)
+      };
+
+      const existing = await getItemByItemId(itemId);
+      let itemRow;
+      if (existing) {
+        itemRow = await updateItemDb(existing.id, payload);
+        result.updated += 1;
+      } else {
+        itemRow = await createItemDb(payload);
+        result.created += 1;
+      }
+
+      const drops = Array.isArray(raw?.drops) ? raw.drops : [];
+      if (itemRow?.id) {
+        const normalizedDrops = drops
+          .map((d) => ({
+            mob_id: String(d?.mob_id || '').trim(),
+            drop_chance: Number(d?.drop_chance || 0)
+          }))
+          .filter((d) => d.mob_id && Number.isFinite(d.drop_chance) && d.drop_chance >= 0);
+        await setItemDropsDb(itemRow.id, normalizedDrops);
+        result.dropsUpdated += normalizedDrops.length;
+      }
+    } catch (err) {
+      result.failed.push({
+        item_id: raw?.item_id || null,
+        reason: err.message || '未知错误'
+      });
+    }
+  }
+
+  res.json({ ok: true, result });
 });
 
 // 获取装备列表

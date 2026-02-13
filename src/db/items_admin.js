@@ -581,3 +581,25 @@ export async function syncMobDropsToTemplates() {
 
   return drops.length;
 }
+
+/**
+ * 导出所有装备及其掉落配置
+ */
+export async function exportAllItems() {
+  const items = await knex('items').orderBy('id', 'asc');
+  const drops = await knex('item_drops').orderBy('item_id', 'asc').orderBy('drop_chance', 'desc');
+  const dropsByItemId = new Map();
+  drops.forEach((row) => {
+    const key = Number(row.item_id || 0);
+    if (!dropsByItemId.has(key)) dropsByItemId.set(key, []);
+    dropsByItemId.get(key).push({
+      id: row.id,
+      mob_id: row.mob_id,
+      drop_chance: Number(row.drop_chance || 0)
+    });
+  });
+  return items.map((item) => ({
+    ...item,
+    drops: dropsByItemId.get(Number(item.id || 0)) || []
+  }));
+}
