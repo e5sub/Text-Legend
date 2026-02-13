@@ -2571,7 +2571,14 @@ app.post('/admin/import', async (req, res) => {
       });
       for (const chunk of chunks) {
         try {
-          await trx(name).insert(chunk);
+          if (name === 'characters') {
+            await trx(name)
+              .insert(chunk)
+              .onConflict(['user_id', 'name', 'realm_id'])
+              .merge();
+          } else {
+            await trx(name).insert(chunk);
+          }
         } catch (err) {
           const detail = err?.sqlMessage || err?.message || String(err);
           throw new Error(`[import][${name}] ${detail}`);
