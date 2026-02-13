@@ -7,6 +7,16 @@ export async function up(knex) {
   const hasRealm = await knex.schema.hasColumn('characters', 'realm_id');
   if (!hasRealm) return;
 
+  // MySQL may currently use `characters_user_id_name_unique` to satisfy
+  // FK index requirement on characters.user_id -> users.id.
+  // Create a dedicated index first so the unique index can be dropped safely.
+  try {
+    await knex.raw('ALTER TABLE `characters` ADD INDEX `characters_user_id_idx` (`user_id`)');
+  } catch (err) {
+    const msg = String(err?.sqlMessage || err?.message || '');
+    if (!msg.includes('Duplicate') && !msg.includes('already exists')) throw err;
+  }
+
   const dropOldUniqueIndex = async () => {
     await knex.raw('ALTER TABLE `characters` DROP INDEX `characters_user_id_name_unique`');
   };
