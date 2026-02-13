@@ -16,7 +16,7 @@ export async function up(knex) {
   if (!hasSessions) {
     await knex.schema.createTable('sessions', (t) => {
       t.increments('id').primary();
-      t.unsignedInteger('user_id').notNullable().references('users.id').onDelete('CASCADE');
+      t.integer('user_id').unsigned().notNullable().references('users.id').onDelete('CASCADE');
       t.string('token', 64).notNullable().unique();
       t.timestamp('created_at').defaultTo(knex.fn.now());
       t.timestamp('last_seen').defaultTo(knex.fn.now());
@@ -27,7 +27,7 @@ export async function up(knex) {
   if (!hasCharacters) {
     await knex.schema.createTable('characters', (t) => {
       t.increments('id').primary();
-      t.unsignedInteger('user_id').notNullable().references('users.id').onDelete('CASCADE');
+      t.integer('user_id').unsigned().notNullable().references('users.id').onDelete('CASCADE');
       t.string('name', 64).notNullable();
       t.string('class', 32).notNullable();
       t.integer('level').notNullable();

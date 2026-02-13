@@ -5,7 +5,7 @@ export async function up(knex) {
 
   if (!hasColumn) {
     await knex.schema.table('mails', (t) => {
-      t.unsignedInteger('from_user_id').nullable().references('users.id');
+      t.integer('from_user_id').unsigned().nullable().references('users.id');
       t.index('from_user_id');
     });
     return;
