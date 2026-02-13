@@ -143,6 +143,7 @@ import {
   TREASURE_TOWER_XUANMING_DROP_CHANCE,
   normalizeTreasureState,
   getTreasureDef,
+  getTreasureAutoPassiveDef,
   getTreasureLevel,
   getTreasureAdvanceCount,
   getTreasureStageByAdvanceCount,
@@ -5326,6 +5327,100 @@ function hasHealBlockEffect(player) {
   return Boolean(player?.flags?.hasHealblockEffect);
 }
 
+function getTreasureAutoProcData(player, treasureId) {
+  const level = Math.max(1, Math.floor(Number(getTreasureLevel(player, treasureId) || 1)));
+  const advance = Math.max(0, Math.floor(Number(getTreasureAdvanceCount(player, treasureId) || 0)));
+  const stage = getTreasureStageByAdvanceCount(advance);
+  const def = getTreasureAutoPassiveDef(treasureId) || {};
+  const chance = Math.min(0.25, Math.max(0, Number(def.chanceBase || 0.04) + stage * Number(def.chancePerStage || 0.005)));
+  const power = Math.min(3, Math.max(0.5, Number(def.powerBase || 1) + Math.min(200, level) * Number(def.powerPerLevel || 0.002) + stage * Number(def.powerPerStage || 0.03)));
+  return { stage, chance, power, def };
+}
+
+function tryTriggerTreasureAutoPassiveOnHit(attacker, target, options = {}) {
+  if (!attacker || !target || target.hp <= 0) return;
+  const targetType = options.targetType === 'mob' ? 'mob' : 'player';
+  const roomRealmId = options.roomRealmId;
+  const baseDamage = Math.max(1, Math.floor(Number(options.baseDamage || 1)));
+  const equipped = normalizeTreasureState(attacker)?.equipped || [];
+  if (!equipped.length) return;
+
+  const applyExtraDamage = (rawAmount, sourceName) => {
+    const amount = Math.max(1, Math.floor(rawAmount));
+    if (targetType === 'mob') {
+      const result = applyDamageToMob(target, amount, attacker.name, roomRealmId);
+      const taken = Number(result?.damageTaken || 0);
+      if (taken > 0) {
+        attacker.send(`法宝【${sourceName}】自动触发，对 ${target.name} 造成 ${taken} 点额外伤害。`);
+      }
+      return;
+    }
+    const taken = applyDamageToPlayer(target, amount);
+    if (taken > 0) {
+      attacker.send(`法宝【${sourceName}】自动触发，对 ${target.name} 造成 ${taken} 点额外伤害。`);
+      target.send(`${attacker.name} 的法宝【${sourceName}】自动触发，对你造成 ${taken} 点额外伤害。`);
+    }
+  };
+
+  for (const treasureId of equipped) {
+    const tDef = getTreasureDef(treasureId);
+    const { stage, chance, power, def } = getTreasureAutoProcData(attacker, treasureId);
+    if (!tDef || !def.type) continue;
+    if (Math.random() > chance) continue;
+
+    if (def.type === 'burst') {
+      const burst = Math.floor((attacker.atk * 0.2 + attacker.elementAtk * 5 + attacker.mag * 0.12) * power);
+      applyExtraDamage(burst, tDef.name);
+      break;
+    }
+
+    if (def.type === 'weak') {
+      if (!target.status) target.status = {};
+      if (!target.status.debuffs) target.status.debuffs = {};
+      target.status.debuffs.weak = {
+        expiresAt: Date.now() + Math.max(500, Number(def.durationMs || 2000)),
+        dmgReduction: Math.min(0.3, Math.max(0.05, Number(def.weakBase || 0.12) + stage * Number(def.weakPerStage || 0.01)))
+      };
+      attacker.send(`法宝【${tDef.name}】自动触发，${target.name} 伤害降低。`);
+      if (targetType === 'player') {
+        target.send(`你受到法宝【${tDef.name}】影响，伤害降低。`);
+      }
+      break;
+    }
+
+    if (def.type === 'armorBreak') {
+      if (targetType === 'mob' && enforceSpecialBossDebuffImmunity(target, roomRealmId)) {
+        continue;
+      }
+      if (!target.status) target.status = {};
+      if (!target.status.debuffs) target.status.debuffs = {};
+      target.status.debuffs.armorBreak = {
+        expiresAt: Date.now() + Math.max(500, Number(def.durationMs || 2500)),
+        defMultiplier: Math.max(0.7, Number(def.defMulBase || 0.85) - stage * Number(def.defMulPerStage || 0.01))
+      };
+      attacker.send(`法宝【${tDef.name}】自动触发，${target.name} 防御被削弱。`);
+      if (targetType === 'player') {
+        target.send(`你受到法宝【${tDef.name}】影响，防御降低。`);
+      }
+      break;
+    }
+
+    if (def.type === 'heal') {
+      const heal = Math.max(1, Math.floor(baseDamage * (Number(def.healRatioBase || 0.1) + stage * Number(def.healRatioPerStage || 0.01))));
+      attacker.hp = clamp(attacker.hp + heal, 1, attacker.max_hp);
+      attacker.send(`法宝【${tDef.name}】自动触发，恢复 ${heal} 点生命。`);
+      break;
+    }
+
+    if (def.type === 'mp') {
+      const restore = Math.max(1, Math.floor(attacker.max_mp * (Number(def.mpRatioBase || 0.01) + stage * Number(def.mpRatioPerStage || 0.001))));
+      attacker.mp = clamp(attacker.mp + restore, 0, attacker.max_mp);
+      attacker.send(`法宝【${tDef.name}】自动触发，恢复 ${restore} 点法力。`);
+      break;
+    }
+  }
+}
+
 function isInvincible(target) {
   const until = target?.status?.invincible;
   if (!until) return false;
@@ -10070,6 +10165,7 @@ async function combatTick() {
         if (!target.combat || target.combat.targetType !== 'player' || target.combat.targetId !== player.name) {
           target.combat = { targetId: player.name, targetType: 'player', skillId: 'slash' };
         }
+      tryTriggerTreasureAutoPassiveOnHit(player, target, { targetType: 'player', baseDamage: dmg });
       if (skill && skill.type === 'dot') {
         if (skill.id === 'poison') {
           const poisonTargets = online.filter((p) =>
@@ -10202,6 +10298,7 @@ async function combatTick() {
         player.send(`你释放了 ${skillName}，${target.name} 躲过了你的攻击。`);
       }
       target.send(`你躲过了 ${player.name} 的攻击。`);
+      tryTriggerTreasureAutoPassiveOnHit(player, mob, { targetType: 'mob', roomRealmId, baseDamage: dmg });
       if (skill && skill.type === 'dot') {
         player.send('施毒失败。');
       }

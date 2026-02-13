@@ -41,7 +41,49 @@ const TREASURE_EFFECTS = {
   treasure_taixu_script: { expPctPerLevel: 0.008, atkPctPerLevel: 0.004, maxMpPctPerLevel: 0.006 }
 };
 
+// 自动触发被动技能配置（命中后按概率触发）
+// type:
+// - burst: 追加伤害
+// - weak: 施加降伤
+// - armorBreak: 施加破甲
+// - heal: 自身回血
+// - mp: 自身回蓝
+const TREASURE_AUTO_PASSIVES = {
+  // 焚天系（输出）
+  treasure_fentian_mark: { type: 'burst', chanceBase: 0.04, chancePerStage: 0.005, powerBase: 1.0, powerPerLevel: 0.002, powerPerStage: 0.03 },
+  treasure_blood_blade: { type: 'heal', chanceBase: 0.04, chancePerStage: 0.005, healRatioBase: 0.1, healRatioPerStage: 0.01 },
+  treasure_chixiao_talisman: { type: 'burst', chanceBase: 0.04, chancePerStage: 0.005, powerBase: 1.0, powerPerLevel: 0.002, powerPerStage: 0.03 },
+  treasure_cangyan_flag: { type: 'burst', chanceBase: 0.04, chancePerStage: 0.005, powerBase: 1.0, powerPerLevel: 0.002, powerPerStage: 0.03 },
+  treasure_fenyu_wheel: { type: 'burst', chanceBase: 0.04, chancePerStage: 0.005, powerBase: 1.0, powerPerLevel: 0.002, powerPerStage: 0.03 },
+  treasure_jiehuo_token: { type: 'weak', chanceBase: 0.04, chancePerStage: 0.005, weakBase: 0.12, weakPerStage: 0.01, durationMs: 2000 },
+
+  // 玄冥系（生存）
+  treasure_xuanwu_core: { type: 'heal', chanceBase: 0.04, chancePerStage: 0.005, healRatioBase: 0.1, healRatioPerStage: 0.01 },
+  treasure_taiyin_mirror: { type: 'heal', chanceBase: 0.04, chancePerStage: 0.005, healRatioBase: 0.1, healRatioPerStage: 0.01 },
+  treasure_guiyuan_bead: { type: 'heal', chanceBase: 0.04, chancePerStage: 0.005, healRatioBase: 0.1, healRatioPerStage: 0.01 },
+  treasure_xuanshuang_wall: { type: 'heal', chanceBase: 0.04, chancePerStage: 0.005, healRatioBase: 0.1, healRatioPerStage: 0.01 },
+  treasure_beiming_armor: { type: 'heal', chanceBase: 0.04, chancePerStage: 0.005, healRatioBase: 0.1, healRatioPerStage: 0.01 },
+  treasure_hanyuan_stone: { type: 'heal', chanceBase: 0.04, chancePerStage: 0.005, healRatioBase: 0.1, healRatioPerStage: 0.01 },
+
+  // 幽罗系（控制）
+  treasure_youluo_lamp: { type: 'weak', chanceBase: 0.04, chancePerStage: 0.005, weakBase: 0.12, weakPerStage: 0.01, durationMs: 2000 },
+  treasure_shigou_nail: { type: 'burst', chanceBase: 0.04, chancePerStage: 0.005, powerBase: 1.0, powerPerLevel: 0.002, powerPerStage: 0.03 },
+  treasure_shehun_banner: { type: 'armorBreak', chanceBase: 0.04, chancePerStage: 0.005, defMulBase: 0.85, defMulPerStage: 0.01, durationMs: 2500 },
+  treasure_shiling_chain: { type: 'armorBreak', chanceBase: 0.04, chancePerStage: 0.005, defMulBase: 0.85, defMulPerStage: 0.01, durationMs: 2500 },
+  treasure_duanpo_bell: { type: 'weak', chanceBase: 0.04, chancePerStage: 0.005, weakBase: 0.12, weakPerStage: 0.01, durationMs: 2000 },
+  treasure_fushen_lu: { type: 'armorBreak', chanceBase: 0.04, chancePerStage: 0.005, defMulBase: 0.85, defMulPerStage: 0.01, durationMs: 2500 },
+
+  // 太一系（成长）
+  treasure_taiyi_disc: { type: 'mp', chanceBase: 0.04, chancePerStage: 0.005, mpRatioBase: 0.01, mpRatioPerStage: 0.001 },
+  treasure_zhoutian_jade: { type: 'burst', chanceBase: 0.04, chancePerStage: 0.005, powerBase: 1.0, powerPerLevel: 0.002, powerPerStage: 0.03 },
+  treasure_hongmeng_seal: { type: 'burst', chanceBase: 0.04, chancePerStage: 0.005, powerBase: 1.0, powerPerLevel: 0.002, powerPerStage: 0.03 },
+  treasure_taichu_scroll: { type: 'mp', chanceBase: 0.04, chancePerStage: 0.005, mpRatioBase: 0.01, mpRatioPerStage: 0.001 },
+  treasure_ziwei_disc: { type: 'mp', chanceBase: 0.04, chancePerStage: 0.005, mpRatioBase: 0.01, mpRatioPerStage: 0.001 },
+  treasure_taixu_script: { type: 'burst', chanceBase: 0.04, chancePerStage: 0.005, powerBase: 1.0, powerPerLevel: 0.002, powerPerStage: 0.03 }
+};
+
 export const TREASURE_IDS = Object.keys(TREASURE_EFFECTS);
+export const TREASURE_AUTO_PASSIVE_IDS = Object.keys(TREASURE_AUTO_PASSIVES);
 
 export function isTreasureItemId(itemId) {
   return Boolean(itemId && TREASURE_EFFECTS[itemId]);
@@ -55,6 +97,16 @@ export function getTreasureDef(itemId) {
     name: tmpl?.name || itemId,
     effects: TREASURE_EFFECTS[itemId]
   };
+}
+
+export function getTreasureAutoPassiveDef(itemId) {
+  if (!isTreasureItemId(itemId)) return null;
+  const def = TREASURE_AUTO_PASSIVES[itemId];
+  return def ? { ...def } : null;
+}
+
+export function getTreasureAutoPassives() {
+  return { ...TREASURE_AUTO_PASSIVES };
 }
 
 export function normalizeTreasureState(player) {
