@@ -542,6 +542,36 @@ function chunkRowsForInsert(rows, options = {}) {
   return chunks;
 }
 
+function normalizeImportRows(tableName, rows) {
+  if (!Array.isArray(rows) || rows.length === 0) return [];
+  if (tableName !== 'characters') return rows;
+  const picked = new Map();
+  for (const row of rows) {
+    const userId = Number(row?.user_id || 0);
+    const realmId = Number(row?.realm_id || 1) || 1;
+    const name = String(row?.name || '').trim();
+    if (!userId || !name) continue;
+    const key = `${userId}__${realmId}__${name}`;
+    const prev = picked.get(key);
+    if (!prev) {
+      picked.set(key, row);
+      continue;
+    }
+    const prevTs = Date.parse(prev.updated_at || 0) || 0;
+    const nextTs = Date.parse(row.updated_at || 0) || 0;
+    if (nextTs > prevTs) {
+      picked.set(key, row);
+      continue;
+    }
+    if (nextTs === prevTs) {
+      const prevId = Number(prev.id || 0);
+      const nextId = Number(row.id || 0);
+      if (nextId > prevId) picked.set(key, row);
+    }
+  }
+  return Array.from(picked.values());
+}
+
 if (ADMIN_BASE !== '/admin') {
   app.use('/admin', (req, res, next) => {
     const original = String(req.originalUrl || req.url || '');
@@ -2531,7 +2561,11 @@ app.post('/admin/import', async (req, res) => {
         continue;
       }
       if (!await trx.schema.hasTable(name)) continue;
-      const chunks = chunkRowsForInsert(rows, {
+      const normalizedRows = normalizeImportRows(name, rows);
+      if (normalizedRows.length !== rows.length) {
+        console.warn(`[import][${name}] deduped ${rows.length - normalizedRows.length} duplicate rows before insert`);
+      }
+      const chunks = chunkRowsForInsert(normalizedRows, {
         maxRows: config.db.client === 'sqlite' ? 200 : 100,
         maxBytes: config.db.client === 'sqlite' ? 2 * 1024 * 1024 : 512 * 1024
       });
@@ -2543,7 +2577,7 @@ app.post('/admin/import', async (req, res) => {
           throw new Error(`[import][${name}] ${detail}`);
         }
       }
-      counts[name] = rows.length;
+      counts[name] = normalizedRows.length;
     }
     if (config.db.client === 'sqlite') {
       await trx.raw('PRAGMA foreign_keys = ON;');
