@@ -2106,6 +2106,21 @@ app.post('/admin/realms/merge', async (req, res) => {
 // 自动备份功能
 const BACKUP_DIR = path.join(__dirname, '../data/backup');
 const BACKUP_RETENTION_DAYS = 30;
+const CONSIGNMENT_HISTORY_RETENTION_DAYS = Math.max(1, Math.floor(Number(config.consignmentHistoryRetentionDays || 90)));
+
+async function cleanupConsignmentHistory() {
+  try {
+    const cutoff = new Date(Date.now() - CONSIGNMENT_HISTORY_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+    const deleted = await knex('consignment_history')
+      .where('sold_at', '<', cutoff)
+      .del();
+    if (deleted > 0) {
+      console.log(`[ConsignmentHistory] deleted ${deleted} rows older than ${CONSIGNMENT_HISTORY_RETENTION_DAYS} days`);
+    }
+  } catch (err) {
+    console.error('[ConsignmentHistory] cleanup failed:', err);
+  }
+}
 
 async function performAutoBackup() {
   try {
@@ -2144,7 +2159,7 @@ async function performAutoBackup() {
     };
 
     // 写入备份文件
-    await import('node:fs/promises').then(fs => fs.writeFile(backupFilePath, JSON.stringify(payload, null, 2)));
+    await import('node:fs/promises').then(fs => fs.writeFile(backupFilePath, JSON.stringify(payload)));
     console.log(`[AutoBackup] 备份完成: ${backupFileName}`);
 
     // 清理超过30天的旧备份
@@ -2217,6 +2232,7 @@ async function cleanupSameDayBackups(dateStr, currentFileName) {
 function scheduleAutoBackup() {
   // 每天凌晨0点执行
   cron.schedule('0 0 * * *', async () => {
+    await cleanupConsignmentHistory();
     await performAutoBackup();
   });
 
@@ -11136,6 +11152,7 @@ async function start() {
   console.log(`Synced ${syncedDrops} mob drops from database.`);
 
   // 启动自动备份定时任务
+  await cleanupConsignmentHistory();
   scheduleAutoBackup();
 
   // 启动排行榜自动更新定时任务
