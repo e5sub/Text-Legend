@@ -1080,6 +1080,17 @@ function partyStatus(party) {
 }
 
 export async function handleCommand({ player, players, allCharacters, playersByName, input, source, send, partyApi, guildApi, tradeApi, rechargeApi, svipApi, mailApi, consignApi, onMove, logLoot, realmId, emitAnnouncement }) {
+  const resolveAllCharacters = async () => {
+    if (typeof allCharacters === 'function') {
+      const rows = await allCharacters();
+      return Array.isArray(rows) ? rows : [];
+    }
+    if (allCharacters && typeof allCharacters.then === 'function') {
+      const rows = await allCharacters;
+      return Array.isArray(rows) ? rows : [];
+    }
+    return Array.isArray(allCharacters) ? allCharacters : [];
+  };
   const [cmdRaw, ...rest] = input.trim().split(' ');
   const cmd = (cmdRaw || '').toLowerCase();
   const args = rest.join(' ').trim();
@@ -4220,7 +4231,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       }
 
       // 获取该服务器该职业的玩家（包括离线）
-      const allClassPlayers = await allCharacters;
+      const allClassPlayers = await resolveAllCharacters();
       const rankedPlayers = allClassPlayers
         .filter(p => p.classId === classId)
         .map(p => {
@@ -4269,7 +4280,8 @@ export async function handleCommand({ player, players, allCharacters, playersByN
 
       for (const cls of classes) {
         try {
-          const allClassPlayers = allCharacters.filter(p => p.classId === cls.id);
+          const allCharactersRows = await resolveAllCharacters();
+          const allClassPlayers = allCharactersRows.filter(p => p.classId === cls.id);
 
           const rankedPlayers = allClassPlayers
             .map(p => {

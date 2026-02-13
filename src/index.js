@@ -5437,6 +5437,33 @@ const AUTO_FULL_BOSS_MOVE_COOLDOWN_MS = 1000;
 const AUTO_FULL_CROSS_BOSS_COOLDOWN_MS = 30000;
 const AUTO_FULL_ROOM_CACHE_TTL = 15000;
 const autoFullRoomCache = new Map();
+const ALL_CHAR_CACHE_TTL_MS = 5000;
+const allCharactersCache = new Map();
+
+async function getAllCharactersCached(realmId = 1) {
+  const key = Number(realmId || 1) || 1;
+  const now = Date.now();
+  const cached = allCharactersCache.get(key);
+  if (cached && Array.isArray(cached.data) && (now - cached.at) <= ALL_CHAR_CACHE_TTL_MS) {
+    return cached.data;
+  }
+  if (cached?.inFlight) {
+    return cached.inFlight;
+  }
+  const inFlight = listAllCharacters(key)
+    .then((rows) => {
+      const data = Array.isArray(rows) ? rows : [];
+      allCharactersCache.set(key, { data, at: Date.now(), inFlight: null });
+      return data;
+    })
+    .catch((err) => {
+      allCharactersCache.delete(key);
+      throw err;
+    });
+  allCharactersCache.set(key, { data: cached?.data || null, at: cached?.at || 0, inFlight });
+  return inFlight;
+}
+
 const AUTO_FULL_BOSS_LIST = Array.from(new Set(
   Object.values(MOB_TEMPLATES)
     .filter((tpl) => tpl && tpl.name && isBossMob(tpl))
@@ -8199,7 +8226,7 @@ io.on('connection', (socket) => {
     await handleCommand({
       player,
       players: commandPlayers,
-      allCharacters: listAllCharacters(player.realmId || 1),
+      allCharacters: () => getAllCharactersCached(player.realmId || 1),
       playersByName: (name, realmId) => {
         const list = Array.from(players.values());
         return list.find((p) => p.name === name && (!realmId || p.realmId === realmId));
