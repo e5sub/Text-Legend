@@ -49,6 +49,9 @@ export async function up(knex) {
   }
 
   if (isMysql) {
+    // Keep SQLite-like case-sensitive uniqueness for usernames on MySQL.
+    await knex.raw('ALTER TABLE `users` MODIFY COLUMN `username` VARCHAR(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL');
+
     // Normalize FK column type for old/partial schemas created before this migration fix.
     await knex.raw('ALTER TABLE `sessions` MODIFY COLUMN `user_id` INT UNSIGNED NOT NULL');
     await knex.raw('ALTER TABLE `characters` MODIFY COLUMN `user_id` INT UNSIGNED NOT NULL');
