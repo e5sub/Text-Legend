@@ -2536,7 +2536,12 @@ app.post('/admin/import', async (req, res) => {
         maxBytes: config.db.client === 'sqlite' ? 2 * 1024 * 1024 : 512 * 1024
       });
       for (const chunk of chunks) {
-        await trx(name).insert(chunk);
+        try {
+          await trx(name).insert(chunk);
+        } catch (err) {
+          const detail = err?.sqlMessage || err?.message || String(err);
+          throw new Error(`[import][${name}] ${detail}`);
+        }
       }
       counts[name] = rows.length;
     }

@@ -1,6 +1,10 @@
 export async function up(knex) {
   const client = String(knex?.client?.config?.client || '').toLowerCase();
   const isMysql = client.includes('mysql');
+  const jsonText = (t, name) => {
+    if (isMysql) t.specificType(name, 'LONGTEXT').notNullable();
+    else t.text(name).notNullable();
+  };
 
   const hasUsers = await knex.schema.hasTable('users');
   if (!hasUsers) {
@@ -37,12 +41,12 @@ export async function up(knex) {
       t.integer('mp').notNullable();
       t.integer('max_hp').notNullable();
       t.integer('max_mp').notNullable();
-      t.text('stats_json').notNullable();
-      t.text('position_json').notNullable();
-      t.text('inventory_json').notNullable();
-      t.text('equipment_json').notNullable();
-      t.text('quests_json').notNullable();
-      t.text('flags_json').notNullable();
+      jsonText(t, 'stats_json');
+      jsonText(t, 'position_json');
+      jsonText(t, 'inventory_json');
+      jsonText(t, 'equipment_json');
+      jsonText(t, 'quests_json');
+      jsonText(t, 'flags_json');
       t.timestamp('updated_at').defaultTo(knex.fn.now());
       t.unique(['user_id', 'name']);
     });
@@ -55,6 +59,12 @@ export async function up(knex) {
     // Normalize FK column type for old/partial schemas created before this migration fix.
     await knex.raw('ALTER TABLE `sessions` MODIFY COLUMN `user_id` INT UNSIGNED NOT NULL');
     await knex.raw('ALTER TABLE `characters` MODIFY COLUMN `user_id` INT UNSIGNED NOT NULL');
+    await knex.raw('ALTER TABLE `characters` MODIFY COLUMN `stats_json` LONGTEXT NOT NULL');
+    await knex.raw('ALTER TABLE `characters` MODIFY COLUMN `position_json` LONGTEXT NOT NULL');
+    await knex.raw('ALTER TABLE `characters` MODIFY COLUMN `inventory_json` LONGTEXT NOT NULL');
+    await knex.raw('ALTER TABLE `characters` MODIFY COLUMN `equipment_json` LONGTEXT NOT NULL');
+    await knex.raw('ALTER TABLE `characters` MODIFY COLUMN `quests_json` LONGTEXT NOT NULL');
+    await knex.raw('ALTER TABLE `characters` MODIFY COLUMN `flags_json` LONGTEXT NOT NULL');
 
     try {
       await knex.raw('ALTER TABLE `sessions` ADD CONSTRAINT `sessions_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE');
