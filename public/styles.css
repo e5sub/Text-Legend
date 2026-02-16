@@ -6307,6 +6307,10 @@ body.dark .sponsor-markdown .sponsor-tip {
   overflow-y: auto;
 }
 
+.pet-book-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .pet-entry,
 .pet-book-entry {
   border: 1px solid var(--line);
@@ -6315,6 +6319,10 @@ body.dark .sponsor-markdown .sponsor-tip {
   background: rgba(255, 255, 255, 0.03);
   cursor: pointer;
   font-size: 13px;
+}
+
+.pet-book-entry {
+  cursor: default;
 }
 
 .pet-entry.active {

@@ -560,15 +560,10 @@ const petUi = {
   summary: document.getElementById('pet-summary'),
   list: document.getElementById('pet-list'),
   detail: document.getElementById('pet-detail'),
-  capture: document.getElementById('pet-capture'),
   setActive: document.getElementById('pet-set-active'),
   setRest: document.getElementById('pet-set-rest'),
   rename: document.getElementById('pet-rename'),
-  comprehend: document.getElementById('pet-comprehend'),
   bookList: document.getElementById('pet-book-list'),
-  buyBook: document.getElementById('pet-buy-book'),
-  buyBookQty: document.getElementById('pet-buy-book-qty'),
-  buyBookBtn: document.getElementById('pet-buy-book-btn'),
   useBook: document.getElementById('pet-use-book'),
   useBookBtn: document.getElementById('pet-use-book-btn'),
   synthMain: document.getElementById('pet-synth-main'),
@@ -2420,6 +2415,7 @@ function renderPetModal() {
   const petState = lastState?.pet || null;
   const pets = Array.isArray(petState?.pets) ? petState.pets : [];
   const books = Array.isArray(petState?.books) ? petState.books : [];
+  const ownedBooks = books.filter((book) => Number(book?.qty || 0) > 0);
   if (selectedPetId && !pets.some((pet) => pet.id === selectedPetId)) {
     selectedPetId = null;
   }
@@ -2431,7 +2427,7 @@ function renderPetModal() {
   if (petUi.summary) {
     const active = pets.find((pet) => pet.id === petState?.activePetId);
     const activeName = active ? active.name : '无';
-    petUi.summary.textContent = `宠物: ${pets.length}/${Number(petState?.maxOwned || 0)} | 出战: ${activeName} | 获取: BOSS掉落 | 领悟:${Number(petState?.comprehendCostGold || 0)}金 | 合成:${Number(petState?.synthesisCostGold || 0)}金`;
+    petUi.summary.textContent = `宠物: ${pets.length}/${Number(petState?.maxOwned || 0)} | 出战: ${activeName} | 合成:${Number(petState?.synthesisCostGold || 0)}金`;
   }
 
   petUi.list.innerHTML = '';
@@ -2464,33 +2460,24 @@ function renderPetModal() {
 
   if (petUi.bookList) {
     petUi.bookList.innerHTML = '';
-    if (!books.length) {
+    if (!ownedBooks.length) {
       const empty = document.createElement('div');
       empty.className = 'pet-book-entry';
       empty.textContent = '暂无技能书';
       petUi.bookList.appendChild(empty);
     } else {
-      books.forEach((book) => {
+      ownedBooks.forEach((book) => {
         const row = document.createElement('div');
         row.className = 'pet-book-entry';
-        row.textContent = `${book.name} (${book.skillName}) x${Number(book.qty || 0)} | ${Number(book.priceGold || 0)}金`;
+        row.textContent = `${book.name} (${book.skillName}) x${Number(book.qty || 0)}`;
         petUi.bookList.appendChild(row);
       });
     }
   }
 
-  if (petUi.buyBook) {
-    petUi.buyBook.innerHTML = '';
-    books.forEach((book) => {
-      const opt = document.createElement('option');
-      opt.value = book.id;
-      opt.textContent = `${book.name} (${book.priceGold}金)`;
-      petUi.buyBook.appendChild(opt);
-    });
-  }
   if (petUi.useBook) {
     petUi.useBook.innerHTML = '';
-    books.filter((book) => Number(book.qty || 0) > 0).forEach((book) => {
+    ownedBooks.forEach((book) => {
       const opt = document.createElement('option');
       opt.value = book.id;
       opt.textContent = `${book.name} x${book.qty}`;
@@ -8214,11 +8201,6 @@ if (repairUi.all) {
     socket.emit('cmd', { text: 'repair all' });
   });
 }
-if (petUi.capture) {
-  petUi.capture.addEventListener('click', () => {
-    showToast('宠物改为BOSS掉落获取');
-  });
-}
 if (petUi.setActive) {
   petUi.setActive.addEventListener('click', () => {
     if (!selectedPetId) return showToast('请先选择宠物');
@@ -8241,20 +8223,6 @@ if (petUi.rename) {
     });
     if (!name) return;
     sendPetAction('rename', { petId: selectedPetId, name: String(name).trim() });
-  });
-}
-if (petUi.comprehend) {
-  petUi.comprehend.addEventListener('click', () => {
-    if (!selectedPetId) return showToast('请先选择宠物');
-    sendPetAction('comprehend', { petId: selectedPetId });
-  });
-}
-if (petUi.buyBookBtn) {
-  petUi.buyBookBtn.addEventListener('click', () => {
-    const bookId = String(petUi.buyBook?.value || '');
-    const qty = Math.max(1, Number(petUi.buyBookQty?.value || 1));
-    if (!bookId) return showToast('请选择技能书');
-    sendPetAction('buy_book', { bookId, qty });
   });
 }
 if (petUi.useBookBtn) {
