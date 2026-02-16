@@ -786,12 +786,33 @@ function sendRoomDescription(player, send) {
     send('你所在的房间不存在。');
     return;
   }
-  const allExits = Object.entries(room.exits)
+  const exitsSource = { ...(room.exits || {}) };
+  if (player.position.zone === PERSONAL_BOSS_ZONE_ID && player.position.room === 'entry') {
+    const vipActive = normalizeVipStatus(player);
+    const svipActive = normalizeSvipStatus(player);
+    const svipPermanent = svipActive && !Number(player.flags?.svipExpiresAt || 0);
+    if (vipActive || svipActive) exitsSource.north = 'vip_lair';
+    else delete exitsSource.north;
+    if (svipActive) exitsSource.east = 'svip_lair';
+    else delete exitsSource.east;
+    if (svipPermanent) exitsSource.up = 'perma_lair';
+    else delete exitsSource.up;
+  }
+
+  const allExits = Object.entries(exitsSource)
     .map(([dir, dest]) => {
       let zoneId = player.position.zone;
       let roomId = dest;
       if (dest.includes(':')) {
         [zoneId, roomId] = dest.split(':');
+      }
+      if (
+        zoneId === PERSONAL_BOSS_ZONE_ID &&
+        player.position.zone === PERSONAL_BOSS_ZONE_ID &&
+        player.position.room === 'entry'
+      ) {
+        roomId = toPlayerPersonalBossRoomId(player, roomId);
+        ensurePersonalBossRoom(roomId);
       }
       const destZone = WORLD[zoneId];
       const destRoom = destZone?.rooms[roomId];

@@ -6963,7 +6963,19 @@ function buildRoomExits(zoneId, roomId, player = null) {
   const zone = WORLD[zoneId];
   const room = zone?.rooms?.[roomId];
   if (!room) return [];
-  const allExits = Object.entries(room.exits).map(([dir, dest]) => {
+  const exitsSource = { ...(room.exits || {}) };
+  if (player && zoneId === PERSONAL_BOSS_ZONE_ID && roomId === 'entry') {
+    const vipActive = normalizeVipStatus(player);
+    const svipActive = normalizeSvipStatus(player);
+    const svipPermanent = svipActive && !Number(player.flags?.svipExpiresAt || 0);
+    if (vipActive || svipActive) exitsSource.north = 'vip_lair';
+    else delete exitsSource.north;
+    if (svipActive) exitsSource.east = 'svip_lair';
+    else delete exitsSource.east;
+    if (svipPermanent) exitsSource.up = 'perma_lair';
+    else delete exitsSource.up;
+  }
+  const allExits = Object.entries(exitsSource).map(([dir, dest]) => {
     let destZoneId = zoneId;
     let destRoomId = dest;
     if (dest.includes(':')) {
