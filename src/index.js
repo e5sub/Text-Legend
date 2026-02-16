@@ -6749,7 +6749,7 @@ function applyOfflineRewards(player) {
     treasureExpPct: Number(player.flags?.treasureExpBonusPct || 0)
   });
   const expGain = Math.floor(offlineMinutes * player.level * offlineMultiplier * rewardMult);
-  const goldGain = Math.floor(offlineMinutes * player.level * offlineMultiplier * rewardMult);
+  const goldGain = Math.floor(offlineMinutes * player.level * offlineMultiplier);
   let fruitGain = 0;
   const fruitDropRate = getTrainingFruitDropRate();
   for (let i = 0; i < offlineMinutes; i += 1) {
@@ -10026,7 +10026,7 @@ async function processMobDeath(player, mob, online) {
         treasureExpPct: Number(member.flags?.treasureExpBonusPct || 0)
       });
       const finalExp = Math.floor(shareExp * rewardMult);
-      const finalGold = Math.floor(shareGold * rewardMult);
+      const finalGold = shareGold;
       member.gold += finalGold;
       const leveled = gainExp(member, finalExp);
       awardKill(member, mob.templateId);
