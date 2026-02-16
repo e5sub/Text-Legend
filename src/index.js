@@ -3787,7 +3787,6 @@ function tryRecoverZhuxianTowerEmptyRoom(player) {
   }
   spawnMobs(zoneId, roomId, roomRealmId);
   if (getAliveMobs(zoneId, roomId, roomRealmId).length > 0) {
-    player.send('浮图塔本层怪物状态异常，已自动刷新怪物。');
     player.forceStateRefresh = true;
     return true;
   }

@@ -1,4 +1,4 @@
-import { WORLD } from './world.js';
+﻿import { WORLD } from './world.js';
 import { MOB_TEMPLATES } from './mobs.js';
 import { randInt } from './utils.js';
 
@@ -38,7 +38,7 @@ function getZhuxianTowerFloorScale(zoneId, roomId) {
 function scaledStats(tpl, realmId = 1, zoneId, roomId) {
   if (!tpl) return { hp: 0, atk: 0, def: 0, mdef: 0 };
 
-  // 特殊BOSS：不进行任何属性缩放，直接使用GM设置的值（房间人数加成由外部函数处理）
+  // 特殊BOSS：仅应用击杀次数成长。
   if (tpl.specialBoss && !tpl.worldBoss) {
     const count = specialBossKillCounts.get(realmId) || 0;
     const growth = 1 + Math.floor(count / 5) * 0.01;
@@ -50,7 +50,7 @@ function scaledStats(tpl, realmId = 1, zoneId, roomId) {
     };
   }
 
-  // 世界BOSS：只保留击杀成长机制（每击杀5次提升1%），不进行其他缩放（房间人数加成由外部函数处理）
+  // 世界BOSS：仅应用击杀次数成长。
   if (tpl.worldBoss) {
     const count = worldBossKillCounts.get(realmId) || 0;
     const growth = 1 + Math.floor(count / 5) * 0.01;
@@ -62,7 +62,7 @@ function scaledStats(tpl, realmId = 1, zoneId, roomId) {
     };
   }
 
-  // 修真BOSS：按击杀次数成长（每5次 +1%）
+  // 修真BOSS：应用击杀次数成长。
   if (tpl.id && tpl.id.startsWith('cultivation_boss_')) {
     const count = cultivationBossKillCounts.get(realmId) || 0;
     const growth = 1 + Math.floor(count / 5) * 0.01;
@@ -78,7 +78,7 @@ function scaledStats(tpl, realmId = 1, zoneId, roomId) {
   if (!isBossTemplate(tpl)) {
     let cultivationLevelScale = 1;
     const towerFloorScale = getZhuxianTowerFloorScale(zoneId, roomId);
-    // 修真普通怪物：根据地图等级成长（每级 +50%）
+    // 修真地图普通怪：按房间修真等级进行属性成长。
     if (tpl.id && tpl.id.startsWith('cultivation_') && zoneId === 'cultivation' && roomId) {
       const room = getRoom(zoneId, roomId);
       if (room && typeof room.minCultivationLevel === 'number') {
@@ -96,7 +96,7 @@ function scaledStats(tpl, realmId = 1, zoneId, roomId) {
     };
   }
 
-  // 其他BOSS（不包括worldBoss和specialBoss）
+  // 其他BOSS（不包含世界BOSS/特殊BOSS）
   let def = Math.floor(tpl.def * BOSS_SCALE.def * MOB_STAT_SCALE * MOB_DEF_SCALE);
   return {
     hp: Math.floor(tpl.hp * MOB_HP_SCALE * BOSS_SCALE.hp * MOB_STAT_SCALE),
@@ -196,13 +196,16 @@ export function spawnMobs(zoneId, roomId, realmId = 1) {
     let mob = mobList.find((m) => m.slotIndex === index);
     const tpl = MOB_TEMPLATES[templateId];
     const scaled = scaledStats(tpl, realmId, zoneId, roomId);
-    const cached = RESPAWN_CACHE.get(respawnKey(realmId, zoneId, roomId, index));
-    if (noRespawn && cached) {
+    const cacheKeyValue = respawnKey(realmId, zoneId, roomId, index);
+    const cachedRaw = RESPAWN_CACHE.get(cacheKeyValue);
+    if (noRespawn && cachedRaw) {
       RESPAWN_CACHE.delete(respawnKey(realmId, zoneId, roomId, index));
       if (respawnStore && respawnStore.clear) {
         respawnStore.clear(realmId, zoneId, roomId, index);
       }
     }
+    // 浮图塔房间不使用重生缓存，避免旧缓存导致“死亡怪”状态残留。
+    const cached = noRespawn ? null : cachedRaw;
     if (mob && mob.hp <= 0 && noRespawn) {
       mob.respawnAt = null;
       return;
@@ -212,7 +215,7 @@ export function spawnMobs(zoneId, roomId, realmId = 1) {
     }
     if (!mob) {
       if (cached && cached.respawnAt > now) {
-        // 检查缓存的怪物类型是否匹配当前配置
+        // 缓存模板与当前配置一致：保留死亡占位，等待重生时间。
         if (!cached.templateId || cached.templateId === templateId) {
           mob = {
             id: `${templateId}-${Date.now()}-${randInt(100, 999)}`,
@@ -235,13 +238,13 @@ export function spawnMobs(zoneId, roomId, realmId = 1) {
           mobList.push(mob);
           return;
         }
-        // 缓存的怪物类型不匹配，清理旧缓存，直接创建新怪物
+        // 缓存模板与当前配置不一致：清理旧缓存并创建新怪物。
         RESPAWN_CACHE.delete(respawnKey(realmId, zoneId, roomId, index));
         if (respawnStore && respawnStore.clear) {
           respawnStore.clear(realmId, zoneId, roomId, index);
         }
       } else if (cached && cached.respawnAt <= now && cached.currentHp !== null && cached.currentHp !== undefined) {
-        // 缓存已过期但有血量数据：恢复怪物血量（重启服务器加载）
+        // 缓存已过期但有血量快照：用于重启后恢复怪物当前血量。
         mob = {
           id: `${templateId}-${Date.now()}-${randInt(100, 999)}`,
           templateId,
@@ -266,7 +269,7 @@ export function spawnMobs(zoneId, roomId, realmId = 1) {
         mobList.push(mob);
         return;
       } else if (cached && cached.respawnAt <= now) {
-        // 缓存已过期，清理缓存记录
+        // 缓存已过期：清理旧缓存记录。
         RESPAWN_CACHE.delete(respawnKey(realmId, zoneId, roomId, index));
         if (respawnStore && respawnStore.clear) {
           respawnStore.clear(realmId, zoneId, roomId, index);
