@@ -84,7 +84,8 @@ data class GameState(
     val effect_reset_config: EffectResetConfig? = null,
     val treasure_sets: List<TreasureSetInfo> = emptyList(),
     val auto_full_boss_list: List<String> = emptyList(),
-    val treasure: TreasureStateInfo? = null
+    val treasure: TreasureStateInfo? = null,
+    val pet: PetState? = null
 )
 
 @Serializable
@@ -544,4 +545,64 @@ data class ChatLocation(
     val label: String = "",
     val zoneId: String? = null,
     val roomId: String? = null
+)
+
+// 宠物系统数据模型
+@Serializable
+data class PetState(
+    @SerialName("active_pet_id") val activePetId: String? = null,
+    val pets: List<PetInfo> = emptyList(),
+    val books: Map<String, Int> = emptyMap()
+)
+
+@Serializable
+data class PetInfo(
+    val id: String = "",
+    val rarity: String = "",
+    val level: Int = 1,
+    val exp: Long = 0,
+    val name: String = "",
+    val role: String = "",
+    val growth: Double = 1.0,
+    val aptitude: PetAptitude = PetAptitude(),
+    @SerialName("skill_slots") val skillSlots: Int = 3,
+    val skills: List<String> = emptyList()
+)
+
+@Serializable
+data class PetAptitude(
+    val hp: Int = 0,
+    val atk: Int = 0,
+    val def: Int = 0,
+    val mag: Int = 0,
+    val agility: Int = 0
+)
+
+@Serializable
+data class PetSkillInfo(
+    val id: String = "",
+    val name: String = "",
+    val grade: String = ""
+)
+
+@Serializable
+data class PetBookInfo(
+    val id: String = "",
+    val name: String = "",
+    @SerialName("skill_id") val skillId: String = "",
+    @SerialName("skill_name") val skillName: String = "",
+    val tier: String = "",
+    @SerialName("price_gold") val priceGold: Int = 0
+)
+
+@Serializable
+data class PetCombatStats(
+    val hp: Int = 0,
+    val atk: Int = 0,
+    val def: Int = 0,
+    val mag: Int = 0,
+    val speed: Int = 0,
+    val crit: Double = 0.0,
+    val dodge: Double = 0.0,
+    val lifesteal: Double = 0.0
 )

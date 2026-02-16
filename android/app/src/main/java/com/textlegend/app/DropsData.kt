@@ -269,6 +269,28 @@ object DropsData {
                     DropEntry("魔龙教主", "0.3%"), DropEntry("暗之沃玛教主", "0.3%"), DropEntry("暗之祖玛教主", "0.3%"), DropEntry("暗之赤月恶魔", "0.3%"), DropEntry("暗之虹魔教主", "0.3%"), DropEntry("暗之骷髅精灵", "0.3%"), DropEntry("世界BOSS", "0.8%"), DropEntry("跨服BOSS", "0.8%"), DropEntry("沙巴克BOSS", "1.5%")
                 ))
             )
+        ),
+        DropSet(
+            id = "pet",
+            name = "宠物",
+            items = listOf(
+                DropItem("pet_normal", "普通宠物(10种)", listOf(DropEntry("沃玛教主", "8%"), DropEntry("祖玛教主", "6%"))),
+                DropItem("pet_excellent", "优秀宠物(10种)", listOf(DropEntry("祖玛教主", "7%"), DropEntry("触龙神", "5%"), DropEntry("白野猪", "4%"))),
+                DropItem("pet_rare", "稀有宠物(10种)", listOf(DropEntry("赤月恶魔", "7%"), DropEntry("黄泉教主", "5%"), DropEntry("双头金刚", "4%"))),
+                DropItem("pet_epic", "史诗宠物(10种)", listOf(DropEntry("魔龙教主", "8%"), DropEntry("世界BOSS", "8%"), DropEntry("跨服BOSS", "7%"))),
+                DropItem("pet_legendary", "传说宠物(10种)", listOf(DropEntry("魔龙教主", "9%"), DropEntry("世界BOSS", "9%"), DropEntry("跨服BOSS", "8%"), DropEntry("沙巴克BOSS", "8%"))),
+                DropItem("pet_supreme", "至尊宠物(10种)", listOf(DropEntry("世界BOSS", "10%"), DropEntry("跨服BOSS", "10%"), DropEntry("沙巴克BOSS", "8%"))),
+                DropItem("pet_ultimate", "终极宠物(10种)", listOf(DropEntry("世界BOSS", "12%"), DropEntry("跨服BOSS", "12%"), DropEntry("沙巴克BOSS", "10%")))
+            )
+        ),
+        DropSet(
+            id = "petbook",
+            name = "宠物技能书",
+            items = listOf(
+                DropItem("pet_book_low", "普通技能书(30种)", listOf(DropEntry("祖玛教主", "25%"), DropEntry("触龙神", "25%"), DropEntry("赤月恶魔", "30%"), DropEntry("白野猪", "25%"))),
+                DropItem("pet_book_high", "高级技能书(15种)", listOf(DropEntry("魔龙教主", "5%"), DropEntry("世界BOSS", "5%"), DropEntry("跨服BOSS", "5%"), DropEntry("沙巴克BOSS", "6%"))),
+                DropItem("pet_book_special", "特殊技能书(6种)", listOf(DropEntry("魔龙教主", "5%"), DropEntry("世界BOSS", "6%"), DropEntry("跨服BOSS", "6%"), DropEntry("沙巴克BOSS", "8%")))
+            )
         )
     )
 }

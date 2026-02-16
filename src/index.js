@@ -7286,13 +7286,13 @@ const PET_RARITY_GROWTH_RANGE = {
   ultimate: [1.62, 1.95]
 };
 const PET_RARITY_APTITUDE_RANGE = {
-  normal: { hp: [1400, 2600], atk: [70, 130], def: [60, 120], mag: [70, 130], speed: [60, 120] },
-  excellent: { hp: [1900, 3200], atk: [95, 160], def: [85, 150], mag: [95, 160], speed: [85, 150] },
-  rare: { hp: [2500, 3900], atk: [125, 200], def: [110, 190], mag: [125, 200], speed: [110, 190] },
-  epic: { hp: [3200, 4700], atk: [160, 245], def: [140, 230], mag: [160, 245], speed: [140, 230] },
-  legendary: { hp: [4000, 5600], atk: [195, 295], def: [175, 280], mag: [195, 295], speed: [175, 280] },
-  supreme: { hp: [5000, 6600], atk: [240, 360], def: [220, 340], mag: [240, 360], speed: [220, 340] },
-  ultimate: { hp: [6200, 8000], atk: [300, 440], def: [280, 420], mag: [300, 440], speed: [280, 420] }
+  normal: { hp: [1400, 2600], atk: [70, 130], def: [60, 120], mag: [70, 130], agility: [60, 120] },
+  excellent: { hp: [1900, 3200], atk: [95, 160], def: [85, 150], mag: [95, 160], agility: [85, 150] },
+  rare: { hp: [2500, 3900], atk: [125, 200], def: [110, 190], mag: [125, 200], agility: [110, 190] },
+  epic: { hp: [3200, 4700], atk: [160, 245], def: [140, 230], mag: [160, 245], agility: [140, 230] },
+  legendary: { hp: [4000, 5600], atk: [195, 295], def: [175, 280], mag: [195, 295], agility: [175, 280] },
+  supreme: { hp: [5000, 6600], atk: [240, 360], def: [220, 340], mag: [240, 360], agility: [220, 340] },
+  ultimate: { hp: [6200, 8000], atk: [300, 440], def: [280, 420], mag: [300, 440], agility: [280, 420] }
 };
 
 const PET_SKILL_LIBRARY = [
@@ -7662,7 +7662,7 @@ function calcPetPower(pet) {
     Number(aptitude.atk || 0) * 1.8 +
     Number(aptitude.def || 0) * 1.2 +
     Number(aptitude.mag || 0) * 1.4 +
-    Number(aptitude.speed || 0) * 1.0;
+    Number(aptitude.agility || 0) * 1.2;
   const growth = Number(pet.growth || 1);
   const slots = Number(pet.skillSlots || PET_BASE_SKILL_SLOTS);
   const skillCount = Array.isArray(pet.skills) ? pet.skills.length : 0;
@@ -7702,7 +7702,7 @@ function normalizePetState(player) {
         atk: Math.max(aptRange.atk[0], Math.min(aptRange.atk[1], Math.floor(Number(aptitudeRaw.atk || aptRange.atk[0])))),
         def: Math.max(aptRange.def[0], Math.min(aptRange.def[1], Math.floor(Number(aptitudeRaw.def || aptRange.def[0])))),
         mag: Math.max(aptRange.mag[0], Math.min(aptRange.mag[1], Math.floor(Number(aptitudeRaw.mag || aptRange.mag[0])))),
-        speed: Math.max(aptRange.speed[0], Math.min(aptRange.speed[1], Math.floor(Number(aptitudeRaw.speed || aptRange.speed[0]))))
+        agility: Math.max(aptRange.agility[0], Math.min(aptRange.agility[1], Math.floor(Number(aptitudeRaw.agility || aptRange.agility[0]))))
       };
       const skillSlots = Math.max(PET_BASE_SKILL_SLOTS, Math.min(PET_MAX_SKILL_SLOTS, Math.floor(Number(pet.skillSlots || PET_BASE_SKILL_SLOTS))));
       const rawSkills = Array.isArray(pet.skills) ? pet.skills : [];
@@ -7817,7 +7817,7 @@ function createRandomPet(rarity = 'normal') {
       atk: randInt(aptRange.atk[0], aptRange.atk[1]),
       def: randInt(aptRange.def[0], aptRange.def[1]),
       mag: randInt(aptRange.mag[0], aptRange.mag[1]),
-      speed: randInt(aptRange.speed[0], aptRange.speed[1])
+      agility: randInt(aptRange.agility[0], aptRange.agility[1])
     },
     skillSlots: PET_BASE_SKILL_SLOTS,
     skills
@@ -7833,6 +7833,13 @@ function rollPetDropForBoss(mobTemplate, bonus = 1) {
   if (Math.random() > chance) return null;
   const rarity = pickPetDropRarity(maxRarity);
   return rarity ? createRandomPet(rarity) : null;
+}
+
+function rollWillowDewDropForBoss(mobTemplate, bonus = 1) {
+  if (!mobTemplate || !mobTemplate.isBoss) return false;
+  // 金柳露掉落概率1%，受加成影响
+  const chance = Math.max(0, Math.min(0.5, 0.01 * Math.max(0.5, Number(bonus || 1))));
+  return Math.random() < chance;
 }
 
 function rollPetBookDropsForBoss(mobTemplate, bonus = 1) {
@@ -11389,6 +11396,19 @@ async function processMobDeath(player, mob, online) {
       });
       if (labels.length > 0) {
         owner.send(`pet book drop: ${labels.join(', ')}`);
+        if (owner?.userId) lootOwnersToSave.add(owner);
+      }
+    });
+  }
+  // 金柳露掉落（所有BOSS）
+  if (isBossMob(template) && dropTargets.length > 0) {
+    dropTargets.forEach(({ player: owner, damageRatio }) => {
+      if (!owner) return;
+      const chanceBonus = Math.max(0.35, Math.min(1.5, Number(damageRatio || 1)));
+      if (rollWillowDewDropForBoss(template, chanceBonus)) {
+        addItem(owner, 'willow_dew', 1);
+        owner.send('获得了金柳露 x1');
+        logLoot(`[loot][willow_dew] ${owner.name} <- willow_dew x1 (${template.id})`);
         if (owner?.userId) lootOwnersToSave.add(owner);
       }
     });

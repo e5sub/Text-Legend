@@ -17,6 +17,16 @@ function getActivePetSkillSet(player) {
   );
 }
 
+function getActivePetAgilityBonus(player) {
+  const petState = player?.flags?.pet;
+  if (!petState || !Array.isArray(petState.pets) || !petState.activePetId) return 0;
+  const active = petState.pets.find((pet) => pet && pet.id === petState.activePetId);
+  if (!active || !active.aptitude) return 0;
+  // 敏捷资质每100点提供1%的闪避和命中加成
+  const agility = Number(active.aptitude.agility || 0);
+  return agility / 100;
+}
+
 function rarityByPrice(item) {
   if (!item) return 'common';
   if (item.rarity) return item.rarity;
@@ -470,6 +480,7 @@ export function computeDerived(player) {
   let comboEffectCount = 0;
   let healblockEffectCount = 0;
   const petSkills = getActivePetSkillSet(player);
+  const petAgilityBonus = getActivePetAgilityBonus(player);
   if (petSkills.has('pet_bash')) petAtkPct += 0.08;
   if (petSkills.has('pet_guard')) {
     petDefPct += 0.12;
@@ -477,6 +488,11 @@ export function computeDerived(player) {
   }
   if (petSkills.has('pet_dodge')) evadeChance += 0.06;
   if (petSkills.has('pet_focus')) player.flags.petHitBonusPct += 8;
+  // 宠物敏捷资质对闪避和命中的加成
+  if (petAgilityBonus > 0) {
+    evadeChance += petAgilityBonus * 0.01;
+    player.flags.petHitBonusPct += petAgilityBonus;
+  }
   if (petSkills.has('pet_spirit')) {
     petMagPct += 0.1;
     petSpiritPct += 0.1;

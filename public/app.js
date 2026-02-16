@@ -4473,6 +4473,26 @@ const SET_DROPS = {
       { id: 'ring_break', name: '破防戒指', drops: [{ mob: '魔龙教主', chance: '0.5%' }, { mob: '暗之沃玛教主', chance: '0.5%' }, { mob: '暗之祖玛教主', chance: '0.5%' }, { mob: '暗之赤月恶魔', chance: '0.5%' }, { mob: '暗之虹魔教主', chance: '0.5%' }, { mob: '暗之骷髅精灵', chance: '0.5%' }, { mob: '世界BOSS', chance: '1.5%' }, { mob: '跨服BOSS', chance: '1.5%' }, { mob: '沙巴克BOSS', chance: '2%' }] },
       { id: 'ring_recall', name: '记忆戒指', drops: [{ mob: '魔龙教主', chance: '0.3%' }, { mob: '暗之沃玛教主', chance: '0.3%' }, { mob: '暗之祖玛教主', chance: '0.3%' }, { mob: '暗之赤月恶魔', chance: '0.3%' }, { mob: '暗之虹魔教主', chance: '0.3%' }, { mob: '暗之骷髅精灵', chance: '0.3%' }, { mob: '世界BOSS', chance: '0.8%' }, { mob: '跨服BOSS', chance: '0.8%' }, { mob: '沙巴克BOSS', chance: '1.5%' }] }
     ]
+  },
+  pet: {
+    name: '宠物',
+    items: [
+      { id: 'pet_normal', name: '普通宠物(10种)', drops: [{ mob: '沃玛教主', chance: '8%' }, { mob: '祖玛教主', chance: '6%' }] },
+      { id: 'pet_excellent', name: '优秀宠物(10种)', drops: [{ mob: '祖玛教主', chance: '7%' }, { mob: '触龙神', chance: '5%' }, { mob: '白野猪', chance: '4%' }] },
+      { id: 'pet_rare', name: '稀有宠物(10种)', drops: [{ mob: '赤月恶魔', chance: '7%' }, { mob: '黄泉教主', chance: '5%' }, { mob: '双头金刚', chance: '4%' }] },
+      { id: 'pet_epic', name: '史诗宠物(10种)', drops: [{ mob: '魔龙教主', chance: '8%' }, { mob: '世界BOSS', chance: '8%' }, { mob: '跨服BOSS', chance: '7%' }] },
+      { id: 'pet_legendary', name: '传说宠物(10种)', drops: [{ mob: '魔龙教主', chance: '9%' }, { mob: '世界BOSS', chance: '9%' }, { mob: '跨服BOSS', chance: '8%' }, { mob: '沙巴克BOSS', chance: '8%' }] },
+      { id: 'pet_supreme', name: '至尊宠物(10种)', drops: [{ mob: '世界BOSS', chance: '10%' }, { mob: '跨服BOSS', chance: '10%' }, { mob: '沙巴克BOSS', chance: '8%' }] },
+      { id: 'pet_ultimate', name: '终极宠物(10种)', drops: [{ mob: '世界BOSS', chance: '12%' }, { mob: '跨服BOSS', chance: '12%' }, { mob: '沙巴克BOSS', chance: '10%' }] }
+    ]
+  },
+  petbook: {
+    name: '宠物技能书',
+    items: [
+      { id: 'pet_book_low', name: '普通技能书(30种)', drops: [{ mob: '祖玛教主', chance: '25%' }, { mob: '触龙神', chance: '25%' }, { mob: '赤月恶魔', chance: '30%' }, { mob: '白野猪', chance: '25%' }] },
+      { id: 'pet_book_high', name: '高级技能书(15种)', drops: [{ mob: '魔龙教主', chance: '5%' }, { mob: '世界BOSS', chance: '5%' }, { mob: '跨服BOSS', chance: '5%' }, { mob: '沙巴克BOSS', chance: '6%' }] },
+      { id: 'pet_book_special', name: '特殊技能书(6种)', drops: [{ mob: '魔龙教主', chance: '5%' }, { mob: '世界BOSS', chance: '6%' }, { mob: '跨服BOSS', chance: '6%' }, { mob: '沙巴克BOSS', chance: '8%' }] }
+    ]
   }
 };
 

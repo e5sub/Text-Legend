@@ -53,6 +53,34 @@ import {
 const ALLOWED_EFFECTS = ['combo', 'fury', 'unbreakable', 'defense', 'dodge', 'poison', 'healblock'];
 const AUTO_FULL_TRIAL_MS = 10 * 60 * 1000;
 
+// 宠物系统常量（与index.js保持同步）
+const PET_RARITY_ORDER = ['normal', 'excellent', 'rare', 'epic', 'legendary', 'supreme', 'ultimate'];
+const PET_RARITY_APTITUDE_RANGE = {
+  normal: { hp: [1400, 2600], atk: [70, 130], def: [60, 120], mag: [70, 130], agility: [60, 120] },
+  excellent: { hp: [1900, 3200], atk: [95, 160], def: [85, 150], mag: [95, 160], agility: [85, 150] },
+  rare: { hp: [2500, 3900], atk: [125, 200], def: [110, 190], mag: [125, 200], agility: [110, 190] },
+  epic: { hp: [3200, 4700], atk: [160, 245], def: [140, 230], mag: [160, 245], agility: [140, 230] },
+  legendary: { hp: [4000, 5600], atk: [195, 295], def: [175, 280], mag: [195, 295], agility: [175, 280] },
+  supreme: { hp: [5000, 6600], atk: [240, 360], def: [220, 340], mag: [240, 360], agility: [220, 340] },
+  ultimate: { hp: [6200, 8000], atk: [300, 440], def: [280, 420], mag: [300, 440], agility: [280, 420] }
+};
+const PET_BASE_SKILL_SLOTS = 3;
+
+// 宠物状态标准化
+function normalizePetState(player) {
+  if (!player) return null;
+  if (!player.flags) player.flags = {};
+  if (!player.flags.pet || typeof player.flags.pet !== 'object') {
+    player.flags.pet = {};
+  }
+  const state = player.flags.pet;
+  if (!Array.isArray(state.pets)) state.pets = [];
+  if (!state.books || typeof state.books !== 'object') {
+    state.books = {};
+  }
+  return state;
+}
+
 function getAutoFullTrialDayKey(now = Date.now()) {
   const date = new Date(now);
   const yyyy = date.getFullYear();
@@ -2725,7 +2753,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           const raw = String(args || '').trim();
           const rest = raw.replace(/^boss\s*/i, '').trim();
           if (!rest) {
-            // 空参数视为“不打BOSS”
+            // 空参数视为"不打BOSS"
             player.flags.autoFullBossFilter = [];
             player.forceStateRefresh = true;
             send('智能挂机BOSS：不打BOSS');
@@ -4470,6 +4498,86 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       }
 
       send('排行榜称号已更新');
+      return;
+    }
+    case 'pet':
+    case '宠物': {
+      if (source !== 'ui') return;
+      const parts = String(args || '').split(/\s+/).filter(Boolean);
+      const sub = (parts[0] || '').toLowerCase();
+      
+      if (sub === 'activate') {
+        // 出战宠物
+        const petId = parts[1];
+        if (!petId) return send('请指定要出战的宠物ID。');
+        const petState = normalizePetState(player);
+        if (!petState) return send('宠物系统未初始化。');
+        const pet = petState.pets.find((p) => p.id === petId);
+        if (!pet) return send('找不到指定的宠物。');
+        petState.activePetId = petId;
+        computeDerived(player);
+        player.forceStateRefresh = true;
+        send(`${pet.name} 已出战！`);
+        return;
+      }
+
+      if (sub === 'release') {
+        // 收回宠物
+        const petState = normalizePetState(player);
+        if (!petState) return send('宠物系统未初始化。');
+        petState.activePetId = null;
+        computeDerived(player);
+        player.forceStateRefresh = true;
+        send('宠物已收回。');
+        return;
+      }
+      
+      if (sub === 'reset') {
+        // 使用金柳露重置宠物资质
+        const petId = parts[1];
+        if (!petId) return send('请指定要重置的宠物ID。');
+        const petState = normalizePetState(player);
+        if (!petState) return send('宠物系统未初始化。');
+        const pet = petState.pets.find((p) => p.id === petId);
+        if (!pet) return send('找不到指定的宠物。');
+        
+        // 检查金柳露数量
+        const willowDewCount = (player.items || []).filter((i) => i.id === 'willow_dew').length;
+        if (willowDewCount < 1) return send('金柳露数量不足，需要1个金柳露。');
+        
+        // 消耗金柳露
+        removeItem(player, 'willow_dew', 1);
+        
+        // 重新生成资质
+        const safeRarity = PET_RARITY_ORDER.includes(String(pet.rarity || '')) ? String(pet.rarity) : 'normal';
+        const aptRange = PET_RARITY_APTITUDE_RANGE[safeRarity] || PET_RARITY_APTITUDE_RANGE.normal;
+        pet.aptitude = {
+          hp: randInt(aptRange.hp[0], aptRange.hp[1]),
+          atk: randInt(aptRange.atk[0], aptRange.atk[1]),
+          def: randInt(aptRange.def[0], aptRange.def[1]),
+          mag: randInt(aptRange.mag[0], aptRange.mag[1]),
+          agility: randInt(aptRange.agility[0], aptRange.agility[1])
+        };
+        
+        // 等级归零
+        pet.level = 1;
+        pet.exp = 0;
+        
+        // 重置技能槽数量
+        pet.skillSlots = PET_BASE_SKILL_SLOTS;
+        
+        // 如果是出战宠物，刷新属性
+        if (petState.activePetId === petId) {
+          computeDerived(player);
+          player.forceStateRefresh = true;
+        }
+        
+        send(`${pet.name} 的资质已重置，等级已归零！`);
+        logLoot(`[pet][reset] ${player.name} reset pet ${pet.id} (${pet.name})`);
+        return;
+      }
+      
+      send('宠物命令用法: pet activate <宠物ID> / pet release / pet reset <宠物ID>');
       return;
     }
     default:

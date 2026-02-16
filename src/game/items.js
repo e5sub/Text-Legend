@@ -17,6 +17,7 @@
 
   training_fruit: { id: 'training_fruit', name: '修炼果', type: 'consumable', price: 1800, untradable: true, unconsignable: true, unmail: true },
   treasure_exp_material: { id: 'treasure_exp_material', name: '法宝经验丹', type: 'material', price: 0, untradable: true, unconsignable: true, unmail: true },
+  willow_dew: { id: 'willow_dew', name: '金柳露', type: 'material', price: 0, untradable: true, unconsignable: true, unmail: true },
   // 法宝（第一期）
   // 焚天·战魂系（输出）
   treasure_fentian_mark: { id: 'treasure_fentian_mark', name: '焚天战印', type: 'material', rarity: 'supreme', price: 0, untradable: true, unconsignable: true, unmail: true },

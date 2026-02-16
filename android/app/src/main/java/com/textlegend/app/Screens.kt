@@ -458,6 +458,7 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                                     "effect" -> innerNav.navigate("effect")
                                     "repair" -> innerNav.navigate("repair")
                                     "changeclass" -> innerNav.navigate("changeclass")
+                                    "pet" -> innerNav.navigate("pet")
                                     "drops" -> innerNav.navigate("drops")
                                     "treasure" -> innerNav.navigate("treasure")
                                     "rank" -> innerNav.navigate("rank")
@@ -492,6 +493,7 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
             composable("effect") { EffectDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
             composable("repair") { RepairDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
             composable("changeclass") { ChangeClassDialog(vm = vm, onDismiss = { innerNav.popBackStack() }) }
+            composable("pet") { PetDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
             composable("drops") { DropsDialog(state = state, onDismiss = { innerNav.popBackStack() }) }
             composable("treasure") { TreasureDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
             composable("rank") { RankDialog(state = state, vm = vm, onDismiss = { innerNav.popBackStack() }) }
@@ -1836,6 +1838,7 @@ private fun ActionsTab(
         ActionItem("装备锻造", "refine", R.drawable.ic_refine),
         ActionItem("法宝", "treasure", R.drawable.ic_magic),
         ActionItem("特效重置", "effect", R.drawable.ic_magic),
+        ActionItem("宠物系统", "pet", R.drawable.ic_magic),
         ActionItem("套装掉落", "drops", R.drawable.ic_drops),
         ActionItem("修炼", "train", R.drawable.ic_train)
     )
