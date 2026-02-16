@@ -7610,7 +7610,7 @@ function checkMobRespawn(realmId = 1) {
           return tpl && tpl.specialBoss;
         });
 
-        if (specialBossRespawned) {
+        if (specialBossRespawned && zoneId !== PERSONAL_BOSS_ZONE_ID) {
           const bossName = specialBossRespawned.name || 'BOSS';
           const locationData = {
             zoneId,
