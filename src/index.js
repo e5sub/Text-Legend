@@ -3462,8 +3462,8 @@ function cultivationRewardMultiplier(player) {
   return 1 + (level + 1) * 0.1;
 }
 
-function totalRewardMultiplier({ vipActive, guildActive, cultivationMult = 1, partyMult = 1, treasureExpPct = 0 }) {
-  const vipBonus = vipActive ? 1 : 0;
+function totalRewardMultiplier({ vipActive, svipActive = false, guildActive, cultivationMult = 1, partyMult = 1, treasureExpPct = 0 }) {
+  const vipBonus = (vipActive ? 1 : 0) + (svipActive ? 1 : 0);
   const guildBonus = guildActive ? 1 : 0;
   const cultivationBonus = Math.max(0, (Number(cultivationMult) || 1) - 1);
   const partyBonus = Math.max(0, (Number(partyMult) || 1) - 1);
@@ -6742,6 +6742,7 @@ function applyOfflineRewards(player) {
   const cultivationMult = cultivationRewardMultiplier(player);
   const rewardMult = totalRewardMultiplier({
     vipActive: isVipActive(player),
+    svipActive: isSvipActive(player),
     guildActive: Boolean(player.guild),
     cultivationMult,
     partyMult: 1,
@@ -7419,6 +7420,7 @@ async function buildState(player) {
         const cultivationMult = cultivationRewardMultiplier(player);
         const rewardMult = totalRewardMultiplier({
           vipActive: isVipActive(player),
+          svipActive: isSvipActive(player),
           guildActive: Boolean(player.guild),
           cultivationMult,
           partyMult,
@@ -10017,6 +10019,7 @@ async function processMobDeath(player, mob, online) {
       const cultivationMult = cultivationRewardMultiplier(member);
       const rewardMult = totalRewardMultiplier({
         vipActive: isVipActive(member),
+        svipActive: isSvipActive(member),
         guildActive: Boolean(member.guild),
         cultivationMult,
         partyMult,
