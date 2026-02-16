@@ -1,5 +1,6 @@
 package com.textlegend.app
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -37,30 +38,46 @@ fun PetDialog(
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf("我的宠物", "技能书库")
 
-    ScreenScaffold(title = "宠物系统", onBack = onDismiss) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Tab选择
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                tabs.forEachIndexed { index, tab ->
-                    Button(
-                        onClick = { selectedTab = index },
-                        modifier = Modifier.weight(1f),
-                        colors = if (selectedTab == index) {
-                            ButtonDefaults.buttonColors(containerColor = Color(0xFF1B3A57))
-                        } else {
-                            ButtonDefaults.buttonColors()
-                        }
-                    ) {
-                        Text(tab)
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        // 标题和返回按钮
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onDismiss) {
+                Text("←", fontSize = 24.sp)
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "宠物系统",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Tab选择
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            tabs.forEachIndexed { index, tab ->
+                Button(
+                    onClick = { selectedTab = index },
+                    modifier = Modifier.weight(1f),
+                    colors = if (selectedTab == index) {
+                        ButtonDefaults.buttonColors(containerColor = Color(0xFF1B3A57))
+                    } else {
+                        ButtonDefaults.buttonColors()
                     }
+                ) {
+                    Text(tab)
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
+        }
+        Spacer(modifier = Modifier.height(16.dp))
 
-            when (selectedTab) {
-                0 -> PetListTab(vm, pets, activePet, onDismiss)
-                1 -> PetBooksTab(vm, books)
-            }
+        when (selectedTab) {
+            0 -> PetListTab(vm, pets, activePet, onDismiss)
+            1 -> PetBooksTab(vm, books)
         }
     }
 }
@@ -191,8 +208,15 @@ private fun PetCard(
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        border = BorderStroke(2.dp, if (isActive) rarityColor else Color.Transparent)
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (isActive) {
+                    Modifier.border(BorderStroke(2.dp, rarityColor))
+                } else {
+                    Modifier
+                }
+            )
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(
@@ -325,7 +349,10 @@ private fun PetCard(
 
 @Composable
 private fun PetStatColumn(label: String, value: Int) {
-    Column(modifier = Modifier.weight(1f)) {
+    Column(
+        modifier = Modifier.padding(horizontal = 2.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         Text(text = label, fontSize = 10.sp, color = Color.Gray)
         Text(text = value.toString(), fontSize = 12.sp, fontWeight = FontWeight.Bold)
     }
