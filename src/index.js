@@ -6667,6 +6667,9 @@ function applyDamageToPlayer(target, dmg) {
   if (hasActivePetSkill(target, 'pet_tough_skin')) {
     dmg *= 0.88;
   }
+  if (hasActivePetSkill(target, 'pet_soul_chain')) {
+    dmg *= 0.9;
+  }
   if (hasActivePetSkill(target, 'pet_divine_guard') && Math.random() < 0.1) {
     dmg *= 0.65;
     if (typeof target.send === 'function') {
@@ -7368,6 +7371,99 @@ function hasActivePetSkill(player, skillId) {
   const pet = getActivePet(player);
   if (!pet || !Array.isArray(pet.skills)) return false;
   return pet.skills.includes(skillId);
+}
+
+function getPetHitChanceBonus(player) {
+  let bonus = 0;
+  if (hasActivePetSkill(player, 'pet_focus')) bonus += 0.08;
+  if (hasActivePetSkill(player, 'pet_quick_step')) bonus += 0.05;
+  return bonus;
+}
+
+function getPetEvadeChanceBonus(player) {
+  let bonus = 0;
+  if (hasActivePetSkill(player, 'pet_dodge')) bonus += 0.05;
+  if (hasActivePetSkill(player, 'pet_quick_step')) bonus += 0.05;
+  return bonus;
+}
+
+function applyPetOffenseModifiers(attacker, baseDamage, skillType = 'attack') {
+  let dmg = Math.max(0, Math.floor(Number(baseDamage) || 0));
+  if (!attacker || dmg <= 0) return dmg;
+  const isSpellLike = skillType === 'spell' || skillType === 'dot' || skillType === 'aoe';
+  const isPhysicalLike = skillType === 'attack' || skillType === 'cleave' || skillType === 'slash';
+  if (hasActivePetSkill(attacker, 'pet_fury')) dmg = Math.floor(dmg * 1.12);
+  if (hasActivePetSkill(attacker, 'pet_overload')) dmg = Math.floor(dmg * 1.06);
+  if (isPhysicalLike && hasActivePetSkill(attacker, 'pet_bash')) dmg = Math.floor(dmg * 1.08);
+  if (isSpellLike && hasActivePetSkill(attacker, 'pet_spirit')) dmg = Math.floor(dmg * 1.1);
+  if (hasActivePetSkill(attacker, 'pet_break')) dmg = Math.floor(dmg * 1.1);
+  return Math.max(1, dmg);
+}
+
+function maybeApplyPetCrit(attacker, baseDamage) {
+  const dmg = Math.max(0, Math.floor(Number(baseDamage) || 0));
+  if (dmg <= 0) return { damage: 0, crit: false };
+  if (!hasActivePetSkill(attacker, 'pet_crit')) return { damage: dmg, crit: false };
+  if (Math.random() > 0.08) return { damage: dmg, crit: false };
+  return { damage: Math.max(1, Math.floor(dmg * 1.5)), crit: true };
+}
+
+function shouldTriggerPetCombo(attacker) {
+  return Boolean(hasActivePetSkill(attacker, 'pet_combo') && Math.random() <= 0.1);
+}
+
+function applyPetLifesteal(attacker, dealtDamage) {
+  if (!attacker || !hasActivePetSkill(attacker, 'pet_lifesteal')) return 0;
+  const dealt = Math.max(0, Math.floor(Number(dealtDamage) || 0));
+  if (dealt <= 0) return 0;
+  const heal = Math.max(1, Math.floor(dealt * 0.08));
+  attacker.hp = clamp(attacker.hp + heal, 1, attacker.max_hp);
+  if (typeof attacker.send === 'function') {
+    attacker.send(`宠物技能【吸血】触发，恢复 ${heal} 点生命。`);
+  }
+  return heal;
+}
+
+function tryApplyPetMagicBreak(attacker, target) {
+  if (!attacker || !target || !hasActivePetSkill(attacker, 'pet_magic_break')) return false;
+  if (Math.random() > 0.15) return false;
+  if (!target.status) target.status = {};
+  if (!target.status.debuffs) target.status.debuffs = {};
+  target.status.debuffs.petMagicBreak = {
+    mdefMultiplier: 0.85,
+    expiresAt: Date.now() + 5000
+  };
+  return true;
+}
+
+function tryTriggerPetArcaneEcho(attacker, skill) {
+  if (!attacker || !skill) return false;
+  if (!hasActivePetSkill(attacker, 'pet_arcane_echo')) return false;
+  if (!['spell', 'aoe', 'dot'].includes(skill.type)) return false;
+  return Math.random() <= 0.08;
+}
+
+function applyPetKillSoulOnKill(attacker) {
+  if (!attacker || !hasActivePetSkill(attacker, 'pet_kill_soul')) return false;
+  const hpGain = Math.max(1, Math.floor((attacker.max_hp || 1) * 0.1));
+  const mpGain = Math.max(1, Math.floor((attacker.max_mp || 1) * 0.1));
+  attacker.hp = clamp(attacker.hp + hpGain, 1, attacker.max_hp);
+  attacker.mp = clamp(attacker.mp + mpGain, 0, attacker.max_mp);
+  if (typeof attacker.send === 'function') {
+    attacker.send(`宠物技能【噬魂】触发，恢复 ${hpGain} 生命和 ${mpGain} 法力。`);
+  }
+  return true;
+}
+
+function tryResolvePetStun(player) {
+  if (!player?.status || !player.status.stunTurns || player.status.stunTurns <= 0) return false;
+  if (!hasActivePetSkill(player, 'pet_resolve')) return false;
+  if (Math.random() > 0.35) return false;
+  player.status.stunTurns = 0;
+  if (typeof player.send === 'function') {
+    player.send('宠物技能【不屈】触发，成功抵抗控制。');
+  }
+  return true;
 }
 
 function getPetLevelCap(player) {
@@ -11290,9 +11386,13 @@ async function combatTick() {
     tryAutoBuff(player);
 
     if (player.status && player.status.stunTurns > 0) {
+      if (tryResolvePetStun(player)) {
+        // 宠物不屈触发则本回合可继续行动
+      } else {
       player.status.stunTurns -= 1;
       player.send('你被麻痹，无法行动。');
       continue;
+      }
     }
 
       if (player.combat.targetType === 'player') {
@@ -11363,9 +11463,14 @@ async function combatTick() {
       }
     }
 
-    const hitChance = calcHitChance(player, target);
+    const hitChance = clamp(
+      calcHitChance(player, target) + getPetHitChanceBonus(player) - getPetEvadeChanceBonus(target),
+      0.05,
+      0.98
+    );
     if (Math.random() <= hitChance) {
-      if (target.evadeChance && Math.random() <= target.evadeChance) {
+      const targetEvadeChance = clamp((target.evadeChance || 0) + getPetEvadeChanceBonus(target), 0, 0.85);
+      if (targetEvadeChance > 0 && Math.random() <= targetEvadeChance) {
         const skillName = skill?.id === 'slash' ? null : skill?.name;
         if (skillName) {
           player.send(`你释放了 ${skillName}，${target.name} 闪避了你的攻击。`);
@@ -11422,6 +11527,7 @@ async function combatTick() {
       if (elementAtk > 0) {
         dmg += elementAtk * 10;
       }
+      const now = Date.now();
       // 检查攻击者的弱化效果（来自破防戒指）
       if (player.status?.debuffs?.weak) {
         const weak = player.status.debuffs.weak;
@@ -11431,11 +11537,34 @@ async function combatTick() {
           dmg = Math.floor(dmg * (1 - (weak.dmgReduction || 0)));
         }
       }
+      dmg = applyPetOffenseModifiers(player, dmg, skill?.type || 'attack');
+      const petCritResult = maybeApplyPetCrit(player, dmg);
+      dmg = petCritResult.damage;
+      if (petCritResult.crit) {
+        player.send('宠物技能【会心】触发，造成暴击伤害！');
+      }
 
         const damageDealt = applyDamageToPlayer(target, dmg);
         target.flags.lastCombatAt = Date.now();
         player.send(`你对 ${target.name} 造成 ${damageDealt} 点伤害。`);
         target.send(`${player.name} 对你造成 ${damageDealt} 点伤害。`);
+        if (hasActivePetSkill(target, 'pet_counter') && Math.random() <= 0.1 && player.hp > 0) {
+          const counterDmg = Math.max(1, Math.floor(Math.max(1, damageDealt) * 0.2));
+          const counterDealt = applyDamageToPlayer(player, counterDmg);
+          target.send(`宠物技能【反击】触发，对 ${player.name} 反弹 ${counterDealt} 点伤害。`);
+          player.send(`${target.name} 的宠物反击造成 ${counterDealt} 点伤害。`);
+        }
+        applyPetLifesteal(player, damageDealt);
+        if (tryApplyPetMagicBreak(player, target)) {
+          player.send(`宠物技能【破魔】触发，${target.name} 魔御降低。`);
+        }
+        if (tryTriggerPetArcaneEcho(player, skill) && target.hp > 0) {
+          const echoBase = Math.max(1, Math.floor(damageDealt * 0.35));
+          const echoDealt = applyDamageToPlayer(target, echoBase);
+          player.send(`宠物技能【奥术回响】触发，追加 ${echoDealt} 点伤害。`);
+          target.send(`你受到奥术回响追加伤害 ${echoDealt} 点。`);
+          applyPetLifesteal(player, echoDealt);
+        }
         if (skill && (skill.type === 'aoe' || skill.type === 'cleave')) {
           target.send('你受到群体技能伤害。');
         }
@@ -11444,6 +11573,14 @@ async function combatTick() {
           target.flags.lastCombatAt = Date.now();
           player.send(`连击触发，对 ${target.name} 造成 ${comboDealt} 点伤害。`);
           target.send(`${player.name} 连击对你造成 ${comboDealt} 点伤害。`);
+          applyPetLifesteal(player, comboDealt);
+        }
+        if (target.hp > 0 && shouldTriggerPetCombo(player)) {
+          const petComboDmg = Math.max(1, Math.floor(dmg * 0.5));
+          const petComboDealt = applyDamageToPlayer(target, petComboDmg);
+          player.send(`宠物技能【连击】触发，对 ${target.name} 追加 ${petComboDealt} 点伤害。`);
+          target.send(`你受到宠物连击追加伤害 ${petComboDealt} 点。`);
+          applyPetLifesteal(player, petComboDealt);
         }
         if (tryApplyHealBlockEffect(player, target)) {
           target.send('你受到禁疗影响，回血降低。');
@@ -11538,6 +11675,7 @@ async function combatTick() {
               player.send(`${extraTarget.name} 掉落了: ${droppedBag.join(', ')}`);
             }
             recordCrossRankKill(player, extraTarget);
+            applyPetKillSoulOnKill(player);
             handleDeath(extraTarget);
           }
         }
@@ -11585,7 +11723,7 @@ async function combatTick() {
         player.send(`你释放了 ${skillName}，${target.name} 躲过了你的攻击。`);
       }
       target.send(`你躲过了 ${player.name} 的攻击。`);
-      tryTriggerTreasureAutoPassiveOnHit(player, mob, { targetType: 'mob', roomRealmId, baseDamage: dmg });
+      tryTriggerTreasureAutoPassiveOnHit(player, target, { targetType: 'player', roomRealmId, baseDamage: dmg });
       if (skill && skill.type === 'dot') {
         player.send('施毒失败。');
       }
@@ -11621,6 +11759,7 @@ async function combatTick() {
           player.send(`${target.name} 掉落了: ${droppedBag.join(', ')}`);
         }
         recordCrossRankKill(player, target);
+        applyPetKillSoulOnKill(player);
         handleDeath(target);
       }
       await sendState(player);
@@ -11664,7 +11803,7 @@ async function combatTick() {
       skill = skillForPlayer(player, DEFAULT_SKILLS[player.classId]);
     }
 
-    const hitChance = calcHitChance(player, mob);
+    const hitChance = clamp(calcHitChance(player, mob) + getPetHitChanceBonus(player), 0.05, 0.98);
       if (Math.random() <= hitChance) {
       const mobImmuneToDebuffs = enforceSpecialBossDebuffImmunity(mob, roomRealmId);
       let dmg = 0;
@@ -11721,9 +11860,14 @@ async function combatTick() {
           if (elementAtk > 0) {
             aoeDmg += elementAtk * 10;
           }
+          aoeDmg = applyPetOffenseModifiers(player, aoeDmg, skill?.type || 'aoe');
+          const aoePetCrit = maybeApplyPetCrit(player, aoeDmg);
+          aoeDmg = aoePetCrit.damage;
           const result = applyDamageToMob(target, aoeDmg, player.name, roomRealmId);
           if (result?.damageTaken) {
             player.send(`你对 ${target.name} 造成 ${aoeDmg} 点伤害。`);
+            applyPetLifesteal(player, result.damageTaken);
+            tryApplyPetMagicBreak(player, target);
           }
           const targetImmuneToDebuffs = enforceSpecialBossDebuffImmunity(target, roomRealmId);
           if (tryApplyHealBlockEffect(player, target)) {
@@ -11738,6 +11882,7 @@ async function combatTick() {
         const deadTargets = mobs.filter((target) => target.hp <= 0);
         if (deadTargets.length) {
           for (const target of deadTargets) {
+            applyPetKillSoulOnKill(player);
             await processMobDeath(player, target, online);
           }
           if (deadTargets.some((target) => target.id === mob.id)) {
@@ -11752,14 +11897,40 @@ async function combatTick() {
         if (elementAtk > 0) {
           dmg += elementAtk * 10;
         }
+        dmg = applyPetOffenseModifiers(player, dmg, skill?.type || 'attack');
+        const petCritResult = maybeApplyPetCrit(player, dmg);
+        dmg = petCritResult.damage;
+        if (petCritResult.crit) {
+          player.send('宠物技能【会心】触发，造成暴击伤害！');
+        }
         const result = applyDamageToMob(mob, dmg, player.name, roomRealmId);
         if (result?.damageTaken) {
           player.send(`你对 ${mob.name} 造成 ${dmg} 点伤害。`);
+          applyPetLifesteal(player, result.damageTaken);
+          tryApplyPetMagicBreak(player, mob);
+          if (tryTriggerPetArcaneEcho(player, skill) && mob.hp > 0) {
+            const echoBase = Math.max(1, Math.floor(result.damageTaken * 0.35));
+            const echoResult = applyDamageToMob(mob, echoBase, player.name, roomRealmId);
+            const echoDealt = Number(echoResult?.damageTaken || 0);
+            if (echoDealt > 0) {
+              player.send(`宠物技能【奥术回响】触发，追加 ${echoDealt} 点伤害。`);
+              applyPetLifesteal(player, echoDealt);
+            }
+          }
         }
         if (hasComboWeapon(player) && mob.hp > 0 && Math.random() <= COMBO_PROC_CHANCE) {
           const comboResult = applyDamageToMob(mob, dmg, player.name, roomRealmId);
           if (comboResult?.damageTaken) {
             player.send(`连击触发，对 ${mob.name} 造成 ${dmg} 点伤害。`);
+            applyPetLifesteal(player, comboResult.damageTaken);
+          }
+        }
+        if (mob.hp > 0 && shouldTriggerPetCombo(player)) {
+          const petComboDmg = Math.max(1, Math.floor(dmg * 0.5));
+          const petComboResult = applyDamageToMob(mob, petComboDmg, player.name, roomRealmId);
+          if (petComboResult?.damageTaken) {
+            player.send(`宠物技能【连击】触发，对 ${mob.name} 追加 ${petComboResult.damageTaken} 点伤害。`);
+            applyPetLifesteal(player, petComboResult.damageTaken);
           }
         }
         if (tryApplyHealBlockEffect(player, mob)) {
@@ -11782,6 +11953,7 @@ async function combatTick() {
               player.send(`你的毒特效作用于 ${extraTarget.name}。`);
             }
             if (extraTarget.hp <= 0) {
+              applyPetKillSoulOnKill(player);
               await processMobDeath(player, extraTarget, online);
             }
           }
@@ -11850,9 +12022,11 @@ async function combatTick() {
           if (elementAtk > 0) {
             cleaveDmg += elementAtk * 10;
           }
+          cleaveDmg = applyPetOffenseModifiers(player, cleaveDmg, 'cleave');
           const cleaveResult = applyDamageToMob(other, cleaveDmg, player.name, roomRealmId);
           if (cleaveResult?.damageTaken) {
             player.send(`你对 ${other.name} 造成 ${cleaveDmg} 点伤害。`);
+            applyPetLifesteal(player, cleaveResult.damageTaken);
           }
           retaliateMobAgainstPlayer(other, player, online);
         });
@@ -11924,6 +12098,7 @@ async function combatTick() {
     }
 
     if (mob.hp <= 0) {
+      applyPetKillSoulOnKill(player);
       await processMobDeath(player, mob, online);
       player.combat = null;
       sendRoomState(player.position.zone, player.position.room, roomRealmId);
@@ -11987,7 +12162,10 @@ async function combatTick() {
       const isWorldBoss = Boolean(mobTemplate?.worldBoss);
       const isSpecialBoss = Boolean(mobTemplate?.specialBoss);
       const enragedMultiplier = isSpecialBossEnraged(mob) ? 2 : 1;
-      if (!isBoss && !isWorldBoss && !isSpecialBoss && mobTarget && mobTarget.evadeChance && Math.random() <= mobTarget.evadeChance) {
+      const mobTargetEvadeChance = mobTarget?.userId
+        ? clamp((mobTarget.evadeChance || 0) + getPetEvadeChanceBonus(mobTarget), 0, 0.85)
+        : (mobTarget?.evadeChance || 0);
+      if (!isBoss && !isWorldBoss && !isSpecialBoss && mobTarget && mobTargetEvadeChance && Math.random() <= mobTargetEvadeChance) {
         if (mobTarget.userId) {
           mobTarget.send(`你闪避了 ${mob.name} 的攻击。`);
         } else {
@@ -12133,6 +12311,13 @@ async function combatTick() {
       if (mobTarget && mobTarget.userId) {
         const damageDealt = applyDamageToPlayer(mobTarget, dmg);
         mobTarget.send(`${mob.name} 对你造成 ${damageDealt} 点伤害。`);
+        if (hasActivePetSkill(mobTarget, 'pet_counter') && Math.random() <= 0.1 && mob.hp > 0) {
+          const counterDmg = Math.max(1, Math.floor(Math.max(1, damageDealt) * 0.2));
+          const counterResult = applyDamageToMob(mob, counterDmg, mobTarget.name, roomRealmId);
+          if (counterResult?.damageTaken) {
+            mobTarget.send(`宠物技能【反击】触发，对 ${mob.name} 反弹 ${counterResult.damageTaken} 点伤害。`);
+          }
+        }
         if (mobTarget !== player) {
           player.send(`${mob.name} 攻击 ${mobTarget.name}，造成 ${damageDealt} 点伤害。`);
         }
