@@ -481,66 +481,121 @@ export function computeDerived(player) {
     petMagPct += 0.1;
     petSpiritPct += 0.1;
   }
+  if (petSkills.has('pet_spirit_adv')) {
+    petMagPct += 0.2;
+    petSpiritPct += 0.2;
+  }
   if (petSkills.has('pet_fury')) {
+    petAtkPct += 0.075;
+    petMagPct += 0.075;
+    petSpiritPct += 0.075;
+  }
+  if (petSkills.has('pet_fury_adv')) {
     petAtkPct += 0.15;
     petMagPct += 0.15;
     petSpiritPct += 0.15;
   }
   if (petSkills.has('pet_bloodline')) {
+    petMaxHpPct += 0.06;
+    petMaxMpPct += 0.06;
+  }
+  if (petSkills.has('pet_bloodline_adv')) {
     petMaxHpPct += 0.12;
     petMaxMpPct += 0.12;
   }
   if (petSkills.has('pet_quick_step')) {
+    petDexPct += 0.075;
+    evadeChance += 0.02;
+  }
+  if (petSkills.has('pet_quick_step_adv')) {
     petDexPct += 0.15;
     evadeChance += 0.04;
   }
   if (petSkills.has('pet_war_horn')) {
-    petAtkPct += 0.1;
-    petDefPct += 0.1;
-    petMagPct += 0.1;
-    petSpiritPct += 0.1;
-    petDexPct += 0.1;
-    petMaxHpPct += 0.1;
-    petMaxMpPct += 0.1;
+    petAtkPct += 0.05;
+    petDefPct += 0.05;
+    petMagPct += 0.05;
+    petSpiritPct += 0.05;
+    petDexPct += 0.05;
+    petMaxHpPct += 0.05;
+    petMaxMpPct += 0.05;
   }
 
   if (petSkills.has('pet_crit')) {
     player.flags.petCritChancePct += 10;
     player.flags.petCritDamagePct += 35;
   }
+  if (petSkills.has('pet_crit_adv')) {
+    player.flags.petCritChancePct += 15;
+    player.flags.petCritDamagePct += 52.5;
+  }
   if (petSkills.has('pet_lifesteal')) player.flags.petLifestealPct += 8;
+  if (petSkills.has('pet_lifesteal_adv')) player.flags.petLifestealPct += 12;
   if (petSkills.has('pet_counter')) {
     player.flags.petCounterChancePct += 10;
     player.flags.petCounterDamagePct += 60;
+  }
+  if (petSkills.has('pet_counter_adv')) {
+    player.flags.petCounterChancePct += 15;
+    player.flags.petCounterDamagePct += 90;
   }
   if (petSkills.has('pet_combo')) {
     player.flags.petComboChancePct += 10;
     player.flags.petComboDamagePct += 70;
   }
+  if (petSkills.has('pet_combo_adv')) {
+    player.flags.petComboChancePct += 15;
+    player.flags.petComboDamagePct += 105;
+  }
   if (petSkills.has('pet_tough_skin')) player.flags.petDamageReductionPct += 0.08;
+  if (petSkills.has('pet_tough_skin_adv')) player.flags.petDamageReductionPct += 0.12;
   if (petSkills.has('pet_break')) {
-    player.flags.petArmorBreakChancePct += 15;
-    player.flags.petArmorBreakPct += 15;
+    player.flags.petArmorBreakChancePct += 7.5;
+    player.flags.petArmorBreakPct += 7.5;
+    player.flags.petArmorBreakMs = Math.max(player.flags.petArmorBreakMs, 3000);
+  }
+  if (petSkills.has('pet_break_adv')) {
+    player.flags.petArmorBreakChancePct += 11.25;
+    player.flags.petArmorBreakPct += 11.25;
     player.flags.petArmorBreakMs = Math.max(player.flags.petArmorBreakMs, 3000);
   }
   if (petSkills.has('pet_magic_break')) {
-    player.flags.petMagicBreakChancePct += 15;
-    player.flags.petMagicBreakPct += 25;
+    player.flags.petMagicBreakChancePct += 7.5;
+    player.flags.petMagicBreakPct += 12.5;
+    player.flags.petMagicBreakMs = Math.max(player.flags.petMagicBreakMs, 3000);
+  }
+  if (petSkills.has('pet_magic_break_adv')) {
+    player.flags.petMagicBreakChancePct += 11.25;
+    player.flags.petMagicBreakPct += 18.75;
     player.flags.petMagicBreakMs = Math.max(player.flags.petMagicBreakMs, 3000);
   }
   if (petSkills.has('pet_resolve')) {
     player.flags.petLowHpThresholdPct = Math.max(player.flags.petLowHpThresholdPct, 30);
     player.flags.petLowHpDamageReductionPct += 0.15;
   }
+  if (petSkills.has('pet_resolve_adv')) {
+    player.flags.petLowHpThresholdPct = Math.max(player.flags.petLowHpThresholdPct, 30);
+    player.flags.petLowHpDamageReductionPct += 0.225;
+  }
   if (petSkills.has('pet_sunder')) {
-    player.flags.petWeakChancePct += 15;
-    player.flags.petWeakPct += 20;
+    player.flags.petWeakChancePct += 7.5;
+    player.flags.petWeakPct += 10;
+    player.flags.petWeakMs = Math.max(player.flags.petWeakMs, 3000);
+  }
+  if (petSkills.has('pet_sunder_adv')) {
+    player.flags.petWeakChancePct += 11.25;
+    player.flags.petWeakPct += 15;
     player.flags.petWeakMs = Math.max(player.flags.petWeakMs, 3000);
   }
   if (petSkills.has('pet_arcane_echo')) {
-    player.flags.petSpellBonusPct += 20;
-    player.flags.petSpellEchoChancePct += 20;
-    player.flags.petSpellEchoPct += 35;
+    player.flags.petSpellBonusPct += 10;
+    player.flags.petSpellEchoChancePct += 10;
+    player.flags.petSpellEchoPct += 17.5;
+  }
+  if (petSkills.has('pet_arcane_echo_adv')) {
+    player.flags.petSpellBonusPct += 15;
+    player.flags.petSpellEchoChancePct += 15;
+    player.flags.petSpellEchoPct += 26.25;
   }
   if (petSkills.has('pet_divine_guard')) {
     player.flags.petDamageReductionPct += 0.12;
@@ -552,16 +607,28 @@ export function computeDerived(player) {
     player.flags.petLifestealPct += 5;
   }
   if (petSkills.has('pet_soul_chain')) {
-    player.flags.petReflectChancePct += 18;
-    player.flags.petReflectPct += 20;
+    player.flags.petReflectChancePct += 9;
+    player.flags.petReflectPct += 10;
+  }
+  if (petSkills.has('pet_soul_chain_adv')) {
+    player.flags.petReflectChancePct += 13.5;
+    player.flags.petReflectPct += 15;
   }
   if (petSkills.has('pet_overload')) {
     player.flags.petOverloadChancePct += 18;
     player.flags.petOverloadPct += 35;
   }
+  if (petSkills.has('pet_overload_adv')) {
+    player.flags.petOverloadChancePct += 27;
+    player.flags.petOverloadPct += 52.5;
+  }
   if (petSkills.has('pet_rebirth')) {
-    player.flags.petRebirthChancePct = Math.max(player.flags.petRebirthChancePct, 18);
-    player.flags.petRebirthHpPct = Math.max(player.flags.petRebirthHpPct, 25);
+    player.flags.petRebirthChancePct = Math.max(player.flags.petRebirthChancePct, 9);
+    player.flags.petRebirthHpPct = Math.max(player.flags.petRebirthHpPct, 12.5);
+  }
+  if (petSkills.has('pet_rebirth_adv')) {
+    player.flags.petRebirthChancePct = Math.max(player.flags.petRebirthChancePct, 13.5);
+    player.flags.petRebirthHpPct = Math.max(player.flags.petRebirthHpPct, 18.75);
   }
   if (petSkills.has('pet_bash') || petSkills.has('pet_fury') || petSkills.has('pet_war_horn')) {
     player.flags.petDamageBonusPct += 8;

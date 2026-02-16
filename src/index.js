@@ -6294,7 +6294,7 @@ function findAliveBossTarget(player) {
         const blockedCrossBossId = String(player.flags?.autoFullCrossBossBlockedId || player.flags?.autoFullCrossBossSeenId || '');
         const awaitingCrossBossRespawn = Boolean(player.flags?.autoFullCrossBossAwaitRespawn);
         const currentCrossBossId = String(mob.id || '');
-        // 离开跨服BOSS房后，仅在检测到“新一轮刷新(新mob.id)”时才允许再次跳回
+        // 离开跨服BOSS房后，仅在检测到"新一轮刷新(新mob.id)"时才允许再次跳回
         if (awaitingCrossBossRespawn && blockedCrossBossId && currentCrossBossId === blockedCrossBossId) {
           continue;
         }
@@ -6661,14 +6661,20 @@ function applyDamageToPlayer(target, dmg) {
       dmg = Math.floor(dmg * (1 - (buff.dmgReduction || 0)));
     }
   }
-  if (hasActivePetSkill(target, 'pet_guard')) {
-    dmg *= PET_COMBAT_BALANCE.guardDamageMul;
+  const guardMul = hasActivePetSkill(target, 'pet_guard_adv') ? PET_COMBAT_BALANCE.guardAdvDamageMul :
+                  hasActivePetSkill(target, 'pet_guard') ? PET_COMBAT_BALANCE.guardDamageMul : 1;
+  if (guardMul !== 1) {
+    dmg *= guardMul;
   }
-  if (hasActivePetSkill(target, 'pet_tough_skin')) {
-    dmg *= PET_COMBAT_BALANCE.toughSkinDamageMul;
+  const toughSkinMul = hasActivePetSkill(target, 'pet_tough_skin_adv') ? PET_COMBAT_BALANCE.toughSkinAdvDamageMul :
+                       hasActivePetSkill(target, 'pet_tough_skin') ? PET_COMBAT_BALANCE.toughSkinDamageMul : 1;
+  if (toughSkinMul !== 1) {
+    dmg *= toughSkinMul;
   }
-  if (hasActivePetSkill(target, 'pet_soul_chain')) {
-    dmg *= PET_COMBAT_BALANCE.soulChainDamageMul;
+  const soulChainMul = hasActivePetSkill(target, 'pet_soul_chain_adv') ? PET_COMBAT_BALANCE.soulChainAdvDamageMul :
+                       hasActivePetSkill(target, 'pet_soul_chain') ? PET_COMBAT_BALANCE.soulChainDamageMul : 1;
+  if (soulChainMul !== 1) {
+    dmg *= soulChainMul;
   }
   if (hasActivePetSkill(target, 'pet_divine_guard') && Math.random() < PET_COMBAT_BALANCE.divineGuardChance) {
     dmg *= PET_COMBAT_BALANCE.divineGuardDamageMul;
@@ -6707,10 +6713,14 @@ function tryRevive(player) {
     if (!player.flags) player.flags = {};
     const cdMs = PET_COMBAT_BALANCE.rebirthCooldownMs;
     const last = Number(player.flags.petRebirthAt || 0);
-    if (now - last >= cdMs && Math.random() < PET_COMBAT_BALANCE.rebirthChance) {
+    const rebirthChance = hasActivePetSkill(player, 'pet_rebirth_adv') ? PET_COMBAT_BALANCE.rebirthAdvChance :
+                           hasActivePetSkill(player, 'pet_rebirth') ? PET_COMBAT_BALANCE.rebirthChance : 0;
+    if (now - last >= cdMs && rebirthChance > 0 && Math.random() < rebirthChance) {
       player.flags.petRebirthAt = now;
-      player.hp = Math.max(1, Math.floor(player.max_hp * PET_COMBAT_BALANCE.rebirthRecoverRatio));
-      player.mp = Math.max(0, Math.floor(player.max_mp * PET_COMBAT_BALANCE.rebirthRecoverRatio));
+      const rebirthRecoverRatio = hasActivePetSkill(player, 'pet_rebirth_adv') ? PET_COMBAT_BALANCE.rebirthAdvRecoverRatio :
+                                   hasActivePetSkill(player, 'pet_rebirth') ? PET_COMBAT_BALANCE.rebirthRecoverRatio : 0.3;
+      player.hp = Math.max(1, Math.floor(player.max_hp * rebirthRecoverRatio));
+      player.mp = Math.max(0, Math.floor(player.max_mp * rebirthRecoverRatio));
       player.send('宠物技能【涅槃】触发，你恢复了部分生命和法力。');
       return true;
     }
@@ -7306,106 +7316,142 @@ const PET_SKILL_LIBRARY = [
   { id: 'pet_focus_adv', name: '高级专注', grade: 'advanced' },
   { id: 'pet_spirit', name: '灵能', grade: 'normal' },
   { id: 'pet_spirit_adv', name: '高级灵能', grade: 'advanced' },
-  { id: 'pet_fury', name: '狂怒', grade: 'advanced' },
-  { id: 'pet_break', name: '破甲', grade: 'advanced' },
-  { id: 'pet_magic_break', name: '破魔', grade: 'advanced' },
-  { id: 'pet_bloodline', name: '血脉', grade: 'advanced' },
-  { id: 'pet_resolve', name: '不屈', grade: 'advanced' },
-  { id: 'pet_quick_step', name: '疾行', grade: 'advanced' },
-  { id: 'pet_sunder', name: '撕裂', grade: 'advanced' },
-  { id: 'pet_arcane_echo', name: '奥术回响', grade: 'advanced' },
+  { id: 'pet_fury', name: '狂怒', grade: 'normal' },
+  { id: 'pet_fury_adv', name: '高级狂怒', grade: 'advanced' },
+  { id: 'pet_break', name: '破甲', grade: 'normal' },
+  { id: 'pet_break_adv', name: '高级破甲', grade: 'advanced' },
+  { id: 'pet_magic_break', name: '破魔', grade: 'normal' },
+  { id: 'pet_magic_break_adv', name: '高级破魔', grade: 'advanced' },
+  { id: 'pet_bloodline', name: '血脉', grade: 'normal' },
+  { id: 'pet_bloodline_adv', name: '高级血脉', grade: 'advanced' },
+  { id: 'pet_resolve', name: '不屈', grade: 'normal' },
+  { id: 'pet_resolve_adv', name: '高级不屈', grade: 'advanced' },
+  { id: 'pet_quick_step', name: '疾行', grade: 'normal' },
+  { id: 'pet_quick_step_adv', name: '高级疾行', grade: 'advanced' },
+  { id: 'pet_sunder', name: '撕裂', grade: 'normal' },
+  { id: 'pet_sunder_adv', name: '高级撕裂', grade: 'advanced' },
+  { id: 'pet_arcane_echo', name: '奥术回响', grade: 'normal' },
+  { id: 'pet_arcane_echo_adv', name: '高级奥术回响', grade: 'advanced' },
   { id: 'pet_divine_guard', name: '神佑', grade: 'special' },
   { id: 'pet_kill_soul', name: '噬魂', grade: 'special' },
   { id: 'pet_war_horn', name: '战号', grade: 'special' },
-  { id: 'pet_soul_chain', name: '魂链', grade: 'special' },
-  { id: 'pet_overload', name: '超载', grade: 'special' },
-  { id: 'pet_rebirth', name: '涅槃', grade: 'special' }
+  { id: 'pet_soul_chain', name: '魂链', grade: 'normal' },
+  { id: 'pet_soul_chain_adv', name: '高级魂链', grade: 'advanced' },
+  { id: 'pet_overload', name: '超载', grade: 'normal' },
+  { id: 'pet_overload_adv', name: '高级超载', grade: 'advanced' },
+  { id: 'pet_rebirth', name: '涅槃', grade: 'normal' },
+  { id: 'pet_rebirth_adv', name: '高级涅槃', grade: 'advanced' }
 ];
 
 const PET_SKILL_EFFECTS = {
-  pet_bash: '被动：宠物物理伤害+3%',
-  pet_bash_adv: '被动：宠物物理伤害+6%',
-  pet_crit: '被动：宠物暴击率+3%',
-  pet_crit_adv: '被动：宠物暴击率+6%',
-  pet_guard: '被动：主人受到伤害-3%',
-  pet_guard_adv: '被动：主人受到伤害-6%',
-  pet_dodge: '被动：主人闪避率+2%',
-  pet_dodge_adv: '被动：主人闪避率+4%',
-  pet_lifesteal: '被动：宠物攻击吸血3%',
-  pet_lifesteal_adv: '被动：宠物攻击吸血6%',
-  pet_counter: '被动：宠物受击时4%反击',
-  pet_counter_adv: '被动：宠物受击时8%反击',
-  pet_combo: '被动：宠物攻击4%连击',
-  pet_combo_adv: '被动：宠物攻击8%连击',
-  pet_tough_skin: '被动：主人额外减伤5%',
-  pet_tough_skin_adv: '被动：主人额外减伤10%',
-  pet_focus: '被动：宠物命中率+2.5%',
-  pet_focus_adv: '被动：宠物命中率+5%',
-  pet_spirit: '被动：宠物法术伤害+3%',
-  pet_spirit_adv: '被动：宠物法术伤害+6%',
-  pet_fury: '被动：主人最终伤害+8%',
-  pet_break: '被动：主人无视目标防御6%',
-  pet_magic_break: '被动：攻击时12%附加破魔(4.5秒)',
-  pet_bloodline: '被动：主人治疗效果+12%',
+  pet_bash: '被动：宠物物理伤害+4.5%',
+  pet_bash_adv: '被动：宠物物理伤害+6.75%',
+  pet_crit: '被动：宠物暴击率+4.5%',
+  pet_crit_adv: '被动：宠物暴击率+6.75%',
+  pet_guard: '被动：主人受到伤害-4.5%',
+  pet_guard_adv: '被动：主人受到伤害-6.75%',
+  pet_dodge: '被动：主人闪避率+3%',
+  pet_dodge_adv: '被动：主人闪避率+4.5%',
+  pet_lifesteal: '被动：宠物攻击吸血4.5%',
+  pet_lifesteal_adv: '被动：宠物攻击吸血6.75%',
+  pet_counter: '被动：宠物受击时6%反击',
+  pet_counter_adv: '被动：宠物受击时9%反击',
+  pet_combo: '被动：宠物攻击6%连击',
+  pet_combo_adv: '被动：宠物攻击9%连击',
+  pet_tough_skin: '被动：主人额外减伤7.5%',
+  pet_tough_skin_adv: '被动：主人额外减伤11.25%',
+  pet_focus: '被动：宠物命中率+3.75%',
+  pet_focus_adv: '被动：宠物命中率+5.625%',
+  pet_spirit: '被动：宠物法术伤害+4.5%',
+  pet_spirit_adv: '被动：宠物法术伤害+6.75%',
+  pet_fury: '被动：主人最终伤害+6%',
+  pet_fury_adv: '被动：主人最终伤害+9%',
+  pet_break: '被动：主人无视目标防御4.5%',
+  pet_break_adv: '被动：主人无视目标防御6.75%',
+  pet_magic_break: '被动：攻击时9%附加破魔(4.5秒)',
+  pet_magic_break_adv: '被动：攻击时13.5%附加破魔(4.5秒)',
+  pet_bloodline: '被动：主人治疗效果+9%',
+  pet_bloodline_adv: '被动：主人治疗效果+13.5%',
   pet_resolve: '被动：主人控制抗性提升',
+  pet_resolve_adv: '被动：主人控制抗性提升',
   pet_quick_step: '被动：主人速度提升',
+  pet_quick_step_adv: '被动：主人速度提升',
   pet_sunder: '被动：主人造成流血概率提升',
-  pet_arcane_echo: '被动：法术命中时6%追加一段伤害',
-  pet_divine_guard: '被动：受击8%触发神佑减伤28%',
-  pet_kill_soul: '被动：击杀目标时恢复生命/法力',
+  pet_sunder_adv: '被动：主人造成流血概率提升',
+  pet_arcane_echo: '被动：法术命中时4.5%追加一段伤害',
+  pet_arcane_echo_adv: '被动：法术命中时6.75%追加一段伤害',
+  pet_divine_guard: '被动：受击4%触发神佑减伤14%',
+  pet_kill_soul: '被动：击杀目标时恢复4.5%生命/法力',
   pet_war_horn: '被动：攻击附带禁疗概率提升',
-  pet_soul_chain: '被动：宠物与主人分担部分伤害',
+  pet_soul_chain: '被动：宠物与主人分担6%伤害',
+  pet_soul_chain_adv: '被动：宠物与主人分担9%伤害',
   pet_overload: '被动：技能伤害小幅增幅',
-  pet_rebirth: '被动：濒死时16%几率涅槃复活'
+  pet_overload_adv: '被动：技能伤害增幅',
+  pet_rebirth: '被动：濒死时12%几率涅槃复活',
+  pet_rebirth_adv: '被动：濒死时18%几率涅槃复活'
 };
 
 const PET_COMBAT_BALANCE = {
-  focusHitBonus: 0.025,
-  focusAdvHitBonus: 0.05,
+  focusHitBonus: 0.0375,
+  focusAdvHitBonus: 0.05625,
   quickStepHitBonus: 0.03,
-  dodgeEvadeBonus: 0.02,
-  dodgeAdvEvadeBonus: 0.04,
+  dodgeEvadeBonus: 0.03,
+  dodgeAdvEvadeBonus: 0.045,
   quickStepEvadeBonus: 0.03,
-  furyMul: 1.08,
-  overloadMul: 1.04,
-  bashMul: 1.03,
-  bashAdvMul: 1.06,
-  spiritMul: 1.03,
-  spiritAdvMul: 1.06,
-  breakMul: 1.06,
-  critChance: 0.03,
-  critAdvChance: 0.06,
+  furyMul: 1.06,
+  furyAdvMul: 1.09,
+  overloadMul: 1.06,
+  overloadAdvMul: 1.09,
+  bashMul: 1.045,
+  bashAdvMul: 1.0675,
+  spiritMul: 1.045,
+  spiritAdvMul: 1.0675,
+  breakMul: 1.045,
+  breakAdvMul: 1.0675,
+  critChance: 0.045,
+  critAdvChance: 0.0675,
   critMultiplier: 1.4,
-  comboChance: 0.04,
-  comboAdvChance: 0.08,
-  comboDamageRatio: 0.225,
-  comboAdvDamageRatio: 0.45,
-  lifestealRatio: 0.03,
-  lifestealAdvRatio: 0.06,
-  magicBreakChance: 0.12,
-  magicBreakMdefMultiplier: 0.9,
+  comboChance: 0.06,
+  comboAdvChance: 0.09,
+  comboDamageRatio: 0.3375,
+  comboAdvDamageRatio: 0.50625,
+  lifestealRatio: 0.045,
+  lifestealAdvRatio: 0.0675,
+  magicBreakChance: 0.09,
+  magicBreakAdvChance: 0.135,
+  magicBreakMdefMultiplier: 0.925,
+  magicBreakAdvMdefMultiplier: 0.8875,
   magicBreakDurationMs: 4500,
-  arcaneEchoChance: 0.06,
-  arcaneEchoDamageRatio: 0.25,
-  killSoulRecoverRatio: 0.06,
-  resolveChance: 0.28,
-  guardDamageMul: 0.97,
-  guardAdvDamageMul: 0.94,
-  toughSkinDamageMul: 0.95,
-  toughSkinAdvDamageMul: 0.9,
-  soulChainDamageMul: 0.92,
-  divineGuardChance: 0.08,
-  divineGuardDamageMul: 0.72,
-  rebirthChance: 0.16,
+  arcaneEchoChance: 0.045,
+  arcaneEchoAdvChance: 0.0675,
+  arcaneEchoDamageRatio: 0.18,
+  arcaneEchoAdvDamageRatio: 0.27,
+  killSoulRecoverRatio: 0.045,
+  resolveChance: 0.21,
+  resolveAdvChance: 0.315,
+  guardDamageMul: 0.955,
+  guardAdvDamageMul: 0.9325,
+  toughSkinDamageMul: 0.925,
+  toughSkinAdvDamageMul: 0.8875,
+  soulChainDamageMul: 0.94,
+  soulChainAdvDamageMul: 0.91,
+  divineGuardChance: 0.04,
+  divineGuardDamageMul: 0.86,
+  rebirthChance: 0.12,
+  rebirthAdvChance: 0.18,
   rebirthCooldownMs: 120000,
-  rebirthRecoverRatio: 0.4,
-  bloodlineHealMul: 1.12,
-  healBlockBaseChance: 0.18,
-  warHornHealBlockBonusChance: 0.07,
-  counterChance: 0.04,
-  counterAdvChance: 0.08,
-  counterDamageRatio: 0.09,
-  counterAdvDamageRatio: 0.18
+  rebirthRecoverRatio: 0.3,
+  rebirthAdvRecoverRatio: 0.45,
+  bloodlineHealMul: 1.09,
+  bloodlineAdvHealMul: 1.135,
+  healBlockBaseChance: 0.09,
+  healBlockAdvBaseChance: 0.135,
+  warHornHealBlockBonusChance: 0.035,
+  warHornAdvHealBlockBonusChance: 0.0525,
+  counterChance: 0.06,
+  counterAdvChance: 0.09,
+  counterDamageRatio: 0.135,
+  counterAdvDamageRatio: 0.2025
 };
 
 const PET_BOOK_LIBRARY = PET_SKILL_LIBRARY.map((skill, index) => ({
@@ -7458,9 +7504,27 @@ function hasActivePetSkill(player, skillId) {
   return pet.skills.includes(skillId);
 }
 
+function hasAnyPetSkill(player, baseSkillId) {
+  const advSkillId = baseSkillId + '_adv';
+  return hasActivePetSkill(player, baseSkillId) || hasActivePetSkill(player, advSkillId);
+}
+
+function getPetSkillMultiplier(player, baseSkillId, normalValue, advValue) {
+  if (hasActivePetSkill(player, baseSkillId)) return normalValue;
+  if (hasActivePetSkill(player, baseSkillId + '_adv')) return advValue;
+  return 0;
+}
+
+function getPetSkillChance(player, baseSkillId, normalChance, advChance) {
+  if (hasActivePetSkill(player, baseSkillId)) return normalChance;
+  if (hasActivePetSkill(player, baseSkillId + '_adv')) return advChance;
+  return 0;
+}
+
 function getPetHitChanceBonus(player) {
   let bonus = 0;
   if (hasActivePetSkill(player, 'pet_focus')) bonus += PET_COMBAT_BALANCE.focusHitBonus;
+  if (hasActivePetSkill(player, 'pet_focus_adv')) bonus += PET_COMBAT_BALANCE.focusAdvHitBonus;
   if (hasActivePetSkill(player, 'pet_quick_step')) bonus += PET_COMBAT_BALANCE.quickStepHitBonus;
   return bonus;
 }
@@ -7468,6 +7532,7 @@ function getPetHitChanceBonus(player) {
 function getPetEvadeChanceBonus(player) {
   let bonus = 0;
   if (hasActivePetSkill(player, 'pet_dodge')) bonus += PET_COMBAT_BALANCE.dodgeEvadeBonus;
+  if (hasActivePetSkill(player, 'pet_dodge_adv')) bonus += PET_COMBAT_BALANCE.dodgeAdvEvadeBonus;
   if (hasActivePetSkill(player, 'pet_quick_step')) bonus += PET_COMBAT_BALANCE.quickStepEvadeBonus;
   return bonus;
 }
@@ -7477,31 +7542,52 @@ function applyPetOffenseModifiers(attacker, baseDamage, skillType = 'attack') {
   if (!attacker || dmg <= 0) return dmg;
   const isSpellLike = skillType === 'spell' || skillType === 'dot' || skillType === 'aoe';
   const isPhysicalLike = skillType === 'attack' || skillType === 'cleave' || skillType === 'slash';
-  if (hasActivePetSkill(attacker, 'pet_fury')) dmg = Math.floor(dmg * PET_COMBAT_BALANCE.furyMul);
-  if (hasActivePetSkill(attacker, 'pet_overload')) dmg = Math.floor(dmg * PET_COMBAT_BALANCE.overloadMul);
-  if (isPhysicalLike && hasActivePetSkill(attacker, 'pet_bash')) dmg = Math.floor(dmg * PET_COMBAT_BALANCE.bashMul);
-  if (isSpellLike && hasActivePetSkill(attacker, 'pet_spirit')) dmg = Math.floor(dmg * PET_COMBAT_BALANCE.spiritMul);
-  if (hasActivePetSkill(attacker, 'pet_break')) dmg = Math.floor(dmg * PET_COMBAT_BALANCE.breakMul);
+  const furyMul = hasActivePetSkill(attacker, 'pet_fury_adv') ? PET_COMBAT_BALANCE.furyAdvMul :
+                  hasActivePetSkill(attacker, 'pet_fury') ? PET_COMBAT_BALANCE.furyMul : 1;
+  if (furyMul !== 1) dmg = Math.floor(dmg * furyMul);
+  const overloadMul = hasActivePetSkill(attacker, 'pet_overload_adv') ? PET_COMBAT_BALANCE.overloadAdvMul :
+                      hasActivePetSkill(attacker, 'pet_overload') ? PET_COMBAT_BALANCE.overloadMul : 1;
+  if (overloadMul !== 1) dmg = Math.floor(dmg * overloadMul);
+  if (isPhysicalLike) {
+    const bashMul = hasActivePetSkill(attacker, 'pet_bash_adv') ? PET_COMBAT_BALANCE.bashAdvMul :
+                    hasActivePetSkill(attacker, 'pet_bash') ? PET_COMBAT_BALANCE.bashMul : 1;
+    dmg = Math.floor(dmg * bashMul);
+  }
+  if (isSpellLike) {
+    const spiritMul = hasActivePetSkill(attacker, 'pet_spirit_adv') ? PET_COMBAT_BALANCE.spiritAdvMul :
+                       hasActivePetSkill(attacker, 'pet_spirit') ? PET_COMBAT_BALANCE.spiritMul : 1;
+    dmg = Math.floor(dmg * spiritMul);
+  }
+  const breakMul = hasActivePetSkill(attacker, 'pet_break_adv') ? PET_COMBAT_BALANCE.breakAdvMul :
+                   hasActivePetSkill(attacker, 'pet_break') ? PET_COMBAT_BALANCE.breakMul : 1;
+  if (breakMul !== 1) dmg = Math.floor(dmg * breakMul);
   return Math.max(1, dmg);
 }
 
 function maybeApplyPetCrit(attacker, baseDamage) {
   const dmg = Math.max(0, Math.floor(Number(baseDamage) || 0));
   if (dmg <= 0) return { damage: 0, crit: false };
-  if (!hasActivePetSkill(attacker, 'pet_crit')) return { damage: dmg, crit: false };
-  if (Math.random() > PET_COMBAT_BALANCE.critChance) return { damage: dmg, crit: false };
+  const critChance = hasActivePetSkill(attacker, 'pet_crit_adv') ? PET_COMBAT_BALANCE.critAdvChance :
+                     hasActivePetSkill(attacker, 'pet_crit') ? PET_COMBAT_BALANCE.critChance : 0;
+  if (critChance === 0) return { damage: dmg, crit: false };
+  if (Math.random() > critChance) return { damage: dmg, crit: false };
   return { damage: Math.max(1, Math.floor(dmg * PET_COMBAT_BALANCE.critMultiplier)), crit: true };
 }
 
 function shouldTriggerPetCombo(attacker) {
-  return Boolean(hasActivePetSkill(attacker, 'pet_combo') && Math.random() <= PET_COMBAT_BALANCE.comboChance);
+  const comboChance = hasActivePetSkill(attacker, 'pet_combo_adv') ? PET_COMBAT_BALANCE.comboAdvChance :
+                      hasActivePetSkill(attacker, 'pet_combo') ? PET_COMBAT_BALANCE.comboChance : 0;
+  if (comboChance === 0) return false;
+  return Math.random() <= comboChance;
 }
 
 function applyPetLifesteal(attacker, dealtDamage) {
-  if (!attacker || !hasActivePetSkill(attacker, 'pet_lifesteal')) return 0;
+  const lifestealRatio = hasActivePetSkill(attacker, 'pet_lifesteal_adv') ? PET_COMBAT_BALANCE.lifestealAdvRatio :
+                        hasActivePetSkill(attacker, 'pet_lifesteal') ? PET_COMBAT_BALANCE.lifestealRatio : 0;
+  if (!attacker || lifestealRatio === 0) return 0;
   const dealt = Math.max(0, Math.floor(Number(dealtDamage) || 0));
   if (dealt <= 0) return 0;
-  const heal = Math.max(1, Math.floor(dealt * PET_COMBAT_BALANCE.lifestealRatio));
+  const heal = Math.max(1, Math.floor(dealt * lifestealRatio));
   attacker.hp = clamp(attacker.hp + heal, 1, attacker.max_hp);
   if (typeof attacker.send === 'function') {
     attacker.send(`宠物技能【吸血】触发，恢复 ${heal} 点生命。`);
@@ -7510,12 +7596,17 @@ function applyPetLifesteal(attacker, dealtDamage) {
 }
 
 function tryApplyPetMagicBreak(attacker, target) {
-  if (!attacker || !target || !hasActivePetSkill(attacker, 'pet_magic_break')) return false;
-  if (Math.random() > PET_COMBAT_BALANCE.magicBreakChance) return false;
+  if (!attacker || !target) return false;
+  const magicBreakChance = hasActivePetSkill(attacker, 'pet_magic_break_adv') ? PET_COMBAT_BALANCE.magicBreakAdvChance :
+                          hasActivePetSkill(attacker, 'pet_magic_break') ? PET_COMBAT_BALANCE.magicBreakChance : 0;
+  if (magicBreakChance === 0) return false;
+  if (Math.random() > magicBreakChance) return false;
   if (!target.status) target.status = {};
   if (!target.status.debuffs) target.status.debuffs = {};
+  const mdefMultiplier = hasActivePetSkill(attacker, 'pet_magic_break_adv') ? PET_COMBAT_BALANCE.magicBreakAdvMdefMultiplier :
+                        hasActivePetSkill(attacker, 'pet_magic_break') ? PET_COMBAT_BALANCE.magicBreakMdefMultiplier : 0.9;
   target.status.debuffs.petMagicBreak = {
-    mdefMultiplier: PET_COMBAT_BALANCE.magicBreakMdefMultiplier,
+    mdefMultiplier: mdefMultiplier,
     expiresAt: Date.now() + PET_COMBAT_BALANCE.magicBreakDurationMs
   };
   return true;
@@ -7523,9 +7614,11 @@ function tryApplyPetMagicBreak(attacker, target) {
 
 function tryTriggerPetArcaneEcho(attacker, skill) {
   if (!attacker || !skill) return false;
-  if (!hasActivePetSkill(attacker, 'pet_arcane_echo')) return false;
+  const arcaneEchoChance = hasActivePetSkill(attacker, 'pet_arcane_echo_adv') ? PET_COMBAT_BALANCE.arcaneEchoAdvChance :
+                            hasActivePetSkill(attacker, 'pet_arcane_echo') ? PET_COMBAT_BALANCE.arcaneEchoChance : 0;
+  if (arcaneEchoChance === 0) return false;
   if (!['spell', 'aoe', 'dot'].includes(skill.type)) return false;
-  return Math.random() <= PET_COMBAT_BALANCE.arcaneEchoChance;
+  return Math.random() <= arcaneEchoChance;
 }
 
 function applyPetKillSoulOnKill(attacker) {
@@ -7762,6 +7855,10 @@ function rollPetBookDropsForBoss(mobTemplate, bonus = 1) {
   if (Math.random() > chance) return [];
 
   const pickPool = () => {
+    const isSpecialBoss = Boolean(mobTemplate && mobTemplate.specialBoss);
+    if (!isSpecialBoss) {
+      return lowBooks;
+    }
     if (!highBooks.length || maxRarity === 'excellent' || maxRarity === 'rare') return lowBooks;
     const highChanceByCap = {
       epic: 0.15,
@@ -7779,7 +7876,8 @@ function rollPetBookDropsForBoss(mobTemplate, bonus = 1) {
     const first = firstPool[randInt(0, firstPool.length - 1)];
     results.push({ bookId: first.id, qty: 1 });
   }
-  if ((maxRarity === 'supreme' || maxRarity === 'ultimate') && Math.random() < 0.2) {
+  const isSpecialBoss = Boolean(mobTemplate && mobTemplate.specialBoss);
+  if (isSpecialBoss && (maxRarity === 'supreme' || maxRarity === 'ultimate') && Math.random() < 0.2) {
     const secondPool = pickPool();
     if (secondPool.length) {
       const second = secondPool[randInt(0, secondPool.length - 1)];
@@ -8993,7 +9091,8 @@ function applyHealBlockDebuff(target) {
 
 function getHealMultiplier(target) {
   const debuff = target.status?.debuffs?.healBlock;
-  const petBonus = hasActivePetSkill(target, 'pet_bloodline') ? PET_COMBAT_BALANCE.bloodlineHealMul : 1;
+  const petBonus = hasActivePetSkill(target, 'pet_bloodline_adv') ? PET_COMBAT_BALANCE.bloodlineAdvHealMul :
+                    hasActivePetSkill(target, 'pet_bloodline') ? PET_COMBAT_BALANCE.bloodlineHealMul : 1;
   if (!debuff) return petBonus;
   if (debuff.expiresAt && debuff.expiresAt < Date.now()) {
     delete target.status.debuffs.healBlock;
@@ -9005,9 +9104,9 @@ function getHealMultiplier(target) {
 function tryApplyHealBlockEffect(attacker, target) {
   if (!attacker || !target) return false;
   if (!hasHealBlockEffect(attacker)) return false;
-  const chance =
-    PET_COMBAT_BALANCE.healBlockBaseChance +
-    (hasActivePetSkill(attacker, 'pet_war_horn') ? PET_COMBAT_BALANCE.warHornHealBlockBonusChance : 0);
+  const warHornBonus = hasActivePetSkill(attacker, 'pet_war_horn_adv') ? PET_COMBAT_BALANCE.warHornAdvHealBlockBonusChance :
+                        hasActivePetSkill(attacker, 'pet_war_horn') ? PET_COMBAT_BALANCE.warHornHealBlockBonusChance : 0;
+  const chance = PET_COMBAT_BALANCE.healBlockBaseChance + warHornBonus;
   if (Math.random() > chance) return false;
   applyHealBlockDebuff(target);
   if (hasActivePetSkill(attacker, 'pet_magic_break')) {
@@ -11653,8 +11752,12 @@ async function combatTick() {
         target.flags.lastCombatAt = Date.now();
         player.send(`你对 ${target.name} 造成 ${damageDealt} 点伤害。`);
         target.send(`${player.name} 对你造成 ${damageDealt} 点伤害。`);
-        if (hasActivePetSkill(target, 'pet_counter') && Math.random() <= PET_COMBAT_BALANCE.counterChance && player.hp > 0) {
-          const counterDmg = Math.max(1, Math.floor(Math.max(1, damageDealt) * PET_COMBAT_BALANCE.counterDamageRatio));
+        const counterChance = hasActivePetSkill(target, 'pet_counter_adv') ? PET_COMBAT_BALANCE.counterAdvChance :
+                             hasActivePetSkill(target, 'pet_counter') ? PET_COMBAT_BALANCE.counterChance : 0;
+        if (counterChance > 0 && Math.random() <= counterChance && player.hp > 0) {
+          const counterRatio = hasActivePetSkill(target, 'pet_counter_adv') ? PET_COMBAT_BALANCE.counterAdvDamageRatio :
+                              hasActivePetSkill(target, 'pet_counter') ? PET_COMBAT_BALANCE.counterDamageRatio : 0;
+          const counterDmg = Math.max(1, Math.floor(Math.max(1, damageDealt) * counterRatio));
           const counterDealt = applyDamageToPlayer(player, counterDmg);
           target.send(`宠物技能【反击】触发，对 ${player.name} 反弹 ${counterDealt} 点伤害。`);
           player.send(`${target.name} 的宠物反击造成 ${counterDealt} 点伤害。`);
@@ -11664,7 +11767,9 @@ async function combatTick() {
           player.send(`宠物技能【破魔】触发，${target.name} 魔御降低。`);
         }
         if (tryTriggerPetArcaneEcho(player, skill) && target.hp > 0) {
-          const echoBase = Math.max(1, Math.floor(damageDealt * PET_COMBAT_BALANCE.arcaneEchoDamageRatio));
+          const echoRatio = hasActivePetSkill(player, 'pet_arcane_echo_adv') ? PET_COMBAT_BALANCE.arcaneEchoAdvDamageRatio :
+                            hasActivePetSkill(player, 'pet_arcane_echo') ? PET_COMBAT_BALANCE.arcaneEchoDamageRatio : 0;
+          const echoBase = Math.max(1, Math.floor(damageDealt * echoRatio));
           const echoDealt = applyDamageToPlayer(target, echoBase);
           player.send(`宠物技能【奥术回响】触发，追加 ${echoDealt} 点伤害。`);
           target.send(`你受到奥术回响追加伤害 ${echoDealt} 点。`);
@@ -11681,7 +11786,9 @@ async function combatTick() {
           applyPetLifesteal(player, comboDealt);
         }
         if (target.hp > 0 && shouldTriggerPetCombo(player)) {
-          const petComboDmg = Math.max(1, Math.floor(dmg * PET_COMBAT_BALANCE.comboDamageRatio));
+          const comboRatio = hasActivePetSkill(player, 'pet_combo_adv') ? PET_COMBAT_BALANCE.comboAdvDamageRatio :
+                             hasActivePetSkill(player, 'pet_combo') ? PET_COMBAT_BALANCE.comboDamageRatio : 0;
+          const petComboDmg = Math.max(1, Math.floor(dmg * comboRatio));
           const petComboDealt = applyDamageToPlayer(target, petComboDmg);
           player.send(`宠物技能【连击】触发，对 ${target.name} 追加 ${petComboDealt} 点伤害。`);
           target.send(`你受到宠物连击追加伤害 ${petComboDealt} 点。`);
@@ -12014,7 +12121,9 @@ async function combatTick() {
           applyPetLifesteal(player, result.damageTaken);
           tryApplyPetMagicBreak(player, mob);
           if (tryTriggerPetArcaneEcho(player, skill) && mob.hp > 0) {
-            const echoBase = Math.max(1, Math.floor(result.damageTaken * PET_COMBAT_BALANCE.arcaneEchoDamageRatio));
+            const echoRatio = hasActivePetSkill(player, 'pet_arcane_echo_adv') ? PET_COMBAT_BALANCE.arcaneEchoAdvDamageRatio :
+                              hasActivePetSkill(player, 'pet_arcane_echo') ? PET_COMBAT_BALANCE.arcaneEchoDamageRatio : 0;
+            const echoBase = Math.max(1, Math.floor(result.damageTaken * echoRatio));
             const echoResult = applyDamageToMob(mob, echoBase, player.name, roomRealmId);
             const echoDealt = Number(echoResult?.damageTaken || 0);
             if (echoDealt > 0) {
@@ -12031,7 +12140,9 @@ async function combatTick() {
           }
         }
         if (mob.hp > 0 && shouldTriggerPetCombo(player)) {
-          const petComboDmg = Math.max(1, Math.floor(dmg * PET_COMBAT_BALANCE.comboDamageRatio));
+          const comboRatio = hasActivePetSkill(player, 'pet_combo_adv') ? PET_COMBAT_BALANCE.comboAdvDamageRatio :
+                             hasActivePetSkill(player, 'pet_combo') ? PET_COMBAT_BALANCE.comboDamageRatio : 0;
+          const petComboDmg = Math.max(1, Math.floor(dmg * comboRatio));
           const petComboResult = applyDamageToMob(mob, petComboDmg, player.name, roomRealmId);
           if (petComboResult?.damageTaken) {
             player.send(`宠物技能【连击】触发，对 ${mob.name} 追加 ${petComboResult.damageTaken} 点伤害。`);
@@ -12416,8 +12527,12 @@ async function combatTick() {
       if (mobTarget && mobTarget.userId) {
         const damageDealt = applyDamageToPlayer(mobTarget, dmg);
         mobTarget.send(`${mob.name} 对你造成 ${damageDealt} 点伤害。`);
-        if (hasActivePetSkill(mobTarget, 'pet_counter') && Math.random() <= PET_COMBAT_BALANCE.counterChance && mob.hp > 0) {
-          const counterDmg = Math.max(1, Math.floor(Math.max(1, damageDealt) * PET_COMBAT_BALANCE.counterDamageRatio));
+        const counterChance = hasActivePetSkill(mobTarget, 'pet_counter_adv') ? PET_COMBAT_BALANCE.counterAdvChance :
+                             hasActivePetSkill(mobTarget, 'pet_counter') ? PET_COMBAT_BALANCE.counterChance : 0;
+        if (counterChance > 0 && Math.random() <= counterChance && mob.hp > 0) {
+          const counterRatio = hasActivePetSkill(mobTarget, 'pet_counter_adv') ? PET_COMBAT_BALANCE.counterAdvDamageRatio :
+                              hasActivePetSkill(mobTarget, 'pet_counter') ? PET_COMBAT_BALANCE.counterDamageRatio : 0;
+          const counterDmg = Math.max(1, Math.floor(Math.max(1, damageDealt) * counterRatio));
           const counterResult = applyDamageToMob(mob, counterDmg, mobTarget.name, roomRealmId);
           if (counterResult?.damageTaken) {
             mobTarget.send(`宠物技能【反击】触发，对 ${mob.name} 反弹 ${counterResult.damageTaken} 点伤害。`);
