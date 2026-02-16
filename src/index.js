@@ -10074,7 +10074,10 @@ async function processMobDeath(player, mob, online) {
     const supremePlayerAwarded = new Set();
     const ultimatePlayerAwarded = new Set();
 
-    if (isSpecialBossMob && entries.length) {
+    const skipClassFirstDamageReward = mobZoneId === PERSONAL_BOSS_ZONE_ID
+      || template?.id === 'vip_personal_boss'
+      || template?.id === 'svip_personal_boss';
+    if (isSpecialBossMob && entries.length && !skipClassFirstDamageReward) {
       classRanks = classRanks || buildBossClassRank(mob, entries, roomRealmId);
       const rewardKey = `${roomRealmId}:${mob.id}`;
       if (bossClassFirstDamageRewardProcessed.has(rewardKey)) {

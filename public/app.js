@@ -5453,6 +5453,7 @@ function isBossRoomState(state) {
   if (zoneId === 'dark_bosses' && roomId === 'dark_huangquan_lair') return true;
   if (zoneId === 'dark_bosses' && roomId === 'dark_doublehead_lair') return true;
   if (zoneId === 'dark_bosses' && roomId === 'dark_skeleton_lair') return true;
+  if (zoneId === 'pboss' && /^(vip_lair|svip_lair|perma_lair)(?:__u_.+)?$/.test(String(roomId))) return true;
   return false;
 }
 
@@ -5924,8 +5925,9 @@ function renderState(state) {
     const inDarkHuangquanRoom = state.room && state.room.zoneId === 'dark_bosses' && state.room.roomId === 'dark_huangquan_lair';
     const inDarkDoubleheadRoom = state.room && state.room.zoneId === 'dark_bosses' && state.room.roomId === 'dark_doublehead_lair';
     const inDarkSkeletonRoom = state.room && state.room.zoneId === 'dark_bosses' && state.room.roomId === 'dark_skeleton_lair';
+    const inPersonalBossRoom = state.room && state.room.zoneId === 'pboss' && /^(vip_lair|svip_lair|perma_lair)(?:__u_.+)?$/.test(String(state.room.roomId || ''));
     const inCultivationBossRoom = state.room && state.room.zoneId === 'cultivation' && String(state.room.roomId || '').startsWith('boss_');
-    const inSpecialBossRoom = inWorldBossRoom || inCrossBossRoom || inMolongRoom || inSabakBossRoom || inDarkWomaRoom || inDarkZumaRoom || inDarkHongmoRoom || inDarkHuangquanRoom || inDarkDoubleheadRoom || inDarkSkeletonRoom || inCultivationBossRoom;
+    const inSpecialBossRoom = inWorldBossRoom || inCrossBossRoom || inMolongRoom || inSabakBossRoom || inDarkWomaRoom || inDarkZumaRoom || inDarkHongmoRoom || inDarkHuangquanRoom || inDarkDoubleheadRoom || inDarkSkeletonRoom || inPersonalBossRoom || inCultivationBossRoom;
     const inRankRoom = inSpecialBossRoom || inCrossRankRoom || inZhuxianTowerZone;
     const rankBlock = ui.worldBossRank.closest('.action-group');
 
@@ -5953,6 +5955,10 @@ function renderState(state) {
         ui.worldBossRankTitle.textContent = '暗之双头血魔伤害排行';
       } else if (inDarkSkeletonRoom) {
         ui.worldBossRankTitle.textContent = '暗之骷髅精灵伤害排行';
+      } else if (inPersonalBossRoom) {
+        const bossMob = (state.mobs || []).find((m) => m && m.name);
+        const bossName = bossMob?.name || state.room?.name || '专属BOSS';
+        ui.worldBossRankTitle.textContent = `${bossName}伤害排行`;
       } else if (inCultivationBossRoom) {
         const bossMob = (state.mobs || []).find((m) => m && m.name);
         const bossName = bossMob?.name || state.room?.name || '修真BOSS';
