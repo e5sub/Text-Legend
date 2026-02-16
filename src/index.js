@@ -7493,6 +7493,55 @@ function rollPetDropForBoss(mobTemplate, bonus = 1) {
   return rarity ? createRandomPet(rarity) : null;
 }
 
+function rollPetBookDropsForBoss(mobTemplate, bonus = 1) {
+  const maxRarity = getPetDropMaxRarityForBoss(mobTemplate);
+  if (!maxRarity) return [];
+  const lowBooks = PET_BOOK_LIBRARY.filter((book) => book.tier === 'low');
+  const highBooks = PET_BOOK_LIBRARY.filter((book) => book.tier !== 'low');
+  if (!lowBooks.length && !highBooks.length) return [];
+
+  const baseChanceByCap = {
+    excellent: 0.25,
+    rare: 0.3,
+    epic: 0.36,
+    legendary: 0.42,
+    supreme: 0.5,
+    ultimate: 0.6
+  };
+  const baseChance = baseChanceByCap[maxRarity] || 0.2;
+  const chance = Math.max(0, Math.min(0.85, baseChance * Math.max(0.5, Number(bonus || 1))));
+  if (Math.random() > chance) return [];
+
+  const pickPool = () => {
+    if (!highBooks.length || maxRarity === 'excellent' || maxRarity === 'rare') return lowBooks;
+    const highChanceByCap = {
+      epic: 0.15,
+      legendary: 0.2,
+      supreme: 0.3,
+      ultimate: 0.45
+    };
+    const highChance = highChanceByCap[maxRarity] || 0;
+    return Math.random() < highChance ? highBooks : lowBooks;
+  };
+
+  const results = [];
+  const firstPool = pickPool();
+  if (firstPool.length) {
+    const first = firstPool[randInt(0, firstPool.length - 1)];
+    results.push({ bookId: first.id, qty: 1 });
+  }
+  if ((maxRarity === 'supreme' || maxRarity === 'ultimate') && Math.random() < 0.2) {
+    const secondPool = pickPool();
+    if (secondPool.length) {
+      const second = secondPool[randInt(0, secondPool.length - 1)];
+      const existing = results.find((entry) => entry.bookId === second.id);
+      if (existing) existing.qty += 1;
+      else results.push({ bookId: second.id, qty: 1 });
+    }
+  }
+  return results;
+}
+
 function grantPetDropToPlayer(player, pet, mobTemplate) {
   if (!player || !pet) return false;
   const playerLevel = Math.max(1, Math.floor(Number(player.level || 1)));
@@ -9290,15 +9339,7 @@ io.on('connection', (socket) => {
       dirty = true;
       emitResult(true, `learned: ${pick.name}`);
     } else if (action === 'buy_book') {
-      const book = getPetBookDef(String(clean?.bookId || '').trim());
-      if (!book) return fail('book not found');
-      const qty = Math.max(1, Math.min(99, Math.floor(Number(clean?.qty || 1))));
-      const totalCost = Math.max(0, Math.floor(Number(book.priceGold || 0))) * qty;
-      if (player.gold < totalCost) return fail('gold not enough');
-      player.gold -= totalCost;
-      petState.books[book.id] = Math.max(0, Math.floor(Number(petState.books[book.id] || 0))) + qty;
-      dirty = true;
-      emitResult(true, `bought ${book.name} x${qty}`);
+      return fail('pet books are boss drops only');
     } else if (action === 'use_book') {
       const pet = getPetById(clean?.petId);
       if (!pet) return fail('pet not found');
@@ -10913,6 +10954,29 @@ async function processMobDeath(player, mob, online) {
       if (!pet) return;
       if (grantPetDropToPlayer(owner, pet, template) && owner?.userId) {
         lootOwnersToSave.add(owner);
+      }
+    });
+  }
+  if (isBossMob(template) && dropTargets.length > 0) {
+    dropTargets.forEach(({ player: owner, damageRatio }) => {
+      if (!owner) return;
+      const chanceBonus = Math.max(0.35, Math.min(1.5, Number(damageRatio || 1)));
+      const bookDrops = rollPetBookDropsForBoss(template, chanceBonus);
+      if (!bookDrops.length) return;
+      const petState = normalizePetState(owner);
+      if (!petState) return;
+      const labels = [];
+      bookDrops.forEach((entry) => {
+        const def = getPetBookDef(entry.bookId);
+        if (!def) return;
+        const qty = Math.max(1, Math.floor(Number(entry.qty || 1)));
+        petState.books[def.id] = Math.max(0, Math.floor(Number(petState.books[def.id] || 0))) + qty;
+        labels.push(`${def.name} x${qty}`);
+        logLoot(`[loot][pet_book] ${owner.name} <- ${def.id} x${qty} (${template.id})`);
+      });
+      if (labels.length > 0) {
+        owner.send(`pet book drop: ${labels.join(', ')}`);
+        if (owner?.userId) lootOwnersToSave.add(owner);
       }
     });
   }
