@@ -6289,6 +6289,51 @@ body.dark .sponsor-markdown .sponsor-tip {
   color: #ff9800;
 }
 
+.pet-card {
+  width: min(960px, 92vw);
+}
+
+.pet-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.pet-list,
+.pet-book-list {
+  display: grid;
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.pet-entry,
+.pet-book-entry {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.pet-entry.active {
+  border-color: #d6a15f;
+  box-shadow: 0 0 0 1px rgba(214, 161, 95, 0.35) inset;
+}
+
+.pet-inline-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.pet-inline-actions select,
+.pet-inline-actions input {
+  min-width: 120px;
+}
+
 /* 手机设备优化 */
 @media (max-width: 480px) {
   .sponsor-list-scroll {
@@ -6393,6 +6438,10 @@ body.dark .sponsor-markdown .sponsor-tip {
   /* 修理列表 */
   .repair-list {
     overflow-x: hidden;
+  }
+
+  .pet-grid {
+    grid-template-columns: 1fr;
   }
 }
 

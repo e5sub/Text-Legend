@@ -555,6 +555,27 @@ const repairUi = {
   all: document.getElementById('repair-all'),
   close: document.getElementById('repair-close')
 };
+const petUi = {
+  modal: document.getElementById('pet-modal'),
+  summary: document.getElementById('pet-summary'),
+  list: document.getElementById('pet-list'),
+  detail: document.getElementById('pet-detail'),
+  capture: document.getElementById('pet-capture'),
+  setActive: document.getElementById('pet-set-active'),
+  setRest: document.getElementById('pet-set-rest'),
+  rename: document.getElementById('pet-rename'),
+  comprehend: document.getElementById('pet-comprehend'),
+  bookList: document.getElementById('pet-book-list'),
+  buyBook: document.getElementById('pet-buy-book'),
+  buyBookQty: document.getElementById('pet-buy-book-qty'),
+  buyBookBtn: document.getElementById('pet-buy-book-btn'),
+  useBook: document.getElementById('pet-use-book'),
+  useBookBtn: document.getElementById('pet-use-book-btn'),
+  synthMain: document.getElementById('pet-synth-main'),
+  synthSub: document.getElementById('pet-synth-sub'),
+  synthBtn: document.getElementById('pet-synth-btn'),
+  close: document.getElementById('pet-close')
+};
 const changeClassUi = {
   modal: document.getElementById('changeclass-modal'),
   options: Array.from(document.querySelectorAll('.changeclass-option')),
@@ -750,6 +771,7 @@ const WAREHOUSE_PAGE_SIZE = 20;
 let autoFullBossSelection = new Set();
 const AUTOAFK_BOSS_STORAGE_KEY = 'autoafkBossSelection';
 const AUTOAFK_SKILL_STORAGE_KEY = 'autoafkSkillSelection';
+let selectedPetId = null;
 let guildPage = 0;
 const GUILD_PAGE_SIZE = 5;
 
@@ -2390,6 +2412,122 @@ function showRepairModal() {
   hideItemTooltip();
   renderRepairList(lastState ? lastState.equipment : []);
   repairUi.modal.classList.remove('hidden');
+}
+
+function renderPetModal() {
+  if (!petUi.modal || !petUi.list || !petUi.detail) return;
+  petUi.detail.style.whiteSpace = 'pre-line';
+  const petState = lastState?.pet || null;
+  const pets = Array.isArray(petState?.pets) ? petState.pets : [];
+  const books = Array.isArray(petState?.books) ? petState.books : [];
+  if (selectedPetId && !pets.some((pet) => pet.id === selectedPetId)) {
+    selectedPetId = null;
+  }
+  if (!selectedPetId && pets.length) {
+    selectedPetId = petState?.activePetId || pets[0].id;
+  }
+  const selected = pets.find((pet) => pet.id === selectedPetId) || null;
+
+  if (petUi.summary) {
+    const active = pets.find((pet) => pet.id === petState?.activePetId);
+    const activeName = active ? active.name : '无';
+    petUi.summary.textContent = `宠物: ${pets.length}/${Number(petState?.maxOwned || 0)} | 出战: ${activeName} | 获取: BOSS掉落 | 领悟:${Number(petState?.comprehendCostGold || 0)}金 | 合成:${Number(petState?.synthesisCostGold || 0)}金`;
+  }
+
+  petUi.list.innerHTML = '';
+  if (!pets.length) {
+    const empty = document.createElement('div');
+    empty.className = 'pet-entry';
+    empty.textContent = '暂无宠物，击杀BOSS后有概率掉落宠物。';
+    petUi.list.appendChild(empty);
+  } else {
+    pets.forEach((pet) => {
+      const row = document.createElement('div');
+      row.className = `pet-entry${selectedPetId === pet.id ? ' active' : ''}`;
+      const activeMark = petState?.activePetId === pet.id ? ' [出战]' : '';
+      row.textContent = `[${pet.rarityLabel || '-'}] ${pet.name}${activeMark} | 等级:${Number(pet.level || 1)}/${Number(pet.levelCap || 1)} EXP:${Number(pet.exp || 0)}/${Number(pet.expNeed || 0)} | 成长:${Number(pet.growth || 1).toFixed(3)} | 技能:${(pet.skills || []).length}/${pet.skillSlots} | 战力:${pet.power || 0}`;
+      row.addEventListener('click', () => {
+        selectedPetId = pet.id;
+        renderPetModal();
+      });
+      petUi.list.appendChild(row);
+    });
+  }
+
+  if (!selected) {
+    petUi.detail.textContent = '请选择一只宠物';
+  } else {
+    const skills = Array.isArray(selected.skillNames) ? selected.skillNames.join('、') : '';
+    petUi.detail.textContent =
+      `名称: ${selected.name}\n稀有度: ${selected.rarityLabel || '-'}\n等级: ${Number(selected.level || 1)}/${Number(selected.levelCap || 1)}\n经验: ${Number(selected.exp || 0)}/${Number(selected.expNeed || 0)}\n类型: ${selected.role || '-'}\n成长: ${Number(selected.growth || 1).toFixed(3)}\n资质: HP ${selected.aptitude?.hp || 0} / 攻 ${selected.aptitude?.atk || 0} / 防 ${selected.aptitude?.def || 0} / 法 ${selected.aptitude?.mag || 0} / 速 ${selected.aptitude?.speed || 0}\n技能(${(selected.skills || []).length}/${selected.skillSlots}): ${skills || '无'}`;
+  }
+
+  if (petUi.bookList) {
+    petUi.bookList.innerHTML = '';
+    if (!books.length) {
+      const empty = document.createElement('div');
+      empty.className = 'pet-book-entry';
+      empty.textContent = '暂无技能书';
+      petUi.bookList.appendChild(empty);
+    } else {
+      books.forEach((book) => {
+        const row = document.createElement('div');
+        row.className = 'pet-book-entry';
+        row.textContent = `${book.name} (${book.skillName}) x${Number(book.qty || 0)} | ${Number(book.priceGold || 0)}金`;
+        petUi.bookList.appendChild(row);
+      });
+    }
+  }
+
+  if (petUi.buyBook) {
+    petUi.buyBook.innerHTML = '';
+    books.forEach((book) => {
+      const opt = document.createElement('option');
+      opt.value = book.id;
+      opt.textContent = `${book.name} (${book.priceGold}金)`;
+      petUi.buyBook.appendChild(opt);
+    });
+  }
+  if (petUi.useBook) {
+    petUi.useBook.innerHTML = '';
+    books.filter((book) => Number(book.qty || 0) > 0).forEach((book) => {
+      const opt = document.createElement('option');
+      opt.value = book.id;
+      opt.textContent = `${book.name} x${book.qty}`;
+      petUi.useBook.appendChild(opt);
+    });
+  }
+  if (petUi.synthMain && petUi.synthSub) {
+    const buildPetOptions = (select, allowEmpty = false) => {
+      select.innerHTML = '';
+      if (allowEmpty) {
+        const empty = document.createElement('option');
+        empty.value = '';
+        empty.textContent = '请选择';
+        select.appendChild(empty);
+      }
+      pets.forEach((pet) => {
+        const opt = document.createElement('option');
+        opt.value = pet.id;
+        opt.textContent = pet.name;
+        select.appendChild(opt);
+      });
+    };
+    buildPetOptions(petUi.synthMain, true);
+    buildPetOptions(petUi.synthSub, true);
+    if (selectedPetId) petUi.synthMain.value = selectedPetId;
+  }
+}
+
+function showPetModal() {
+  if (!petUi.modal) return;
+  renderPetModal();
+  petUi.modal.classList.remove('hidden');
+}
+
+function sendPetAction(action, extra = {}) {
+  if (!socket) return;
+  socket.emit('pet_action', { action, ...extra });
 }
 
 function showChangeClassModal(currentClassId) {
@@ -6389,6 +6527,9 @@ function renderState(state) {
   if (repairUi.modal && !repairUi.modal.classList.contains('hidden')) {
     renderRepairList(state.equipment || []);
   }
+  if (petUi.modal && !petUi.modal.classList.contains('hidden')) {
+    renderPetModal();
+  }
   if (statsUi.modal && !statsUi.modal.classList.contains('hidden')) {
     renderStatsModal();
   }
@@ -6426,6 +6567,7 @@ function renderState(state) {
     { id: 'mail list', label: '\u90ae\u4ef6' },
     { id: 'shop', label: '\u5546\u5e97' },
     { id: 'repair', label: '\u4FEE\u7406' },
+    { id: 'pet', label: '\u5BA0\u7269' },
     { id: 'consign', label: '\u5BC4\u552E' },
     { id: 'changeclass', label: '\u8f6c\u804c' },
     { id: 'treasure', label: '\u6CD5\u5B9D' },
@@ -6518,6 +6660,10 @@ function renderState(state) {
     }
     if (a.id === 'repair') {
       showRepairModal();
+      return;
+    }
+    if (a.id === 'pet') {
+      showPetModal();
       return;
     }
     if (a.id === 'changeclass') {
@@ -7219,6 +7365,11 @@ function enterGame(name) {
       updateTradePartnerStatus(payload.text);
       parseTradeItems(payload.text);
     }
+  });
+  socket.on('pet_result', (payload) => {
+    const ok = Boolean(payload?.ok);
+    const msg = String(payload?.msg || (ok ? '宠物操作成功。' : '宠物操作失败。'));
+    showToast(msg, ok ? 1400 : 1800);
   });
   socket.on('guild_members', (payload) => {
     if (!payload || !payload.ok) {
@@ -8061,6 +8212,78 @@ if (repairUi.all) {
   repairUi.all.addEventListener('click', () => {
     if (!socket) return;
     socket.emit('cmd', { text: 'repair all' });
+  });
+}
+if (petUi.capture) {
+  petUi.capture.addEventListener('click', () => {
+    showToast('宠物改为BOSS掉落获取');
+  });
+}
+if (petUi.setActive) {
+  petUi.setActive.addEventListener('click', () => {
+    if (!selectedPetId) return showToast('请先选择宠物');
+    sendPetAction('set_active', { petId: selectedPetId });
+  });
+}
+if (petUi.setRest) {
+  petUi.setRest.addEventListener('click', () => {
+    if (!selectedPetId) return showToast('请先选择宠物');
+    sendPetAction('set_rest', { petId: selectedPetId });
+  });
+}
+if (petUi.rename) {
+  petUi.rename.addEventListener('click', async () => {
+    if (!selectedPetId) return showToast('请先选择宠物');
+    const name = await promptModal({
+      title: '宠物改名',
+      text: '请输入新名称（2-12字）',
+      placeholder: '宠物名称'
+    });
+    if (!name) return;
+    sendPetAction('rename', { petId: selectedPetId, name: String(name).trim() });
+  });
+}
+if (petUi.comprehend) {
+  petUi.comprehend.addEventListener('click', () => {
+    if (!selectedPetId) return showToast('请先选择宠物');
+    sendPetAction('comprehend', { petId: selectedPetId });
+  });
+}
+if (petUi.buyBookBtn) {
+  petUi.buyBookBtn.addEventListener('click', () => {
+    const bookId = String(petUi.buyBook?.value || '');
+    const qty = Math.max(1, Number(petUi.buyBookQty?.value || 1));
+    if (!bookId) return showToast('请选择技能书');
+    sendPetAction('buy_book', { bookId, qty });
+  });
+}
+if (petUi.useBookBtn) {
+  petUi.useBookBtn.addEventListener('click', () => {
+    if (!selectedPetId) return showToast('请先选择宠物');
+    const bookId = String(petUi.useBook?.value || '');
+    if (!bookId) return showToast('请选择技能书');
+    sendPetAction('use_book', { petId: selectedPetId, bookId });
+  });
+}
+if (petUi.synthBtn) {
+  petUi.synthBtn.addEventListener('click', () => {
+    const mainPetId = String(petUi.synthMain?.value || '');
+    const subPetId = String(petUi.synthSub?.value || '');
+    if (!mainPetId || !subPetId) return showToast('请选择两只宠物');
+    if (mainPetId === subPetId) return showToast('主副宠不能相同');
+    sendPetAction('synthesize', { mainPetId, subPetId });
+  });
+}
+if (petUi.close) {
+  petUi.close.addEventListener('click', () => {
+    petUi.modal?.classList.add('hidden');
+  });
+}
+if (petUi.modal) {
+  petUi.modal.addEventListener('click', (e) => {
+    if (e.target === petUi.modal) {
+      petUi.modal.classList.add('hidden');
+    }
   });
 }
 if (consignUi.close) {

@@ -7200,6 +7200,407 @@ function getRoomCommonState(zoneId, roomId, realmId = 1) {
   return data;
 }
 
+const PET_MAX_OWNED = 12;
+const PET_BASE_SKILL_SLOTS = 3;
+const PET_MAX_SKILL_SLOTS = 16;
+const PET_COMPREHEND_COST_GOLD = 150000;
+const PET_SYNTHESIS_COST_GOLD = 500000;
+const PET_COMPREHEND_MAX_SKILLS = 3;
+const PET_BOOK_UNLOCK_SLOT4_CHANCE = 0.35;
+const PET_SYNTHESIS_UNLOCK_SLOT_CHANCE = 0.45;
+const PET_EXP_NEED_RATIO = 0.8;
+const PET_RARITY_ORDER = ['normal', 'excellent', 'rare', 'epic', 'legendary', 'supreme', 'ultimate'];
+const PET_RARITY_LABELS = {
+  normal: '普通',
+  excellent: '优秀',
+  rare: '稀有',
+  epic: '史诗',
+  legendary: '传说',
+  supreme: '至尊',
+  ultimate: '终极'
+};
+const PET_RARITY_GROWTH_RANGE = {
+  normal: [1.0, 1.12],
+  excellent: [1.08, 1.2],
+  rare: [1.16, 1.3],
+  epic: [1.24, 1.42],
+  legendary: [1.34, 1.56],
+  supreme: [1.46, 1.74],
+  ultimate: [1.62, 1.95]
+};
+const PET_RARITY_APTITUDE_RANGE = {
+  normal: { hp: [1400, 2600], atk: [70, 130], def: [60, 120], mag: [70, 130], speed: [60, 120] },
+  excellent: { hp: [1900, 3200], atk: [95, 160], def: [85, 150], mag: [95, 160], speed: [85, 150] },
+  rare: { hp: [2500, 3900], atk: [125, 200], def: [110, 190], mag: [125, 200], speed: [110, 190] },
+  epic: { hp: [3200, 4700], atk: [160, 245], def: [140, 230], mag: [160, 245], speed: [140, 230] },
+  legendary: { hp: [4000, 5600], atk: [195, 295], def: [175, 280], mag: [195, 295], speed: [175, 280] },
+  supreme: { hp: [5000, 6600], atk: [240, 360], def: [220, 340], mag: [240, 360], speed: [220, 340] },
+  ultimate: { hp: [6200, 8000], atk: [300, 440], def: [280, 420], mag: [300, 440], speed: [280, 420] }
+};
+
+const PET_SKILL_LIBRARY = [
+  { id: 'pet_bash', name: '强力', grade: 'normal' },
+  { id: 'pet_crit', name: '会心', grade: 'normal' },
+  { id: 'pet_guard', name: '坚韧', grade: 'normal' },
+  { id: 'pet_dodge', name: '敏捷', grade: 'normal' },
+  { id: 'pet_lifesteal', name: '吸血', grade: 'normal' },
+  { id: 'pet_counter', name: '反击', grade: 'normal' },
+  { id: 'pet_combo', name: '连击', grade: 'normal' },
+  { id: 'pet_tough_skin', name: '硬皮', grade: 'normal' },
+  { id: 'pet_focus', name: '专注', grade: 'normal' },
+  { id: 'pet_spirit', name: '灵能', grade: 'normal' },
+  { id: 'pet_fury', name: '狂怒', grade: 'advanced' },
+  { id: 'pet_break', name: '破甲', grade: 'advanced' },
+  { id: 'pet_magic_break', name: '破魔', grade: 'advanced' },
+  { id: 'pet_bloodline', name: '血脉', grade: 'advanced' },
+  { id: 'pet_resolve', name: '不屈', grade: 'advanced' },
+  { id: 'pet_quick_step', name: '疾行', grade: 'advanced' },
+  { id: 'pet_sunder', name: '撕裂', grade: 'advanced' },
+  { id: 'pet_arcane_echo', name: '奥术回响', grade: 'advanced' },
+  { id: 'pet_divine_guard', name: '神佑', grade: 'special' },
+  { id: 'pet_kill_soul', name: '噬魂', grade: 'special' },
+  { id: 'pet_war_horn', name: '战号', grade: 'special' },
+  { id: 'pet_soul_chain', name: '魂链', grade: 'special' },
+  { id: 'pet_overload', name: '超载', grade: 'special' },
+  { id: 'pet_rebirth', name: '涅槃', grade: 'special' }
+];
+
+const PET_BOOK_LIBRARY = PET_SKILL_LIBRARY.map((skill, index) => ({
+  id: `pet_book_${skill.id}`,
+  name: `宠物技能书·${skill.name}`,
+  skillId: skill.id,
+  skillName: skill.name,
+  tier: skill.grade === 'normal' ? 'low' : 'high',
+  priceGold: skill.grade === 'special'
+    ? 280000
+    : skill.grade === 'advanced'
+      ? 120000
+      : 60000 + index * 800
+}));
+
+const PET_SPECIES_BY_RARITY = {
+  normal: ['FieldWolf', 'HillCat', 'GreenBird', 'StoneTurtle', 'NightBat', 'FireLizard', 'SandFox', 'WoodSprite', 'PuppetBeast', 'GrassSpirit'],
+  excellent: ['SilverFox', 'SkyHawk', 'ThunderLeopard', 'FrostDeer', 'BlazeWolf', 'AquaQilin', 'IronApe', 'OakSpirit', 'RuneTurtle', 'WindBird'],
+  rare: ['CrimsonLion', 'IceFox', 'StormRhino', 'AquaDragon', 'ShadowLeopard', 'StarLuan', 'RiftBear', 'VenomSerpent', 'GhostWolf', 'CloudDeer'],
+  epic: ['NetherTiger', 'SolarPhoenix', 'StormDragon', 'FrostQilin', 'YoungXuanwu', 'NineTailFox', 'WarTigerMech', 'GoldenRoc', 'SoulSpider', 'OceanKun'],
+  legendary: ['ZhuLong', 'YingLong', 'BaiZe', 'QiongQi', 'TaoTie', 'BiAn', 'MingBird', 'QingLuan', 'BiFang', 'WhiteTiger'],
+  supreme: ['PrimordialDragon', 'ChaosQilin', 'UndyingCrow', 'VoidXuanwu', 'AllFormBaiZe', 'NineNetherPhoenix', 'PrisonXiezhi', 'TiangangApe', 'SkyZhuLong', 'WildTaoTie'],
+  ultimate: ['EndOriginDragon', 'EternalPhoenix', 'TaixuRoc', 'WujiBaiZe', 'GenesisQilin', 'HunyuanXuanwu', 'AbyssQiongQi', 'SkyTorch', 'OriginYingLong', 'HongmengCrow']
+};
+
+function getPetSkillDef(skillId) {
+  return PET_SKILL_LIBRARY.find((skill) => skill.id === skillId) || null;
+}
+
+function getPetSkillTier(skillId) {
+  const def = getPetSkillDef(skillId);
+  if (!def) return 'low';
+  return def.grade === 'normal' ? 'low' : 'high';
+}
+
+function getPetBookDef(bookId) {
+  return PET_BOOK_LIBRARY.find((book) => book.id === bookId) || null;
+}
+
+function getPetLevelCap(player) {
+  return Math.max(1, Math.floor(Number(player?.level || 1)) + 10);
+}
+
+function getPetLevelExpNeed(level) {
+  const baseNeed = Math.max(1, Math.floor(expForLevel(Math.max(1, Math.floor(Number(level || 1))))));
+  return Math.max(1, Math.floor(baseNeed * PET_EXP_NEED_RATIO));
+}
+
+function calcPetPower(pet) {
+  if (!pet) return 0;
+  const aptitude = pet.aptitude || {};
+  const level = Math.max(1, Math.floor(Number(pet.level || 1)));
+  const base =
+    Number(aptitude.hp || 0) * 0.2 +
+    Number(aptitude.atk || 0) * 1.8 +
+    Number(aptitude.def || 0) * 1.2 +
+    Number(aptitude.mag || 0) * 1.4 +
+    Number(aptitude.speed || 0) * 1.0;
+  const growth = Number(pet.growth || 1);
+  const slots = Number(pet.skillSlots || PET_BASE_SKILL_SLOTS);
+  const skillCount = Array.isArray(pet.skills) ? pet.skills.length : 0;
+  return Math.max(1, Math.floor((base * growth + slots * 28 + skillCount * 90) * (1 + level * 0.02)));
+}
+
+function normalizePetState(player) {
+  if (!player) return null;
+  if (!player.flags) player.flags = {};
+  if (!player.flags.pet || typeof player.flags.pet !== 'object') {
+    player.flags.pet = {};
+  }
+  const state = player.flags.pet;
+  if (!Array.isArray(state.pets)) state.pets = [];
+  if (!state.books || typeof state.books !== 'object') state.books = {};
+
+  state.pets = state.pets
+    .filter((pet) => pet && typeof pet === 'object')
+    .slice(0, PET_MAX_OWNED)
+    .map((pet) => {
+      const playerLevel = Math.max(1, Math.floor(Number(player.level || 1)));
+      const petLevelCap = getPetLevelCap(player);
+      const id = String(pet.id || `pet_${Date.now()}_${randInt(100, 999)}`);
+      const rarity = PET_RARITY_ORDER.includes(String(pet.rarity || '').trim())
+        ? String(pet.rarity || '').trim()
+        : 'normal';
+      const speciesPool = PET_SPECIES_BY_RARITY[rarity] || PET_SPECIES_BY_RARITY.normal;
+      const role = String(pet.role || speciesPool[randInt(0, speciesPool.length - 1)]);
+      const name = String(pet.name || role).slice(0, 24);
+      const growthRange = PET_RARITY_GROWTH_RANGE[rarity] || PET_RARITY_GROWTH_RANGE.normal;
+      const growthRaw = Number(pet.growth || growthRange[0]);
+      const growth = Math.max(growthRange[0], Math.min(growthRange[1], Number(growthRaw.toFixed(3))));
+      const aptitudeRaw = pet.aptitude && typeof pet.aptitude === 'object' ? pet.aptitude : {};
+      const aptRange = PET_RARITY_APTITUDE_RANGE[rarity] || PET_RARITY_APTITUDE_RANGE.normal;
+      const aptitude = {
+        hp: Math.max(aptRange.hp[0], Math.min(aptRange.hp[1], Math.floor(Number(aptitudeRaw.hp || aptRange.hp[0])))),
+        atk: Math.max(aptRange.atk[0], Math.min(aptRange.atk[1], Math.floor(Number(aptitudeRaw.atk || aptRange.atk[0])))),
+        def: Math.max(aptRange.def[0], Math.min(aptRange.def[1], Math.floor(Number(aptitudeRaw.def || aptRange.def[0])))),
+        mag: Math.max(aptRange.mag[0], Math.min(aptRange.mag[1], Math.floor(Number(aptitudeRaw.mag || aptRange.mag[0])))),
+        speed: Math.max(aptRange.speed[0], Math.min(aptRange.speed[1], Math.floor(Number(aptitudeRaw.speed || aptRange.speed[0]))))
+      };
+      const skillSlots = Math.max(PET_BASE_SKILL_SLOTS, Math.min(PET_MAX_SKILL_SLOTS, Math.floor(Number(pet.skillSlots || PET_BASE_SKILL_SLOTS))));
+      const rawSkills = Array.isArray(pet.skills) ? pet.skills : [];
+      const skills = Array.from(new Set(rawSkills.map((idValue) => String(idValue || '').trim()).filter(Boolean)))
+        .filter((skillId) => Boolean(getPetSkillDef(skillId)))
+        .slice(0, skillSlots);
+      const levelRaw = Math.floor(Number(pet.level || playerLevel));
+      const level = Math.max(1, Math.min(petLevelCap, Number.isFinite(levelRaw) ? levelRaw : playerLevel));
+      const expNeed = getPetLevelExpNeed(level);
+      const exp = level >= petLevelCap ? 0 : Math.max(0, Math.min(expNeed - 1, Math.floor(Number(pet.exp || 0))));
+      return {
+        id,
+        rarity,
+        level,
+        exp,
+        name,
+        role,
+        growth,
+        aptitude,
+        skillSlots,
+        skills
+      };
+    });
+
+  if (!state.activePetId || !state.pets.some((pet) => pet.id === state.activePetId)) {
+    state.activePetId = null;
+  }
+
+  Object.keys(state.books).forEach((bookId) => {
+    const qty = Math.max(0, Math.floor(Number(state.books[bookId] || 0)));
+    if (!qty) delete state.books[bookId];
+    else state.books[bookId] = qty;
+  });
+
+  return state;
+}
+
+function pickPetDropRarity(maxRarity) {
+  const maxIndex = PET_RARITY_ORDER.indexOf(maxRarity);
+  if (maxIndex < 0) return null;
+  const candidates = PET_RARITY_ORDER.slice(0, maxIndex + 1);
+  const weights = candidates.map((rarity) => {
+    if (rarity === maxRarity) return 8;
+    if (rarity === 'ultimate') return 1;
+    if (rarity === 'supreme') return 2;
+    if (rarity === 'legendary') return 4;
+    if (rarity === 'epic') return 8;
+    if (rarity === 'rare') return 14;
+    if (rarity === 'excellent') return 22;
+    return 32;
+  });
+  const total = weights.reduce((sum, value) => sum + value, 0);
+  if (total <= 0) return null;
+  let roll = Math.random() * total;
+  for (let i = 0; i < candidates.length; i += 1) {
+    roll -= weights[i];
+    if (roll <= 0) return candidates[i];
+  }
+  return candidates[candidates.length - 1];
+}
+
+function getPetDropMaxRarityForBoss(mobTemplate) {
+  if (!mobTemplate || !isBossMob(mobTemplate)) return null;
+  if (mobTemplate.id === 'vip_personal_boss') return 'excellent';
+  if (mobTemplate.id === 'svip_personal_boss') return 'rare';
+  if (mobTemplate.id && String(mobTemplate.id).startsWith('cultivation_boss_')) return 'rare';
+  if (mobTemplate.allowUltimateDrop || mobTemplate.id === 'cross_world_boss') return 'ultimate';
+  if (mobTemplate.worldBoss) return 'supreme';
+  if (mobTemplate.specialBoss) return 'legendary';
+  return 'epic';
+}
+
+function createRandomPet(rarity = 'normal') {
+  const safeRarity = PET_RARITY_ORDER.includes(rarity) ? rarity : 'normal';
+  const speciesPool = PET_SPECIES_BY_RARITY[safeRarity] || PET_SPECIES_BY_RARITY.normal;
+  const role = speciesPool[randInt(0, speciesPool.length - 1)];
+  const growthRange = PET_RARITY_GROWTH_RANGE[safeRarity] || PET_RARITY_GROWTH_RANGE.normal;
+  const growth = Number((growthRange[0] + Math.random() * (growthRange[1] - growthRange[0])).toFixed(3));
+  const availableGrades = safeRarity === 'normal'
+    ? new Set(['normal'])
+    : safeRarity === 'excellent'
+      ? new Set(['normal'])
+      : safeRarity === 'rare'
+        ? new Set(['normal', 'advanced'])
+        : safeRarity === 'epic'
+          ? new Set(['normal', 'advanced'])
+          : new Set(['normal', 'advanced', 'special']);
+  const skillPool = PET_SKILL_LIBRARY.filter((skill) => availableGrades.has(skill.grade));
+  const normalSkills = PET_SKILL_LIBRARY.filter((skill) => skill.grade === 'normal');
+  const minOpen = safeRarity === 'normal' ? 1 : safeRarity === 'excellent' ? 1 : safeRarity === 'rare' ? 2 : 3;
+  const maxOpen = safeRarity === 'ultimate' ? 6 : safeRarity === 'supreme' ? 5 : safeRarity === 'legendary' ? 4 : 3;
+  const openSkillCount = Math.min(PET_BASE_SKILL_SLOTS, randInt(minOpen, maxOpen));
+  const skills = [];
+  while (skills.length < openSkillCount && skillPool.length > 0) {
+    const pick = skillPool[randInt(0, skillPool.length - 1)];
+    if (!skills.includes(pick.id)) skills.push(pick.id);
+  }
+  if (skills.length === 0 && normalSkills.length > 0) {
+    skills.push(normalSkills[randInt(0, normalSkills.length - 1)].id);
+  }
+  const aptRange = PET_RARITY_APTITUDE_RANGE[safeRarity] || PET_RARITY_APTITUDE_RANGE.normal;
+  return {
+    id: `pet_${Date.now()}_${randInt(100, 999)}`,
+    rarity: safeRarity,
+    level: 1,
+    exp: 0,
+    name: `${role}${randInt(1, 99)}`,
+    role,
+    growth,
+    aptitude: {
+      hp: randInt(aptRange.hp[0], aptRange.hp[1]),
+      atk: randInt(aptRange.atk[0], aptRange.atk[1]),
+      def: randInt(aptRange.def[0], aptRange.def[1]),
+      mag: randInt(aptRange.mag[0], aptRange.mag[1]),
+      speed: randInt(aptRange.speed[0], aptRange.speed[1])
+    },
+    skillSlots: PET_BASE_SKILL_SLOTS,
+    skills
+  };
+}
+
+function rollPetDropForBoss(mobTemplate, bonus = 1) {
+  const maxRarity = getPetDropMaxRarityForBoss(mobTemplate);
+  if (!maxRarity) return null;
+  const baseChanceByCap = { excellent: 0.06, rare: 0.07, epic: 0.08, legendary: 0.09, supreme: 0.1, ultimate: 0.12 };
+  const baseChance = baseChanceByCap[maxRarity] || 0.05;
+  const chance = Math.max(0, Math.min(0.5, baseChance * Math.max(0.5, Number(bonus || 1))));
+  if (Math.random() > chance) return null;
+  const rarity = pickPetDropRarity(maxRarity);
+  return rarity ? createRandomPet(rarity) : null;
+}
+
+function grantPetDropToPlayer(player, pet, mobTemplate) {
+  if (!player || !pet) return false;
+  const playerLevel = Math.max(1, Math.floor(Number(player.level || 1)));
+  const petLevelCap = getPetLevelCap(player);
+  const petLevelRaw = Math.floor(Number(pet.level || playerLevel));
+  pet.level = Math.max(1, Math.min(petLevelCap, Number.isFinite(petLevelRaw) ? petLevelRaw : playerLevel));
+  pet.exp = Math.max(0, Math.floor(Number(pet.exp || 0)));
+  const petState = normalizePetState(player);
+  if (!petState || petState.pets.length >= PET_MAX_OWNED) {
+    player.send(`Pet drop: [${PET_RARITY_LABELS[pet.rarity] || PET_RARITY_LABELS.normal}] ${pet.name}, but pet slots are full.`);
+    return false;
+  }
+  petState.pets.push(pet);
+  if (!petState.activePetId) petState.activePetId = pet.id;
+  player.send(`Pet drop: [${PET_RARITY_LABELS[pet.rarity] || PET_RARITY_LABELS.normal}] ${pet.name} (growth ${pet.growth.toFixed(3)}).`);
+  logLoot(`[loot][pet] ${player.name} <- ${pet.rarity}:${pet.role} (${mobTemplate?.id || 'unknown'})`);
+  return true;
+}
+
+function learnPetSkill(pet, skillId, allowReplace = true) {
+  if (!pet || !skillId) return { ok: false, reason: 'invalid' };
+  const skills = Array.isArray(pet.skills) ? pet.skills : [];
+  if (skills.includes(skillId)) return { ok: false, reason: 'exists' };
+  if (skills.length < pet.skillSlots) {
+    pet.skills = [...skills, skillId];
+    return { ok: true, replaced: null };
+  }
+  if (!allowReplace || skills.length === 0) return { ok: false, reason: 'full' };
+  const idx = randInt(0, skills.length - 1);
+  const replaced = skills[idx];
+  const next = skills.slice();
+  next[idx] = skillId;
+  pet.skills = next;
+  return { ok: true, replaced };
+}
+
+function gainActivePetExp(player, expGain) {
+  if (!player) return { leveled: 0, gained: 0, pet: null };
+  const state = normalizePetState(player);
+  if (!state?.activePetId) return { leveled: 0, gained: 0, pet: null };
+  const pet = state.pets.find((entry) => entry.id === state.activePetId);
+  if (!pet) return { leveled: 0, gained: 0, pet: null };
+  const cap = getPetLevelCap(player);
+  pet.level = Math.max(1, Math.min(cap, Math.floor(Number(pet.level || 1))));
+  pet.exp = Math.max(0, Math.floor(Number(pet.exp || 0)));
+  let pending = Math.max(0, Math.floor(Number(expGain || 0)));
+  const totalGain = pending;
+  let leveled = 0;
+  while (pending > 0 && pet.level < cap) {
+    const need = getPetLevelExpNeed(pet.level);
+    const missing = Math.max(1, need - pet.exp);
+    if (pending >= missing) {
+      pending -= missing;
+      pet.level += 1;
+      pet.exp = 0;
+      leveled += 1;
+    } else {
+      pet.exp += pending;
+      pending = 0;
+    }
+  }
+  if (pet.level >= cap) {
+    pet.level = cap;
+    pet.exp = 0;
+  }
+  return { leveled, gained: totalGain, pet };
+}
+
+function buildPetStatePayload(player) {
+  const state = normalizePetState(player);
+  const pets = (state?.pets || []).map((pet) => ({
+    id: pet.id,
+    rarity: pet.rarity || 'normal',
+    rarityLabel: PET_RARITY_LABELS[pet.rarity] || PET_RARITY_LABELS.normal,
+    level: Math.max(1, Math.floor(Number(pet.level || 1))),
+    levelCap: getPetLevelCap(player),
+    exp: Math.max(0, Math.floor(Number(pet.exp || 0))),
+    expNeed: getPetLevelExpNeed(Math.max(1, Math.floor(Number(pet.level || 1)))),
+    name: pet.name,
+    role: pet.role,
+    growth: pet.growth,
+    aptitude: pet.aptitude,
+    skillSlots: pet.skillSlots,
+    skills: pet.skills,
+    skillTiers: (pet.skills || []).map((skillId) => getPetSkillTier(skillId)),
+    skillNames: (pet.skills || []).map((skillId) => getPetSkillDef(skillId)?.name || skillId),
+    power: calcPetPower(pet)
+  }));
+  const books = PET_BOOK_LIBRARY.map((book) => ({
+    id: book.id,
+    name: book.name,
+    skillId: book.skillId,
+    skillName: book.skillName,
+    tier: book.tier || 'low',
+    qty: Math.max(0, Math.floor(Number(state?.books?.[book.id] || 0))),
+    priceGold: book.priceGold
+  }));
+  return {
+    maxOwned: PET_MAX_OWNED,
+    captureCostGold: 0,
+    comprehendCostGold: PET_COMPREHEND_COST_GOLD,
+    synthesisCostGold: PET_SYNTHESIS_COST_GOLD,
+    activePetId: state?.activePetId || null,
+    pets,
+    books
+  };
+}
+
 async function buildState(player) {
   normalizeVipStatus(player);
   normalizeSvipStatus(player);
@@ -7458,6 +7859,7 @@ async function buildState(player) {
       expMaterial: treasureExpMaterial,
       randomAttr: treasureRandomAttrTotal
     },
+    pet: buildPetStatePayload(player),
     anti: {
       key: player.socket?.data?.antiKey || null,
       seq: player.socket?.data?.antiSeq || 0
@@ -8667,6 +9069,7 @@ io.on('connection', (socket) => {
       loaded.guild = { id: member.guild.id, name: member.guild.name, role: member.role };
     }
     normalizeZhuxianTowerProgress(loaded);
+    normalizePetState(loaded);
     ensureZhuxianTowerPosition(loaded);
     ensurePersonalBossPosition(loaded);
 
@@ -8822,6 +9225,151 @@ io.on('connection', (socket) => {
     tryRecoverZhuxianTowerEmptyRoom(player);
     player.forceStateRefresh = true;
     await sendState(player);
+  });
+
+  socket.on('pet_action', async (payload) => {
+    const player = players.get(socket.id);
+    if (!player) return;
+    const { clean } = sanitizePayload(
+      payload,
+      ['action', 'petId', 'name', 'bookId', 'qty', 'mainPetId', 'subPetId'],
+      'pet_action'
+    );
+    const action = String(clean?.action || '').trim().toLowerCase();
+    const petState = normalizePetState(player);
+    const getPetById = (id) => petState.pets.find((pet) => pet.id === String(id || '').trim());
+    const emitResult = (ok, msg) => socket.emit('pet_result', { ok, msg });
+    const fail = (msg) => emitResult(false, msg);
+    let dirty = false;
+
+    if (!action) return fail('invalid action');
+
+    if (action === 'set_active') {
+      const pet = getPetById(clean?.petId);
+      if (!pet) return fail('pet not found');
+      petState.activePetId = pet.id;
+      dirty = true;
+      emitResult(true, `active pet: ${pet.name}`);
+    } else if (action === 'set_rest') {
+      const pet = getPetById(clean?.petId);
+      if (!pet) return fail('pet not found');
+      if (petState.activePetId === pet.id) {
+        petState.activePetId = null;
+        dirty = true;
+      }
+      emitResult(true, `${pet.name} is now resting`);
+    } else if (action === 'rename') {
+      const pet = getPetById(clean?.petId);
+      if (!pet) return fail('pet not found');
+      const name = String(clean?.name || '').trim();
+      const len = [...name].length;
+      if (len < 2 || len > 12) return fail('name must be 2-12 chars');
+      pet.name = name;
+      dirty = true;
+      emitResult(true, `rename success: ${pet.name}`);
+    } else if (action === 'comprehend') {
+      const pet = getPetById(clean?.petId);
+      if (!pet) return fail('pet not found');
+      if (player.gold < PET_COMPREHEND_COST_GOLD) return fail('gold not enough');
+      const skillCap = Math.min(PET_COMPREHEND_MAX_SKILLS, Math.max(PET_BASE_SKILL_SLOTS, Number(pet.skillSlots || PET_BASE_SKILL_SLOTS)));
+      if ((pet.skills || []).length >= skillCap) return fail('comprehend limit reached');
+      const rarityIndex = PET_RARITY_ORDER.indexOf(pet.rarity || 'normal');
+      const canAdvanced = rarityIndex >= PET_RARITY_ORDER.indexOf('rare');
+      const canSpecial = rarityIndex >= PET_RARITY_ORDER.indexOf('legendary');
+      const pool = PET_SKILL_LIBRARY.filter((skill) => {
+        if ((pet.skills || []).includes(skill.id)) return false;
+        if (skill.grade === 'normal') return true;
+        if (skill.grade === 'advanced') return canAdvanced;
+        return canSpecial;
+      });
+      if (!pool.length) return fail('no skill available');
+      const pick = pool[randInt(0, pool.length - 1)];
+      const learned = learnPetSkill(pet, pick.id, false);
+      if (!learned.ok) return fail('learn failed');
+      player.gold -= PET_COMPREHEND_COST_GOLD;
+      dirty = true;
+      emitResult(true, `learned: ${pick.name}`);
+    } else if (action === 'buy_book') {
+      const book = getPetBookDef(String(clean?.bookId || '').trim());
+      if (!book) return fail('book not found');
+      const qty = Math.max(1, Math.min(99, Math.floor(Number(clean?.qty || 1))));
+      const totalCost = Math.max(0, Math.floor(Number(book.priceGold || 0))) * qty;
+      if (player.gold < totalCost) return fail('gold not enough');
+      player.gold -= totalCost;
+      petState.books[book.id] = Math.max(0, Math.floor(Number(petState.books[book.id] || 0))) + qty;
+      dirty = true;
+      emitResult(true, `bought ${book.name} x${qty}`);
+    } else if (action === 'use_book') {
+      const pet = getPetById(clean?.petId);
+      if (!pet) return fail('pet not found');
+      const book = getPetBookDef(String(clean?.bookId || '').trim());
+      if (!book) return fail('book not found');
+      const owned = Math.max(0, Math.floor(Number(petState.books[book.id] || 0)));
+      if (owned <= 0) return fail('book not enough');
+      if ((pet.skills || []).includes(book.skillId)) return fail('skill already learned');
+      const learned = learnPetSkill(pet, book.skillId, true);
+      if (!learned.ok) return fail('learn failed');
+      petState.books[book.id] = owned - 1;
+      if (petState.books[book.id] <= 0) delete petState.books[book.id];
+      let unlocked = false;
+      if (Number(pet.skillSlots || PET_BASE_SKILL_SLOTS) < 4 && Math.random() < PET_BOOK_UNLOCK_SLOT4_CHANCE) {
+        pet.skillSlots = Math.min(4, Number(pet.skillSlots || PET_BASE_SKILL_SLOTS) + 1);
+        unlocked = true;
+      }
+      dirty = true;
+      const replacedText = learned.replaced ? ` (replaced ${learned.replaced})` : '';
+      const unlockText = unlocked ? ' | slot unlocked' : '';
+      emitResult(true, `book used: ${book.skillName}${replacedText}${unlockText}`);
+    } else if (action === 'synthesize' || action === 'synthesis') {
+      const mainPet = getPetById(clean?.mainPetId);
+      const subPet = getPetById(clean?.subPetId);
+      if (!mainPet || !subPet) return fail('pet not found');
+      if (mainPet.id === subPet.id) return fail('main and sub cannot be same');
+      if (player.gold < PET_SYNTHESIS_COST_GOLD) return fail('gold not enough');
+      player.gold -= PET_SYNTHESIS_COST_GOLD;
+
+      const mainRarity = PET_RARITY_ORDER.includes(mainPet.rarity) ? mainPet.rarity : 'normal';
+      const growthRange = PET_RARITY_GROWTH_RANGE[mainRarity] || PET_RARITY_GROWTH_RANGE.normal;
+      const mixGrowth = Number(mainPet.growth || growthRange[0]) * 0.85 + Number(subPet.growth || growthRange[0]) * 0.15;
+      mainPet.growth = Math.max(growthRange[0], Math.min(growthRange[1], Number(mixGrowth.toFixed(3))));
+
+      const aptRange = PET_RARITY_APTITUDE_RANGE[mainRarity] || PET_RARITY_APTITUDE_RANGE.normal;
+      ['hp', 'atk', 'def', 'mag', 'speed'].forEach((key) => {
+        const mainVal = Math.floor(Number(mainPet?.aptitude?.[key] || aptRange[key][0]));
+        const subVal = Math.floor(Number(subPet?.aptitude?.[key] || aptRange[key][0]));
+        const mixed = Math.floor(mainVal * 0.75 + subVal * 0.25 + randInt(0, 6));
+        mainPet.aptitude[key] = Math.max(aptRange[key][0], Math.min(aptRange[key][1], mixed));
+      });
+
+      let unlocked = false;
+      const slotsNow = Math.max(PET_BASE_SKILL_SLOTS, Math.floor(Number(mainPet.skillSlots || PET_BASE_SKILL_SLOTS)));
+      if (slotsNow >= 4 && slotsNow < PET_MAX_SKILL_SLOTS && Math.random() < PET_SYNTHESIS_UNLOCK_SLOT_CHANCE) {
+        mainPet.skillSlots = slotsNow + 1;
+        unlocked = true;
+      }
+
+      const subSkills = Array.isArray(subPet.skills) ? subPet.skills.slice() : [];
+      const inheritable = subSkills.filter((skillId) => skillId && !(mainPet.skills || []).includes(skillId));
+      if (inheritable.length > 0 && Math.random() < 0.6) {
+        const pickSkill = inheritable[randInt(0, inheritable.length - 1)];
+        learnPetSkill(mainPet, pickSkill, true);
+      }
+
+      petState.pets = petState.pets.filter((pet) => pet.id !== subPet.id);
+      if (petState.activePetId === subPet.id) {
+        petState.activePetId = mainPet.id;
+      }
+      dirty = true;
+      const unlockText = unlocked ? ' | slot unlocked' : '';
+      emitResult(true, `synthesis success: ${mainPet.name}${unlockText}`);
+    } else {
+      return fail('unknown action');
+    }
+
+    if (!dirty) return;
+    normalizePetState(player);
+    await sendState(player);
+    await savePlayer(player);
   });
 
   socket.on('mail_list', async () => {
@@ -10067,6 +10615,7 @@ async function processMobDeath(player, mob, online) {
       const finalGold = shareGold;
       member.gold += finalGold;
       const leveled = gainExp(member, finalExp);
+      gainActivePetExp(member, finalExp);
       awardKill(member, mob.templateId);
       member.send(`队伍分配: 获得 ${finalExp} 经验和 ${finalGold} 金币。`);
       if (leveled) member.send('你升级了！');
@@ -10355,6 +10904,18 @@ async function processMobDeath(player, mob, online) {
         });
       }
     });
+
+  if (isBossMob(template) && dropTargets.length > 0) {
+    dropTargets.forEach(({ player: owner, damageRatio }) => {
+      if (!owner) return;
+      const chanceBonus = Math.max(0.35, Math.min(1.5, Number(damageRatio || 1)));
+      const pet = rollPetDropForBoss(template, chanceBonus);
+      if (!pet) return;
+      if (grantPetDropToPlayer(owner, pet, template) && owner?.userId) {
+        lootOwnersToSave.add(owner);
+      }
+    });
+  }
 
   if (towerRoomCleared && towerClearOwner) {
     const reward = await grantZhuxianTowerClearReward(towerClearOwner, towerFloor);

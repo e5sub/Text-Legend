@@ -382,6 +382,54 @@
     </div>
   </div>
 
+  <div id="pet-modal" class="modal hidden">
+    <div class="modal-card pet-card">
+      <div class="modal-title">宠物系统</div>
+      <div class="modal-list-wrapper">
+        <div id="pet-summary" class="modal-text">加载中...</div>
+        <div class="pet-grid">
+          <div>
+            <div class="modal-text">我的宠物</div>
+            <div id="pet-list" class="pet-list"></div>
+            <div class="pet-inline-actions">
+              <button id="pet-capture">BOSS掉落</button>
+              <button id="pet-set-active">设为出战</button>
+              <button id="pet-set-rest">休息</button>
+            </div>
+            <div class="pet-inline-actions">
+              <button id="pet-rename">改名</button>
+              <button id="pet-comprehend">领悟</button>
+            </div>
+          </div>
+          <div>
+            <div class="modal-text">宠物详情</div>
+            <div id="pet-detail" class="modal-text">请选择一只宠物</div>
+            <div class="modal-text">技能书仓库</div>
+            <div id="pet-book-list" class="pet-book-list"></div>
+            <div class="pet-inline-actions">
+              <select id="pet-buy-book"></select>
+              <input id="pet-buy-book-qty" type="number" min="1" step="1" value="1">
+              <button id="pet-buy-book-btn">购买</button>
+            </div>
+            <div class="pet-inline-actions">
+              <select id="pet-use-book"></select>
+              <button id="pet-use-book-btn">打书</button>
+            </div>
+            <div class="modal-text">宠物合成</div>
+            <div class="pet-inline-actions">
+              <select id="pet-synth-main"></select>
+              <select id="pet-synth-sub"></select>
+              <button id="pet-synth-btn">合成</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="pet-close">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <div id="changeclass-modal" class="modal hidden">
     <div class="modal-card">
       <div class="modal-title">&#x8F6C;&#x804C;</div>
