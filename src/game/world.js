@@ -1003,7 +1003,7 @@ export const WORLD = {
     rooms: {
       entry: {
         id: 'entry',
-        name: '专属入口',
+        name: '入口',
         desc: '仅供VIP/SVIP挑战的个人专属BOSS领域。',
         exits: {
           south: 'mg_plains:gate',
