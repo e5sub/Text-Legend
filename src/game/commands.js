@@ -1219,15 +1219,31 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         send('你所在的房间不存在。');
         return;
       }
+      const exitsSource = { ...(room.exits || {}) };
+      if (player.position.zone === PERSONAL_BOSS_ZONE_ID && player.position.room === 'entry') {
+        const vipActive = normalizeVipStatus(player);
+        const svipActive = normalizeSvipStatus(player);
+        const svipPermanent = svipActive && !Number(player.flags?.svipExpiresAt || 0);
+        if (vipActive || svipActive) exitsSource.north = 'vip_lair';
+        else delete exitsSource.north;
+        if (svipActive) exitsSource.east = 'svip_lair';
+        else delete exitsSource.east;
+        if (svipPermanent) exitsSource.up = 'perma_lair';
+        else delete exitsSource.up;
+      }
       let dir = normalizeDirection(args);
-      if (!dir || !room.exits[dir]) {
+      if (!dir || !exitsSource[dir]) {
         const targetName = (args || '').trim();
         if (targetName) {
-          const entry = Object.entries(room.exits).find(([exitDir, dest]) => {
+          const entry = Object.entries(exitsSource).find(([exitDir, dest]) => {
             let zoneId = player.position.zone;
             let roomId = dest;
             if (dest.includes(':')) {
               [zoneId, roomId] = dest.split(':');
+            }
+            if (zoneId === PERSONAL_BOSS_ZONE_ID && player.position.zone === PERSONAL_BOSS_ZONE_ID && player.position.room === 'entry') {
+              roomId = toPlayerPersonalBossRoomId(player, roomId);
+              ensurePersonalBossRoom(roomId);
             }
             const destZone = WORLD[zoneId];
             const destRoom = destZone?.rooms[roomId];
@@ -1238,11 +1254,11 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           if (entry) dir = entry[0];
         }
       }
-      if (!dir || !room.exits[dir]) {
+      if (!dir || !exitsSource[dir]) {
         send('方向无效。');
         return;
       }
-      const dest = room.exits[dir];
+      const dest = exitsSource[dir];
       if (dest.includes(':')) {
         let [zoneId, roomId] = dest.split(':');
         if (zoneId === ZHUXIAN_TOWER_ZONE_ID && roomId === 'entry') {
