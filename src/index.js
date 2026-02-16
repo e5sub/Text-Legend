@@ -7856,15 +7856,20 @@ function rollPetBookDropsForBoss(mobTemplate, bonus = 1) {
 
   const pickPool = () => {
     const isSpecialBoss = Boolean(mobTemplate && mobTemplate.specialBoss);
-    if (!isSpecialBoss) {
+    const isVipBoss = mobTemplate.id === 'vip_personal_boss';
+    const isSvipBoss = mobTemplate.id === 'svip_personal_boss';
+    const isCultivationBoss = mobTemplate.id && String(mobTemplate.id).startsWith('cultivation_boss_');
+    if (!isSpecialBoss && !isVipBoss && !isSvipBoss && !isCultivationBoss) {
       return lowBooks;
     }
-    if (!highBooks.length || maxRarity === 'excellent' || maxRarity === 'rare') return lowBooks;
+    if (!highBooks.length) return lowBooks;
     const highChanceByCap = {
-      epic: 0.15,
-      legendary: 0.2,
-      supreme: 0.3,
-      ultimate: 0.45
+      excellent: 0.02,
+      rare: 0.03,
+      epic: 0.04,
+      legendary: 0.05,
+      supreme: 0.05,
+      ultimate: 0.05
     };
     const highChance = highChanceByCap[maxRarity] || 0;
     return Math.random() < highChance ? highBooks : lowBooks;
@@ -9765,13 +9770,34 @@ io.on('connection', (socket) => {
 
       let unlocked = false;
       const slotsNow = Math.max(PET_BASE_SKILL_SLOTS, Math.floor(Number(mainPet.skillSlots || PET_BASE_SKILL_SLOTS)));
-      if (slotsNow >= 4 && slotsNow < PET_MAX_SKILL_SLOTS && Math.random() < PET_SYNTHESIS_UNLOCK_SLOT_CHANCE) {
+      
+      const mainSkills = Array.isArray(mainPet.skills) ? mainPet.skills : [];
+      const subSkills = Array.isArray(subPet.skills) ? subPet.skills : [];
+      const mainUniqueSkills = new Set(mainSkills);
+      const subUniqueSkills = new Set(subSkills);
+      
+      const allUniqueSkills = new Set([...mainUniqueSkills, ...subUniqueSkills]);
+      const totalUniqueSkills = allUniqueSkills.size;
+      
+      const maxSkillSlots = totalUniqueSkills;
+      
+      let unlockChance = PET_SYNTHESIS_UNLOCK_SLOT_CHANCE;
+      if (totalUniqueSkills >= 6) {
+        unlockChance = 0.0125;
+      } else if (totalUniqueSkills >= 8) {
+        unlockChance = 0.0075;
+      } else if (totalUniqueSkills >= 10) {
+        unlockChance = 0.005;
+      } else if (totalUniqueSkills >= 12) {
+        unlockChance = 0.0025;
+      }
+      
+      if (slotsNow >= 4 && slotsNow < maxSkillSlots && Math.random() < unlockChance) {
         mainPet.skillSlots = slotsNow + 1;
         unlocked = true;
       }
-
-      const subSkills = Array.isArray(subPet.skills) ? subPet.skills.slice() : [];
-      const inheritable = subSkills.filter((skillId) => skillId && !(mainPet.skills || []).includes(skillId));
+      
+      const inheritable = [...subUniqueSkills].filter((skillId) => skillId && !mainUniqueSkills.has(skillId));
       if (inheritable.length > 0 && Math.random() < 0.6) {
         const pickSkill = inheritable[randInt(0, inheritable.length - 1)];
         learnPetSkill(mainPet, pickSkill, true);
