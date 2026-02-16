@@ -355,6 +355,75 @@
 
         <div class="block" data-collapsible>
           <div class="block-title">
+            <h2>专属BOSS设置</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <p style="color: #666; margin-bottom: 8px; font-size: 13px;">
+              三张专属图对应两套BOSS配置：VIP专属BOSS、SVIP专属BOSS（SVIP永久图与SVIP图共享同一BOSS配置）。
+            </p>
+
+            <h3 style="margin: 6px 0 6px;">VIP专属BOSS（洛奇）</h3>
+            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
+              <label style="min-width: 40px;">生命:</label>
+              <input id="pb-vip-hp" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+              <label style="min-width: 40px;">攻击:</label>
+              <input id="pb-vip-atk" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+            </div>
+            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
+              <label style="min-width: 40px;">防御:</label>
+              <input id="pb-vip-def" type="number" min="0" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+              <label style="min-width: 40px;">魔御:</label>
+              <input id="pb-vip-mdef" type="number" min="0" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+            </div>
+            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
+              <label style="min-width: 40px;">经验:</label>
+              <input id="pb-vip-exp" type="number" min="1" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+              <label style="min-width: 40px;">金币:</label>
+              <input id="pb-vip-gold" type="number" min="0" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+            </div>
+            <div class="row" style="margin-bottom: 8px; font-size: 13px; gap: 4px;">
+              <label style="min-width: 70px;">刷新(分钟):</label>
+              <input id="pb-vip-respawn-mins" type="number" min="1" step="1" style="width: 80px; font-size: 13px; padding: 4px 6px;">
+              <label style="min-width: 70px;">掉率倍率:</label>
+              <input id="pb-vip-drop-bonus" type="number" min="0" step="0.1" style="width: 80px; font-size: 13px; padding: 4px 6px;">
+            </div>
+
+            <h3 style="margin: 6px 0 6px;">SVIP专属BOSS（菜芽）</h3>
+            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
+              <label style="min-width: 40px;">生命:</label>
+              <input id="pb-svip-hp" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+              <label style="min-width: 40px;">攻击:</label>
+              <input id="pb-svip-atk" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+            </div>
+            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
+              <label style="min-width: 40px;">防御:</label>
+              <input id="pb-svip-def" type="number" min="0" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+              <label style="min-width: 40px;">魔御:</label>
+              <input id="pb-svip-mdef" type="number" min="0" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+            </div>
+            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
+              <label style="min-width: 40px;">经验:</label>
+              <input id="pb-svip-exp" type="number" min="1" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+              <label style="min-width: 40px;">金币:</label>
+              <input id="pb-svip-gold" type="number" min="0" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+            </div>
+            <div class="row" style="margin-bottom: 8px; font-size: 13px; gap: 4px;">
+              <label style="min-width: 70px;">刷新(分钟):</label>
+              <input id="pb-svip-respawn-mins" type="number" min="1" step="1" style="width: 80px; font-size: 13px; padding: 4px 6px;">
+              <label style="min-width: 70px;">掉率倍率:</label>
+              <input id="pb-svip-drop-bonus" type="number" min="0" step="0.1" style="width: 80px; font-size: 13px; padding: 4px 6px;">
+            </div>
+
+            <div class="row" style="margin-top: 8px;">
+              <button id="pb-save-btn" class="btn-small">保存</button>
+            </div>
+            <div id="pb-msg" class="msg"></div>
+          </div>
+        </div>
+
+        <div class="block" data-collapsible>
+          <div class="block-title">
             <h2>每日幸运玩家</h2>
             <button class="btn-small block-toggle">折叠</button>
           </div>

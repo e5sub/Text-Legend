@@ -117,7 +117,7 @@ import {
 } from './game/skills.js';
 import { MOB_TEMPLATES } from './game/mobs.js';
 import { ITEM_TEMPLATES, SHOP_STOCKS } from './game/items.js';
-import { WORLD, expandRoomVariants, shrinkRoomVariants, ensureZhuxianTowerRoom } from './game/world.js';
+import { WORLD, expandRoomVariants, shrinkRoomVariants, ensureZhuxianTowerRoom, ensurePersonalBossRoom } from './game/world.js';
 import { getRoomMobs, getAliveMobs, spawnMobs, removeMob, seedRespawnCache, setRespawnStore, getAllAliveMobs, incrementWorldBossKills, setWorldBossKillCount as setWorldBossKillCountState, incrementSpecialBossKills, setSpecialBossKillCount as setSpecialBossKillCountState, incrementCultivationBossKills, setCultivationBossKillCount as setCultivationBossKillCountState } from './game/state.js';
 import { calcHitChance, calcDamage, applyDamage, applyHealing, applyPoison, tickStatus, getDefenseMultiplier, consumeFirestrikeCrit } from './game/combat.js';
 import { randInt, clamp } from './game/utils.js';
@@ -1614,6 +1614,66 @@ app.get('/api/training-config', async (req, res) => {
 });
 
 // 特殊BOSS配置（魔龙BOSS、暗之系列BOSS、沙巴克BOSS）
+app.get('/admin/personalboss-settings', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const vip = await getPersonalBossTierSettings('vip');
+  const svip = await getPersonalBossTierSettings('svip');
+  res.json({
+    ok: true,
+    vip,
+    svip,
+    svipPermanentSharesSvip: true
+  });
+});
+
+app.post('/admin/personalboss-settings/update', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const data = req.body || {};
+  const toTierPayload = (payload, fallback) => ({
+    hp: Math.max(1, Math.floor(Number(payload?.hp) || fallback.hp)),
+    atk: Math.max(1, Math.floor(Number(payload?.atk) || fallback.atk)),
+    def: Math.max(0, Math.floor(Number(payload?.def) || fallback.def)),
+    mdef: Math.max(0, Math.floor(Number(payload?.mdef) || fallback.mdef)),
+    exp: Math.max(1, Math.floor(Number(payload?.exp) || fallback.exp)),
+    gold: Math.max(0, Math.floor(Number(payload?.gold) || fallback.gold)),
+    respawnMinutes: Math.max(1, Math.floor(Number(payload?.respawnMinutes) || fallback.respawnMinutes)),
+    dropBonus: (() => {
+      const parsed = Number(payload?.dropBonus);
+      if (!Number.isFinite(parsed)) return fallback.dropBonus;
+      return Math.max(0, parsed);
+    })()
+  });
+  const currentVip = await getPersonalBossTierSettings('vip');
+  const currentSvip = await getPersonalBossTierSettings('svip');
+  const vipPayload = toTierPayload(data.vip || {}, currentVip);
+  const svipPayload = toTierPayload(data.svip || {}, currentSvip);
+
+  const saveTier = async (tier, payload) => {
+    const prefix = `personal_boss_${tier}`;
+    await setSetting(`${prefix}_hp`, String(payload.hp));
+    await setSetting(`${prefix}_atk`, String(payload.atk));
+    await setSetting(`${prefix}_def`, String(payload.def));
+    await setSetting(`${prefix}_mdef`, String(payload.mdef));
+    await setSetting(`${prefix}_exp`, String(payload.exp));
+    await setSetting(`${prefix}_gold`, String(payload.gold));
+    await setSetting(`${prefix}_respawn_minutes`, String(payload.respawnMinutes));
+    await setSetting(`${prefix}_drop_bonus`, String(payload.dropBonus));
+  };
+
+  await saveTier('vip', vipPayload);
+  await saveTier('svip', svipPayload);
+  await applyPersonalBossSettings();
+
+  res.json({
+    ok: true,
+    vip: await getPersonalBossTierSettings('vip'),
+    svip: await getPersonalBossTierSettings('svip'),
+    svipPermanentSharesSvip: true
+  });
+});
+
 app.get('/admin/specialboss-settings', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
@@ -3163,6 +3223,7 @@ const CULTIVATION_ZONE_ID = 'cultivation';
 const CULTIVATION_BOSS_ROOM_PREFIX = 'boss_';
 const ZHUXIAN_TOWER_ZONE_ID = 'zxft';
 const ZHUXIAN_TOWER_ENTRY_ROOM_ID = 'entry';
+const PERSONAL_BOSS_ZONE_ID = 'pboss';
 const ZHUXIAN_TOWER_REWARD_ITEM_ID = 'treasure_exp_material';
 const ZHUXIAN_TOWER_TOP1_TITLE = '我是爬塔小能手';
 const ZHUXIAN_TOWER_XUANMING_DROPS = ['treasure_xuanwu_core', 'treasure_taiyin_mirror', 'treasure_guiyuan_bead', 'treasure_xuanshuang_wall', 'treasure_beiming_armor', 'treasure_hanyuan_stone'];
@@ -3268,6 +3329,29 @@ function rarityByPrice(item) {
   if (price >= 10000) return 'rare';
   if (price >= 2000) return 'uncommon';
   return 'common';
+}
+
+const RARITY_RANK = {
+  common: 1,
+  uncommon: 2,
+  rare: 3,
+  epic: 4,
+  legendary: 5,
+  supreme: 6,
+  ultimate: 7
+};
+
+function filterDropsByMaxRarity(drops, maxRarity) {
+  if (!Array.isArray(drops) || !maxRarity) return Array.isArray(drops) ? drops : [];
+  const maxRank = RARITY_RANK[maxRarity] || 0;
+  if (!maxRank) return drops;
+  return drops.filter((entry) => {
+    const item = ITEM_TEMPLATES[entry?.id];
+    if (!item) return false;
+    const rarity = rarityByPrice(item);
+    const rank = RARITY_RANK[rarity] || 0;
+    return rank > 0 && rank <= maxRank;
+  });
 }
 
 const ITEM_POOLS = (() => {
@@ -3655,6 +3739,14 @@ function getPlayerZhuxianTowerRoomId(player, roomId) {
   return ownerKey ? `floor_${floor}_x__u_${ownerKey}` : `floor_${floor}_x`;
 }
 
+function getPlayerPersonalBossRoomId(player, roomId) {
+  const match = String(roomId || '').match(/^(vip_lair|svip_lair|perma_lair)(?:__u_(.+))?$/);
+  if (!match) return String(roomId || '');
+  const base = match[1];
+  const ownerKey = String(player?.userId || player?.name || '').trim();
+  return ownerKey ? `${base}__u_${ownerKey}` : base;
+}
+
 function ensureZhuxianTowerPosition(player, now = Date.now()) {
   if (!player || player.position?.zone !== ZHUXIAN_TOWER_ZONE_ID) return false;
   const personalRoomId = getPlayerZhuxianTowerRoomId(player, player.position.room);
@@ -3671,6 +3763,28 @@ function ensureZhuxianTowerPosition(player, now = Date.now()) {
   player.combat = null;
   player.send('浮图塔层数已在本周重置，已返回浮图塔入口。');
   return true;
+}
+
+function ensurePersonalBossPosition(player) {
+  if (!player || player.position?.zone !== PERSONAL_BOSS_ZONE_ID) return false;
+  const personalRoomId = getPlayerPersonalBossRoomId(player, player.position.room);
+  if (personalRoomId && personalRoomId !== player.position.room) {
+    ensurePersonalBossRoom(personalRoomId);
+    player.position.room = personalRoomId;
+    return true;
+  }
+  return false;
+}
+
+function getPersonalBossDropCap(zoneId, roomId) {
+  if (zoneId !== PERSONAL_BOSS_ZONE_ID) return null;
+  ensurePersonalBossRoom(roomId);
+  const room = WORLD[zoneId]?.rooms?.[roomId];
+  if (!room) return null;
+  if (room.personalBossTier === 'vip') return 'supreme';
+  if (room.personalBossTier === 'svip') return 'ultimate';
+  if (room.personalBossTier === 'svip_permanent') return 'ultimate';
+  return null;
 }
 
 async function syncZhuxianTowerTopTitleForRealm(realmId) {
@@ -4079,9 +4193,10 @@ function rollRarityDrop(mobTemplate, bonus = 1) {
   if (!isBossMob(mobTemplate)) return null;
   const table = RARITY_BOSS;
   const allowSet = true;
+  const allowUltimateDrop = Boolean(mobTemplate?.id === 'cross_world_boss' || mobTemplate?.allowUltimateDrop);
   for (const rarity of RARITY_ORDER) {
     if (!isWorldBossDropMob(mobTemplate) && (rarity === 'supreme' || rarity === 'ultimate')) continue;
-    if (rarity === 'ultimate' && mobTemplate?.id !== 'cross_world_boss') continue;
+    if (rarity === 'ultimate' && !allowUltimateDrop) continue;
     if (Math.random() <= Math.min(1, table[rarity] * bonus)) {
       const pool = allowSet
         ? ITEM_POOLS[rarity]
@@ -4091,7 +4206,7 @@ function rollRarityDrop(mobTemplate, bonus = 1) {
         const item = ITEM_TEMPLATES[id];
         if (item?.bossOnly) return false;
         if (item?.worldBossOnly && !isWorldBossDropMob(mobTemplate)) return false;
-        if (item?.crossWorldBossOnly && mobTemplate?.id !== 'cross_world_boss') return false;
+        if (item?.crossWorldBossOnly && !allowUltimateDrop) return false;
         return true;
       });
       if (!filteredPool.length) return null;
@@ -4105,9 +4220,10 @@ function rollRarityEquipmentDrop(mobTemplate, bonus = 1) {
   if (!isBossMob(mobTemplate)) return null;
   const table = RARITY_BOSS;
   const allowSet = true;
+  const allowUltimateDrop = Boolean(mobTemplate?.id === 'cross_world_boss' || mobTemplate?.allowUltimateDrop);
   for (const rarity of RARITY_ORDER) {
     if (!isWorldBossDropMob(mobTemplate) && (rarity === 'supreme' || rarity === 'ultimate')) continue;
-    if (rarity === 'ultimate' && mobTemplate?.id !== 'cross_world_boss') continue;
+    if (rarity === 'ultimate' && !allowUltimateDrop) continue;
     if (Math.random() <= Math.min(1, table[rarity] * bonus)) {
       const pool = allowSet
         ? ITEM_POOLS[rarity]
@@ -4121,7 +4237,7 @@ function rollRarityEquipmentDrop(mobTemplate, bonus = 1) {
         const item = ITEM_TEMPLATES[id];
         if (item?.bossOnly) return false;
         if (item?.worldBossOnly && !isWorldBossDropMob(mobTemplate)) return false;
-        if (item?.crossWorldBossOnly && mobTemplate?.id !== 'cross_world_boss') return false;
+        if (item?.crossWorldBossOnly && !allowUltimateDrop) return false;
         return true;
       });
       if (!filteredPool.length) return null;
@@ -4134,6 +4250,103 @@ function rollRarityEquipmentDrop(mobTemplate, bonus = 1) {
 let WORLD_BOSS_DROP_BONUS = 1.5;
 let SPECIAL_BOSS_DROP_BONUS = 1.5;
 let CULTIVATION_BOSS_DROP_BONUS = 1.5;
+const PERSONAL_BOSS_DEFAULTS = {
+  vip: {
+    hp: 420000,
+    atk: 170,
+    def: 180,
+    mdef: 180,
+    exp: 7800,
+    gold: 1500,
+    respawnMinutes: 10,
+    dropBonus: 1.0
+  },
+  svip: {
+    hp: 600000,
+    atk: 180,
+    def: 210,
+    mdef: 210,
+    exp: 9000,
+    gold: 2000,
+    respawnMinutes: 10,
+    dropBonus: 1.0
+  }
+};
+let PERSONAL_BOSS_DROP_BONUS = {
+  vip: PERSONAL_BOSS_DEFAULTS.vip.dropBonus,
+  svip: PERSONAL_BOSS_DEFAULTS.svip.dropBonus
+};
+
+function getPersonalBossDropBonusByTemplate(mobTemplate) {
+  if (!mobTemplate?.id) return null;
+  if (mobTemplate.id === 'vip_personal_boss') return Math.max(0, Number(PERSONAL_BOSS_DROP_BONUS.vip || 0));
+  if (mobTemplate.id === 'svip_personal_boss') return Math.max(0, Number(PERSONAL_BOSS_DROP_BONUS.svip || 0));
+  return null;
+}
+
+async function getPersonalBossTierSettings(tier) {
+  const defaults = PERSONAL_BOSS_DEFAULTS[tier] || PERSONAL_BOSS_DEFAULTS.vip;
+  const prefix = `personal_boss_${tier}`;
+  const parseIntMin = (value, fallback, min = 0) => {
+    const parsed = Math.floor(Number(value));
+    if (!Number.isFinite(parsed)) return fallback;
+    return Math.max(min, parsed);
+  };
+  const parseFloatMin = (value, fallback, min = 0) => {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return fallback;
+    return Math.max(min, parsed);
+  };
+  const hp = parseIntMin(await getSetting(`${prefix}_hp`, String(defaults.hp)), defaults.hp, 1);
+  const atk = parseIntMin(await getSetting(`${prefix}_atk`, String(defaults.atk)), defaults.atk, 1);
+  const def = parseIntMin(await getSetting(`${prefix}_def`, String(defaults.def)), defaults.def, 0);
+  const mdef = parseIntMin(await getSetting(`${prefix}_mdef`, String(defaults.mdef)), defaults.mdef, 0);
+  const exp = parseIntMin(await getSetting(`${prefix}_exp`, String(defaults.exp)), defaults.exp, 1);
+  const gold = parseIntMin(await getSetting(`${prefix}_gold`, String(defaults.gold)), defaults.gold, 0);
+  const respawnMinutes = parseIntMin(
+    await getSetting(`${prefix}_respawn_minutes`, String(defaults.respawnMinutes)),
+    defaults.respawnMinutes,
+    1
+  );
+  const dropBonus = parseFloatMin(
+    await getSetting(`${prefix}_drop_bonus`, String(defaults.dropBonus)),
+    defaults.dropBonus,
+    0
+  );
+  return { hp, atk, def, mdef, exp, gold, respawnMinutes, dropBonus };
+}
+
+async function applyPersonalBossSettings() {
+  const vip = await getPersonalBossTierSettings('vip');
+  const svip = await getPersonalBossTierSettings('svip');
+
+  const vipTemplate = MOB_TEMPLATES.vip_personal_boss;
+  if (vipTemplate) {
+    vipTemplate.hp = vip.hp;
+    vipTemplate.atk = vip.atk;
+    vipTemplate.def = vip.def;
+    vipTemplate.mdef = vip.mdef;
+    vipTemplate.exp = vip.exp;
+    vipTemplate.gold = [vip.gold, Math.floor(vip.gold * 1.6)];
+    vipTemplate.respawnMs = vip.respawnMinutes * 60 * 1000;
+  }
+
+  const svipTemplate = MOB_TEMPLATES.svip_personal_boss;
+  if (svipTemplate) {
+    svipTemplate.hp = svip.hp;
+    svipTemplate.atk = svip.atk;
+    svipTemplate.def = svip.def;
+    svipTemplate.mdef = svip.mdef;
+    svipTemplate.exp = svip.exp;
+    svipTemplate.gold = [svip.gold, Math.floor(svip.gold * 1.6)];
+    svipTemplate.respawnMs = svip.respawnMinutes * 60 * 1000;
+  }
+
+  PERSONAL_BOSS_DROP_BONUS = {
+    vip: vip.dropBonus,
+    svip: svip.dropBonus
+  };
+}
 const bossClassFirstDamageRewardGiven = new Map(); // 追踪特殊BOSS各职业伤害第一奖励是否已发放
 const bossClassFirstDamageRewardProcessed = new Set(); // 防止同一只BOSS重复发放职业第一奖励
 
@@ -4354,9 +4567,13 @@ function getCultivationBossPlayerBonusConfigSync() {
 
 function dropLoot(mobTemplate, bonus = 1) {
   const loot = [];
+  const allowUltimateDrop = Boolean(mobTemplate?.id === 'cross_world_boss' || mobTemplate?.allowUltimateDrop);
   const sabakBonus = mobTemplate.sabakBoss ? 3.0 : 1.0;
+  const personalBossDropBonus = getPersonalBossDropBonusByTemplate(mobTemplate);
   let finalBonus = bonus * sabakBonus;
-  if (isWorldBossDropMob(mobTemplate)) {
+  if (personalBossDropBonus !== null) {
+    finalBonus *= personalBossDropBonus;
+  } else if (isWorldBossDropMob(mobTemplate)) {
     finalBonus *= WORLD_BOSS_DROP_BONUS;
   } else if (isCultivationBoss(mobTemplate)) {
     finalBonus *= CULTIVATION_BOSS_DROP_BONUS;
@@ -4368,7 +4585,7 @@ function dropLoot(mobTemplate, bonus = 1) {
       const dropItem = ITEM_TEMPLATES[drop.id];
       if (dropItem?.bossOnly && !isBossMob(mobTemplate)) return;
       if (dropItem?.worldBossOnly && !isWorldBossDropMob(mobTemplate)) return;
-      if (dropItem?.crossWorldBossOnly && mobTemplate?.id !== 'cross_world_boss') return;
+      if (dropItem?.crossWorldBossOnly && !allowUltimateDrop) return;
       // 史诗和传说级别的bossOnly装备只能在魔龙教主、世界BOSS、沙巴克BOSS掉落
       if (dropItem?.bossOnly) {
         const rarity = rarityByPrice(dropItem);
@@ -5165,11 +5382,23 @@ function distributeLoot(party, partyMembers, drops) {
   return results;
 }
 
-function distributeLootWithBonus(party, partyMembers, mobTemplate, bonusResolver) {
+function distributeLootWithBonus(party, partyMembers, mobTemplate, bonusResolver, maxDropRarity = null) {
   if (!party || partyMembers.length === 0 || !mobTemplate) return [];
   const results = [];
+  const allowUltimateDrop = Boolean(mobTemplate?.id === 'cross_world_boss' || mobTemplate?.allowUltimateDrop);
+  const maxDropRank = maxDropRarity ? (RARITY_RANK[maxDropRarity] || 0) : 0;
+  const exceedsMaxDropRarity = (itemId) => {
+    if (!maxDropRank) return false;
+    const item = ITEM_TEMPLATES[itemId];
+    if (!item) return true;
+    const rarity = rarityByPrice(item);
+    return (RARITY_RANK[rarity] || 0) > maxDropRank;
+  };
   const sabakBonus = mobTemplate.sabakBoss ? 3.0 : 1.0;
-  const worldBossBonus = isWorldBossDropMob(mobTemplate) ? WORLD_BOSS_DROP_BONUS : 1;
+  const personalBossDropBonus = getPersonalBossDropBonusByTemplate(mobTemplate);
+  const worldBossBonus = personalBossDropBonus !== null
+    ? personalBossDropBonus
+    : (isWorldBossDropMob(mobTemplate) ? WORLD_BOSS_DROP_BONUS : 1);
   const resolveFinalBonus = (target) => {
     const baseBonus = typeof bonusResolver === 'function' ? bonusResolver(target) : 1;
     return baseBonus * worldBossBonus * sabakBonus;
@@ -5185,7 +5414,8 @@ function distributeLootWithBonus(party, partyMembers, mobTemplate, bonusResolver
       const dropItem = ITEM_TEMPLATES[drop.id];
       if (dropItem?.bossOnly && !isBossMob(mobTemplate)) return;
       if (dropItem?.worldBossOnly && !isWorldBossDropMob(mobTemplate)) return;
-      if (dropItem?.crossWorldBossOnly && mobTemplate?.id !== 'cross_world_boss') return;
+      if (dropItem?.crossWorldBossOnly && !allowUltimateDrop) return;
+      if (exceedsMaxDropRarity(drop.id)) return;
       if (dropItem?.bossOnly) {
         const rarity = rarityByPrice(dropItem);
         if ((rarity === 'epic' || rarity === 'legendary' || rarity === 'ultimate') && !isSpecialBoss(mobTemplate)) {
@@ -5219,7 +5449,7 @@ function distributeLootWithBonus(party, partyMembers, mobTemplate, bonusResolver
 
   const rarityTarget = partyMembers[randInt(0, partyMembers.length - 1)];
   const rarityDrop = rollRarityDrop(mobTemplate, resolveFinalBonus(rarityTarget));
-  if (rarityDrop) {
+  if (rarityDrop && !exceedsMaxDropRarity(rarityDrop)) {
     const effects = rollEquipmentEffects(rarityDrop);
     addItem(rarityTarget, rarityDrop, 1, effects);
     logLoot(`[loot][party] ${rarityTarget.name} <- ${rarityDrop}`);
@@ -6752,6 +6982,16 @@ function buildRoomExits(zoneId, roomId, player = null) {
       const roomToken = `floor_${String(challengeFloor).padStart(2, '0')}_x`;
       destRoomId = getPlayerZhuxianTowerRoomId(player, roomToken);
       ensureZhuxianTowerRoom(destRoomId);
+    }
+    if (
+      player &&
+      zoneId === PERSONAL_BOSS_ZONE_ID &&
+      roomId === 'entry' &&
+      destZoneId === PERSONAL_BOSS_ZONE_ID &&
+      /^(vip_lair|svip_lair|perma_lair)$/.test(destRoomId)
+    ) {
+      destRoomId = getPlayerPersonalBossRoomId(player, destRoomId);
+      ensurePersonalBossRoom(destRoomId);
     }
     const destZone = WORLD[destZoneId];
     const destRoom = destZone?.rooms?.[destRoomId];
@@ -8398,6 +8638,7 @@ io.on('connection', (socket) => {
     }
     normalizeZhuxianTowerProgress(loaded);
     ensureZhuxianTowerPosition(loaded);
+    ensurePersonalBossPosition(loaded);
 
     players.set(socket.id, loaded);
     loaded.send(`欢迎回来，${loaded.name}。`);
@@ -9735,6 +9976,8 @@ async function processMobDeath(player, mob, online) {
   const totalGold = Math.floor(gold * (1 + bonus));
   const shareExp = hasParty ? totalExp : Math.floor(totalExp / eligibleCount);
   const shareGold = hasParty ? totalGold : Math.floor(totalGold / eligibleCount);
+  const personalDropCap = getPersonalBossDropCap(mobZoneId, mobRoomId);
+  const personalDropCapRank = personalDropCap ? (RARITY_RANK[personalDropCap] || 0) : 0;
 
   // 追踪传说和至尊装备掉落数量
   let legendaryDropCount = 0;
@@ -9844,6 +10087,11 @@ async function processMobDeath(player, mob, online) {
           }
         }
         if (!forcedId) return;
+        const forcedCandidate = ITEM_TEMPLATES[forcedId];
+        if (forcedCandidate && personalDropCapRank > 0) {
+          const forcedRank = RARITY_RANK[rarityByPrice(forcedCandidate)] || 0;
+          if (forcedRank > personalDropCapRank) return;
+        }
         const forcedEffects = forceEquipmentEffects(forcedId);
         addItem(topPlayer, forcedId, 1, forcedEffects);
         topPlayer.send(`${cls.name}伤害第一奖励：${formatItemLabel(forcedId, forcedEffects)}。`);
@@ -9867,14 +10115,15 @@ async function processMobDeath(player, mob, online) {
   const lootOwnersToSave = new Set();
   dropTargets.forEach(({ player: owner, damageRatio, rank, classRank }) => {
       const vipDropBonus = isVipActive(owner) ? 1.01 : 1;
-      const drops = dropLoot(template, vipDropBonus);
+      const drops = filterDropsByMaxRarity(dropLoot(template, vipDropBonus), personalDropCap);
       if (!drops.length) return;
       if (!isSpecialBoss && party && partyMembersForLoot.length > 0) {
         const distributed = distributeLootWithBonus(
           party,
           partyMembersForLoot,
           template,
-          (member) => (isVipActive(member) ? 1.01 : 1)
+          (member) => (isVipActive(member) ? 1.01 : 1),
+          personalDropCap
         );
         distributed.forEach(({ id, effects, target }) => {
           const item = ITEM_TEMPLATES[id];
@@ -10167,6 +10416,7 @@ async function combatTick() {
     downgradeAutoFullInZhuxianTower(player);
     normalizeZhuxianTowerProgress(player);
     ensureZhuxianTowerPosition(player);
+    ensurePersonalBossPosition(player);
     const realmId = player.realmId || 1;
     const roomRealmId = getRoomRealmId(player.position.zone, player.position.room, realmId);
     const roomKey = `${roomRealmId}:${player.position.zone}:${player.position.room}`;
@@ -11347,6 +11597,7 @@ async function start() {
   await applyWorldBossSettings();
   await applyCultivationBossSettings();
   await applySpecialBossSettings();
+  await applyPersonalBossSettings();
   await loadEventTimeSettings();
   await refreshRealmCache();
   await clearInvalidCrossWorldBossRespawns();

@@ -1,5 +1,5 @@
 ﻿import knex from '../db/index.js';
-import { WORLD, NPCS, ensureZhuxianTowerRoom } from './world.js';
+import { WORLD, NPCS, ensureZhuxianTowerRoom, ensurePersonalBossRoom } from './world.js';
 import { ITEM_TEMPLATES, SHOP_STOCKS } from './items.js';
 import { MOB_TEMPLATES } from './mobs.js';
 import {
@@ -399,6 +399,8 @@ const TRAINING_ALIASES = {
 };
 const ZHUXIAN_TOWER_ZONE_ID = 'zxft';
 const ZHUXIAN_TOWER_FLOOR_PATTERN = /^floor_(\d+)_x(?:__u_(.+))?$/;
+const PERSONAL_BOSS_ZONE_ID = 'pboss';
+const PERSONAL_BOSS_ROOM_PATTERN = /^(vip_lair|svip_lair|perma_lair)(?:__u_(.+))?$/;
 const ZHUXIAN_TOWER_XUANMING_DROPS = [
   'treasure_xuanwu_core',
   'treasure_taiyin_mirror',
@@ -476,6 +478,43 @@ function getPlayerTowerOwnerKey(player) {
   return String(player?.userId || player?.name || '').trim();
 }
 
+function getPlayerPersonalOwnerKey(player) {
+  return String(player?.userId || player?.name || '').trim();
+}
+
+function toPlayerPersonalBossRoomId(player, roomId) {
+  const raw = String(roomId || '').trim();
+  const match = raw.match(PERSONAL_BOSS_ROOM_PATTERN);
+  if (!match) return raw;
+  const baseRoomId = match[1];
+  const ownerKey = getPlayerPersonalOwnerKey(player);
+  return ownerKey ? `${baseRoomId}__u_${ownerKey}` : baseRoomId;
+}
+
+function canEnterPersonalBossRoom(player, zoneId, roomId) {
+  if (zoneId !== PERSONAL_BOSS_ZONE_ID) return true;
+  ensurePersonalBossRoom(roomId);
+  const room = WORLD[zoneId]?.rooms?.[roomId];
+  if (!room || !room.personalBossTier) return true;
+  const ownerKey = String(room.personalBossOwnerKey || '').trim();
+  const playerOwnerKey = getPlayerPersonalOwnerKey(player);
+  if (!ownerKey || !playerOwnerKey || ownerKey !== playerOwnerKey) return false;
+
+  const vipActive = normalizeVipStatus(player);
+  const svipActive = normalizeSvipStatus(player);
+  const svipPermanent = svipActive && !Number(player.flags?.svipExpiresAt || 0);
+  if (room.personalBossTier === 'vip') {
+    return vipActive || svipActive;
+  }
+  if (room.personalBossTier === 'svip') {
+    return svipActive;
+  }
+  if (room.personalBossTier === 'svip_permanent') {
+    return svipPermanent;
+  }
+  return true;
+}
+
 function toPlayerTowerRoomId(player, roomId) {
   const raw = String(roomId || '').trim();
   const match = raw.match(ZHUXIAN_TOWER_FLOOR_PATTERN);
@@ -541,11 +580,28 @@ function checkRoomAccess(player, zoneId, roomId, onlinePlayers = []) {
   if (zoneId === ZHUXIAN_TOWER_ZONE_ID) {
     ensureZhuxianTowerRoom(roomId);
   }
+  if (zoneId === PERSONAL_BOSS_ZONE_ID) {
+    ensurePersonalBossRoom(roomId);
+  }
   if (!canEnterCultivationRoom(player, zoneId, roomId)) {
     return { ok: false, msg: '修真等级不符，无法进入该区域。' };
   }
   if (!canEnterZhuxianTowerRoom(player, zoneId, roomId)) {
     return { ok: false, msg: '该浮图塔层不属于你，或层数未解锁。' };
+  }
+  if (!canEnterPersonalBossRoom(player, zoneId, roomId)) {
+    return { ok: false, msg: '该专属BOSS房间不属于你，或VIP/SVIP资格不符。' };
+  }
+  if (zoneId === PERSONAL_BOSS_ZONE_ID) {
+    const occupiedByOthers = onlinePlayers.some((p) => (
+      p &&
+      p.name !== player.name &&
+      p.position?.zone === zoneId &&
+      p.position?.room === roomId
+    ));
+    if (occupiedByOthers) {
+      return { ok: false, msg: '该专属BOSS房间当前已有玩家，暂时无法进入。' };
+    }
   }
   return { ok: true, msg: '' };
 }
@@ -1105,6 +1161,14 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       player.forceStateRefresh = true;
     }
   }
+  if (player.position?.zone === PERSONAL_BOSS_ZONE_ID) {
+    const personalRoomId = toPlayerPersonalBossRoomId(player, player.position.room);
+    if (personalRoomId !== player.position.room) {
+      ensurePersonalBossRoom(personalRoomId);
+      player.position.room = personalRoomId;
+      player.forceStateRefresh = true;
+    }
+  }
   if (source !== 'ui' && cmd !== 'say') return;
 
   switch (cmd) {
@@ -1156,6 +1220,10 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         if (zoneId === ZHUXIAN_TOWER_ZONE_ID) {
           roomId = toPlayerTowerRoomId(player, roomId);
         }
+        if (zoneId === PERSONAL_BOSS_ZONE_ID) {
+          roomId = toPlayerPersonalBossRoomId(player, roomId);
+          ensurePersonalBossRoom(roomId);
+        }
 
         // 检查目标房间是否为指定了数字后缀的房间（如 plains1, plains2, plains3）
         // 如果已经指定了数字后缀，则直接使用该房间，不进行负载均衡
@@ -1200,6 +1268,10 @@ export async function handleCommand({ player, players, allCharacters, playersByN
             roomId = getPlayerTowerHighestChallengeRoomId(player);
           }
           roomId = toPlayerTowerRoomId(player, roomId);
+        }
+        if (zoneId === PERSONAL_BOSS_ZONE_ID) {
+          roomId = toPlayerPersonalBossRoomId(player, roomId);
+          ensurePersonalBossRoom(roomId);
         }
         const hasNumberSuffix = /\d$/.test(roomId);
         if (!hasNumberSuffix) {
@@ -1263,7 +1335,11 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         targetRoomId = toPlayerTowerRoomId(player, targetRoomId);
         ensureZhuxianTowerRoom(targetRoomId);
       }
-      if (!WORLD[zoneId].rooms[roomId]) {
+      if (zoneId === PERSONAL_BOSS_ZONE_ID) {
+        targetRoomId = toPlayerPersonalBossRoomId(player, targetRoomId);
+        ensurePersonalBossRoom(targetRoomId);
+      }
+      if (!WORLD[zoneId].rooms[targetRoomId]) {
         // 检查是否是变种房间（带数字后缀）
         const match = roomId.match(/^(.*?)(\d+)$/);
         if (match) {
@@ -1292,7 +1368,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       // 这样玩家发送位置信息后，其他玩家可以跳转到该房间
 
       // 如果是变种房间请求，尝试选择玩家最少的变种房间
-      if (roomId !== targetRoomId) {
+      if (zoneId !== PERSONAL_BOSS_ZONE_ID && roomId !== targetRoomId) {
         // 获取所有变种房间
         const variantRooms = Object.keys(WORLD[zoneId].rooms).filter(r => r.startsWith(targetRoomId) && r !== targetRoomId);
         if (variantRooms.length > 0) {
@@ -1912,8 +1988,10 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         }
       }
       if (!zoneId || !roomId || !WORLD[zoneId] || !WORLD[zoneId].rooms?.[roomId]) {
-        send('位置无效。');
-        return;
+        if (zoneId !== PERSONAL_BOSS_ZONE_ID) {
+          send('位置无效。');
+          return;
+        }
       }
       if (zoneId === ZHUXIAN_TOWER_ZONE_ID) {
         if (roomId === 'entry') {
@@ -1921,6 +1999,14 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         }
         roomId = toPlayerTowerRoomId(player, roomId);
         ensureZhuxianTowerRoom(roomId);
+      }
+      if (zoneId === PERSONAL_BOSS_ZONE_ID) {
+        roomId = toPlayerPersonalBossRoomId(player, roomId);
+        ensurePersonalBossRoom(roomId);
+      }
+      if (!WORLD[zoneId] || !WORLD[zoneId].rooms?.[roomId]) {
+        send('位置无效。');
+        return;
       }
       const fromRoom = { zone: player.position.zone, room: player.position.room };
       const access = checkRoomAccess(player, zoneId, roomId, players);

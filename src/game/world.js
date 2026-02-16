@@ -367,7 +367,7 @@ export const WORLD = {
         id: 'gate',
         name: '盟重入口',
         desc: '黄沙漫天，通往各大地图。',
-        exits: { south: 'wgc:deep', north: 'mg_town:gate', west: 'sm:entrance', east: 'fm:gate', northwest: 'brm:gate', northeast: 'sb_town:gate', cultivation: 'cultivation:entry', tower: 'zxft:entry' },
+        exits: { south: 'wgc:deep', north: 'mg_town:gate', west: 'sm:entrance', east: 'fm:gate', northwest: 'brm:gate', northeast: 'sb_town:gate', cultivation: 'cultivation:entry', tower: 'zxft:entry', vip: 'pboss:entry' },
         spawns: ['half_orc', 'half_orc', 'half_orc', 'half_orc_warrior', 'half_orc_warrior']
       },
       gate1: {
@@ -993,6 +993,25 @@ export const WORLD = {
         desc: '魔龙教主在此守望。',
         exits: { south: 'gate' },
         spawns: ['molong_boss']
+      }
+    }
+  }
+  ,
+  pboss: {
+    id: 'pboss',
+    name: '专属BOSS领域',
+    rooms: {
+      entry: {
+        id: 'entry',
+        name: '专属入口',
+        desc: '仅供VIP/SVIP挑战的个人专属BOSS领域。',
+        exits: {
+          south: 'mg_plains:gate',
+          north: 'vip_lair',
+          east: 'svip_lair',
+          up: 'perma_lair'
+        },
+        spawns: []
       }
     }
   }
@@ -1685,6 +1704,59 @@ function buildZhuxianTowerRoom(floor, ownerKey = '') {
   };
 }
 
+function personalBossOwnerKeyFromRoomId(roomId) {
+  const match = String(roomId || '').match(/^(vip_lair|svip_lair|perma_lair)(?:__u_(.+))?$/);
+  if (!match) return '';
+  return (match[2] || '').trim();
+}
+
+function personalBossBaseRoomId(roomId) {
+  const match = String(roomId || '').match(/^(vip_lair|svip_lair|perma_lair)(?:__u_(.+))?$/);
+  if (!match) return '';
+  return match[1];
+}
+
+function personalBossRoomInstanceId(baseRoomId, ownerKey = '') {
+  const base = String(baseRoomId || '').trim();
+  const owner = String(ownerKey || '').trim();
+  if (!base) return '';
+  return owner ? `${base}__u_${owner}` : base;
+}
+
+function buildPersonalBossRoom(baseRoomId, ownerKey = '') {
+  const base = String(baseRoomId || '').trim();
+  const roomId = personalBossRoomInstanceId(base, ownerKey);
+  let name = '专属BOSS';
+  let desc = '个人专属BOSS房间。';
+  let tier = 'vip';
+  let spawns = ['vip_personal_boss'];
+  if (base === 'svip_lair') {
+    name = 'SVIP专属BOSS';
+    desc = 'SVIP专属BOSS房间，仅允许本人进入。';
+    tier = 'svip';
+    spawns = ['svip_personal_boss'];
+  } else if (base === 'perma_lair') {
+    name = 'SVIP永久专属BOSS';
+    desc = 'SVIP永久专属BOSS房间，仅允许本人进入。';
+    tier = 'svip_permanent';
+    spawns = ['svip_personal_boss'];
+  } else {
+    name = 'VIP专属BOSS';
+    desc = 'VIP专属BOSS房间，仅允许本人进入。';
+    tier = 'vip';
+    spawns = ['vip_personal_boss'];
+  }
+  return {
+    id: roomId,
+    name,
+    desc,
+    exits: { south: 'entry' },
+    spawns,
+    personalBossTier: tier,
+    personalBossOwnerKey: String(ownerKey || '').trim() || null
+  };
+}
+
 export function ensureZhuxianTowerRoom(worldOrRoomId, maybeRoomId) {
   const world = maybeRoomId === undefined ? WORLD : worldOrRoomId;
   const roomValue = maybeRoomId === undefined ? worldOrRoomId : maybeRoomId;
@@ -1700,6 +1772,21 @@ export function ensureZhuxianTowerRoom(worldOrRoomId, maybeRoomId) {
   const roomId = towerFloorRoomInstanceId(floor, ownerKey);
   if (!zone.rooms[roomId]) {
     zone.rooms[roomId] = buildZhuxianTowerRoom(floor, ownerKey);
+  }
+  return roomId;
+}
+
+export function ensurePersonalBossRoom(worldOrRoomId, maybeRoomId) {
+  const world = maybeRoomId === undefined ? WORLD : worldOrRoomId;
+  const roomValue = maybeRoomId === undefined ? worldOrRoomId : maybeRoomId;
+  const zone = world?.pboss;
+  if (!zone || !zone.rooms) return null;
+  const baseRoomId = personalBossBaseRoomId(roomValue);
+  if (!baseRoomId) return null;
+  const ownerKey = typeof roomValue === 'string' ? personalBossOwnerKeyFromRoomId(roomValue) : '';
+  const roomId = personalBossRoomInstanceId(baseRoomId, ownerKey);
+  if (!zone.rooms[roomId]) {
+    zone.rooms[roomId] = buildPersonalBossRoom(baseRoomId, ownerKey);
   }
   return roomId;
 }

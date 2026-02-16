@@ -172,6 +172,23 @@ const cbPlayerBonusList = document.getElementById('cb-player-bonus-list');
 const cbKillRealmInput = document.getElementById('cb-kill-realm');
 const cbKillCountInput = document.getElementById('cb-kill-count');
 const cbKillMsg = document.getElementById('cb-kill-msg');
+const pbMsg = document.getElementById('pb-msg');
+const pbVipHpInput = document.getElementById('pb-vip-hp');
+const pbVipAtkInput = document.getElementById('pb-vip-atk');
+const pbVipDefInput = document.getElementById('pb-vip-def');
+const pbVipMdefInput = document.getElementById('pb-vip-mdef');
+const pbVipExpInput = document.getElementById('pb-vip-exp');
+const pbVipGoldInput = document.getElementById('pb-vip-gold');
+const pbVipRespawnMinsInput = document.getElementById('pb-vip-respawn-mins');
+const pbVipDropBonusInput = document.getElementById('pb-vip-drop-bonus');
+const pbSvipHpInput = document.getElementById('pb-svip-hp');
+const pbSvipAtkInput = document.getElementById('pb-svip-atk');
+const pbSvipDefInput = document.getElementById('pb-svip-def');
+const pbSvipMdefInput = document.getElementById('pb-svip-mdef');
+const pbSvipExpInput = document.getElementById('pb-svip-exp');
+const pbSvipGoldInput = document.getElementById('pb-svip-gold');
+const pbSvipRespawnMinsInput = document.getElementById('pb-svip-respawn-mins');
+const pbSvipDropBonusInput = document.getElementById('pb-svip-drop-bonus');
 
 const sabakTimeStartHourInput = document.getElementById('sabak-time-start-hour');
 const sabakTimeStartMinuteInput = document.getElementById('sabak-time-start-minute');
@@ -1296,6 +1313,7 @@ async function login() {
     await loadWorldBossSettings();
     await loadSpecialBossSettings();
     await loadCultivationBossSettings();
+    await loadPersonalBossSettings();
   } catch (err) {
     loginMsg.textContent = err.message;
   }
@@ -5142,6 +5160,79 @@ async function saveCultivationBossSettings() {
   }
 }
 
+async function loadPersonalBossSettings() {
+  if (!pbMsg) return;
+  pbMsg.textContent = '';
+  try {
+    const data = await api('/admin/personalboss-settings', 'GET');
+    const vip = data.vip || {};
+    const svip = data.svip || {};
+    if (pbVipHpInput) pbVipHpInput.value = vip.hp ?? '';
+    if (pbVipAtkInput) pbVipAtkInput.value = vip.atk ?? '';
+    if (pbVipDefInput) pbVipDefInput.value = vip.def ?? '';
+    if (pbVipMdefInput) pbVipMdefInput.value = vip.mdef ?? '';
+    if (pbVipExpInput) pbVipExpInput.value = vip.exp ?? '';
+    if (pbVipGoldInput) pbVipGoldInput.value = vip.gold ?? '';
+    if (pbVipRespawnMinsInput) pbVipRespawnMinsInput.value = vip.respawnMinutes ?? '';
+    if (pbVipDropBonusInput) pbVipDropBonusInput.value = vip.dropBonus ?? '';
+
+    if (pbSvipHpInput) pbSvipHpInput.value = svip.hp ?? '';
+    if (pbSvipAtkInput) pbSvipAtkInput.value = svip.atk ?? '';
+    if (pbSvipDefInput) pbSvipDefInput.value = svip.def ?? '';
+    if (pbSvipMdefInput) pbSvipMdefInput.value = svip.mdef ?? '';
+    if (pbSvipExpInput) pbSvipExpInput.value = svip.exp ?? '';
+    if (pbSvipGoldInput) pbSvipGoldInput.value = svip.gold ?? '';
+    if (pbSvipRespawnMinsInput) pbSvipRespawnMinsInput.value = svip.respawnMinutes ?? '';
+    if (pbSvipDropBonusInput) pbSvipDropBonusInput.value = svip.dropBonus ?? '';
+
+    pbMsg.textContent = '加载成功';
+    pbMsg.style.color = 'green';
+    setTimeout(() => {
+      pbMsg.textContent = '';
+    }, 1500);
+  } catch (err) {
+    pbMsg.textContent = `加载失败: ${err.message}`;
+    pbMsg.style.color = 'red';
+  }
+}
+
+async function savePersonalBossSettings() {
+  if (!pbMsg) return;
+  pbMsg.textContent = '';
+  try {
+    await api('/admin/personalboss-settings/update', 'POST', {
+      vip: {
+        hp: Number(pbVipHpInput?.value),
+        atk: Number(pbVipAtkInput?.value),
+        def: Number(pbVipDefInput?.value),
+        mdef: Number(pbVipMdefInput?.value),
+        exp: Number(pbVipExpInput?.value),
+        gold: Number(pbVipGoldInput?.value),
+        respawnMinutes: Number(pbVipRespawnMinsInput?.value),
+        dropBonus: Number(pbVipDropBonusInput?.value)
+      },
+      svip: {
+        hp: Number(pbSvipHpInput?.value),
+        atk: Number(pbSvipAtkInput?.value),
+        def: Number(pbSvipDefInput?.value),
+        mdef: Number(pbSvipMdefInput?.value),
+        exp: Number(pbSvipExpInput?.value),
+        gold: Number(pbSvipGoldInput?.value),
+        respawnMinutes: Number(pbSvipRespawnMinsInput?.value),
+        dropBonus: Number(pbSvipDropBonusInput?.value)
+      }
+    });
+    pbMsg.textContent = '保存成功';
+    pbMsg.style.color = 'green';
+    setTimeout(() => {
+      pbMsg.textContent = '';
+    }, 2000);
+  } catch (err) {
+    pbMsg.textContent = `保存失败: ${err.message}`;
+    pbMsg.style.color = 'red';
+  }
+}
+
 function renderCultivationBossPlayerBonusList() {
   if (!cbPlayerBonusList) return;
   cbPlayerBonusList.innerHTML = '';
@@ -5442,6 +5533,7 @@ async function initDashboard() {
     loadWorldBossSettings();
     loadSpecialBossSettings();
     loadCultivationBossSettings();
+    loadPersonalBossSettings();
     loadEventTimeSettings();
     loadClassBonusConfig();
     loadTrainingFruitSettings();
@@ -5731,14 +5823,17 @@ if (document.getElementById('cb-add-bonus-btn')) {
 if (document.getElementById('cb-save-btn')) {
   document.getElementById('cb-save-btn').addEventListener('click', saveCultivationBossSettings);
 }
+if (document.getElementById('pb-save-btn')) {
+  document.getElementById('pb-save-btn').addEventListener('click', savePersonalBossSettings);
+}
 if (document.getElementById('event-time-save-btn')) {
   document.getElementById('event-time-save-btn').addEventListener('click', saveEventTimeSettings);
+}
 if (document.getElementById('daily-lucky-refresh-btn')) {
   document.getElementById('daily-lucky-refresh-btn').addEventListener('click', refreshDailyLucky);
 }
 if (document.getElementById('daily-lucky-info-btn')) {
   document.getElementById('daily-lucky-info-btn').addEventListener('click', showDailyLuckyInfo);
-}
 }
 if (sbKillRealmInput) {
   sbKillRealmInput.addEventListener('change', loadSpecialBossKillCount);
