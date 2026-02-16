@@ -408,7 +408,7 @@ private fun PetBookCard(book: PetBookInfo, qty: Int) {
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = book.name,
+                            text = book.skillName,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
                         )

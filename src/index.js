@@ -7910,12 +7910,12 @@ function grantPetDropToPlayer(player, pet, mobTemplate) {
   pet.exp = Math.max(0, Math.floor(Number(pet.exp || 0)));
   const petState = normalizePetState(player);
   if (!petState || petState.pets.length >= PET_MAX_OWNED) {
-    player.send(`Pet drop: [${PET_RARITY_LABELS[pet.rarity] || PET_RARITY_LABELS.normal}] ${pet.name}, but pet slots are full.`);
+    player.send(`宠物掉落：[${PET_RARITY_LABELS[pet.rarity] || PET_RARITY_LABELS.normal}] ${pet.name}，但宠物栏已满。`);
     return false;
   }
   petState.pets.push(pet);
   if (!petState.activePetId) petState.activePetId = pet.id;
-  player.send(`Pet drop: [${PET_RARITY_LABELS[pet.rarity] || PET_RARITY_LABELS.normal}] ${pet.name} (growth ${pet.growth.toFixed(3)}).`);
+  player.send(`宠物掉落：[${PET_RARITY_LABELS[pet.rarity] || PET_RARITY_LABELS.normal}] ${pet.name}（成长 ${pet.growth.toFixed(3)}）。`);
   logLoot(`[loot][pet] ${player.name} <- ${pet.rarity}:${pet.role} (${mobTemplate?.id || 'unknown'})`);
   return true;
 }
@@ -11391,11 +11391,11 @@ async function processMobDeath(player, mob, online) {
         if (!def) return;
         const qty = Math.max(1, Math.floor(Number(entry.qty || 1)));
         petState.books[def.id] = Math.max(0, Math.floor(Number(petState.books[def.id] || 0))) + qty;
-        labels.push(`${def.name} x${qty}`);
+        labels.push(`${def.skillName} x${qty}`);
         logLoot(`[loot][pet_book] ${owner.name} <- ${def.id} x${qty} (${template.id})`);
       });
       if (labels.length > 0) {
-        owner.send(`pet book drop: ${labels.join(', ')}`);
+        owner.send(`宠物技能书掉落：${labels.join('、')}`);
         if (owner?.userId) lootOwnersToSave.add(owner);
       }
     });
