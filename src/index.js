@@ -6266,6 +6266,7 @@ function findAliveBossTarget(player) {
   if (!player) return null;
   const realmIds = Array.from(new Set([player.realmId || 1, CROSS_REALM_REALM_ID]));
   const crossBossCooldownUntil = Number(player.flags?.autoFullCrossBossCooldownUntil || 0);
+  const playerCultivationLevel = getCultivationLevel(player);
   let best = null;
   for (const realmId of realmIds) {
     const mobs = getAllAliveMobs(realmId);
@@ -6278,6 +6279,10 @@ function findAliveBossTarget(player) {
       const roomId = mob.roomId;
       if (!zoneId || !roomId) continue;
       if (zoneId === ZHUXIAN_TOWER_ZONE_ID) continue;
+      if (isCultivationBoss(tpl)) {
+        const roomMinLevel = Number(WORLD[zoneId]?.rooms?.[roomId]?.minCultivationLevel);
+        if (!Number.isFinite(roomMinLevel) || roomMinLevel !== playerCultivationLevel) continue;
+      }
       if (zoneId === PERSONAL_BOSS_ZONE_ID) {
         const ownRoomId = getPlayerPersonalBossRoomId(player, roomId);
         if (!ownRoomId || ownRoomId !== roomId) continue;
