@@ -5,6 +5,18 @@ import { clamp } from './utils.js';
 import { getClassLevelBonusConfig as getClassLevelBonusFromConfig, getRefineBonusPerLevel } from './settings.js';
 import { getTreasureBonus, getTreasureRandomAttrBonus, normalizeTreasureState } from './treasure.js';
 
+function getActivePetSkillSet(player) {
+  const petState = player?.flags?.pet;
+  if (!petState || !Array.isArray(petState.pets) || !petState.activePetId) return new Set();
+  const active = petState.pets.find((pet) => pet && pet.id === petState.activePetId);
+  if (!active || !Array.isArray(active.skills)) return new Set();
+  return new Set(
+    active.skills
+      .map((id) => String(id || '').trim())
+      .filter(Boolean)
+  );
+}
+
 function rarityByPrice(item) {
   if (!item) return 'common';
   if (item.rarity) return item.rarity;
@@ -181,6 +193,42 @@ import { getTrainingFruitCoefficient, getTrainingPerLevelConfig } from './settin
 
 export function computeDerived(player) {
   if (!player.flags) player.flags = {};
+  player.flags.hasPoisonEffect = false;
+  player.flags.hasComboEffect = false;
+  player.flags.hasHealblockEffect = false;
+  player.flags.petHitBonusPct = 0;
+  player.flags.petDamageReductionPct = 0;
+  player.flags.petLowHpDamageReductionPct = 0;
+  player.flags.petLowHpThresholdPct = 0;
+  player.flags.petReflectChancePct = 0;
+  player.flags.petReflectPct = 0;
+  player.flags.petCritChancePct = 0;
+  player.flags.petCritDamagePct = 0;
+  player.flags.petLifestealPct = 0;
+  player.flags.petCounterChancePct = 0;
+  player.flags.petCounterDamagePct = 0;
+  player.flags.petComboChancePct = 0;
+  player.flags.petComboDamagePct = 0;
+  player.flags.petArmorBreakChancePct = 0;
+  player.flags.petArmorBreakPct = 0;
+  player.flags.petArmorBreakMs = 0;
+  player.flags.petMagicBreakChancePct = 0;
+  player.flags.petMagicBreakPct = 0;
+  player.flags.petMagicBreakMs = 0;
+  player.flags.petWeakChancePct = 0;
+  player.flags.petWeakPct = 0;
+  player.flags.petWeakMs = 0;
+  player.flags.petSpellEchoChancePct = 0;
+  player.flags.petSpellEchoPct = 0;
+  player.flags.petOverloadChancePct = 0;
+  player.flags.petOverloadPct = 0;
+  player.flags.petExecuteThresholdPct = 0;
+  player.flags.petExecuteBonusPct = 0;
+  player.flags.petRebirthChancePct = 0;
+  player.flags.petRebirthHpPct = 0;
+  player.flags.petDivineGuardChancePct = 0;
+  player.flags.petDamageBonusPct = 0;
+  player.flags.petSpellBonusPct = 0;
   if (!player.flags.training) {
     player.flags.training = { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 };
   }
@@ -410,10 +458,114 @@ export function computeDerived(player) {
   let mdefBonus = 0;
   let evadeChance = 0;
   let elementAtk = 0;
+  let petAtkPct = 0;
+  let petDefPct = 0;
+  let petMagPct = 0;
+  let petSpiritPct = 0;
+  let petDexPct = 0;
+  let petMaxHpPct = 0;
+  let petMaxMpPct = 0;
   let dodgeEffectCount = 0;
   let poisonEffectCount = 0;
   let comboEffectCount = 0;
   let healblockEffectCount = 0;
+  const petSkills = getActivePetSkillSet(player);
+  if (petSkills.has('pet_bash')) petAtkPct += 0.08;
+  if (petSkills.has('pet_guard')) {
+    petDefPct += 0.12;
+    player.flags.petDamageReductionPct += 0.04;
+  }
+  if (petSkills.has('pet_dodge')) evadeChance += 0.06;
+  if (petSkills.has('pet_focus')) player.flags.petHitBonusPct += 8;
+  if (petSkills.has('pet_spirit')) {
+    petMagPct += 0.1;
+    petSpiritPct += 0.1;
+  }
+  if (petSkills.has('pet_fury')) {
+    petAtkPct += 0.15;
+    petMagPct += 0.15;
+    petSpiritPct += 0.15;
+  }
+  if (petSkills.has('pet_bloodline')) {
+    petMaxHpPct += 0.12;
+    petMaxMpPct += 0.12;
+  }
+  if (petSkills.has('pet_quick_step')) {
+    petDexPct += 0.15;
+    evadeChance += 0.04;
+  }
+  if (petSkills.has('pet_war_horn')) {
+    petAtkPct += 0.1;
+    petDefPct += 0.1;
+    petMagPct += 0.1;
+    petSpiritPct += 0.1;
+    petDexPct += 0.1;
+    petMaxHpPct += 0.1;
+    petMaxMpPct += 0.1;
+  }
+
+  if (petSkills.has('pet_crit')) {
+    player.flags.petCritChancePct += 10;
+    player.flags.petCritDamagePct += 35;
+  }
+  if (petSkills.has('pet_lifesteal')) player.flags.petLifestealPct += 8;
+  if (petSkills.has('pet_counter')) {
+    player.flags.petCounterChancePct += 10;
+    player.flags.petCounterDamagePct += 60;
+  }
+  if (petSkills.has('pet_combo')) {
+    player.flags.petComboChancePct += 10;
+    player.flags.petComboDamagePct += 70;
+  }
+  if (petSkills.has('pet_tough_skin')) player.flags.petDamageReductionPct += 0.08;
+  if (petSkills.has('pet_break')) {
+    player.flags.petArmorBreakChancePct += 15;
+    player.flags.petArmorBreakPct += 15;
+    player.flags.petArmorBreakMs = Math.max(player.flags.petArmorBreakMs, 3000);
+  }
+  if (petSkills.has('pet_magic_break')) {
+    player.flags.petMagicBreakChancePct += 15;
+    player.flags.petMagicBreakPct += 25;
+    player.flags.petMagicBreakMs = Math.max(player.flags.petMagicBreakMs, 3000);
+  }
+  if (petSkills.has('pet_resolve')) {
+    player.flags.petLowHpThresholdPct = Math.max(player.flags.petLowHpThresholdPct, 30);
+    player.flags.petLowHpDamageReductionPct += 0.15;
+  }
+  if (petSkills.has('pet_sunder')) {
+    player.flags.petWeakChancePct += 15;
+    player.flags.petWeakPct += 20;
+    player.flags.petWeakMs = Math.max(player.flags.petWeakMs, 3000);
+  }
+  if (petSkills.has('pet_arcane_echo')) {
+    player.flags.petSpellBonusPct += 20;
+    player.flags.petSpellEchoChancePct += 20;
+    player.flags.petSpellEchoPct += 35;
+  }
+  if (petSkills.has('pet_divine_guard')) {
+    player.flags.petDamageReductionPct += 0.12;
+    player.flags.petDivineGuardChancePct = Math.max(player.flags.petDivineGuardChancePct, 10);
+  }
+  if (petSkills.has('pet_kill_soul')) {
+    player.flags.petExecuteThresholdPct = Math.max(player.flags.petExecuteThresholdPct, 40);
+    player.flags.petExecuteBonusPct += 25;
+    player.flags.petLifestealPct += 5;
+  }
+  if (petSkills.has('pet_soul_chain')) {
+    player.flags.petReflectChancePct += 18;
+    player.flags.petReflectPct += 20;
+  }
+  if (petSkills.has('pet_overload')) {
+    player.flags.petOverloadChancePct += 18;
+    player.flags.petOverloadPct += 35;
+  }
+  if (petSkills.has('pet_rebirth')) {
+    player.flags.petRebirthChancePct = Math.max(player.flags.petRebirthChancePct, 18);
+    player.flags.petRebirthHpPct = Math.max(player.flags.petRebirthHpPct, 25);
+  }
+  if (petSkills.has('pet_bash') || petSkills.has('pet_fury') || petSkills.has('pet_war_horn')) {
+    player.flags.petDamageBonusPct += 8;
+  }
   for (const entry of bonus) {
     const item = entry.item;
     const setBonus = activeSetIds.has(item.id) ? activeSetBonusRates.get(item.id) : null;
@@ -545,13 +697,15 @@ export function computeDerived(player) {
   player.max_hp = base.con * 10 + cls.hpPerLevel * level + stats.con * 2 + trainingBonus.hp + trainingFruitBonus.hp + bonusHp;
   player.max_mp = base.spirit * 8 + cls.mpPerLevel * level + stats.spirit * 2 + trainingBonus.mp + trainingFruitBonus.mp + bonusMp;
 
-  player.atk = stats.str + trainingBonus.atk + trainingFruitBonus.atk + bonusAtk;
-  player.def = stats.con + trainingBonus.def + trainingFruitBonus.def + bonusDef;
+  player.atk = Math.floor((stats.str + trainingBonus.atk + trainingFruitBonus.atk + bonusAtk) * (1 + petAtkPct));
+  player.def = Math.floor((stats.con + trainingBonus.def + trainingFruitBonus.def + bonusDef) * (1 + petDefPct));
   const bonusDex = levelBonus.dexPerLevel * levelUp;
-  player.dex = stats.dex + trainingBonus.dex + trainingFruitBonus.dex + bonusDex;
-  player.mag = stats.int + trainingBonus.mag + trainingFruitBonus.mag + bonusMag;
-  player.spirit = stats.spirit + trainingBonus.spirit + trainingFruitBonus.spirit + bonusSpirit;
-  player.mdef = stats.spirit + trainingBonus.mdef + trainingFruitBonus.mdef + mdefBonus + bonusMdef;
+  player.dex = Math.floor((stats.dex + trainingBonus.dex + trainingFruitBonus.dex + bonusDex) * (1 + petDexPct));
+  player.mag = Math.floor((stats.int + trainingBonus.mag + trainingFruitBonus.mag + bonusMag) * (1 + petMagPct));
+  player.spirit = Math.floor((stats.spirit + trainingBonus.spirit + trainingFruitBonus.spirit + bonusSpirit) * (1 + petSpiritPct));
+  player.mdef = Math.floor((stats.spirit + trainingBonus.mdef + trainingFruitBonus.mdef + mdefBonus + bonusMdef) * (1 + petDefPct));
+  player.max_hp = Math.floor(player.max_hp * (1 + petMaxHpPct));
+  player.max_mp = Math.floor(player.max_mp * (1 + petMaxMpPct));
   player.elementAtk = elementAtk;
   const treasureBonus = getTreasureBonus(player);
   const treasureRandomAttr = getTreasureRandomAttrBonus(player);

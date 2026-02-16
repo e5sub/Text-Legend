@@ -5777,7 +5777,7 @@ function hasComboWeapon(player) {
 }
 
 function hasHealBlockEffect(player) {
-  return Boolean(player?.flags?.hasHealblockEffect);
+  return Boolean(player?.flags?.hasHealblockEffect || hasActivePetSkill(player, 'pet_war_horn'));
 }
 
 function getTreasureAutoProcData(player, treasureId) {
@@ -6537,14 +6537,16 @@ function clearNegativeStatuses(target) {
     const healBlock = target.status.debuffs.healBlock;
     const armorBreak = target.status.debuffs.armorBreak;
     const weak = target.status.debuffs.weak;
+    const petMagicBreak = target.status.debuffs.petMagicBreak;
     const poison = target.status.debuffs.poison;
     const poisonEffect = target.status.debuffs.poisonEffect;
     delete target.status.debuffs;
-    if (healBlock || armorBreak || weak) {
+    if (healBlock || armorBreak || weak || petMagicBreak) {
       target.status.debuffs = {};
       if (healBlock) target.status.debuffs.healBlock = healBlock;
       if (armorBreak) target.status.debuffs.armorBreak = armorBreak;
       if (weak) target.status.debuffs.weak = weak;
+      if (petMagicBreak) target.status.debuffs.petMagicBreak = petMagicBreak;
     }
     if (poison || poisonEffect) {
       if (!target.status.debuffs) target.status.debuffs = {};
@@ -6632,6 +6634,7 @@ function applyDamageToSummon(target, dmg) {
 
 function applyDamageToPlayer(target, dmg) {
   if (isInvincible(target)) return 0;
+  if (!target.status) target.status = {};
   if (target.status?.buffs?.magicShield) {
     const buff = target.status.buffs.magicShield;
     if (buff.expiresAt && buff.expiresAt < Date.now()) {
@@ -6656,6 +6659,18 @@ function applyDamageToPlayer(target, dmg) {
       delete target.status.buffs.protectShield;
     } else {
       dmg = Math.floor(dmg * (1 - (buff.dmgReduction || 0)));
+    }
+  }
+  if (hasActivePetSkill(target, 'pet_guard')) {
+    dmg *= 0.92;
+  }
+  if (hasActivePetSkill(target, 'pet_tough_skin')) {
+    dmg *= 0.88;
+  }
+  if (hasActivePetSkill(target, 'pet_divine_guard') && Math.random() < 0.1) {
+    dmg *= 0.65;
+    if (typeof target.send === 'function') {
+      target.send('宠物技能【神佑】触发，伤害大幅减免。');
     }
   }
   dmg = Math.max(0, Math.floor(Number(dmg) || 0));
@@ -6683,6 +6698,19 @@ function tryRevive(player) {
     player.mp = player.max_mp;
     player.send('复活戒指生效，你完全恢复了生命和魔法！');
     return true;
+  }
+  if (hasActivePetSkill(player, 'pet_rebirth')) {
+    const now = Date.now();
+    if (!player.flags) player.flags = {};
+    const cdMs = 90 * 1000;
+    const last = Number(player.flags.petRebirthAt || 0);
+    if (now - last >= cdMs && Math.random() < 0.2) {
+      player.flags.petRebirthAt = now;
+      player.hp = Math.max(1, Math.floor(player.max_hp * 0.5));
+      player.mp = Math.max(0, Math.floor(player.max_mp * 0.5));
+      player.send('宠物技能【涅槃】触发，你恢复了部分生命和法力。');
+      return true;
+    }
   }
   return false;
 }
@@ -7265,6 +7293,33 @@ const PET_SKILL_LIBRARY = [
   { id: 'pet_rebirth', name: '涅槃', grade: 'special' }
 ];
 
+const PET_SKILL_EFFECTS = {
+  pet_bash: '被动：宠物物理伤害+8%',
+  pet_crit: '被动：宠物暴击率+8%',
+  pet_guard: '被动：主人受到伤害-8%',
+  pet_dodge: '被动：主人闪避率+5%',
+  pet_lifesteal: '被动：宠物攻击吸血8%',
+  pet_counter: '被动：宠物受击时10%反击',
+  pet_combo: '被动：宠物攻击10%连击',
+  pet_tough_skin: '被动：主人额外减伤12%',
+  pet_focus: '被动：宠物命中率+10%',
+  pet_spirit: '被动：宠物法术伤害+10%',
+  pet_fury: '被动：主人最终伤害+12%',
+  pet_break: '被动：主人无视目标防御10%',
+  pet_magic_break: '被动：攻击时15%附加破魔(5秒)',
+  pet_bloodline: '被动：主人治疗效果+15%',
+  pet_resolve: '被动：主人控制抗性提升',
+  pet_quick_step: '被动：主人速度提升',
+  pet_sunder: '被动：主人造成流血概率提升',
+  pet_arcane_echo: '被动：法术命中时8%追加一段伤害',
+  pet_divine_guard: '被动：受击10%触发神佑减伤35%',
+  pet_kill_soul: '被动：击杀目标时恢复生命/法力',
+  pet_war_horn: '被动：攻击附带禁疗概率提升',
+  pet_soul_chain: '被动：宠物与主人分担部分伤害',
+  pet_overload: '被动：技能伤害小幅增幅',
+  pet_rebirth: '被动：濒死时20%几率涅槃复活'
+};
+
 const PET_BOOK_LIBRARY = PET_SKILL_LIBRARY.map((skill, index) => ({
   id: `pet_book_${skill.id}`,
   name: `宠物技能书·${skill.name}`,
@@ -7300,6 +7355,19 @@ function getPetSkillTier(skillId) {
 
 function getPetBookDef(bookId) {
   return PET_BOOK_LIBRARY.find((book) => book.id === bookId) || null;
+}
+
+function getActivePet(player) {
+  const state = normalizePetState(player);
+  if (!state?.activePetId) return null;
+  return state.pets.find((pet) => pet.id === state.activePetId) || null;
+}
+
+function hasActivePetSkill(player, skillId) {
+  if (!player || !skillId) return false;
+  const pet = getActivePet(player);
+  if (!pet || !Array.isArray(pet.skills)) return false;
+  return pet.skills.includes(skillId);
 }
 
 function getPetLevelCap(player) {
@@ -7628,6 +7696,7 @@ function buildPetStatePayload(player) {
     skills: pet.skills,
     skillTiers: (pet.skills || []).map((skillId) => getPetSkillTier(skillId)),
     skillNames: (pet.skills || []).map((skillId) => getPetSkillDef(skillId)?.name || skillId),
+    skillEffects: (pet.skills || []).map((skillId) => PET_SKILL_EFFECTS[skillId] || ''),
     power: calcPetPower(pet)
   }));
   const books = PET_BOOK_LIBRARY.map((book) => ({
@@ -7636,6 +7705,7 @@ function buildPetStatePayload(player) {
     skillId: book.skillId,
     skillName: book.skillName,
     tier: book.tier || 'low',
+    effect: PET_SKILL_EFFECTS[book.skillId] || '',
     qty: Math.max(0, Math.floor(Number(state?.books?.[book.id] || 0))),
     priceGold: book.priceGold
   }));
@@ -8566,6 +8636,14 @@ function getMagicDefenseMultiplier(target) {
       multiplier *= armorBreak.defMultiplier || 1;
     }
   }
+  const petMagicBreak = debuffs.petMagicBreak;
+  if (petMagicBreak) {
+    if (petMagicBreak.expiresAt && petMagicBreak.expiresAt < now) {
+      delete debuffs.petMagicBreak;
+    } else {
+      multiplier *= petMagicBreak.mdefMultiplier || 1;
+    }
+  }
   return multiplier;
 }
 
@@ -8703,12 +8781,13 @@ function applyHealBlockDebuff(target) {
 
 function getHealMultiplier(target) {
   const debuff = target.status?.debuffs?.healBlock;
-  if (!debuff) return 1;
+  const petBonus = hasActivePetSkill(target, 'pet_bloodline') ? 1.15 : 1;
+  if (!debuff) return petBonus;
   if (debuff.expiresAt && debuff.expiresAt < Date.now()) {
     delete target.status.debuffs.healBlock;
-    return 1;
+    return petBonus;
   }
-  return debuff.healMultiplier || 1;
+  return (debuff.healMultiplier || 1) * petBonus;
 }
 
 function tryApplyHealBlockEffect(attacker, target) {
@@ -8716,6 +8795,14 @@ function tryApplyHealBlockEffect(attacker, target) {
   if (!hasHealBlockEffect(attacker)) return false;
   if (Math.random() > 0.2) return false;
   applyHealBlockDebuff(target);
+  if (hasActivePetSkill(attacker, 'pet_magic_break')) {
+    if (!target.status) target.status = {};
+    if (!target.status.debuffs) target.status.debuffs = {};
+    target.status.debuffs.petMagicBreak = {
+      mdefMultiplier: 0.9,
+      expiresAt: Date.now() + 5000
+    };
+  }
   return true;
 }
 
