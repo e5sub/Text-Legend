@@ -494,11 +494,21 @@ function toPlayerPersonalBossRoomId(player, roomId) {
 function canEnterPersonalBossRoom(player, zoneId, roomId) {
   if (zoneId !== PERSONAL_BOSS_ZONE_ID) return true;
   ensurePersonalBossRoom(roomId);
-  const room = WORLD[zoneId]?.rooms?.[roomId];
+  let targetRoomId = String(roomId || '').trim();
+  let room = WORLD[zoneId]?.rooms?.[targetRoomId];
   if (!room || !room.personalBossTier) return true;
-  const ownerKey = String(room.personalBossOwnerKey || '').trim();
   const playerOwnerKey = getPlayerPersonalOwnerKey(player);
-  if (!ownerKey || !playerOwnerKey || ownerKey !== playerOwnerKey) return false;
+  if (!playerOwnerKey) return false;
+  let ownerKey = String(room.personalBossOwnerKey || '').trim();
+  if (!ownerKey) {
+    const personalRoomId = getPlayerPersonalBossRoomId(player, targetRoomId);
+    if (!personalRoomId) return false;
+    ensurePersonalBossRoom(personalRoomId);
+    targetRoomId = personalRoomId;
+    room = WORLD[zoneId]?.rooms?.[targetRoomId];
+    ownerKey = String(room?.personalBossOwnerKey || '').trim();
+  }
+  if (!ownerKey || ownerKey !== playerOwnerKey) return false;
 
   const vipActive = normalizeVipStatus(player);
   const svipActive = normalizeSvipStatus(player);
