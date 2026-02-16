@@ -3764,6 +3764,36 @@ async function grantZhuxianTowerClearReward(player, floor, now = Date.now()) {
   return { granted: true, qty: rewardQty };
 }
 
+function tryRecoverZhuxianTowerEmptyRoom(player) {
+  if (!player || player.position?.zone !== ZHUXIAN_TOWER_ZONE_ID) return false;
+  const zoneId = player.position.zone;
+  const roomId = player.position.room;
+  const floor = getZhuxianTowerFloor(zoneId, roomId);
+  if (!floor) return false;
+
+  const progress = normalizeZhuxianTowerProgress(player);
+  const highestClearedFloor = Math.max(0, Math.floor(Number(progress.highestClearedFloor || 0)));
+  // Cleared floors can stay empty in the current week.
+  if (floor <= highestClearedFloor) return false;
+
+  const roomRealmId = getRoomRealmId(zoneId, roomId, player.realmId || 1);
+  spawnMobs(zoneId, roomId, roomRealmId);
+  if (getAliveMobs(zoneId, roomId, roomRealmId).length > 0) return false;
+
+  // Stale dead mobs can block tower progress. Rebuild this room's mob list and respawn.
+  const roomMobs = getRoomMobs(zoneId, roomId, roomRealmId);
+  if (Array.isArray(roomMobs) && roomMobs.length > 0) {
+    roomMobs.length = 0;
+  }
+  spawnMobs(zoneId, roomId, roomRealmId);
+  if (getAliveMobs(zoneId, roomId, roomRealmId).length > 0) {
+    player.send('浮图塔本层怪物状态异常，已自动刷新怪物。');
+    player.forceStateRefresh = true;
+    return true;
+  }
+  return false;
+}
+
 function pickEquipmentByRarity(targetRarity) {
   const startIndex = Math.max(0, RARITY_ORDER.indexOf(targetRarity));
   for (let i = startIndex; i < RARITY_ORDER.length; i += 1) {
@@ -8380,6 +8410,7 @@ io.on('connection', (socket) => {
     socket.join(`realm:${serverId}`);
     applyOfflineRewards(loaded);
     spawnMobs(loaded.position.zone, loaded.position.room, loaded.realmId || 1);
+    tryRecoverZhuxianTowerEmptyRoom(loaded);
     await handleSabakEntry(loaded);
     const zone = WORLD[loaded.position.zone];
     const room = zone?.rooms[loaded.position.room];
@@ -8497,6 +8528,7 @@ io.on('connection', (socket) => {
         markMailRead
       }
     });
+    tryRecoverZhuxianTowerEmptyRoom(player);
     markAutoFullManualMove(
       player,
       prevZone,
@@ -8517,6 +8549,7 @@ io.on('connection', (socket) => {
   socket.on('state_request', async () => {
     const player = players.get(socket.id);
     if (!player) return;
+    tryRecoverZhuxianTowerEmptyRoom(player);
     player.forceStateRefresh = true;
     await sendState(player);
   });
