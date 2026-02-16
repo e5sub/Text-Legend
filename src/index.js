@@ -6278,6 +6278,10 @@ function findAliveBossTarget(player) {
       const roomId = mob.roomId;
       if (!zoneId || !roomId) continue;
       if (zoneId === ZHUXIAN_TOWER_ZONE_ID) continue;
+      if (zoneId === PERSONAL_BOSS_ZONE_ID) {
+        const ownRoomId = getPlayerPersonalBossRoomId(player, roomId);
+        if (!ownRoomId || ownRoomId !== roomId) continue;
+      }
       if (zoneId === CROSS_REALM_ZONE_ID && roomId === 'arena' && crossBossCooldownUntil > Date.now()) {
         continue;
       }
@@ -6319,20 +6323,26 @@ function findBossInRoom(roomMobs, player) {
 function movePlayerToRoom(player, zoneId, roomId) {
   if (!player || !player.position) return false;
   if (zoneId === ZHUXIAN_TOWER_ZONE_ID) return false;
-  if (player.position.zone === zoneId && player.position.room === roomId) return false;
-  if (!WORLD[zoneId]?.rooms?.[roomId]) return false;
-  if (!canEnterRoomByCultivation(player, zoneId, roomId)) return false;
+  let targetRoomId = roomId;
+  if (zoneId === PERSONAL_BOSS_ZONE_ID) {
+    targetRoomId = getPlayerPersonalBossRoomId(player, roomId);
+    if (!targetRoomId) return false;
+    ensurePersonalBossRoom(targetRoomId);
+  }
+  if (player.position.zone === zoneId && player.position.room === targetRoomId) return false;
+  if (!WORLD[zoneId]?.rooms?.[targetRoomId]) return false;
+  if (!canEnterRoomByCultivation(player, zoneId, targetRoomId)) return false;
   const fromRoom = { zone: player.position.zone, room: player.position.room };
   player.position.zone = zoneId;
-  player.position.room = roomId;
+  player.position.room = targetRoomId;
   player.forceStateRefresh = true;
   if (typeof player.send === 'function') {
     const zoneName = WORLD[zoneId]?.name || zoneId;
-    const roomName = WORLD[zoneId]?.rooms?.[roomId]?.name || roomId;
+    const roomName = WORLD[zoneId]?.rooms?.[targetRoomId]?.name || targetRoomId;
     player.send(`智能挂机前往 ${zoneName} - ${roomName}。`);
   }
   sendRoomState(fromRoom.zone, fromRoom.room, player.realmId || 1);
-  sendRoomState(zoneId, roomId, player.realmId || 1);
+  sendRoomState(zoneId, targetRoomId, player.realmId || 1);
   return true;
 }
 
@@ -7690,6 +7700,7 @@ function applyDamageToMob(mob, dmg, attackerName, realmId = null) {
   const mobTemplate = MOB_TEMPLATES[mob.templateId];
   const isSpecialBoss = Boolean(mobTemplate?.specialBoss);
   const isWorldBoss = Boolean(mobTemplate?.worldBoss);
+  const suppressBloodAnnouncement = mobTemplate?.id === 'vip_personal_boss' || mobTemplate?.id === 'svip_personal_boss';
 
   // 特殊BOSS防御效果：受到攻击时触发
   if (isSpecialBoss) {
@@ -7749,7 +7760,7 @@ function applyDamageToMob(mob, dmg, attackerName, realmId = null) {
 
   // 特殊BOSS血量百分比公告（在应用伤害前计算）
   let announcedBlood = false;
-  if (isSpecialBoss && mob.hp > 0) {
+  if (isSpecialBoss && mob.hp > 0 && !suppressBloodAnnouncement) {
     const hpBeforeDmg = mob.hp;
 
     // 使用全局Map记录BOSS血量公告状态，避免mob.status被重置导致重复公告
