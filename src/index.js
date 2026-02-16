@@ -88,7 +88,7 @@ import {
   syncMobDropsToTemplates
 } from './db/items_admin.js';
 import { runMigrations } from './db/migrate.js';
-import { newCharacter, computeDerived, gainExp, addItem, removeItem, getItemKey, normalizeInventory, normalizeEquipment } from './game/player.js';
+import { newCharacter, computeDerived, gainExp, addItem, removeItem, getItemKey, normalizeInventory, normalizeEquipment, getDurabilityMax, getRepairCost } from './game/player.js';
 import { handleCommand, awardKill, summonStats } from './game/commands.js';
 import {
   validateNumber,
@@ -9841,6 +9841,41 @@ function tryPendingResummon(player) {
   return ok;
 }
 
+function autoRepairEquipmentForSvip(player) {
+  if (!player?.equipment) return false;
+  let totalCost = 0;
+  const targets = [];
+  Object.values(player.equipment).forEach((equipped) => {
+    if (!equipped || !equipped.id) return;
+    const item = ITEM_TEMPLATES[equipped.id];
+    if (!item) return;
+    const maxDur = Number(equipped.max_durability || getDurabilityMax(item) || 0);
+    if (maxDur <= 0) return;
+    const curDur = equipped.durability == null ? maxDur : Number(equipped.durability || 0);
+    const missing = Math.max(0, maxDur - curDur);
+    if (missing <= 0) return;
+    const cost = Math.max(0, Math.floor(getRepairCost(item, missing, player)));
+    totalCost += cost;
+    targets.push({ equipped, maxDur });
+  });
+  if (!targets.length) return false;
+  if (Number(player.gold || 0) < totalCost) return false;
+  player.gold = Math.max(0, Number(player.gold || 0) - totalCost);
+  let changed = false;
+  targets.forEach(({ equipped, maxDur }) => {
+    if (equipped.durability == null || equipped.durability < maxDur) {
+      equipped.max_durability = maxDur;
+      equipped.durability = maxDur;
+      changed = true;
+    }
+  });
+  if (changed) {
+    computeDerived(player);
+    player.forceStateRefresh = true;
+  }
+  return changed;
+}
+
 function reduceDurabilityOnAttack(player) {
   if (!player || !player.equipment) return;
   if (!player.flags) player.flags = {};
@@ -9855,6 +9890,9 @@ function reduceDurabilityOnAttack(player) {
       equipped.durability = Math.max(0, equipped.durability - 1);
       if (equipped.durability === 0) broken = true;
     });
+  if (isSvipActive(player) && autoRepairEquipmentForSvip(player)) {
+    broken = false;
+  }
   if (broken) {
     computeDerived(player);
     player.send('有装备持久度归零，属性已失效，请修理。');

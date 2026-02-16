@@ -855,6 +855,7 @@ function sendRoomDescription(player, send) {
 }
 
 function canShop(player) {
+  if (normalizeSvipStatus(player)) return true;
   return Boolean(shopForRoom(player.position.room));
 }
 
@@ -964,7 +965,7 @@ function canAddToListWithLimit(list, limit, slot) {
 }
 
 function getShopStock(player) {
-  const shopId = shopForRoom(player.position.room);
+  const shopId = shopForRoom(player.position.room) || (normalizeSvipStatus(player) ? 'bq_shop' : null);
   if (!shopId) return [];
   return SHOP_STOCKS[shopId]
     .map((id) => ITEM_TEMPLATES[id])
