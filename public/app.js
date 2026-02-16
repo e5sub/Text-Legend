@@ -598,6 +598,13 @@ const effectUi = {
   close: document.getElementById('effect-close')
 };
 let effectSelection = null;
+let effectBatchTask = {
+  active: false,
+  mainSlot: '',
+  queue: [],
+  inFlight: false,
+  timer: null
+};
 let changeClassSelection = null;
 const consignUi = {
   modal: document.getElementById('consign-modal'),
@@ -2742,6 +2749,35 @@ function renderEffectModal() {
   effectUi.confirm.disabled = true;
 }
 
+function stopEffectBatchTask() {
+  if (effectBatchTask.timer) {
+    clearTimeout(effectBatchTask.timer);
+    effectBatchTask.timer = null;
+  }
+  effectBatchTask.active = false;
+  effectBatchTask.inFlight = false;
+  effectBatchTask.mainSlot = '';
+  effectBatchTask.queue = [];
+}
+
+function dispatchNextEffectBatchCommand() {
+  if (!effectBatchTask.active || !socket) return;
+  if (effectBatchTask.inFlight) return;
+  const nextSecondaryKey = effectBatchTask.queue.shift();
+  if (!nextSecondaryKey) {
+    stopEffectBatchTask();
+    showToast('一键特效重置完成：未重置成功。');
+    return;
+  }
+  effectBatchTask.inFlight = true;
+  socket.emit('cmd', { text: `effect equip:${effectBatchTask.mainSlot} ${nextSecondaryKey}` });
+  effectBatchTask.timer = setTimeout(() => {
+    if (!effectBatchTask.active) return;
+    effectBatchTask.inFlight = false;
+    dispatchNextEffectBatchCommand();
+  }, 1500);
+}
+
 function updateEffectSelection(selected) {
   if (!selected) {
     effectUi.main.textContent = '主件: 未选择';
@@ -2780,14 +2816,16 @@ function updateEffectSelection(selected) {
     // 一键重置
     effectUi.batch.onclick = () => {
       if (!socket || !selected) return;
-      // 自动消耗所有有特效的装备作为副件
-      for (let i = 0; i < inventoryWithEffect.length; i++) {
-        setTimeout(() => {
-          const secondary = inventoryWithEffect[i];
-          const command = `effect equip:${selected.slot} ${secondary.key}`;
-          socket.emit('cmd', { text: command });
-        }, i * 100); // 每次间隔100ms
+      if (effectBatchTask.active) return;
+      effectBatchTask.active = true;
+      effectBatchTask.mainSlot = selected.slot;
+      effectBatchTask.queue = inventoryWithEffect.map((slot) => slot.key).filter(Boolean);
+      effectBatchTask.inFlight = false;
+      if (effectBatchTask.timer) {
+        clearTimeout(effectBatchTask.timer);
+        effectBatchTask.timer = null;
       }
+      dispatchNextEffectBatchCommand();
     };
   } else {
     effectUi.secondary.textContent = '副件: 无可用';
@@ -7101,6 +7139,7 @@ function enterGame(name) {
     antiKey = '';
     antiSeq = 0;
     pendingCmds = [];
+    stopEffectBatchTask();
   });
   socket.on('trade_invite', (payload) => {
     const from = payload?.from;
@@ -7109,6 +7148,29 @@ function enterGame(name) {
   socket.on('output', (payload) => {
     console.log('Received output:', payload);
     appendLine(payload);
+    if (effectBatchTask.active && payload && typeof payload.text === 'string') {
+      const text = payload.text;
+      const isEffectSuccess = text.includes('特效重置成功');
+      const isEffectFailure = text.includes('特效重置失败');
+      const isEffectFatal = text.includes('背包里没有该副件装备') ||
+        text.includes('副件必须带特效或附加技能') ||
+        text.includes('副件不能使用至尊或终极装备') ||
+        text.includes('主件必须要有特效') ||
+        text.includes('只能给已穿戴的主件装备重置特效');
+      if (isEffectSuccess) {
+        stopEffectBatchTask();
+        showToast('一键特效重置已停止：本次已成功。');
+      } else if (isEffectFailure) {
+        if (effectBatchTask.timer) {
+          clearTimeout(effectBatchTask.timer);
+          effectBatchTask.timer = null;
+        }
+        effectBatchTask.inFlight = false;
+        dispatchNextEffectBatchCommand();
+      } else if (isEffectFatal) {
+        stopEffectBatchTask();
+      }
+    }
     if (payload && payload.text && payload.text.startsWith('转职成功')) {
       showToast(payload.text);
     }
