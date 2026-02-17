@@ -7251,7 +7251,7 @@ function getRoomCommonState(zoneId, roomId, realmId = 1) {
   return data;
 }
 
-const PET_MAX_OWNED = 12;
+const PET_MAX_OWNED = 50;
 const PET_BASE_SKILL_SLOTS = 3;
 const PET_MAX_SKILL_SLOTS = 16;
 const PET_COMPREHEND_COST_GOLD = 150000;
@@ -9856,7 +9856,7 @@ io.on('connection', (socket) => {
       basePet.growth = Math.max(growthRange[0], Math.min(growthRange[1], Number(mixGrowth.toFixed(3))));
 
       const aptRange = PET_RARITY_APTITUDE_RANGE[baseRarity] || PET_RARITY_APTITUDE_RANGE.normal;
-      ['hp', 'atk', 'def', 'mag', 'speed'].forEach((key) => {
+      ['hp', 'atk', 'def', 'mag', 'agility'].forEach((key) => {
         const baseVal = Math.floor(Number(basePet?.aptitude?.[key] || aptRange[key][0]));
         const feedVal = Math.floor(Number(feedPet?.aptitude?.[key] || aptRange[key][0]));
         const mixed = Math.floor(baseVal * 0.75 + feedVal * 0.25 + randInt(0, 6));
