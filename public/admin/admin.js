@@ -129,9 +129,223 @@ const effectResetSaveBtn = document.getElementById('effect-reset-save-btn');
 
 // 宠物系统配置
 const petSettingsMsg = document.getElementById('pet-settings-msg');
-const petSettingsJson = document.getElementById('pet-settings-json');
 const petSettingsRefreshBtn = document.getElementById('pet-settings-refresh');
 const petSettingsSaveBtn = document.getElementById('pet-settings-save');
+const petMaxOwnedInput = document.getElementById('pet-max-owned');
+const petSynthesisCostInput = document.getElementById('pet-synthesis-cost');
+const petBookUnlockSlot4ChanceInput = document.getElementById('pet-book-unlock-slot4-chance');
+const petSynthesisUnlockSlotChanceInput = document.getElementById('pet-synthesis-unlock-slot-chance');
+const petDropBaseExcellentInput = document.getElementById('pet-drop-base-excellent');
+const petDropBaseRareInput = document.getElementById('pet-drop-base-rare');
+const petDropBaseEpicInput = document.getElementById('pet-drop-base-epic');
+const petDropBaseLegendaryInput = document.getElementById('pet-drop-base-legendary');
+const petDropBaseSupremeInput = document.getElementById('pet-drop-base-supreme');
+const petDropBaseUltimateInput = document.getElementById('pet-drop-base-ultimate');
+const petDropMaxChanceInput = document.getElementById('pet-drop-max-chance');
+const petDropBonusMinInput = document.getElementById('pet-drop-bonus-min');
+const petDropWeightNormalInput = document.getElementById('pet-drop-weight-normal');
+const petDropWeightExcellentInput = document.getElementById('pet-drop-weight-excellent');
+const petDropWeightRareInput = document.getElementById('pet-drop-weight-rare');
+const petDropWeightEpicInput = document.getElementById('pet-drop-weight-epic');
+const petDropWeightLegendaryInput = document.getElementById('pet-drop-weight-legendary');
+const petDropWeightSupremeInput = document.getElementById('pet-drop-weight-supreme');
+const petDropWeightUltimateInput = document.getElementById('pet-drop-weight-ultimate');
+const petBookBaseExcellentInput = document.getElementById('pet-book-base-excellent');
+const petBookBaseRareInput = document.getElementById('pet-book-base-rare');
+const petBookBaseEpicInput = document.getElementById('pet-book-base-epic');
+const petBookBaseLegendaryInput = document.getElementById('pet-book-base-legendary');
+const petBookBaseSupremeInput = document.getElementById('pet-book-base-supreme');
+const petBookBaseUltimateInput = document.getElementById('pet-book-base-ultimate');
+const petBookHighExcellentInput = document.getElementById('pet-book-high-excellent');
+const petBookHighRareInput = document.getElementById('pet-book-high-rare');
+const petBookHighEpicInput = document.getElementById('pet-book-high-epic');
+const petBookHighLegendaryInput = document.getElementById('pet-book-high-legendary');
+const petBookHighSupremeInput = document.getElementById('pet-book-high-supreme');
+const petBookHighUltimateInput = document.getElementById('pet-book-high-ultimate');
+const petBookSecondChanceInput = document.getElementById('pet-book-second-chance');
+const petBookSecondEligibleInput = document.getElementById('pet-book-second-eligible');
+const petBookSecondRequireSpecialInput = document.getElementById('pet-book-second-require-special');
+const petGrowthMinNormalInput = document.getElementById('pet-growth-min-normal');
+const petGrowthMaxNormalInput = document.getElementById('pet-growth-max-normal');
+const petGrowthMinExcellentInput = document.getElementById('pet-growth-min-excellent');
+const petGrowthMaxExcellentInput = document.getElementById('pet-growth-max-excellent');
+const petGrowthMinRareInput = document.getElementById('pet-growth-min-rare');
+const petGrowthMaxRareInput = document.getElementById('pet-growth-max-rare');
+const petGrowthMinEpicInput = document.getElementById('pet-growth-min-epic');
+const petGrowthMaxEpicInput = document.getElementById('pet-growth-max-epic');
+const petGrowthMinLegendaryInput = document.getElementById('pet-growth-min-legendary');
+const petGrowthMaxLegendaryInput = document.getElementById('pet-growth-max-legendary');
+const petGrowthMinSupremeInput = document.getElementById('pet-growth-min-supreme');
+const petGrowthMaxSupremeInput = document.getElementById('pet-growth-max-supreme');
+const petGrowthMinUltimateInput = document.getElementById('pet-growth-min-ultimate');
+const petGrowthMaxUltimateInput = document.getElementById('pet-growth-max-ultimate');
+const petAptHpMinNormalInput = document.getElementById('pet-apt-hp-min-normal');
+const petAptHpMaxNormalInput = document.getElementById('pet-apt-hp-max-normal');
+const petAptAtkMinNormalInput = document.getElementById('pet-apt-atk-min-normal');
+const petAptAtkMaxNormalInput = document.getElementById('pet-apt-atk-max-normal');
+const petAptDefMinNormalInput = document.getElementById('pet-apt-def-min-normal');
+const petAptDefMaxNormalInput = document.getElementById('pet-apt-def-max-normal');
+const petAptMagMinNormalInput = document.getElementById('pet-apt-mag-min-normal');
+const petAptMagMaxNormalInput = document.getElementById('pet-apt-mag-max-normal');
+const petAptAgiMinNormalInput = document.getElementById('pet-apt-agi-min-normal');
+const petAptAgiMaxNormalInput = document.getElementById('pet-apt-agi-max-normal');
+const petAptHpMinExcellentInput = document.getElementById('pet-apt-hp-min-excellent');
+const petAptHpMaxExcellentInput = document.getElementById('pet-apt-hp-max-excellent');
+const petAptAtkMinExcellentInput = document.getElementById('pet-apt-atk-min-excellent');
+const petAptAtkMaxExcellentInput = document.getElementById('pet-apt-atk-max-excellent');
+const petAptDefMinExcellentInput = document.getElementById('pet-apt-def-min-excellent');
+const petAptDefMaxExcellentInput = document.getElementById('pet-apt-def-max-excellent');
+const petAptMagMinExcellentInput = document.getElementById('pet-apt-mag-min-excellent');
+const petAptMagMaxExcellentInput = document.getElementById('pet-apt-mag-max-excellent');
+const petAptAgiMinExcellentInput = document.getElementById('pet-apt-agi-min-excellent');
+const petAptAgiMaxExcellentInput = document.getElementById('pet-apt-agi-max-excellent');
+const petAptHpMinRareInput = document.getElementById('pet-apt-hp-min-rare');
+const petAptHpMaxRareInput = document.getElementById('pet-apt-hp-max-rare');
+const petAptAtkMinRareInput = document.getElementById('pet-apt-atk-min-rare');
+const petAptAtkMaxRareInput = document.getElementById('pet-apt-atk-max-rare');
+const petAptDefMinRareInput = document.getElementById('pet-apt-def-min-rare');
+const petAptDefMaxRareInput = document.getElementById('pet-apt-def-max-rare');
+const petAptMagMinRareInput = document.getElementById('pet-apt-mag-min-rare');
+const petAptMagMaxRareInput = document.getElementById('pet-apt-mag-max-rare');
+const petAptAgiMinRareInput = document.getElementById('pet-apt-agi-min-rare');
+const petAptAgiMaxRareInput = document.getElementById('pet-apt-agi-max-rare');
+const petAptHpMinEpicInput = document.getElementById('pet-apt-hp-min-epic');
+const petAptHpMaxEpicInput = document.getElementById('pet-apt-hp-max-epic');
+const petAptAtkMinEpicInput = document.getElementById('pet-apt-atk-min-epic');
+const petAptAtkMaxEpicInput = document.getElementById('pet-apt-atk-max-epic');
+const petAptDefMinEpicInput = document.getElementById('pet-apt-def-min-epic');
+const petAptDefMaxEpicInput = document.getElementById('pet-apt-def-max-epic');
+const petAptMagMinEpicInput = document.getElementById('pet-apt-mag-min-epic');
+const petAptMagMaxEpicInput = document.getElementById('pet-apt-mag-max-epic');
+const petAptAgiMinEpicInput = document.getElementById('pet-apt-agi-min-epic');
+const petAptAgiMaxEpicInput = document.getElementById('pet-apt-agi-max-epic');
+const petAptHpMinLegendaryInput = document.getElementById('pet-apt-hp-min-legendary');
+const petAptHpMaxLegendaryInput = document.getElementById('pet-apt-hp-max-legendary');
+const petAptAtkMinLegendaryInput = document.getElementById('pet-apt-atk-min-legendary');
+const petAptAtkMaxLegendaryInput = document.getElementById('pet-apt-atk-max-legendary');
+const petAptDefMinLegendaryInput = document.getElementById('pet-apt-def-min-legendary');
+const petAptDefMaxLegendaryInput = document.getElementById('pet-apt-def-max-legendary');
+const petAptMagMinLegendaryInput = document.getElementById('pet-apt-mag-min-legendary');
+const petAptMagMaxLegendaryInput = document.getElementById('pet-apt-mag-max-legendary');
+const petAptAgiMinLegendaryInput = document.getElementById('pet-apt-agi-min-legendary');
+const petAptAgiMaxLegendaryInput = document.getElementById('pet-apt-agi-max-legendary');
+const petAptHpMinSupremeInput = document.getElementById('pet-apt-hp-min-supreme');
+const petAptHpMaxSupremeInput = document.getElementById('pet-apt-hp-max-supreme');
+const petAptAtkMinSupremeInput = document.getElementById('pet-apt-atk-min-supreme');
+const petAptAtkMaxSupremeInput = document.getElementById('pet-apt-atk-max-supreme');
+const petAptDefMinSupremeInput = document.getElementById('pet-apt-def-min-supreme');
+const petAptDefMaxSupremeInput = document.getElementById('pet-apt-def-max-supreme');
+const petAptMagMinSupremeInput = document.getElementById('pet-apt-mag-min-supreme');
+const petAptMagMaxSupremeInput = document.getElementById('pet-apt-mag-max-supreme');
+const petAptAgiMinSupremeInput = document.getElementById('pet-apt-agi-min-supreme');
+const petAptAgiMaxSupremeInput = document.getElementById('pet-apt-agi-max-supreme');
+const petAptHpMinUltimateInput = document.getElementById('pet-apt-hp-min-ultimate');
+const petAptHpMaxUltimateInput = document.getElementById('pet-apt-hp-max-ultimate');
+const petAptAtkMinUltimateInput = document.getElementById('pet-apt-atk-min-ultimate');
+const petAptAtkMaxUltimateInput = document.getElementById('pet-apt-atk-max-ultimate');
+const petAptDefMinUltimateInput = document.getElementById('pet-apt-def-min-ultimate');
+const petAptDefMaxUltimateInput = document.getElementById('pet-apt-def-max-ultimate');
+const petAptMagMinUltimateInput = document.getElementById('pet-apt-mag-min-ultimate');
+const petAptMagMaxUltimateInput = document.getElementById('pet-apt-mag-max-ultimate');
+const petAptAgiMinUltimateInput = document.getElementById('pet-apt-agi-min-ultimate');
+const petAptAgiMaxUltimateInput = document.getElementById('pet-apt-agi-max-ultimate');
+const petSkillLibraryInput = document.getElementById('pet-skill-library');
+const petSkillEffectsInput = document.getElementById('pet-skill-effects');
+const PET_RARITY_ORDER = ['normal', 'excellent', 'rare', 'epic', 'legendary', 'supreme', 'ultimate'];
+const petDropBaseInputs = {
+  excellent: petDropBaseExcellentInput,
+  rare: petDropBaseRareInput,
+  epic: petDropBaseEpicInput,
+  legendary: petDropBaseLegendaryInput,
+  supreme: petDropBaseSupremeInput,
+  ultimate: petDropBaseUltimateInput
+};
+const petDropWeightInputs = {
+  normal: petDropWeightNormalInput,
+  excellent: petDropWeightExcellentInput,
+  rare: petDropWeightRareInput,
+  epic: petDropWeightEpicInput,
+  legendary: petDropWeightLegendaryInput,
+  supreme: petDropWeightSupremeInput,
+  ultimate: petDropWeightUltimateInput
+};
+const petBookBaseInputs = {
+  excellent: petBookBaseExcellentInput,
+  rare: petBookBaseRareInput,
+  epic: petBookBaseEpicInput,
+  legendary: petBookBaseLegendaryInput,
+  supreme: petBookBaseSupremeInput,
+  ultimate: petBookBaseUltimateInput
+};
+const petBookHighInputs = {
+  excellent: petBookHighExcellentInput,
+  rare: petBookHighRareInput,
+  epic: petBookHighEpicInput,
+  legendary: petBookHighLegendaryInput,
+  supreme: petBookHighSupremeInput,
+  ultimate: petBookHighUltimateInput
+};
+const petGrowthInputs = {
+  normal: { min: petGrowthMinNormalInput, max: petGrowthMaxNormalInput },
+  excellent: { min: petGrowthMinExcellentInput, max: petGrowthMaxExcellentInput },
+  rare: { min: petGrowthMinRareInput, max: petGrowthMaxRareInput },
+  epic: { min: petGrowthMinEpicInput, max: petGrowthMaxEpicInput },
+  legendary: { min: petGrowthMinLegendaryInput, max: petGrowthMaxLegendaryInput },
+  supreme: { min: petGrowthMinSupremeInput, max: petGrowthMaxSupremeInput },
+  ultimate: { min: petGrowthMinUltimateInput, max: petGrowthMaxUltimateInput }
+};
+const petAptitudeInputs = {
+  normal: {
+    hp: { min: petAptHpMinNormalInput, max: petAptHpMaxNormalInput },
+    atk: { min: petAptAtkMinNormalInput, max: petAptAtkMaxNormalInput },
+    def: { min: petAptDefMinNormalInput, max: petAptDefMaxNormalInput },
+    mag: { min: petAptMagMinNormalInput, max: petAptMagMaxNormalInput },
+    agility: { min: petAptAgiMinNormalInput, max: petAptAgiMaxNormalInput }
+  },
+  excellent: {
+    hp: { min: petAptHpMinExcellentInput, max: petAptHpMaxExcellentInput },
+    atk: { min: petAptAtkMinExcellentInput, max: petAptAtkMaxExcellentInput },
+    def: { min: petAptDefMinExcellentInput, max: petAptDefMaxExcellentInput },
+    mag: { min: petAptMagMinExcellentInput, max: petAptMagMaxExcellentInput },
+    agility: { min: petAptAgiMinExcellentInput, max: petAptAgiMaxExcellentInput }
+  },
+  rare: {
+    hp: { min: petAptHpMinRareInput, max: petAptHpMaxRareInput },
+    atk: { min: petAptAtkMinRareInput, max: petAptAtkMaxRareInput },
+    def: { min: petAptDefMinRareInput, max: petAptDefMaxRareInput },
+    mag: { min: petAptMagMinRareInput, max: petAptMagMaxRareInput },
+    agility: { min: petAptAgiMinRareInput, max: petAptAgiMaxRareInput }
+  },
+  epic: {
+    hp: { min: petAptHpMinEpicInput, max: petAptHpMaxEpicInput },
+    atk: { min: petAptAtkMinEpicInput, max: petAptAtkMaxEpicInput },
+    def: { min: petAptDefMinEpicInput, max: petAptDefMaxEpicInput },
+    mag: { min: petAptMagMinEpicInput, max: petAptMagMaxEpicInput },
+    agility: { min: petAptAgiMinEpicInput, max: petAptAgiMaxEpicInput }
+  },
+  legendary: {
+    hp: { min: petAptHpMinLegendaryInput, max: petAptHpMaxLegendaryInput },
+    atk: { min: petAptAtkMinLegendaryInput, max: petAptAtkMaxLegendaryInput },
+    def: { min: petAptDefMinLegendaryInput, max: petAptDefMaxLegendaryInput },
+    mag: { min: petAptMagMinLegendaryInput, max: petAptMagMaxLegendaryInput },
+    agility: { min: petAptAgiMinLegendaryInput, max: petAptAgiMaxLegendaryInput }
+  },
+  supreme: {
+    hp: { min: petAptHpMinSupremeInput, max: petAptHpMaxSupremeInput },
+    atk: { min: petAptAtkMinSupremeInput, max: petAptAtkMaxSupremeInput },
+    def: { min: petAptDefMinSupremeInput, max: petAptDefMaxSupremeInput },
+    mag: { min: petAptMagMinSupremeInput, max: petAptMagMaxSupremeInput },
+    agility: { min: petAptAgiMinSupremeInput, max: petAptAgiMaxSupremeInput }
+  },
+  ultimate: {
+    hp: { min: petAptHpMinUltimateInput, max: petAptHpMaxUltimateInput },
+    atk: { min: petAptAtkMinUltimateInput, max: petAptAtkMaxUltimateInput },
+    def: { min: petAptDefMinUltimateInput, max: petAptDefMaxUltimateInput },
+    mag: { min: petAptMagMinUltimateInput, max: petAptMagMaxUltimateInput },
+    agility: { min: petAptAgiMinUltimateInput, max: petAptAgiMaxUltimateInput }
+  }
+};
+let petSettingsCache = null;
 
 // 法宝配置相关
 const treasureMsg = document.getElementById('treasure-msg');
@@ -788,8 +1002,130 @@ async function saveEffectResetSettings() {
   }
 }
 
+function setInputValue(input, value) {
+  if (!input) return;
+  input.value = value ?? '';
+}
+
+function readNumberValue(input, fallback, invalidFlag) {
+  if (!input) return fallback;
+  const raw = input.value;
+  if (raw === '' || raw === null || raw === undefined) return fallback;
+  const num = Number(raw);
+  if (!Number.isFinite(num)) {
+    invalidFlag.invalid = true;
+    return fallback;
+  }
+  return num;
+}
+
+function parseSkillLibrary(text) {
+  const lines = String(text || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  const list = [];
+  const errors = [];
+  lines.forEach((line, index) => {
+    const parts = line.split(',').map(part => part.trim());
+    if (parts.length < 3 || !parts[0] || !parts[1] || !parts[2]) {
+      errors.push(index + 1);
+      return;
+    }
+    list.push({ id: parts[0], name: parts[1], grade: parts[2] });
+  });
+  return { list, errors };
+}
+
+function parseSkillEffects(text) {
+  const lines = String(text || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  const effects = {};
+  const errors = [];
+  lines.forEach((line, index) => {
+    const pos = line.indexOf('=');
+    if (pos <= 0 || pos === line.length - 1) {
+      errors.push(index + 1);
+      return;
+    }
+    const id = line.slice(0, pos).trim();
+    const desc = line.slice(pos + 1).trim();
+    if (!id || !desc) {
+      errors.push(index + 1);
+      return;
+    }
+    effects[id] = desc;
+  });
+  return { effects, errors };
+}
+
+function formatSkillLibrary(list) {
+  if (!Array.isArray(list)) return '';
+  return list.map(item => `${item.id || ''},${item.name || ''},${item.grade || ''}`).join('\n');
+}
+
+function formatSkillEffects(effects, skillLibrary) {
+  const lines = [];
+  const used = new Set();
+  if (Array.isArray(skillLibrary)) {
+    skillLibrary.forEach((skill) => {
+      const id = skill?.id;
+      if (!id || effects?.[id] === undefined) return;
+      lines.push(`${id}=${effects[id]}`);
+      used.add(id);
+    });
+  }
+  Object.keys(effects || {}).forEach((id) => {
+    if (used.has(id)) return;
+    lines.push(`${id}=${effects[id]}`);
+  });
+  return lines.join('\n');
+}
+
+function applyPetSettingsToForm(settings) {
+  if (!settings) return;
+  setInputValue(petMaxOwnedInput, settings.maxOwned);
+  setInputValue(petSynthesisCostInput, settings.synthesisCostGold);
+  setInputValue(petBookUnlockSlot4ChanceInput, settings.bookUnlockSlot4Chance);
+  setInputValue(petSynthesisUnlockSlotChanceInput, settings.synthesisUnlockSlotChance);
+  setInputValue(petDropMaxChanceInput, settings.dropMaxChance);
+  setInputValue(petDropBonusMinInput, settings.dropBonusMin);
+  Object.entries(petDropBaseInputs).forEach(([rarity, input]) => {
+    setInputValue(input, settings.dropBaseChanceByCap?.[rarity]);
+  });
+  Object.entries(petDropWeightInputs).forEach(([rarity, input]) => {
+    setInputValue(input, settings.dropRarityWeights?.[rarity]);
+  });
+  Object.entries(petBookBaseInputs).forEach(([rarity, input]) => {
+    setInputValue(input, settings.bookBaseChanceByCap?.[rarity]);
+  });
+  Object.entries(petBookHighInputs).forEach(([rarity, input]) => {
+    setInputValue(input, settings.bookHighChanceByCap?.[rarity]);
+  });
+  setInputValue(petBookSecondChanceInput, settings.bookSecondDropChance);
+  if (petBookSecondEligibleInput) {
+    petBookSecondEligibleInput.value = Array.isArray(settings.bookSecondEligibleRarities)
+      ? settings.bookSecondEligibleRarities.join(',')
+      : '';
+  }
+  if (petBookSecondRequireSpecialInput) {
+    petBookSecondRequireSpecialInput.checked = !!settings.bookSecondRequireSpecialBoss;
+  }
+  Object.entries(petGrowthInputs).forEach(([rarity, inputs]) => {
+    const range = settings.rarityGrowthRange?.[rarity] || [];
+    setInputValue(inputs.min, range[0]);
+    setInputValue(inputs.max, range[1]);
+  });
+  Object.entries(petAptitudeInputs).forEach(([rarity, stats]) => {
+    const range = settings.rarityAptitudeRange?.[rarity] || {};
+    Object.entries(stats).forEach(([stat, inputs]) => {
+      const values = range?.[stat] || [];
+      setInputValue(inputs.min, values[0]);
+      setInputValue(inputs.max, values[1]);
+    });
+  });
+  if (petSkillLibraryInput) petSkillLibraryInput.value = formatSkillLibrary(settings.skillLibrary);
+  if (petSkillEffectsInput) petSkillEffectsInput.value = formatSkillEffects(settings.skillEffects, settings.skillLibrary);
+}
+
 async function loadPetSettings() {
-  if (!petSettingsMsg || !petSettingsJson) return;
+  if (!petSettingsMsg) return;
   petSettingsMsg.textContent = '';
   try {
     const data = await api('/admin/pet-settings', 'GET');
@@ -798,7 +1134,8 @@ async function loadPetSettings() {
       petSettingsMsg.style.color = 'red';
       return;
     }
-    petSettingsJson.value = JSON.stringify(data.settings, null, 2);
+    petSettingsCache = data.settings;
+    applyPetSettingsToForm(petSettingsCache);
     petSettingsMsg.textContent = '加载成功';
     petSettingsMsg.style.color = 'green';
     setTimeout(() => {
@@ -811,20 +1148,91 @@ async function loadPetSettings() {
 }
 
 async function savePetSettings() {
-  if (!petSettingsMsg || !petSettingsJson) return;
+  if (!petSettingsMsg) return;
   petSettingsMsg.textContent = '';
-  let settings;
-  try {
-    settings = JSON.parse(petSettingsJson.value || '{}');
-  } catch (err) {
-    petSettingsMsg.textContent = `JSON 解析失败: ${err.message}`;
+  const invalidFlag = { invalid: false };
+  const base = petSettingsCache ? JSON.parse(JSON.stringify(petSettingsCache)) : {};
+  base.dropBaseChanceByCap = base.dropBaseChanceByCap || {};
+  base.dropRarityWeights = base.dropRarityWeights || {};
+  base.bookBaseChanceByCap = base.bookBaseChanceByCap || {};
+  base.bookHighChanceByCap = base.bookHighChanceByCap || {};
+  base.rarityGrowthRange = base.rarityGrowthRange || {};
+  base.rarityAptitudeRange = base.rarityAptitudeRange || {};
+  base.bookSecondEligibleRarities = base.bookSecondEligibleRarities || [];
+
+  base.maxOwned = readNumberValue(petMaxOwnedInput, base.maxOwned, invalidFlag);
+  base.synthesisCostGold = readNumberValue(petSynthesisCostInput, base.synthesisCostGold, invalidFlag);
+  base.bookUnlockSlot4Chance = readNumberValue(petBookUnlockSlot4ChanceInput, base.bookUnlockSlot4Chance, invalidFlag);
+  base.synthesisUnlockSlotChance = readNumberValue(petSynthesisUnlockSlotChanceInput, base.synthesisUnlockSlotChance, invalidFlag);
+  base.dropMaxChance = readNumberValue(petDropMaxChanceInput, base.dropMaxChance, invalidFlag);
+  base.dropBonusMin = readNumberValue(petDropBonusMinInput, base.dropBonusMin, invalidFlag);
+  Object.entries(petDropBaseInputs).forEach(([rarity, input]) => {
+    base.dropBaseChanceByCap[rarity] = readNumberValue(input, base.dropBaseChanceByCap[rarity], invalidFlag);
+  });
+  Object.entries(petDropWeightInputs).forEach(([rarity, input]) => {
+    base.dropRarityWeights[rarity] = readNumberValue(input, base.dropRarityWeights[rarity], invalidFlag);
+  });
+  Object.entries(petBookBaseInputs).forEach(([rarity, input]) => {
+    base.bookBaseChanceByCap[rarity] = readNumberValue(input, base.bookBaseChanceByCap[rarity], invalidFlag);
+  });
+  Object.entries(petBookHighInputs).forEach(([rarity, input]) => {
+    base.bookHighChanceByCap[rarity] = readNumberValue(input, base.bookHighChanceByCap[rarity], invalidFlag);
+  });
+  base.bookSecondDropChance = readNumberValue(petBookSecondChanceInput, base.bookSecondDropChance, invalidFlag);
+  if (petBookSecondEligibleInput) {
+    const raw = petBookSecondEligibleInput.value || '';
+    base.bookSecondEligibleRarities = raw.split(',').map(item => item.trim()).filter(Boolean);
+  }
+  if (petBookSecondRequireSpecialInput) {
+    base.bookSecondRequireSpecialBoss = !!petBookSecondRequireSpecialInput.checked;
+  }
+  Object.entries(petGrowthInputs).forEach(([rarity, inputs]) => {
+    const current = base.rarityGrowthRange[rarity] || [];
+    const min = readNumberValue(inputs.min, current[0], invalidFlag);
+    const max = readNumberValue(inputs.max, current[1], invalidFlag);
+    base.rarityGrowthRange[rarity] = [min, max];
+  });
+  Object.entries(petAptitudeInputs).forEach(([rarity, stats]) => {
+    const current = base.rarityAptitudeRange[rarity] || {};
+    base.rarityAptitudeRange[rarity] = { ...current };
+    Object.entries(stats).forEach(([stat, inputs]) => {
+      const currentValues = current[stat] || [];
+      const min = readNumberValue(inputs.min, currentValues[0], invalidFlag);
+      const max = readNumberValue(inputs.max, currentValues[1], invalidFlag);
+      base.rarityAptitudeRange[rarity][stat] = [min, max];
+    });
+  });
+
+  if (invalidFlag.invalid) {
+    petSettingsMsg.textContent = '存在无效数字，请检查输入';
     petSettingsMsg.style.color = 'red';
     return;
   }
+
+  if (petSkillLibraryInput) {
+    const parsed = parseSkillLibrary(petSkillLibraryInput.value);
+    if (parsed.errors.length) {
+      petSettingsMsg.textContent = `技能库格式错误：第 ${parsed.errors.join(', ')} 行`;
+      petSettingsMsg.style.color = 'red';
+      return;
+    }
+    base.skillLibrary = parsed.list;
+  }
+  if (petSkillEffectsInput) {
+    const parsed = parseSkillEffects(petSkillEffectsInput.value);
+    if (parsed.errors.length) {
+      petSettingsMsg.textContent = `技能效果格式错误：第 ${parsed.errors.join(', ')} 行`;
+      petSettingsMsg.style.color = 'red';
+      return;
+    }
+    base.skillEffects = parsed.effects;
+  }
+
   try {
-    const data = await api('/admin/pet-settings/update', 'POST', { settings });
+    const data = await api('/admin/pet-settings/update', 'POST', { settings: base });
     if (data?.settings) {
-      petSettingsJson.value = JSON.stringify(data.settings, null, 2);
+      petSettingsCache = data.settings;
+      applyPetSettingsToForm(petSettingsCache);
     }
     petSettingsMsg.textContent = '保存成功';
     petSettingsMsg.style.color = 'green';

@@ -1002,9 +1002,277 @@
           </div>
           <div class="block-body">
             <p style="color: #666; margin-bottom: 12px; font-size: 13px;">
-              支持完整 JSON 配置，保存后立即生效。建议先加载当前配置再修改。
+              配置保存后立即生效。建议先点“加载”同步当前配置。
             </p>
-            <textarea id="pet-settings-json" rows="18" style="width: 100%; font-family: Consolas, 'Courier New', monospace; font-size: 12px; padding: 8px; border-radius: 8px; border: 1px solid #ddd;"></textarea>
+            <div class="table-container">
+              <table style="font-size: 12px;">
+                <thead>
+                  <tr>
+                    <th style="padding: 6px 8px;">基础配置</th>
+                    <th style="padding: 6px 8px;">值</th>
+                    <th style="padding: 6px 8px;">说明</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>宠物上限</td>
+                    <td><input id="pet-max-owned" type="number" min="1" step="1" style="width: 90px;"></td>
+                    <td>最多可携带的宠物数量</td>
+                  </tr>
+                  <tr>
+                    <td>合成费用(金)</td>
+                    <td><input id="pet-synthesis-cost" type="number" min="0" step="1" style="width: 120px;"></td>
+                    <td>宠物合成消耗金币</td>
+                  </tr>
+                  <tr>
+                    <td>技能书开4槽概率</td>
+                    <td><input id="pet-book-unlock-slot4-chance" type="number" min="0" max="1" step="0.001" style="width: 90px;"></td>
+                    <td>使用技能书时开第4槽概率</td>
+                  </tr>
+                  <tr>
+                    <td>合成解锁槽概率</td>
+                    <td><input id="pet-synthesis-unlock-slot-chance" type="number" min="0" max="1" step="0.001" style="width: 90px;"></td>
+                    <td>合成时额外解锁技能槽概率</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3 style="margin: 16px 0 8px; font-size: 13px;">宠物掉落概率</h3>
+            <div class="table-container">
+              <table style="font-size: 12px;">
+                <thead>
+                  <tr>
+                    <th style="padding: 6px 8px;">上限稀有度</th>
+                    <th style="padding: 6px 8px;">基础掉落概率</th>
+                    <th style="padding: 6px 8px;">说明</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>优秀</td>
+                    <td><input id="pet-drop-base-excellent" type="number" min="0" max="1" step="0.001" style="width: 90px;"></td>
+                    <td>maxRarity=excellent</td>
+                  </tr>
+                  <tr>
+                    <td>稀有</td>
+                    <td><input id="pet-drop-base-rare" type="number" min="0" max="1" step="0.001" style="width: 90px;"></td>
+                    <td>maxRarity=rare</td>
+                  </tr>
+                  <tr>
+                    <td>史诗</td>
+                    <td><input id="pet-drop-base-epic" type="number" min="0" max="1" step="0.001" style="width: 90px;"></td>
+                    <td>maxRarity=epic</td>
+                  </tr>
+                  <tr>
+                    <td>传说</td>
+                    <td><input id="pet-drop-base-legendary" type="number" min="0" max="1" step="0.001" style="width: 90px;"></td>
+                    <td>maxRarity=legendary</td>
+                  </tr>
+                  <tr>
+                    <td>至尊</td>
+                    <td><input id="pet-drop-base-supreme" type="number" min="0" max="1" step="0.001" style="width: 90px;"></td>
+                    <td>maxRarity=supreme</td>
+                  </tr>
+                  <tr>
+                    <td>终极</td>
+                    <td><input id="pet-drop-base-ultimate" type="number" min="0" max="1" step="0.001" style="width: 90px;"></td>
+                    <td>maxRarity=ultimate</td>
+                  </tr>
+                  <tr>
+                    <td>掉落上限</td>
+                    <td><input id="pet-drop-max-chance" type="number" min="0" max="1" step="0.001" style="width: 90px;"></td>
+                    <td>最终概率不超过此值</td>
+                  </tr>
+                  <tr>
+                    <td>加成最小倍率</td>
+                    <td><input id="pet-drop-bonus-min" type="number" min="0" step="0.01" style="width: 90px;"></td>
+                    <td>掉落加成的下限</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3 style="margin: 16px 0 8px; font-size: 13px;">稀有度权重</h3>
+            <div class="table-container">
+              <table style="font-size: 12px;">
+                <thead>
+                  <tr>
+                    <th style="padding: 6px 8px;">稀有度</th>
+                    <th style="padding: 6px 8px;">权重</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>普通</td><td><input id="pet-drop-weight-normal" type="number" min="0" step="1" style="width: 80px;"></td></tr>
+                  <tr><td>优秀</td><td><input id="pet-drop-weight-excellent" type="number" min="0" step="1" style="width: 80px;"></td></tr>
+                  <tr><td>稀有</td><td><input id="pet-drop-weight-rare" type="number" min="0" step="1" style="width: 80px;"></td></tr>
+                  <tr><td>史诗</td><td><input id="pet-drop-weight-epic" type="number" min="0" step="1" style="width: 80px;"></td></tr>
+                  <tr><td>传说</td><td><input id="pet-drop-weight-legendary" type="number" min="0" step="1" style="width: 80px;"></td></tr>
+                  <tr><td>至尊</td><td><input id="pet-drop-weight-supreme" type="number" min="0" step="1" style="width: 80px;"></td></tr>
+                  <tr><td>终极</td><td><input id="pet-drop-weight-ultimate" type="number" min="0" step="1" style="width: 80px;"></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3 style="margin: 16px 0 8px; font-size: 13px;">宠物技能书掉落</h3>
+            <div class="table-container">
+              <table style="font-size: 12px;">
+                <thead>
+                  <tr>
+                    <th style="padding: 6px 8px;">上限稀有度</th>
+                    <th style="padding: 6px 8px;">基础掉落概率</th>
+                    <th style="padding: 6px 8px;">高阶书概率</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>优秀</td>
+                    <td><input id="pet-book-base-excellent" type="number" min="0" max="1" step="0.001" style="width: 90px;"></td>
+                    <td><input id="pet-book-high-excellent" type="number" min="0" max="1" step="0.001" style="width: 90px;"></td>
+                  </tr>
+                  <tr>
+                    <td>稀有</td>
+                    <td><input id="pet-book-base-rare" type="number" min="0" max="1" step="0.001" style="width: 90px;"></td>
+                    <td><input id="pet-book-high-rare" type="number" min="0" max="1" step="0.001" style="width: 90px;"></td>
+                  </tr>
+                  <tr>
+                    <td>史诗</td>
+                    <td><input id="pet-book-base-epic" type="number" min="0" max="1" step="0.001" style="width: 90px;"></td>
+                    <td><input id="pet-book-high-epic" type="number" min="0" max="1" step="0.001" style="width: 90px;"></td>
+                  </tr>
+                  <tr>
+                    <td>传说</td>
+                    <td><input id="pet-book-base-legendary" type="number" min="0" max="1" step="0.001" style="width: 90px;"></td>
+                    <td><input id="pet-book-high-legendary" type="number" min="0" max="1" step="0.001" style="width: 90px;"></td>
+                  </tr>
+                  <tr>
+                    <td>至尊</td>
+                    <td><input id="pet-book-base-supreme" type="number" min="0" max="1" step="0.001" style="width: 90px;"></td>
+                    <td><input id="pet-book-high-supreme" type="number" min="0" max="1" step="0.001" style="width: 90px;"></td>
+                  </tr>
+                  <tr>
+                    <td>终极</td>
+                    <td><input id="pet-book-base-ultimate" type="number" min="0" max="1" step="0.001" style="width: 90px;"></td>
+                    <td><input id="pet-book-high-ultimate" type="number" min="0" max="1" step="0.001" style="width: 90px;"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="row" style="margin-top: 8px; gap: 12px; flex-wrap: wrap;">
+              <label>二次掉落概率
+                <input id="pet-book-second-chance" type="number" min="0" max="1" step="0.001" style="width: 90px; margin-left: 6px;">
+              </label>
+              <label>二次掉落稀有度
+                <input id="pet-book-second-eligible" type="text" placeholder="supreme,ultimate" style="width: 200px; margin-left: 6px;">
+              </label>
+              <label>
+                <input id="pet-book-second-require-special" type="checkbox">
+                仅特殊BOSS触发二次掉落
+              </label>
+            </div>
+
+            <h3 style="margin: 16px 0 8px; font-size: 13px;">成长范围</h3>
+            <div class="table-container">
+              <table style="font-size: 12px;">
+                <thead>
+                  <tr>
+                    <th style="padding: 6px 8px;">稀有度</th>
+                    <th style="padding: 6px 8px;">最小成长</th>
+                    <th style="padding: 6px 8px;">最大成长</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>普通</td><td><input id="pet-growth-min-normal" type="number" step="0.001" style="width: 90px;"></td><td><input id="pet-growth-max-normal" type="number" step="0.001" style="width: 90px;"></td></tr>
+                  <tr><td>优秀</td><td><input id="pet-growth-min-excellent" type="number" step="0.001" style="width: 90px;"></td><td><input id="pet-growth-max-excellent" type="number" step="0.001" style="width: 90px;"></td></tr>
+                  <tr><td>稀有</td><td><input id="pet-growth-min-rare" type="number" step="0.001" style="width: 90px;"></td><td><input id="pet-growth-max-rare" type="number" step="0.001" style="width: 90px;"></td></tr>
+                  <tr><td>史诗</td><td><input id="pet-growth-min-epic" type="number" step="0.001" style="width: 90px;"></td><td><input id="pet-growth-max-epic" type="number" step="0.001" style="width: 90px;"></td></tr>
+                  <tr><td>传说</td><td><input id="pet-growth-min-legendary" type="number" step="0.001" style="width: 90px;"></td><td><input id="pet-growth-max-legendary" type="number" step="0.001" style="width: 90px;"></td></tr>
+                  <tr><td>至尊</td><td><input id="pet-growth-min-supreme" type="number" step="0.001" style="width: 90px;"></td><td><input id="pet-growth-max-supreme" type="number" step="0.001" style="width: 90px;"></td></tr>
+                  <tr><td>终极</td><td><input id="pet-growth-min-ultimate" type="number" step="0.001" style="width: 90px;"></td><td><input id="pet-growth-max-ultimate" type="number" step="0.001" style="width: 90px;"></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3 style="margin: 16px 0 8px; font-size: 13px;">资质范围</h3>
+            <div class="table-container">
+              <table style="font-size: 12px;">
+                <thead>
+                  <tr>
+                    <th style="padding: 6px 8px;">稀有度</th>
+                    <th style="padding: 6px 8px;">HP(min/max)</th>
+                    <th style="padding: 6px 8px;">攻(min/max)</th>
+                    <th style="padding: 6px 8px;">防(min/max)</th>
+                    <th style="padding: 6px 8px;">法(min/max)</th>
+                    <th style="padding: 6px 8px;">敏捷(min/max)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>普通</td>
+                    <td><input id="pet-apt-hp-min-normal" type="number" step="1" style="width: 70px;"> / <input id="pet-apt-hp-max-normal" type="number" step="1" style="width: 70px;"></td>
+                    <td><input id="pet-apt-atk-min-normal" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-atk-max-normal" type="number" step="1" style="width: 60px;"></td>
+                    <td><input id="pet-apt-def-min-normal" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-def-max-normal" type="number" step="1" style="width: 60px;"></td>
+                    <td><input id="pet-apt-mag-min-normal" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-mag-max-normal" type="number" step="1" style="width: 60px;"></td>
+                    <td><input id="pet-apt-agi-min-normal" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-agi-max-normal" type="number" step="1" style="width: 60px;"></td>
+                  </tr>
+                  <tr>
+                    <td>优秀</td>
+                    <td><input id="pet-apt-hp-min-excellent" type="number" step="1" style="width: 70px;"> / <input id="pet-apt-hp-max-excellent" type="number" step="1" style="width: 70px;"></td>
+                    <td><input id="pet-apt-atk-min-excellent" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-atk-max-excellent" type="number" step="1" style="width: 60px;"></td>
+                    <td><input id="pet-apt-def-min-excellent" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-def-max-excellent" type="number" step="1" style="width: 60px;"></td>
+                    <td><input id="pet-apt-mag-min-excellent" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-mag-max-excellent" type="number" step="1" style="width: 60px;"></td>
+                    <td><input id="pet-apt-agi-min-excellent" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-agi-max-excellent" type="number" step="1" style="width: 60px;"></td>
+                  </tr>
+                  <tr>
+                    <td>稀有</td>
+                    <td><input id="pet-apt-hp-min-rare" type="number" step="1" style="width: 70px;"> / <input id="pet-apt-hp-max-rare" type="number" step="1" style="width: 70px;"></td>
+                    <td><input id="pet-apt-atk-min-rare" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-atk-max-rare" type="number" step="1" style="width: 60px;"></td>
+                    <td><input id="pet-apt-def-min-rare" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-def-max-rare" type="number" step="1" style="width: 60px;"></td>
+                    <td><input id="pet-apt-mag-min-rare" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-mag-max-rare" type="number" step="1" style="width: 60px;"></td>
+                    <td><input id="pet-apt-agi-min-rare" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-agi-max-rare" type="number" step="1" style="width: 60px;"></td>
+                  </tr>
+                  <tr>
+                    <td>史诗</td>
+                    <td><input id="pet-apt-hp-min-epic" type="number" step="1" style="width: 70px;"> / <input id="pet-apt-hp-max-epic" type="number" step="1" style="width: 70px;"></td>
+                    <td><input id="pet-apt-atk-min-epic" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-atk-max-epic" type="number" step="1" style="width: 60px;"></td>
+                    <td><input id="pet-apt-def-min-epic" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-def-max-epic" type="number" step="1" style="width: 60px;"></td>
+                    <td><input id="pet-apt-mag-min-epic" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-mag-max-epic" type="number" step="1" style="width: 60px;"></td>
+                    <td><input id="pet-apt-agi-min-epic" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-agi-max-epic" type="number" step="1" style="width: 60px;"></td>
+                  </tr>
+                  <tr>
+                    <td>传说</td>
+                    <td><input id="pet-apt-hp-min-legendary" type="number" step="1" style="width: 70px;"> / <input id="pet-apt-hp-max-legendary" type="number" step="1" style="width: 70px;"></td>
+                    <td><input id="pet-apt-atk-min-legendary" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-atk-max-legendary" type="number" step="1" style="width: 60px;"></td>
+                    <td><input id="pet-apt-def-min-legendary" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-def-max-legendary" type="number" step="1" style="width: 60px;"></td>
+                    <td><input id="pet-apt-mag-min-legendary" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-mag-max-legendary" type="number" step="1" style="width: 60px;"></td>
+                    <td><input id="pet-apt-agi-min-legendary" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-agi-max-legendary" type="number" step="1" style="width: 60px;"></td>
+                  </tr>
+                  <tr>
+                    <td>至尊</td>
+                    <td><input id="pet-apt-hp-min-supreme" type="number" step="1" style="width: 70px;"> / <input id="pet-apt-hp-max-supreme" type="number" step="1" style="width: 70px;"></td>
+                    <td><input id="pet-apt-atk-min-supreme" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-atk-max-supreme" type="number" step="1" style="width: 60px;"></td>
+                    <td><input id="pet-apt-def-min-supreme" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-def-max-supreme" type="number" step="1" style="width: 60px;"></td>
+                    <td><input id="pet-apt-mag-min-supreme" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-mag-max-supreme" type="number" step="1" style="width: 60px;"></td>
+                    <td><input id="pet-apt-agi-min-supreme" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-agi-max-supreme" type="number" step="1" style="width: 60px;"></td>
+                  </tr>
+                  <tr>
+                    <td>终极</td>
+                    <td><input id="pet-apt-hp-min-ultimate" type="number" step="1" style="width: 70px;"> / <input id="pet-apt-hp-max-ultimate" type="number" step="1" style="width: 70px;"></td>
+                    <td><input id="pet-apt-atk-min-ultimate" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-atk-max-ultimate" type="number" step="1" style="width: 60px;"></td>
+                    <td><input id="pet-apt-def-min-ultimate" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-def-max-ultimate" type="number" step="1" style="width: 60px;"></td>
+                    <td><input id="pet-apt-mag-min-ultimate" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-mag-max-ultimate" type="number" step="1" style="width: 60px;"></td>
+                    <td><input id="pet-apt-agi-min-ultimate" type="number" step="1" style="width: 60px;"> / <input id="pet-apt-agi-max-ultimate" type="number" step="1" style="width: 60px;"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3 style="margin: 16px 0 8px; font-size: 13px;">技能库</h3>
+            <textarea id="pet-skill-library" rows="8" style="width: 100%; font-family: Consolas, 'Courier New', monospace; font-size: 12px; padding: 8px; border-radius: 8px; border: 1px solid #ddd;" placeholder="格式: id,name,grade\n示例: pet_bash,强力,normal"></textarea>
+
+            <h3 style="margin: 16px 0 8px; font-size: 13px;">技能效果</h3>
+            <textarea id="pet-skill-effects" rows="8" style="width: 100%; font-family: Consolas, 'Courier New', monospace; font-size: 12px; padding: 8px; border-radius: 8px; border: 1px solid #ddd;" placeholder="格式: id=说明\n示例: pet_bash=被动：宠物物理伤害+4.5%"></textarea>
+
             <div class="row" style="margin-top: 10px;">
               <button id="pet-settings-refresh" class="btn-small">加载</button>
               <button id="pet-settings-save" class="btn-small">保存</button>
