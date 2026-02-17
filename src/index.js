@@ -7025,6 +7025,9 @@ function getCultivationLevel(player) {
 
 function buildRoomExits(zoneId, roomId, player = null) {
   const zone = WORLD[zoneId];
+  if (zoneId === PERSONAL_BOSS_ZONE_ID) {
+    ensurePersonalBossRoom(roomId);
+  }
   const room = zone?.rooms?.[roomId];
   if (!room) return [];
   const exitsSource = { ...(room.exits || {}) };
