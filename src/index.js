@@ -7467,14 +7467,87 @@ const PET_BOOK_LIBRARY = PET_SKILL_LIBRARY.map((skill, index) => ({
       : 60000 + index * 800
 }));
 
+const PET_SPECIES_NAME_MAP = {
+  FieldWolf: '旷野狼',
+  HillCat: '山猫',
+  GreenBird: '青羽鸟',
+  StoneTurtle: '石甲龟',
+  NightBat: '夜蝠',
+  FireLizard: '火蜥',
+  SandFox: '沙狐',
+  WoodSprite: '木灵',
+  PuppetBeast: '傀儡兽',
+  GrassSpirit: '草灵',
+  SilverFox: '银狐',
+  SkyHawk: '天鹰',
+  ThunderLeopard: '雷豹',
+  FrostDeer: '霜鹿',
+  BlazeWolf: '烈焰狼',
+  AquaQilin: '水麒麟',
+  IronApe: '铁猿',
+  OakSpirit: '古木灵',
+  RuneTurtle: '符文龟',
+  WindBird: '风鸟',
+  CrimsonLion: '赤狮',
+  IceFox: '冰狐',
+  StormRhino: '风暴犀',
+  AquaDragon: '水龙',
+  ShadowLeopard: '影豹',
+  StarLuan: '星鸾',
+  RiftBear: '裂隙熊',
+  VenomSerpent: '毒蛇',
+  GhostWolf: '幽狼',
+  CloudDeer: '云鹿',
+  NetherTiger: '幽冥虎',
+  SolarPhoenix: '旭日凤凰',
+  StormDragon: '风暴龙',
+  FrostQilin: '冰麒麟',
+  YoungXuanwu: '幼玄武',
+  NineTailFox: '九尾狐',
+  WarTigerMech: '战虎机甲',
+  GoldenRoc: '金翅鹏',
+  SoulSpider: '魂蛛',
+  OceanKun: '海鲲',
+  ZhuLong: '烛龙',
+  YingLong: '应龙',
+  BaiZe: '白泽',
+  QiongQi: '穷奇',
+  TaoTie: '饕餮',
+  BiAn: '狴犴',
+  MingBird: '冥鸟',
+  QingLuan: '青鸾',
+  BiFang: '毕方',
+  WhiteTiger: '白虎',
+  PrimordialDragon: '太初龙',
+  ChaosQilin: '混沌麒麟',
+  UndyingCrow: '不死鸦',
+  VoidXuanwu: '虚空玄武',
+  AllFormBaiZe: '万相白泽',
+  NineNetherPhoenix: '九幽凤凰',
+  PrisonXiezhi: '狱獬豸',
+  TiangangApe: '天罡猿',
+  SkyZhuLong: '天烛龙',
+  WildTaoTie: '狂饕餮',
+  EndOriginDragon: '终源龙',
+  EternalPhoenix: '永恒凤凰',
+  TaixuRoc: '太虚鹏',
+  WujiBaiZe: '无极白泽',
+  GenesisQilin: '创世麒麟',
+  HunyuanXuanwu: '混元玄武',
+  AbyssQiongQi: '深渊穷奇',
+  SkyTorch: '天焰',
+  OriginYingLong: '元初应龙',
+  HongmengCrow: '鸿蒙鸦'
+};
+
 const PET_SPECIES_BY_RARITY = {
-  normal: ['FieldWolf', 'HillCat', 'GreenBird', 'StoneTurtle', 'NightBat', 'FireLizard', 'SandFox', 'WoodSprite', 'PuppetBeast', 'GrassSpirit'],
-  excellent: ['SilverFox', 'SkyHawk', 'ThunderLeopard', 'FrostDeer', 'BlazeWolf', 'AquaQilin', 'IronApe', 'OakSpirit', 'RuneTurtle', 'WindBird'],
-  rare: ['CrimsonLion', 'IceFox', 'StormRhino', 'AquaDragon', 'ShadowLeopard', 'StarLuan', 'RiftBear', 'VenomSerpent', 'GhostWolf', 'CloudDeer'],
-  epic: ['NetherTiger', 'SolarPhoenix', 'StormDragon', 'FrostQilin', 'YoungXuanwu', 'NineTailFox', 'WarTigerMech', 'GoldenRoc', 'SoulSpider', 'OceanKun'],
-  legendary: ['ZhuLong', 'YingLong', 'BaiZe', 'QiongQi', 'TaoTie', 'BiAn', 'MingBird', 'QingLuan', 'BiFang', 'WhiteTiger'],
-  supreme: ['PrimordialDragon', 'ChaosQilin', 'UndyingCrow', 'VoidXuanwu', 'AllFormBaiZe', 'NineNetherPhoenix', 'PrisonXiezhi', 'TiangangApe', 'SkyZhuLong', 'WildTaoTie'],
-  ultimate: ['EndOriginDragon', 'EternalPhoenix', 'TaixuRoc', 'WujiBaiZe', 'GenesisQilin', 'HunyuanXuanwu', 'AbyssQiongQi', 'SkyTorch', 'OriginYingLong', 'HongmengCrow']
+  normal: ['旷野狼', '山猫', '青羽鸟', '石甲龟', '夜蝠', '火蜥', '沙狐', '木灵', '傀儡兽', '草灵'],
+  excellent: ['银狐', '天鹰', '雷豹', '霜鹿', '烈焰狼', '水麒麟', '铁猿', '古木灵', '符文龟', '风鸟'],
+  rare: ['赤狮', '冰狐', '风暴犀', '水龙', '影豹', '星鸾', '裂隙熊', '毒蛇', '幽狼', '云鹿'],
+  epic: ['幽冥虎', '旭日凤凰', '风暴龙', '冰麒麟', '幼玄武', '九尾狐', '战虎机甲', '金翅鹏', '魂蛛', '海鲲'],
+  legendary: ['烛龙', '应龙', '白泽', '穷奇', '饕餮', '狴犴', '冥鸟', '青鸾', '毕方', '白虎'],
+  supreme: ['太初龙', '混沌麒麟', '不死鸦', '虚空玄武', '万相白泽', '九幽凤凰', '狱獬豸', '天罡猿', '天烛龙', '狂饕餮'],
+  ultimate: ['终源龙', '永恒凤凰', '太虚鹏', '无极白泽', '创世麒麟', '混元玄武', '深渊穷奇', '天焰', '元初应龙', '鸿蒙鸦']
 };
 
 function getPetSkillDef(skillId) {
@@ -7690,8 +7763,15 @@ function normalizePetState(player) {
         ? String(pet.rarity || '').trim()
         : 'normal';
       const speciesPool = PET_SPECIES_BY_RARITY[rarity] || PET_SPECIES_BY_RARITY.normal;
-      const role = String(pet.role || speciesPool[randInt(0, speciesPool.length - 1)]);
-      const name = String(pet.name || role).slice(0, 24);
+    const roleRaw = String(pet.role || speciesPool[randInt(0, speciesPool.length - 1)]);
+    const mappedRole = PET_SPECIES_NAME_MAP[roleRaw] || roleRaw;
+    let name = String(pet.name || roleRaw).slice(0, 24);
+    if (PET_SPECIES_NAME_MAP[roleRaw] && name.startsWith(roleRaw)) {
+      const suffix = name.slice(roleRaw.length);
+      if (/^\d*$/.test(suffix)) {
+        name = `${PET_SPECIES_NAME_MAP[roleRaw]}${suffix}`;
+      }
+    }
       const growthRange = PET_RARITY_GROWTH_RANGE[rarity] || PET_RARITY_GROWTH_RANGE.normal;
       const growthRaw = Number(pet.growth || growthRange[0]);
       const growth = Math.max(growthRange[0], Math.min(growthRange[1], Number(growthRaw.toFixed(3))));
@@ -7719,7 +7799,7 @@ function normalizePetState(player) {
         level,
         exp,
         name,
-        role,
+          role: mappedRole,
         growth,
         aptitude,
         skillSlots,
