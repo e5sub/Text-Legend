@@ -1,42 +1,43 @@
 export const SKILLS = {
   warrior: {
-    slash: { id: 'slash', name: '\u57fa\u672c\u5251\u672f', mp: 0, power: 1.0, type: 'attack' },
-    attack: { id: 'attack', name: '\u653b\u6740\u5251\u672f', mp: 0, power: 1.3, type: 'attack' },
-    assassinate: { id: 'assassinate', name: '\u523a\u6740\u5251\u672f', mp: 0, power: 1.6, type: 'attack' },
-    halfmoon: { id: 'halfmoon', name: '\u534a\u6708\u5f2f\u5200', mp: 12, power: 1.2, type: 'cleave' },
-    firestrike: { id: 'firestrike', name: '\u70c8\u706b\u5251\u6cd5', mp: 18, power: 2.2, type: 'attack', cooldown: 5000 },
-    savage: { id: 'savage', name: '\u91ce\u86ee\u51b2\u649e', mp: 12, power: 1.4, type: 'aoe', powerStat: 'atk' },
-    earth_spike: { id: 'earth_spike', name: '彻地钉', mp: 20, power: 2.0, type: 'aoe', powerStat: 'atk' },
-    tiangang: { id: 'tiangang', name: '先天罡气', mp: 24, power: 1.0, type: 'buff_tiangang', cooldown: 60000 }
+    slash: { id: 'slash', name: '\u57fa\u672c\u5251\u672f', mp: 0, power: 1.0, type: 'attack', effect: '对单体造成100%物理伤害。' },
+    attack: { id: 'attack', name: '\u653b\u6740\u5251\u672f', mp: 0, power: 1.3, type: 'attack', effect: '对单体造成130%物理伤害。' },
+    assassinate: { id: 'assassinate', name: '\u523a\u6740\u5251\u672f', mp: 0, power: 1.6, type: 'attack', effect: '对单体造成160%物理伤害，并可能波及附近目标。' },
+    halfmoon: { id: 'halfmoon', name: '\u534a\u6708\u5f2f\u5200', mp: 12, power: 1.2, type: 'cleave', effect: '对周围目标造成120%物理伤害。' },
+    firestrike: { id: 'firestrike', name: '\u70c8\u706b\u5251\u6cd5', mp: 18, power: 2.2, type: 'attack', cooldown: 5000, effect: '对单体造成220%物理伤害，5秒冷却。' },
+    savage: { id: 'savage', name: '\u91ce\u86ee\u51b2\u649e', mp: 12, power: 1.4, type: 'aoe', powerStat: 'atk', effect: '对周围目标造成140%物理伤害。' },
+    earth_spike: { id: 'earth_spike', name: '彻地钉', mp: 20, power: 2.0, type: 'aoe', powerStat: 'atk', effect: '对周围目标造成200%物理伤害。' },
+    tiangang: { id: 'tiangang', name: '先天罡气', mp: 24, power: 1.0, type: 'buff_tiangang', cooldown: 60000, effect: '5秒内攻击×2，防御/魔御×1.5，60秒冷却。' }
   },
   mage: {
-    fireball: { id: 'fireball', name: '\u5c0f\u706b\u7403', mp: 10, power: 1.15, type: 'spell' },
-    resist: { id: 'resist', name: '\u6297\u62d2\u706b\u73af', mp: 12, power: 0.6, type: 'repel' },
-    inferno: { id: 'inferno', name: '\u5730\u72f1\u706b', mp: 12, power: 1.15, type: 'spell' },
-    explode: { id: 'explode', name: '\u7206\u88c2\u706b\u7130', mp: 14, power: 1.25, type: 'spell' },
-    lightning: { id: 'lightning', name: '\u96f7\u7535\u672f', mp: 16, power: 1.45, type: 'spell' },
-    flash: { id: 'flash', name: '\u75be\u5149\u7535\u5f71', mp: 18, power: 1.3, type: 'spell' },
-    thunder: { id: 'thunder', name: '\u5730\u72f1\u96f7\u5149', mp: 20, power: 1.0, type: 'aoe' },
-    thunderstorm: { id: 'thunderstorm', name: '雷霆万钧', mp: 24, power: 2.0, type: 'aoe', powerStat: 'mag' },
-    shield: { id: 'shield', name: '\u9b54\u6cd5\u76fe', mp: 22, power: 1.0, type: 'buff_shield' },
-    iceblast: { id: 'iceblast', name: '冰咆哮', mp: 24, power: 1.6, type: 'spell' },
-    group_magic_shield: { id: 'group_magic_shield', name: '群体魔法盾', mp: 28, power: 1.0, type: 'buff_magic_shield_group', cooldown: 60000 }
+    fireball: { id: 'fireball', name: '\u5c0f\u706b\u7403', mp: 10, power: 1.15, type: 'spell', effect: '对单体造成115%法术伤害。' },
+    resist: { id: 'resist', name: '\u6297\u62d2\u706b\u73af', mp: 12, power: 0.6, type: 'repel', effect: '击退目标并造成60%法术伤害。' },
+    inferno: { id: 'inferno', name: '\u5730\u72f1\u706b', mp: 12, power: 1.15, type: 'spell', effect: '对单体造成115%法术伤害。' },
+    explode: { id: 'explode', name: '\u7206\u88c2\u706b\u7130', mp: 14, power: 1.25, type: 'spell', effect: '对单体造成125%法术伤害。' },
+    lightning: { id: 'lightning', name: '\u96f7\u7535\u672f', mp: 16, power: 1.45, type: 'spell', effect: '对单体造成145%法术伤害。' },
+    flash: { id: 'flash', name: '\u75be\u5149\u7535\u5f71', mp: 18, power: 1.3, type: 'spell', effect: '对单体造成130%法术伤害。' },
+    thunder: { id: 'thunder', name: '\u5730\u72f1\u96f7\u5149', mp: 20, power: 1.0, type: 'aoe', effect: '对周围目标造成100%法术伤害。' },
+    thunderstorm: { id: 'thunderstorm', name: '雷霆万钧', mp: 24, power: 2.0, type: 'aoe', powerStat: 'mag', effect: '对周围目标造成200%法术伤害。' },
+    shield: { id: 'shield', name: '\u9b54\u6cd5\u76fe', mp: 22, power: 1.0, type: 'buff_shield', effect: '开启魔法盾，按比例消耗MP抵消伤害。' },
+    iceblast: { id: 'iceblast', name: '冰咆哮', mp: 24, power: 1.6, type: 'spell', effect: '对单体造成160%法术伤害。' },
+    group_magic_shield: { id: 'group_magic_shield', name: '群体魔法盾', mp: 28, power: 1.0, type: 'buff_magic_shield_group', cooldown: 60000, effect: '为自己与召唤兽施放魔法盾，持续5秒，60秒冷却。' }
   },
   taoist: {
-    heal: { id: 'heal', name: '\u6cbb\u6108\u672f', mp: 12, power: 1.0, type: 'heal' },
-    group_heal: { id: 'group_heal', name: '\u7fa4\u4f53\u6cbb\u7597\u672f', mp: 22, power: 1.0, type: 'heal_group' },
-    poison: { id: 'poison', name: '\u65bd\u6bd2\u672f', mp: 10, power: 0.75, type: 'dot' },
-    soul: { id: 'soul', name: '\u7075\u9b42\u706b\u7b26', mp: 14, power: 1.5, type: 'spell' },
-    invis: { id: 'invis', name: '\u9690\u8eab\u672f', mp: 14, power: 1.0, type: 'stealth' },
-    group_invis: { id: 'group_invis', name: '\u7fa4\u4f53\u9690\u8eab\u672f', mp: 22, power: 1.0, type: 'stealth_group', cooldown: 60000 },
-    armor: { id: 'armor', name: '\u795e\u5723\u6218\u7532\u672f', mp: 18, power: 1.0, type: 'buff_def' },
-    ghost: { id: 'ghost', name: '\u5e7d\u7075\u76fe', mp: 18, power: 1.0, type: 'buff_mdef' },
+    heal: { id: 'heal', name: '\u6cbb\u6108\u672f', mp: 12, power: 1.0, type: 'heal', effect: '恢复单体生命。' },
+    group_heal: { id: 'group_heal', name: '\u7fa4\u4f53\u6cbb\u7597\u672f', mp: 22, power: 1.0, type: 'heal_group', effect: '恢复自身与队友生命。' },
+    poison: { id: 'poison', name: '\u65bd\u6bd2\u672f', mp: 10, power: 0.75, type: 'dot', effect: '施放毒伤，持续掉血并削弱目标。' },
+    soul: { id: 'soul', name: '\u7075\u9b42\u706b\u7b26', mp: 14, power: 1.5, type: 'spell', effect: '对单体造成150%法术伤害。' },
+    invis: { id: 'invis', name: '\u9690\u8eab\u672f', mp: 14, power: 1.0, type: 'stealth', effect: '隐身90+等级*45秒。' },
+    group_invis: { id: 'group_invis', name: '\u7fa4\u4f53\u9690\u8eab\u672f', mp: 22, power: 1.0, type: 'stealth_group', cooldown: 60000, effect: '自己与召唤兽5秒内免疫伤害，道术提升100%，60秒冷却。' },
+    armor: { id: 'armor', name: '\u795e\u5723\u6218\u7532\u672f', mp: 18, power: 1.0, type: 'buff_def', effect: '提升防御10%，持续60秒。' },
+    ghost: { id: 'ghost', name: '\u5e7d\u7075\u76fe', mp: 18, power: 1.0, type: 'buff_mdef', effect: '提升魔御10%，持续60秒。' },
     skeleton: {
       id: 'skeleton',
       name: '\u53ec\u5524\u9ab7\u9ac5',
       mp: 18,
       power: 1.0,
       type: 'summon',
+      effect: '召唤骷髅协助作战。',
       summon: { name: '\u9ab7\u9ac5', level: 2, baseHp: 192, baseAtk: 18, baseDef: 7 }
     },
     summon: {
@@ -45,6 +46,7 @@ export const SKILLS = {
       mp: 28,
       power: 1.0,
       type: 'summon',
+      effect: '召唤神兽协助作战。',
       summon: { name: '\u795e\u517d', level: 3, baseHp: 320, baseAtk: 30, baseDef: 12 }
     },
     white_tiger: {
@@ -53,6 +55,7 @@ export const SKILLS = {
       mp: 36,
       power: 1.0,
       type: 'summon',
+      effect: '召唤白虎协助作战。',
       summon: { name: '\u767d\u864e', level: 4, baseHp: 480, baseAtk: 45, baseDef: 16 }
     },
     moon_fairy: {
@@ -61,6 +64,7 @@ export const SKILLS = {
       mp: 40,
       power: 1.0,
       type: 'summon',
+      effect: '召唤月仙协助作战。',
       summon: { name: '\u6708\u4ed9', level: 5, baseHp: 0, baseAtk: 0, baseDef: 0 }
     }
   }

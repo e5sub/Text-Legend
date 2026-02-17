@@ -8204,6 +8204,7 @@ async function buildState(player) {
     name: s.name,
     mp: s.mp,
     type: s.type,
+    effect: s.effect || '',
     level: getSkillLevel(player, s.id),
     exp: player.flags?.skillMastery?.[s.id]?.exp || 0,
     expNext: player.flags?.skillMastery?.[s.id]?.level ? SKILL_MASTERY_LEVELS[player.flags.skillMastery[s.id].level] : SKILL_MASTERY_LEVELS[1]

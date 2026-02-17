@@ -2442,6 +2442,13 @@ function renderPetModal() {
       row.className = `pet-entry${selectedPetId === pet.id ? ' active' : ''}`;
       const activeMark = petState?.activePetId === pet.id ? ' [出战]' : '';
       row.textContent = `[${pet.rarityLabel || '-'}] ${pet.name}${activeMark} | 等级:${Number(pet.level || 1)}/${Number(pet.levelCap || 1)} EXP:${Number(pet.exp || 0)}/${Number(pet.expNeed || 0)} | 成长:${Number(pet.growth || 1).toFixed(3)} | 技能:${(pet.skills || []).length}/${pet.skillSlots} | 战力:${pet.power || 0}`;
+      const listEffects = Array.isArray(pet.skillEffects) ? pet.skillEffects.filter((text) => String(text || '').trim()) : [];
+      if (listEffects.length) {
+        const tooltipText = listEffects.join('\n');
+        row.addEventListener('mouseenter', (evt) => showItemTooltip(tooltipText, evt));
+        row.addEventListener('mousemove', (evt) => positionTooltip(evt.clientX, evt.clientY));
+        row.addEventListener('mouseleave', hideItemTooltip);
+      }
       row.addEventListener('click', () => {
         selectedPetId = pet.id;
         renderPetModal();
@@ -2453,9 +2460,45 @@ function renderPetModal() {
   if (!selected) {
     petUi.detail.textContent = '请选择一只宠物';
   } else {
-    const skills = Array.isArray(selected.skillNames) ? selected.skillNames.join('、') : '';
-    petUi.detail.textContent =
-      `名称: ${selected.name}\n稀有度: ${selected.rarityLabel || '-'}\n等级: ${Number(selected.level || 1)}/${Number(selected.levelCap || 1)}\n经验: ${Number(selected.exp || 0)}/${Number(selected.expNeed || 0)}\n类型: ${selected.role || '-'}\n成长: ${Number(selected.growth || 1).toFixed(3)}\n资质: HP ${selected.aptitude?.hp || 0} / 攻 ${selected.aptitude?.atk || 0} / 防 ${selected.aptitude?.def || 0} / 法 ${selected.aptitude?.mag || 0} / 速 ${selected.aptitude?.speed || 0}\n技能(${(selected.skills || []).length}/${selected.skillSlots}): ${skills || '无'}`;
+    petUi.detail.innerHTML = '';
+    const lines = [
+      `名称: ${selected.name}`,
+      `稀有度: ${selected.rarityLabel || '-'}`,
+      `等级: ${Number(selected.level || 1)}/${Number(selected.levelCap || 1)}`,
+      `经验: ${Number(selected.exp || 0)}/${Number(selected.expNeed || 0)}`,
+      `类型: ${selected.role || '-'}`,
+      `成长: ${Number(selected.growth || 1).toFixed(3)}`,
+      `资质: HP ${selected.aptitude?.hp || 0} / 攻 ${selected.aptitude?.atk || 0} / 防 ${selected.aptitude?.def || 0} / 法 ${selected.aptitude?.mag || 0} / 速 ${selected.aptitude?.speed || 0}`
+    ];
+    lines.forEach((text) => {
+      const line = document.createElement('div');
+      line.textContent = text;
+      petUi.detail.appendChild(line);
+    });
+    const skillLine = document.createElement('div');
+    const skillLabel = document.createElement('span');
+    skillLabel.textContent = `技能(${(selected.skills || []).length}/${selected.skillSlots}): `;
+    skillLine.appendChild(skillLabel);
+    const skillNames = Array.isArray(selected.skillNames) ? selected.skillNames : [];
+    const skillEffects = Array.isArray(selected.skillEffects) ? selected.skillEffects : [];
+    if (!skillNames.length) {
+      skillLine.appendChild(document.createTextNode('无'));
+    } else {
+      skillNames.forEach((name, idx) => {
+        const effect = skillEffects[idx] || '';
+        const tag = document.createElement('span');
+        tag.textContent = name;
+        tag.style.marginRight = '6px';
+        if (effect) {
+          tag.style.cursor = 'help';
+          tag.addEventListener('mouseenter', (evt) => showItemTooltip(effect, evt));
+          tag.addEventListener('mousemove', (evt) => positionTooltip(evt.clientX, evt.clientY));
+          tag.addEventListener('mouseleave', hideItemTooltip);
+        }
+        skillLine.appendChild(tag);
+      });
+    }
+    petUi.detail.appendChild(skillLine);
   }
 
   if (petUi.bookList) {
@@ -2470,6 +2513,11 @@ function renderPetModal() {
         const row = document.createElement('div');
         row.className = 'pet-book-entry';
         row.textContent = `${book.name} (${book.skillName}) x${Number(book.qty || 0)}`;
+        if (book.effect) {
+          row.addEventListener('mouseenter', (evt) => showItemTooltip(book.effect, evt));
+          row.addEventListener('mousemove', (evt) => positionTooltip(evt.clientX, evt.clientY));
+          row.addEventListener('mouseleave', hideItemTooltip);
+        }
         petUi.bookList.appendChild(row);
       });
     }
@@ -3345,13 +3393,18 @@ function showAfkModal(skills, activeIds) {
     empty.textContent = '暂无可用技能';
     afkUi.list.appendChild(empty);
   } else {
-    skills.forEach((skill) => {
-      const btn = document.createElement('div');
-      btn.className = 'afk-skill-item';
-      btn.textContent = skill.name;
-      if (afkUi.selected.has(skill.id)) {
-        btn.classList.add('selected');
-      }
+      skills.forEach((skill) => {
+        const btn = document.createElement('div');
+        btn.className = 'afk-skill-item';
+        btn.textContent = skill.name;
+        if (skill.effect) {
+          btn.addEventListener('mouseenter', (evt) => showItemTooltip(skill.effect, evt));
+          btn.addEventListener('mousemove', (evt) => positionTooltip(evt.clientX, evt.clientY));
+          btn.addEventListener('mouseleave', hideItemTooltip);
+        }
+        if (afkUi.selected.has(skill.id)) {
+          btn.classList.add('selected');
+        }
       btn.addEventListener('click', () => {
         if (afkUi.selected.has(skill.id)) {
           afkUi.selected.delete(skill.id);
@@ -5994,13 +6047,14 @@ function renderState(state) {
     }
   });
 
-  const skills = (state.skills || []).map((s) => ({
-    id: s.id,
-    label: s.level ? `${getSkillDisplayName(s)} Lv${s.level}` : getSkillDisplayName(s),
-    raw: s,
-    exp: s.exp || 0,
-    expNext: s.expNext || 100
-  }));
+    const skills = (state.skills || []).map((s) => ({
+      id: s.id,
+      label: s.level ? `${getSkillDisplayName(s)} Lv${s.level}` : getSkillDisplayName(s),
+      raw: s,
+      tooltip: s.effect || '',
+      exp: s.exp || 0,
+      expNext: s.expNext || 100
+    }));
   const NO_TARGET_SKILL_TYPES = new Set([
     'heal',
     'heal_group',
