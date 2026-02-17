@@ -127,6 +127,12 @@ const effectDropDoubleChanceInput = document.getElementById('effect-drop-double-
 const equipSkillDropChanceInput = document.getElementById('equip-skill-drop-chance');
 const effectResetSaveBtn = document.getElementById('effect-reset-save-btn');
 
+// 宠物系统配置
+const petSettingsMsg = document.getElementById('pet-settings-msg');
+const petSettingsJson = document.getElementById('pet-settings-json');
+const petSettingsRefreshBtn = document.getElementById('pet-settings-refresh');
+const petSettingsSaveBtn = document.getElementById('pet-settings-save');
+
 // 法宝配置相关
 const treasureMsg = document.getElementById('treasure-msg');
 const treasureSlotCountInput = document.getElementById('treasure-slot-count');
@@ -779,6 +785,55 @@ async function saveEffectResetSettings() {
   } catch (err) {
     effectResetMsg.textContent = `保存失败: ${err.message}`;
     effectResetMsg.style.color = 'red';
+  }
+}
+
+async function loadPetSettings() {
+  if (!petSettingsMsg || !petSettingsJson) return;
+  petSettingsMsg.textContent = '';
+  try {
+    const data = await api('/admin/pet-settings', 'GET');
+    if (!data?.settings) {
+      petSettingsMsg.textContent = '加载失败：返回数据为空';
+      petSettingsMsg.style.color = 'red';
+      return;
+    }
+    petSettingsJson.value = JSON.stringify(data.settings, null, 2);
+    petSettingsMsg.textContent = '加载成功';
+    petSettingsMsg.style.color = 'green';
+    setTimeout(() => {
+      if (petSettingsMsg) petSettingsMsg.textContent = '';
+    }, 1500);
+  } catch (err) {
+    petSettingsMsg.textContent = `加载失败: ${err.message}`;
+    petSettingsMsg.style.color = 'red';
+  }
+}
+
+async function savePetSettings() {
+  if (!petSettingsMsg || !petSettingsJson) return;
+  petSettingsMsg.textContent = '';
+  let settings;
+  try {
+    settings = JSON.parse(petSettingsJson.value || '{}');
+  } catch (err) {
+    petSettingsMsg.textContent = `JSON 解析失败: ${err.message}`;
+    petSettingsMsg.style.color = 'red';
+    return;
+  }
+  try {
+    const data = await api('/admin/pet-settings/update', 'POST', { settings });
+    if (data?.settings) {
+      petSettingsJson.value = JSON.stringify(data.settings, null, 2);
+    }
+    petSettingsMsg.textContent = '保存成功';
+    petSettingsMsg.style.color = 'green';
+    setTimeout(() => {
+      if (petSettingsMsg) petSettingsMsg.textContent = '';
+    }, 1500);
+  } catch (err) {
+    petSettingsMsg.textContent = `保存失败: ${err.message}`;
+    petSettingsMsg.style.color = 'red';
   }
 }
 
@@ -5541,6 +5596,7 @@ async function initDashboard() {
     loadRefineSettings();
     loadTreasureSettings();
     loadEffectResetSettings();
+    loadPetSettings();
   }
 }
 
@@ -5877,6 +5933,14 @@ if (treasureSaveBtn) {
 // 特效重置配置事件
 if (effectResetSaveBtn) {
   effectResetSaveBtn.addEventListener('click', saveEffectResetSettings);
+}
+
+// 宠物配置事件
+if (petSettingsRefreshBtn) {
+  petSettingsRefreshBtn.addEventListener('click', loadPetSettings);
+}
+if (petSettingsSaveBtn) {
+  petSettingsSaveBtn.addEventListener('click', savePetSettings);
 }
 
 if (adminPwCancel) {

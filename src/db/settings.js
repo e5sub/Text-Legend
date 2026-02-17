@@ -18,6 +18,22 @@ export async function setSetting(key, value) {
     .merge({ value, updated_at: knex.fn.now() });
 }
 
+export async function getPetSettings() {
+  const value = await getSetting('pet_settings', null);
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function setPetSettings(settings) {
+  const normalized = JSON.stringify(settings || {});
+  await setSetting('pet_settings', normalized);
+}
+
 /**
  * 获取VIP自助领取开关
  */

@@ -995,6 +995,24 @@
           </div>
         </div>
 
+        <div class="block full" data-collapsible>
+          <div class="block-title">
+            <h2>宠物系统设置</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <p style="color: #666; margin-bottom: 12px; font-size: 13px;">
+              支持完整 JSON 配置，保存后立即生效。建议先加载当前配置再修改。
+            </p>
+            <textarea id="pet-settings-json" rows="18" style="width: 100%; font-family: Consolas, 'Courier New', monospace; font-size: 12px; padding: 8px; border-radius: 8px; border: 1px solid #ddd;"></textarea>
+            <div class="row" style="margin-top: 10px;">
+              <button id="pet-settings-refresh" class="btn-small">加载</button>
+              <button id="pet-settings-save" class="btn-small">保存</button>
+            </div>
+            <div id="pet-settings-msg" class="msg"></div>
+          </div>
+        </div>
+
         <div class="block" data-collapsible>
           <div class="block-title">
             <h2>职业升级属性配置</h2>

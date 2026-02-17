@@ -18,7 +18,7 @@ import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from '.
 import { sendMail, listMail, listSentMail, markMailRead, markMailClaimed, deleteMail } from './db/mail.js';
 import { createVipCodes, listVipCodes, countVipCodes, useVipCode } from './db/vip.js';
 import { createRechargeCards, listRechargeCards, countRechargeCards, useRechargeCard } from './db/recharge.js';
-import { getSetting, setSetting, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getSvipPrices, setSvipPrices, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb, getEquipSkillDropChance as getEquipSkillDropChanceDb, setEquipSkillDropChance as setEquipSkillDropChanceDb, getTreasureSlotCount as getTreasureSlotCountDb, setTreasureSlotCount as setTreasureSlotCountDb, getTreasureMaxLevel as getTreasureMaxLevelDb, setTreasureMaxLevel as setTreasureMaxLevelDb, getTreasureUpgradeConsume as getTreasureUpgradeConsumeDb, setTreasureUpgradeConsume as setTreasureUpgradeConsumeDb, getTreasureAdvanceConsume as getTreasureAdvanceConsumeDb, setTreasureAdvanceConsume as setTreasureAdvanceConsumeDb, getTreasureAdvancePerStage as getTreasureAdvancePerStageDb, setTreasureAdvancePerStage as setTreasureAdvancePerStageDb, getTreasureAdvanceEffectBonusPerStack as getTreasureAdvanceEffectBonusPerStackDb, setTreasureAdvanceEffectBonusPerStack as setTreasureAdvanceEffectBonusPerStackDb, getTreasureWorldBossDropMultiplier as getTreasureWorldBossDropMultiplierDb, setTreasureWorldBossDropMultiplier as setTreasureWorldBossDropMultiplierDb, getTreasureCrossWorldBossDropMultiplier as getTreasureCrossWorldBossDropMultiplierDb, setTreasureCrossWorldBossDropMultiplier as setTreasureCrossWorldBossDropMultiplierDb, getTreasureTowerXuanmingDropChance as getTreasureTowerXuanmingDropChanceDb, setTreasureTowerXuanmingDropChance as setTreasureTowerXuanmingDropChanceDb, getCmdRateLimits, setCmdRateLimits, getCmdCooldowns, setCmdCooldowns } from './db/settings.js';
+import { getSetting, setSetting, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getSvipPrices, setSvipPrices, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getPetSettings, setPetSettings, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb, getEquipSkillDropChance as getEquipSkillDropChanceDb, setEquipSkillDropChance as setEquipSkillDropChanceDb, getTreasureSlotCount as getTreasureSlotCountDb, setTreasureSlotCount as setTreasureSlotCountDb, getTreasureMaxLevel as getTreasureMaxLevelDb, setTreasureMaxLevel as setTreasureMaxLevelDb, getTreasureUpgradeConsume as getTreasureUpgradeConsumeDb, setTreasureUpgradeConsume as setTreasureUpgradeConsumeDb, getTreasureAdvanceConsume as getTreasureAdvanceConsumeDb, setTreasureAdvanceConsume as setTreasureAdvanceConsumeDb, getTreasureAdvancePerStage as getTreasureAdvancePerStageDb, setTreasureAdvancePerStage as setTreasureAdvancePerStageDb, getTreasureAdvanceEffectBonusPerStack as getTreasureAdvanceEffectBonusPerStackDb, setTreasureAdvanceEffectBonusPerStack as setTreasureAdvanceEffectBonusPerStackDb, getTreasureWorldBossDropMultiplier as getTreasureWorldBossDropMultiplierDb, setTreasureWorldBossDropMultiplier as setTreasureWorldBossDropMultiplierDb, getTreasureCrossWorldBossDropMultiplier as getTreasureCrossWorldBossDropMultiplierDb, setTreasureCrossWorldBossDropMultiplier as setTreasureCrossWorldBossDropMultiplierDb, getTreasureTowerXuanmingDropChance as getTreasureTowerXuanmingDropChanceDb, setTreasureTowerXuanmingDropChance as setTreasureTowerXuanmingDropChanceDb, getCmdRateLimits, setCmdRateLimits, getCmdCooldowns, setCmdCooldowns } from './db/settings.js';
 import { listRealms, getRealmById, updateRealmName, createRealm } from './db/realms.js';
 import {
   listMobRespawns,
@@ -1600,6 +1600,24 @@ app.post('/admin/effect-reset-settings/update', async (req, res) => {
   setEffectDropDoubleChance(newDropDoubleChance);
   setEquipSkillDropChance(newEquipSkillDropChance);
   res.json({ ok: true, successRate: newSuccessRate, doubleRate: newDoubleRate, tripleRate: newTripleRate, quadrupleRate: newQuadrupleRate, quintupleRate: newQuintupleRate, dropSingleChance: newDropSingleChance, dropDoubleChance: newDropDoubleChance, equipSkillDropChance: newEquipSkillDropChance });
+});
+
+// 宠物系统配置
+app.get('/admin/pet-settings', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  res.json({ ok: true, settings: getPetSettingsSnapshot() });
+});
+
+app.post('/admin/pet-settings/update', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  try {
+    const normalized = await applyPetSettings(req.body?.settings, { persist: true });
+    res.json({ ok: true, settings: normalized });
+  } catch (err) {
+    res.status(400).json({ error: err.message || '宠物设置更新失败' });
+  }
 });
 
 // 修炼配置（普通玩家）
@@ -7251,16 +7269,16 @@ function getRoomCommonState(zoneId, roomId, realmId = 1) {
   return data;
 }
 
-const PET_MAX_OWNED = 50;
-const PET_BASE_SKILL_SLOTS = 3;
-const PET_MAX_SKILL_SLOTS = 16;
-const PET_COMPREHEND_COST_GOLD = 150000;
-const PET_SYNTHESIS_COST_GOLD = 500000;
-const PET_COMPREHEND_MAX_SKILLS = 3;
-const PET_BOOK_UNLOCK_SLOT4_CHANCE = 0.35;
-const PET_SYNTHESIS_UNLOCK_SLOT_CHANCE = 0.45;
-const PET_EXP_NEED_RATIO = 0.8;
-const PET_AUTO_COMPREHEND_CHANCE = {
+let PET_MAX_OWNED = 50;
+let PET_BASE_SKILL_SLOTS = 3;
+let PET_MAX_SKILL_SLOTS = 16;
+let PET_COMPREHEND_COST_GOLD = 150000;
+let PET_SYNTHESIS_COST_GOLD = 500000;
+let PET_COMPREHEND_MAX_SKILLS = 3;
+let PET_BOOK_UNLOCK_SLOT4_CHANCE = 0.35;
+let PET_SYNTHESIS_UNLOCK_SLOT_CHANCE = 0.45;
+let PET_EXP_NEED_RATIO = 0.8;
+let PET_AUTO_COMPREHEND_CHANCE = {
   normal: 0.2,
   excellent: 0.24,
   rare: 0.28,
@@ -7269,8 +7287,8 @@ const PET_AUTO_COMPREHEND_CHANCE = {
   supreme: 0.4,
   ultimate: 0.45
 };
-const PET_RARITY_ORDER = ['normal', 'excellent', 'rare', 'epic', 'legendary', 'supreme', 'ultimate'];
-const PET_RARITY_LABELS = {
+let PET_RARITY_ORDER = ['normal', 'excellent', 'rare', 'epic', 'legendary', 'supreme', 'ultimate'];
+let PET_RARITY_LABELS = {
   normal: '普通',
   excellent: '优秀',
   rare: '稀有',
@@ -7279,7 +7297,7 @@ const PET_RARITY_LABELS = {
   supreme: '至尊',
   ultimate: '终极'
 };
-const PET_RARITY_GROWTH_RANGE = {
+let PET_RARITY_GROWTH_RANGE = {
   normal: [1.0, 1.12],
   excellent: [1.08, 1.2],
   rare: [1.16, 1.3],
@@ -7288,7 +7306,7 @@ const PET_RARITY_GROWTH_RANGE = {
   supreme: [1.46, 1.74],
   ultimate: [1.62, 1.95]
 };
-const PET_RARITY_APTITUDE_RANGE = {
+let PET_RARITY_APTITUDE_RANGE = {
   normal: { hp: [1400, 2600], atk: [70, 130], def: [60, 120], mag: [70, 130], agility: [60, 120] },
   excellent: { hp: [1900, 3200], atk: [95, 160], def: [85, 150], mag: [95, 160], agility: [85, 150] },
   rare: { hp: [2500, 3900], atk: [125, 200], def: [110, 190], mag: [125, 200], agility: [110, 190] },
@@ -7298,7 +7316,7 @@ const PET_RARITY_APTITUDE_RANGE = {
   ultimate: { hp: [6200, 8000], atk: [300, 440], def: [280, 420], mag: [300, 440], agility: [280, 420] }
 };
 
-const PET_SKILL_LIBRARY = [
+let PET_SKILL_LIBRARY = [
   { id: 'pet_bash', name: '强力', grade: 'normal' },
   { id: 'pet_bash_adv', name: '高级强力', grade: 'advanced' },
   { id: 'pet_crit', name: '会心', grade: 'normal' },
@@ -7346,7 +7364,7 @@ const PET_SKILL_LIBRARY = [
   { id: 'pet_rebirth_adv', name: '高级涅槃', grade: 'advanced' }
 ];
 
-const PET_SKILL_EFFECTS = {
+let PET_SKILL_EFFECTS = {
   pet_bash: '被动：宠物物理伤害+4.5%',
   pet_bash_adv: '被动：宠物物理伤害+6.75%',
   pet_crit: '被动：宠物暴击率+4.5%',
@@ -7394,7 +7412,7 @@ const PET_SKILL_EFFECTS = {
   pet_rebirth_adv: '被动：濒死时18%几率涅槃复活'
 };
 
-const PET_COMBAT_BALANCE = {
+let PET_COMBAT_BALANCE = {
   focusHitBonus: 0.0375,
   focusAdvHitBonus: 0.05625,
   quickStepHitBonus: 0.03,
@@ -7457,20 +7475,97 @@ const PET_COMBAT_BALANCE = {
   counterAdvDamageRatio: 0.2025
 };
 
-const PET_BOOK_LIBRARY = PET_SKILL_LIBRARY.map((skill, index) => ({
-  id: `pet_book_${skill.id}`,
-  name: `宠物技能书·${skill.name}`,
-  skillId: skill.id,
-  skillName: skill.name,
-  tier: skill.grade === 'normal' ? 'low' : 'high',
-  priceGold: skill.grade === 'special'
-    ? 280000
-    : skill.grade === 'advanced'
-      ? 120000
-      : 60000 + index * 800
-}));
+let PET_LEVEL_CAP_OFFSET = 10;
+let PET_POWER_WEIGHTS = {
+  hp: 0.2,
+  atk: 1.8,
+  def: 1.2,
+  mag: 1.4,
+  agility: 1.2,
+  slot: 28,
+  skill: 90,
+  levelMul: 0.02
+};
 
-const PET_SPECIES_NAME_MAP = {
+let PET_AVAILABLE_GRADES_BY_RARITY = {
+  normal: ['normal'],
+  excellent: ['normal'],
+  rare: ['normal', 'advanced'],
+  epic: ['normal', 'advanced'],
+  legendary: ['normal', 'advanced', 'special'],
+  supreme: ['normal', 'advanced', 'special'],
+  ultimate: ['normal', 'advanced', 'special']
+};
+
+let PET_OPEN_SKILL_MIN_BY_RARITY = {
+  normal: 1,
+  excellent: 1,
+  rare: 2,
+  epic: 3,
+  legendary: 3,
+  supreme: 3,
+  ultimate: 3
+};
+
+let PET_OPEN_SKILL_MAX_BY_RARITY = {
+  normal: 3,
+  excellent: 3,
+  rare: 3,
+  epic: 3,
+  legendary: 4,
+  supreme: 5,
+  ultimate: 6
+};
+
+let PET_DROP_RARITY_WEIGHTS = {
+  normal: 32,
+  excellent: 22,
+  rare: 14,
+  epic: 8,
+  legendary: 4,
+  supreme: 2,
+  ultimate: 1
+};
+
+let PET_DROP_BASE_CHANCE_BY_CAP = { excellent: 0.06, rare: 0.07, epic: 0.08, legendary: 0.09, supreme: 0.1, ultimate: 0.12 };
+let PET_DROP_MAX_CHANCE = 0.5;
+let PET_DROP_BONUS_MIN = 0.5;
+
+let PET_BOOK_BASE_CHANCE_BY_CAP = {
+  excellent: 0.25,
+  rare: 0.3,
+  epic: 0.36,
+  legendary: 0.42,
+  supreme: 0.5,
+  ultimate: 0.6
+};
+let PET_BOOK_MAX_CHANCE = 0.85;
+let PET_BOOK_HIGH_CHANCE_BY_CAP = {
+  excellent: 0.02,
+  rare: 0.03,
+  epic: 0.04,
+  legendary: 0.05,
+  supreme: 0.05,
+  ultimate: 0.05
+};
+let PET_BOOK_SECOND_DROP_CHANCE = 0.2;
+let PET_BOOK_SECOND_ELIGIBLE_RARITIES = ['supreme', 'ultimate'];
+let PET_BOOK_SECOND_REQUIRE_SPECIAL_BOSS = true;
+
+let PET_WILLOW_DEW_BASE_CHANCE = 0.01;
+let PET_WILLOW_DEW_MAX_CHANCE = 0.5;
+let PET_WILLOW_DEW_BONUS_MIN = 0.5;
+
+let PET_BOOK_PRICE_CONFIG = {
+  special: 280000,
+  advanced: 120000,
+  normalBase: 60000,
+  normalStep: 800
+};
+
+let PET_BOOK_LIBRARY = buildPetBookLibrary(PET_SKILL_LIBRARY, PET_BOOK_PRICE_CONFIG);
+
+let PET_SPECIES_NAME_MAP = {
   FieldWolf: '旷野狼',
   HillCat: '山猫',
   GreenBird: '青羽鸟',
@@ -7543,7 +7638,7 @@ const PET_SPECIES_NAME_MAP = {
   HongmengCrow: '鸿蒙鸦'
 };
 
-const PET_SPECIES_BY_RARITY = {
+let PET_SPECIES_BY_RARITY = {
   normal: ['旷野狼', '山猫', '青羽鸟', '石甲龟', '夜蝠', '火蜥', '沙狐', '木灵', '傀儡兽', '草灵'],
   excellent: ['银狐', '天鹰', '雷豹', '霜鹿', '烈焰狼', '水麒麟', '铁猿', '古木灵', '符文龟', '风鸟'],
   rare: ['赤狮', '冰狐', '风暴犀', '水龙', '影豹', '星鸾', '裂隙熊', '毒蛇', '幽狼', '云鹿'],
@@ -7552,6 +7647,314 @@ const PET_SPECIES_BY_RARITY = {
   supreme: ['太初龙', '混沌麒麟', '不死鸦', '虚空玄武', '万相白泽', '九幽凤凰', '狱獬豸', '天罡猿', '天烛龙', '狂饕餮'],
   ultimate: ['终源龙', '永恒凤凰', '太虚鹏', '无极白泽', '创世麒麟', '混元玄武', '深渊穷奇', '天焰', '元初应龙', '鸿蒙鸦']
 };
+
+function buildPetBookLibrary(skills, priceConfig) {
+  const safeSkills = Array.isArray(skills) ? skills.filter((skill) => skill && skill.id) : [];
+  const specialPrice = Math.max(0, Math.floor(Number(priceConfig?.special ?? 280000)));
+  const advancedPrice = Math.max(0, Math.floor(Number(priceConfig?.advanced ?? 120000)));
+  const normalBase = Math.max(0, Math.floor(Number(priceConfig?.normalBase ?? 60000)));
+  const normalStep = Math.max(0, Math.floor(Number(priceConfig?.normalStep ?? 800)));
+  return safeSkills.map((skill, index) => ({
+    id: `pet_book_${skill.id}`,
+    name: `宠物技能书·${skill.name || skill.id}`,
+    skillId: skill.id,
+    skillName: skill.name || skill.id,
+    tier: skill.grade === 'normal' ? 'low' : 'high',
+    priceGold: skill.grade === 'special'
+      ? specialPrice
+      : skill.grade === 'advanced'
+        ? advancedPrice
+        : normalBase + index * normalStep
+  }));
+}
+
+function getDefaultPetSettings() {
+  return {
+    maxOwned: 50,
+    baseSkillSlots: 3,
+    maxSkillSlots: 16,
+    comprehendCostGold: 150000,
+    synthesisCostGold: 500000,
+    comprehendMaxSkills: 3,
+    bookUnlockSlot4Chance: 0.35,
+    synthesisUnlockSlotChance: 0.45,
+    expNeedRatio: 0.8,
+    levelCapOffset: 10,
+    powerWeights: {
+      hp: 0.2,
+      atk: 1.8,
+      def: 1.2,
+      mag: 1.4,
+      agility: 1.2,
+      slot: 28,
+      skill: 90,
+      levelMul: 0.02
+    },
+    autoComprehendChance: {
+      normal: 0.2,
+      excellent: 0.24,
+      rare: 0.28,
+      epic: 0.32,
+      legendary: 0.36,
+      supreme: 0.4,
+      ultimate: 0.45
+    },
+    rarityOrder: ['normal', 'excellent', 'rare', 'epic', 'legendary', 'supreme', 'ultimate'],
+    rarityLabels: {
+      normal: '普通',
+      excellent: '优秀',
+      rare: '稀有',
+      epic: '史诗',
+      legendary: '传说',
+      supreme: '至尊',
+      ultimate: '终极'
+    },
+    rarityGrowthRange: {
+      normal: [1.0, 1.12],
+      excellent: [1.08, 1.2],
+      rare: [1.16, 1.3],
+      epic: [1.24, 1.42],
+      legendary: [1.34, 1.56],
+      supreme: [1.46, 1.74],
+      ultimate: [1.62, 1.95]
+    },
+    rarityAptitudeRange: {
+      normal: { hp: [1400, 2600], atk: [70, 130], def: [60, 120], mag: [70, 130], agility: [60, 120] },
+      excellent: { hp: [1900, 3200], atk: [95, 160], def: [85, 150], mag: [95, 160], agility: [85, 150] },
+      rare: { hp: [2500, 3900], atk: [125, 200], def: [110, 190], mag: [125, 200], agility: [110, 190] },
+      epic: { hp: [3200, 4700], atk: [160, 245], def: [140, 230], mag: [160, 245], agility: [140, 230] },
+      legendary: { hp: [4000, 5600], atk: [195, 295], def: [175, 280], mag: [195, 295], agility: [175, 280] },
+      supreme: { hp: [5000, 6600], atk: [240, 360], def: [220, 340], mag: [240, 360], agility: [220, 340] },
+      ultimate: { hp: [6200, 8000], atk: [300, 440], def: [280, 420], mag: [300, 440], agility: [280, 420] }
+    },
+    skillLibrary: PET_SKILL_LIBRARY.map((entry) => ({ ...entry })),
+    skillEffects: { ...PET_SKILL_EFFECTS },
+    combatBalance: { ...PET_COMBAT_BALANCE },
+    availableGradesByRarity: { ...PET_AVAILABLE_GRADES_BY_RARITY },
+    openSkillMinByRarity: { ...PET_OPEN_SKILL_MIN_BY_RARITY },
+    openSkillMaxByRarity: { ...PET_OPEN_SKILL_MAX_BY_RARITY },
+    dropRarityWeights: { ...PET_DROP_RARITY_WEIGHTS },
+    dropBaseChanceByCap: { ...PET_DROP_BASE_CHANCE_BY_CAP },
+    dropMaxChance: PET_DROP_MAX_CHANCE,
+    dropBonusMin: PET_DROP_BONUS_MIN,
+    bookBaseChanceByCap: { ...PET_BOOK_BASE_CHANCE_BY_CAP },
+    bookMaxChance: PET_BOOK_MAX_CHANCE,
+    bookHighChanceByCap: { ...PET_BOOK_HIGH_CHANCE_BY_CAP },
+    bookSecondDropChance: PET_BOOK_SECOND_DROP_CHANCE,
+    bookSecondEligibleRarities: PET_BOOK_SECOND_ELIGIBLE_RARITIES.slice(),
+    bookSecondRequireSpecialBoss: PET_BOOK_SECOND_REQUIRE_SPECIAL_BOSS,
+    willowDewBaseChance: PET_WILLOW_DEW_BASE_CHANCE,
+    willowDewMaxChance: PET_WILLOW_DEW_MAX_CHANCE,
+    willowDewBonusMin: PET_WILLOW_DEW_BONUS_MIN,
+    bookPriceConfig: { ...PET_BOOK_PRICE_CONFIG },
+    speciesNameMap: { ...PET_SPECIES_NAME_MAP },
+    speciesByRarity: { ...PET_SPECIES_BY_RARITY }
+  };
+}
+
+function normalizePetSettings(raw) {
+  const defaults = getDefaultPetSettings();
+  const input = raw && typeof raw === 'object' ? raw : {};
+  const numberValue = (value, fallback, min = null, max = null, asInt = false) => {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return fallback;
+    let next = parsed;
+    if (asInt) next = Math.floor(next);
+    if (min != null) next = Math.max(min, next);
+    if (max != null) next = Math.min(max, next);
+    return next;
+  };
+  const mergeObject = (fallback, value) => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return { ...fallback };
+    return { ...fallback, ...value };
+  };
+  const mergeRangeMap = (fallback, value) => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return { ...fallback };
+    const next = { ...fallback };
+    Object.keys(fallback).forEach((key) => {
+      const range = value[key];
+      if (Array.isArray(range) && range.length === 2) {
+        const min = Number(range[0]);
+        const max = Number(range[1]);
+        if (Number.isFinite(min) && Number.isFinite(max)) {
+          next[key] = [min, max];
+        }
+      }
+    });
+    return next;
+  };
+  const mergeNestedRangeMap = (fallback, value) => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return { ...fallback };
+    const next = {};
+    Object.keys(fallback).forEach((key) => {
+      next[key] = mergeRangeMap(fallback[key], value[key]);
+    });
+    return next;
+  };
+  const normalizeSkillLibrary = (value) => {
+    if (!Array.isArray(value)) return defaults.skillLibrary.map((entry) => ({ ...entry }));
+    const normalized = value
+      .map((entry) => ({
+        id: String(entry?.id || '').trim(),
+        name: String(entry?.name || '').trim(),
+        grade: String(entry?.grade || 'normal').trim()
+      }))
+      .filter((entry) => entry.id);
+    return normalized.length ? normalized : defaults.skillLibrary.map((entry) => ({ ...entry }));
+  };
+  const normalizeStringArray = (value, fallback) => {
+    if (!Array.isArray(value)) return fallback.slice();
+    const normalized = value.map((entry) => String(entry || '').trim()).filter(Boolean);
+    return normalized.length ? normalized : fallback.slice();
+  };
+  const normalizeSpeciesByRarity = (value) => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return { ...defaults.speciesByRarity };
+    const next = {};
+    Object.keys(defaults.speciesByRarity).forEach((key) => {
+      next[key] = normalizeStringArray(value[key], defaults.speciesByRarity[key]);
+    });
+    return next;
+  };
+
+  return {
+    maxOwned: numberValue(input.maxOwned, defaults.maxOwned, 1, null, true),
+    baseSkillSlots: numberValue(input.baseSkillSlots, defaults.baseSkillSlots, 1, null, true),
+    maxSkillSlots: numberValue(input.maxSkillSlots, defaults.maxSkillSlots, 1, null, true),
+    comprehendCostGold: numberValue(input.comprehendCostGold, defaults.comprehendCostGold, 0, null, true),
+    synthesisCostGold: numberValue(input.synthesisCostGold, defaults.synthesisCostGold, 0, null, true),
+    comprehendMaxSkills: numberValue(input.comprehendMaxSkills, defaults.comprehendMaxSkills, 0, null, true),
+    bookUnlockSlot4Chance: numberValue(input.bookUnlockSlot4Chance, defaults.bookUnlockSlot4Chance, 0, 1),
+    synthesisUnlockSlotChance: numberValue(input.synthesisUnlockSlotChance, defaults.synthesisUnlockSlotChance, 0, 1),
+    expNeedRatio: numberValue(input.expNeedRatio, defaults.expNeedRatio, 0.01, null),
+    levelCapOffset: numberValue(input.levelCapOffset, defaults.levelCapOffset, 0, null, true),
+    powerWeights: mergeObject(defaults.powerWeights, input.powerWeights),
+    autoComprehendChance: mergeObject(defaults.autoComprehendChance, input.autoComprehendChance),
+    rarityOrder: normalizeStringArray(input.rarityOrder, defaults.rarityOrder),
+    rarityLabels: mergeObject(defaults.rarityLabels, input.rarityLabels),
+    rarityGrowthRange: mergeRangeMap(defaults.rarityGrowthRange, input.rarityGrowthRange),
+    rarityAptitudeRange: mergeNestedRangeMap(defaults.rarityAptitudeRange, input.rarityAptitudeRange),
+    skillLibrary: normalizeSkillLibrary(input.skillLibrary),
+    skillEffects: mergeObject(defaults.skillEffects, input.skillEffects),
+    combatBalance: mergeObject(defaults.combatBalance, input.combatBalance),
+    availableGradesByRarity: mergeObject(defaults.availableGradesByRarity, input.availableGradesByRarity),
+    openSkillMinByRarity: mergeObject(defaults.openSkillMinByRarity, input.openSkillMinByRarity),
+    openSkillMaxByRarity: mergeObject(defaults.openSkillMaxByRarity, input.openSkillMaxByRarity),
+    dropRarityWeights: mergeObject(defaults.dropRarityWeights, input.dropRarityWeights),
+    dropBaseChanceByCap: mergeObject(defaults.dropBaseChanceByCap, input.dropBaseChanceByCap),
+    dropMaxChance: numberValue(input.dropMaxChance, defaults.dropMaxChance, 0, 1),
+    dropBonusMin: numberValue(input.dropBonusMin, defaults.dropBonusMin, 0, null),
+    bookBaseChanceByCap: mergeObject(defaults.bookBaseChanceByCap, input.bookBaseChanceByCap),
+    bookMaxChance: numberValue(input.bookMaxChance, defaults.bookMaxChance, 0, 1),
+    bookHighChanceByCap: mergeObject(defaults.bookHighChanceByCap, input.bookHighChanceByCap),
+    bookSecondDropChance: numberValue(input.bookSecondDropChance, defaults.bookSecondDropChance, 0, 1),
+    bookSecondEligibleRarities: normalizeStringArray(input.bookSecondEligibleRarities, defaults.bookSecondEligibleRarities),
+    bookSecondRequireSpecialBoss: typeof input.bookSecondRequireSpecialBoss === 'boolean'
+      ? input.bookSecondRequireSpecialBoss
+      : defaults.bookSecondRequireSpecialBoss,
+    willowDewBaseChance: numberValue(input.willowDewBaseChance, defaults.willowDewBaseChance, 0, 1),
+    willowDewMaxChance: numberValue(input.willowDewMaxChance, defaults.willowDewMaxChance, 0, 1),
+    willowDewBonusMin: numberValue(input.willowDewBonusMin, defaults.willowDewBonusMin, 0, null),
+    bookPriceConfig: mergeObject(defaults.bookPriceConfig, input.bookPriceConfig),
+    speciesNameMap: mergeObject(defaults.speciesNameMap, input.speciesNameMap),
+    speciesByRarity: normalizeSpeciesByRarity(input.speciesByRarity)
+  };
+}
+
+function applyPetSettings(raw, options = {}) {
+  const normalized = normalizePetSettings(raw);
+  PET_MAX_OWNED = normalized.maxOwned;
+  PET_BASE_SKILL_SLOTS = normalized.baseSkillSlots;
+  PET_MAX_SKILL_SLOTS = normalized.maxSkillSlots;
+  PET_COMPREHEND_COST_GOLD = normalized.comprehendCostGold;
+  PET_SYNTHESIS_COST_GOLD = normalized.synthesisCostGold;
+  PET_COMPREHEND_MAX_SKILLS = normalized.comprehendMaxSkills;
+  PET_BOOK_UNLOCK_SLOT4_CHANCE = normalized.bookUnlockSlot4Chance;
+  PET_SYNTHESIS_UNLOCK_SLOT_CHANCE = normalized.synthesisUnlockSlotChance;
+  PET_EXP_NEED_RATIO = normalized.expNeedRatio;
+  PET_LEVEL_CAP_OFFSET = normalized.levelCapOffset;
+  PET_POWER_WEIGHTS = { ...normalized.powerWeights };
+  PET_AUTO_COMPREHEND_CHANCE = { ...normalized.autoComprehendChance };
+  PET_RARITY_ORDER = normalized.rarityOrder.slice();
+  PET_RARITY_LABELS = { ...normalized.rarityLabels };
+  PET_RARITY_GROWTH_RANGE = { ...normalized.rarityGrowthRange };
+  PET_RARITY_APTITUDE_RANGE = { ...normalized.rarityAptitudeRange };
+  PET_SKILL_LIBRARY = normalized.skillLibrary.map((entry) => ({ ...entry }));
+  PET_SKILL_EFFECTS = { ...normalized.skillEffects };
+  PET_COMBAT_BALANCE = { ...normalized.combatBalance };
+  PET_AVAILABLE_GRADES_BY_RARITY = { ...normalized.availableGradesByRarity };
+  PET_OPEN_SKILL_MIN_BY_RARITY = { ...normalized.openSkillMinByRarity };
+  PET_OPEN_SKILL_MAX_BY_RARITY = { ...normalized.openSkillMaxByRarity };
+  PET_DROP_RARITY_WEIGHTS = { ...normalized.dropRarityWeights };
+  PET_DROP_BASE_CHANCE_BY_CAP = { ...normalized.dropBaseChanceByCap };
+  PET_DROP_MAX_CHANCE = normalized.dropMaxChance;
+  PET_DROP_BONUS_MIN = normalized.dropBonusMin;
+  PET_BOOK_BASE_CHANCE_BY_CAP = { ...normalized.bookBaseChanceByCap };
+  PET_BOOK_MAX_CHANCE = normalized.bookMaxChance;
+  PET_BOOK_HIGH_CHANCE_BY_CAP = { ...normalized.bookHighChanceByCap };
+  PET_BOOK_SECOND_DROP_CHANCE = normalized.bookSecondDropChance;
+  PET_BOOK_SECOND_ELIGIBLE_RARITIES = normalized.bookSecondEligibleRarities.slice();
+  PET_BOOK_SECOND_REQUIRE_SPECIAL_BOSS = normalized.bookSecondRequireSpecialBoss;
+  PET_WILLOW_DEW_BASE_CHANCE = normalized.willowDewBaseChance;
+  PET_WILLOW_DEW_MAX_CHANCE = normalized.willowDewMaxChance;
+  PET_WILLOW_DEW_BONUS_MIN = normalized.willowDewBonusMin;
+  PET_BOOK_PRICE_CONFIG = { ...normalized.bookPriceConfig };
+  PET_BOOK_LIBRARY = buildPetBookLibrary(PET_SKILL_LIBRARY, PET_BOOK_PRICE_CONFIG);
+  PET_SPECIES_NAME_MAP = { ...normalized.speciesNameMap };
+  PET_SPECIES_BY_RARITY = { ...normalized.speciesByRarity };
+
+  if (options.persist) {
+    return setPetSettings(normalized).then(() => normalized);
+  }
+  return Promise.resolve(normalized);
+}
+
+function getPetSettingsSnapshot() {
+  return {
+    maxOwned: PET_MAX_OWNED,
+    baseSkillSlots: PET_BASE_SKILL_SLOTS,
+    maxSkillSlots: PET_MAX_SKILL_SLOTS,
+    comprehendCostGold: PET_COMPREHEND_COST_GOLD,
+    synthesisCostGold: PET_SYNTHESIS_COST_GOLD,
+    comprehendMaxSkills: PET_COMPREHEND_MAX_SKILLS,
+    bookUnlockSlot4Chance: PET_BOOK_UNLOCK_SLOT4_CHANCE,
+    synthesisUnlockSlotChance: PET_SYNTHESIS_UNLOCK_SLOT_CHANCE,
+    expNeedRatio: PET_EXP_NEED_RATIO,
+    levelCapOffset: PET_LEVEL_CAP_OFFSET,
+    powerWeights: { ...PET_POWER_WEIGHTS },
+    autoComprehendChance: { ...PET_AUTO_COMPREHEND_CHANCE },
+    rarityOrder: PET_RARITY_ORDER.slice(),
+    rarityLabels: { ...PET_RARITY_LABELS },
+    rarityGrowthRange: { ...PET_RARITY_GROWTH_RANGE },
+    rarityAptitudeRange: { ...PET_RARITY_APTITUDE_RANGE },
+    skillLibrary: PET_SKILL_LIBRARY.map((entry) => ({ ...entry })),
+    skillEffects: { ...PET_SKILL_EFFECTS },
+    combatBalance: { ...PET_COMBAT_BALANCE },
+    availableGradesByRarity: { ...PET_AVAILABLE_GRADES_BY_RARITY },
+    openSkillMinByRarity: { ...PET_OPEN_SKILL_MIN_BY_RARITY },
+    openSkillMaxByRarity: { ...PET_OPEN_SKILL_MAX_BY_RARITY },
+    dropRarityWeights: { ...PET_DROP_RARITY_WEIGHTS },
+    dropBaseChanceByCap: { ...PET_DROP_BASE_CHANCE_BY_CAP },
+    dropMaxChance: PET_DROP_MAX_CHANCE,
+    dropBonusMin: PET_DROP_BONUS_MIN,
+    bookBaseChanceByCap: { ...PET_BOOK_BASE_CHANCE_BY_CAP },
+    bookMaxChance: PET_BOOK_MAX_CHANCE,
+    bookHighChanceByCap: { ...PET_BOOK_HIGH_CHANCE_BY_CAP },
+    bookSecondDropChance: PET_BOOK_SECOND_DROP_CHANCE,
+    bookSecondEligibleRarities: PET_BOOK_SECOND_ELIGIBLE_RARITIES.slice(),
+    bookSecondRequireSpecialBoss: PET_BOOK_SECOND_REQUIRE_SPECIAL_BOSS,
+    willowDewBaseChance: PET_WILLOW_DEW_BASE_CHANCE,
+    willowDewMaxChance: PET_WILLOW_DEW_MAX_CHANCE,
+    willowDewBonusMin: PET_WILLOW_DEW_BONUS_MIN,
+    bookPriceConfig: { ...PET_BOOK_PRICE_CONFIG },
+    speciesNameMap: { ...PET_SPECIES_NAME_MAP },
+    speciesByRarity: { ...PET_SPECIES_BY_RARITY }
+  };
+}
+
+async function loadPetSettingsFromDb() {
+  const stored = await getPetSettings();
+  await applyPetSettings(stored, { persist: false });
+}
 
 function getPetSkillDef(skillId) {
   return PET_SKILL_LIBRARY.find((skill) => skill.id === skillId) || null;
@@ -7721,7 +8124,7 @@ function tryResolvePetStun(player) {
 }
 
 function getPetLevelCap(player) {
-  return Math.max(1, Math.floor(Number(player?.level || 1)) + 10);
+  return Math.max(1, Math.floor(Number(player?.level || 1)) + PET_LEVEL_CAP_OFFSET);
 }
 
 function getPetLevelExpNeed(level) {
@@ -7734,15 +8137,18 @@ function calcPetPower(pet) {
   const aptitude = pet.aptitude || {};
   const level = Math.max(1, Math.floor(Number(pet.level || 1)));
   const base =
-    Number(aptitude.hp || 0) * 0.2 +
-    Number(aptitude.atk || 0) * 1.8 +
-    Number(aptitude.def || 0) * 1.2 +
-    Number(aptitude.mag || 0) * 1.4 +
-    Number(aptitude.agility || 0) * 1.2;
+    Number(aptitude.hp || 0) * PET_POWER_WEIGHTS.hp +
+    Number(aptitude.atk || 0) * PET_POWER_WEIGHTS.atk +
+    Number(aptitude.def || 0) * PET_POWER_WEIGHTS.def +
+    Number(aptitude.mag || 0) * PET_POWER_WEIGHTS.mag +
+    Number(aptitude.agility || 0) * PET_POWER_WEIGHTS.agility;
   const growth = Number(pet.growth || 1);
   const slots = Number(pet.skillSlots || PET_BASE_SKILL_SLOTS);
   const skillCount = Array.isArray(pet.skills) ? pet.skills.length : 0;
-  return Math.max(1, Math.floor((base * growth + slots * 28 + skillCount * 90) * (1 + level * 0.02)));
+  return Math.max(
+    1,
+    Math.floor((base * growth + slots * PET_POWER_WEIGHTS.slot + skillCount * PET_POWER_WEIGHTS.skill) * (1 + level * PET_POWER_WEIGHTS.levelMul))
+  );
 }
 
 function normalizePetState(player) {
@@ -7827,16 +8233,7 @@ function pickPetDropRarity(maxRarity) {
   const maxIndex = PET_RARITY_ORDER.indexOf(maxRarity);
   if (maxIndex < 0) return null;
   const candidates = PET_RARITY_ORDER.slice(0, maxIndex + 1);
-  const weights = candidates.map((rarity) => {
-    if (rarity === maxRarity) return 8;
-    if (rarity === 'ultimate') return 1;
-    if (rarity === 'supreme') return 2;
-    if (rarity === 'legendary') return 4;
-    if (rarity === 'epic') return 8;
-    if (rarity === 'rare') return 14;
-    if (rarity === 'excellent') return 22;
-    return 32;
-  });
+  const weights = candidates.map((rarity) => Number(PET_DROP_RARITY_WEIGHTS[rarity] || 0));
   const total = weights.reduce((sum, value) => sum + value, 0);
   if (total <= 0) return null;
   let roll = Math.random() * total;
@@ -7864,19 +8261,11 @@ function createRandomPet(rarity = 'normal') {
   const role = speciesPool[randInt(0, speciesPool.length - 1)];
   const growthRange = PET_RARITY_GROWTH_RANGE[safeRarity] || PET_RARITY_GROWTH_RANGE.normal;
   const growth = Number((growthRange[0] + Math.random() * (growthRange[1] - growthRange[0])).toFixed(3));
-  const availableGrades = safeRarity === 'normal'
-    ? new Set(['normal'])
-    : safeRarity === 'excellent'
-      ? new Set(['normal'])
-      : safeRarity === 'rare'
-        ? new Set(['normal', 'advanced'])
-        : safeRarity === 'epic'
-          ? new Set(['normal', 'advanced'])
-          : new Set(['normal', 'advanced', 'special']);
+  const availableGrades = new Set(PET_AVAILABLE_GRADES_BY_RARITY[safeRarity] || PET_AVAILABLE_GRADES_BY_RARITY.normal || ['normal']);
   const skillPool = PET_SKILL_LIBRARY.filter((skill) => availableGrades.has(skill.grade));
   const normalSkills = PET_SKILL_LIBRARY.filter((skill) => skill.grade === 'normal');
-  const minOpen = safeRarity === 'normal' ? 1 : safeRarity === 'excellent' ? 1 : safeRarity === 'rare' ? 2 : 3;
-  const maxOpen = safeRarity === 'ultimate' ? 6 : safeRarity === 'supreme' ? 5 : safeRarity === 'legendary' ? 4 : 3;
+  const minOpen = Number(PET_OPEN_SKILL_MIN_BY_RARITY[safeRarity] ?? PET_OPEN_SKILL_MIN_BY_RARITY.normal ?? 1);
+  const maxOpen = Number(PET_OPEN_SKILL_MAX_BY_RARITY[safeRarity] ?? PET_OPEN_SKILL_MAX_BY_RARITY.normal ?? 3);
   const openSkillCount = Math.min(PET_BASE_SKILL_SLOTS, randInt(minOpen, maxOpen));
   const skills = [];
   while (skills.length < openSkillCount && skillPool.length > 0) {
@@ -7910,9 +8299,8 @@ function createRandomPet(rarity = 'normal') {
 function rollPetDropForBoss(mobTemplate, bonus = 1) {
   const maxRarity = getPetDropMaxRarityForBoss(mobTemplate);
   if (!maxRarity) return null;
-  const baseChanceByCap = { excellent: 0.06, rare: 0.07, epic: 0.08, legendary: 0.09, supreme: 0.1, ultimate: 0.12 };
-  const baseChance = baseChanceByCap[maxRarity] || 0.05;
-  const chance = Math.max(0, Math.min(0.5, baseChance * Math.max(0.5, Number(bonus || 1))));
+  const baseChance = Number(PET_DROP_BASE_CHANCE_BY_CAP[maxRarity] || 0.05);
+  const chance = Math.max(0, Math.min(PET_DROP_MAX_CHANCE, baseChance * Math.max(PET_DROP_BONUS_MIN, Number(bonus || 1))));
   if (Math.random() > chance) return null;
   const rarity = pickPetDropRarity(maxRarity);
   return rarity ? createRandomPet(rarity) : null;
@@ -7920,8 +8308,8 @@ function rollPetDropForBoss(mobTemplate, bonus = 1) {
 
 function rollWillowDewDropForBoss(mobTemplate, bonus = 1) {
   if (!mobTemplate || !mobTemplate.isBoss) return false;
-  // 金柳露掉落概率1%，受加成影响
-  const chance = Math.max(0, Math.min(0.5, 0.01 * Math.max(0.5, Number(bonus || 1))));
+  // 金柳露掉落概率，受加成影响
+  const chance = Math.max(0, Math.min(PET_WILLOW_DEW_MAX_CHANCE, PET_WILLOW_DEW_BASE_CHANCE * Math.max(PET_WILLOW_DEW_BONUS_MIN, Number(bonus || 1))));
   return Math.random() < chance;
 }
 
@@ -7932,16 +8320,8 @@ function rollPetBookDropsForBoss(mobTemplate, bonus = 1) {
   const highBooks = PET_BOOK_LIBRARY.filter((book) => book.tier !== 'low');
   if (!lowBooks.length && !highBooks.length) return [];
 
-  const baseChanceByCap = {
-    excellent: 0.25,
-    rare: 0.3,
-    epic: 0.36,
-    legendary: 0.42,
-    supreme: 0.5,
-    ultimate: 0.6
-  };
-  const baseChance = baseChanceByCap[maxRarity] || 0.2;
-  const chance = Math.max(0, Math.min(0.85, baseChance * Math.max(0.5, Number(bonus || 1))));
+  const baseChance = Number(PET_BOOK_BASE_CHANCE_BY_CAP[maxRarity] || 0.2);
+  const chance = Math.max(0, Math.min(PET_BOOK_MAX_CHANCE, baseChance * Math.max(PET_DROP_BONUS_MIN, Number(bonus || 1))));
   if (Math.random() > chance) return [];
 
   const pickPool = () => {
@@ -7953,15 +8333,7 @@ function rollPetBookDropsForBoss(mobTemplate, bonus = 1) {
       return lowBooks;
     }
     if (!highBooks.length) return lowBooks;
-    const highChanceByCap = {
-      excellent: 0.02,
-      rare: 0.03,
-      epic: 0.04,
-      legendary: 0.05,
-      supreme: 0.05,
-      ultimate: 0.05
-    };
-    const highChance = highChanceByCap[maxRarity] || 0;
+    const highChance = Number(PET_BOOK_HIGH_CHANCE_BY_CAP[maxRarity] || 0);
     return Math.random() < highChance ? highBooks : lowBooks;
   };
 
@@ -7972,7 +8344,9 @@ function rollPetBookDropsForBoss(mobTemplate, bonus = 1) {
     results.push({ bookId: first.id, qty: 1 });
   }
   const isSpecialBoss = Boolean(mobTemplate && mobTemplate.specialBoss);
-  if (isSpecialBoss && (maxRarity === 'supreme' || maxRarity === 'ultimate') && Math.random() < 0.2) {
+  const canSecondDrop = PET_BOOK_SECOND_ELIGIBLE_RARITIES.includes(maxRarity)
+    && (!PET_BOOK_SECOND_REQUIRE_SPECIAL_BOSS || isSpecialBoss);
+  if (canSecondDrop && Math.random() < PET_BOOK_SECOND_DROP_CHANCE) {
     const secondPool = pickPool();
     if (secondPool.length) {
       const second = secondPool[randInt(0, secondPool.length - 1)];
@@ -12921,6 +13295,7 @@ async function start() {
     await mkdir(dir, { recursive: true });
   }
   await runMigrations();
+  await loadPetSettingsFromDb();
   await applyWorldBossSettings();
   await applyCultivationBossSettings();
   await applySpecialBossSettings();
