@@ -8565,7 +8565,7 @@ function applyDamageToMob(mob, dmg, attackerName, realmId = null) {
           attacker.send(`${mob.name} 处于无敌状态，免疫了所有伤害！`);
         }
       }
-      return { damageTaken: false };
+        return { damageTaken: 0, actualDamage: 0 };
     }
 
     // 世界BOSS受到攻击时1%几率触发无敌效果（持续5秒）
@@ -8602,7 +8602,7 @@ function applyDamageToMob(mob, dmg, attackerName, realmId = null) {
           });
         }
       }
-      return { damageTaken: false };
+        return { damageTaken: 0, actualDamage: 0 };
     }
   }
 
@@ -8644,8 +8644,8 @@ function applyDamageToMob(mob, dmg, attackerName, realmId = null) {
   applyDamage(mob, dmg);
   enforceSpecialBossDebuffImmunity(mob, realmId);
 
-  return { damageTaken: true, actualDamage: dmg };
-}
+    return { damageTaken: dmg, actualDamage: dmg };
+  }
 
 function retaliateMobAgainstPlayer(mob, player, online) {
   if (!mob) return;
