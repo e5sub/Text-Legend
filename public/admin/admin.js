@@ -135,6 +135,8 @@ const petMaxOwnedInput = document.getElementById('pet-max-owned');
 const petSynthesisCostInput = document.getElementById('pet-synthesis-cost');
 const petBookUnlockSlot4ChanceInput = document.getElementById('pet-book-unlock-slot4-chance');
 const petSynthesisUnlockSlotChanceInput = document.getElementById('pet-synthesis-unlock-slot-chance');
+const petSynthesisInheritChanceInput = document.getElementById('pet-synthesis-inherit-chance');
+const petSynthesisMultiSkillChanceInput = document.getElementById('pet-synthesis-multi-chance');
 const petDropBaseExcellentInput = document.getElementById('pet-drop-base-excellent');
 const petDropBaseRareInput = document.getElementById('pet-drop-base-rare');
 const petDropBaseEpicInput = document.getElementById('pet-drop-base-epic');
@@ -1084,6 +1086,8 @@ function applyPetSettingsToForm(settings) {
   setInputValue(petSynthesisCostInput, settings.synthesisCostGold);
   setInputValue(petBookUnlockSlot4ChanceInput, settings.bookUnlockSlot4Chance);
   setInputValue(petSynthesisUnlockSlotChanceInput, settings.synthesisUnlockSlotChance);
+  setInputValue(petSynthesisInheritChanceInput, settings.synthesisInheritChance);
+  setInputValue(petSynthesisMultiSkillChanceInput, settings.synthesisMultiSkillChance);
   setInputValue(petDropMaxChanceInput, settings.dropMaxChance);
   setInputValue(petDropBonusMinInput, settings.dropBonusMin);
   Object.entries(petDropBaseInputs).forEach(([rarity, input]) => {
@@ -1164,6 +1168,8 @@ async function savePetSettings() {
   base.synthesisCostGold = readNumberValue(petSynthesisCostInput, base.synthesisCostGold, invalidFlag);
   base.bookUnlockSlot4Chance = readNumberValue(petBookUnlockSlot4ChanceInput, base.bookUnlockSlot4Chance, invalidFlag);
   base.synthesisUnlockSlotChance = readNumberValue(petSynthesisUnlockSlotChanceInput, base.synthesisUnlockSlotChance, invalidFlag);
+  base.synthesisInheritChance = readNumberValue(petSynthesisInheritChanceInput, base.synthesisInheritChance, invalidFlag);
+  base.synthesisMultiSkillChance = readNumberValue(petSynthesisMultiSkillChanceInput, base.synthesisMultiSkillChance, invalidFlag);
   base.dropMaxChance = readNumberValue(petDropMaxChanceInput, base.dropMaxChance, invalidFlag);
   base.dropBonusMin = readNumberValue(petDropBonusMinInput, base.dropBonusMin, invalidFlag);
   Object.entries(petDropBaseInputs).forEach(([rarity, input]) => {

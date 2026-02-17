@@ -7277,6 +7277,8 @@ let PET_SYNTHESIS_COST_GOLD = 500000;
 let PET_COMPREHEND_MAX_SKILLS = 3;
 let PET_BOOK_UNLOCK_SLOT4_CHANCE = 0.35;
 let PET_SYNTHESIS_UNLOCK_SLOT_CHANCE = 0.45;
+let PET_SYNTHESIS_INHERIT_CHANCE = 0.6;
+let PET_SYNTHESIS_MULTI_SKILL_CHANCE = 0;
 let PET_EXP_NEED_RATIO = 0.8;
 let PET_AUTO_COMPREHEND_CHANCE = {
   normal: 0.2,
@@ -7678,6 +7680,8 @@ function getDefaultPetSettings() {
     comprehendMaxSkills: 3,
     bookUnlockSlot4Chance: 0.35,
     synthesisUnlockSlotChance: 0.45,
+    synthesisInheritChance: 0.6,
+    synthesisMultiSkillChance: 0,
     expNeedRatio: 0.8,
     levelCapOffset: 10,
     powerWeights: {
@@ -7825,6 +7829,8 @@ function normalizePetSettings(raw) {
     comprehendMaxSkills: numberValue(input.comprehendMaxSkills, defaults.comprehendMaxSkills, 0, null, true),
     bookUnlockSlot4Chance: numberValue(input.bookUnlockSlot4Chance, defaults.bookUnlockSlot4Chance, 0, 1),
     synthesisUnlockSlotChance: numberValue(input.synthesisUnlockSlotChance, defaults.synthesisUnlockSlotChance, 0, 1),
+    synthesisInheritChance: numberValue(input.synthesisInheritChance, defaults.synthesisInheritChance, 0, 1),
+    synthesisMultiSkillChance: numberValue(input.synthesisMultiSkillChance, defaults.synthesisMultiSkillChance, 0, 1),
     expNeedRatio: numberValue(input.expNeedRatio, defaults.expNeedRatio, 0.01, null),
     levelCapOffset: numberValue(input.levelCapOffset, defaults.levelCapOffset, 0, null, true),
     powerWeights: mergeObject(defaults.powerWeights, input.powerWeights),
@@ -7870,6 +7876,8 @@ function applyPetSettings(raw, options = {}) {
   PET_COMPREHEND_MAX_SKILLS = normalized.comprehendMaxSkills;
   PET_BOOK_UNLOCK_SLOT4_CHANCE = normalized.bookUnlockSlot4Chance;
   PET_SYNTHESIS_UNLOCK_SLOT_CHANCE = normalized.synthesisUnlockSlotChance;
+  PET_SYNTHESIS_INHERIT_CHANCE = normalized.synthesisInheritChance;
+  PET_SYNTHESIS_MULTI_SKILL_CHANCE = normalized.synthesisMultiSkillChance;
   PET_EXP_NEED_RATIO = normalized.expNeedRatio;
   PET_LEVEL_CAP_OFFSET = normalized.levelCapOffset;
   PET_POWER_WEIGHTS = { ...normalized.powerWeights };
@@ -7918,6 +7926,8 @@ function getPetSettingsSnapshot() {
     comprehendMaxSkills: PET_COMPREHEND_MAX_SKILLS,
     bookUnlockSlot4Chance: PET_BOOK_UNLOCK_SLOT4_CHANCE,
     synthesisUnlockSlotChance: PET_SYNTHESIS_UNLOCK_SLOT_CHANCE,
+    synthesisInheritChance: PET_SYNTHESIS_INHERIT_CHANCE,
+    synthesisMultiSkillChance: PET_SYNTHESIS_MULTI_SKILL_CHANCE,
     expNeedRatio: PET_EXP_NEED_RATIO,
     levelCapOffset: PET_LEVEL_CAP_OFFSET,
     powerWeights: { ...PET_POWER_WEIGHTS },
@@ -10271,9 +10281,21 @@ io.on('connection', (socket) => {
       }
       
       const inheritable = [...subUniqueSkills].filter((skillId) => skillId && !mainUniqueSkills.has(skillId));
-      if (inheritable.length > 0 && Math.random() < 0.6) {
-        const pickSkill = inheritable[randInt(0, inheritable.length - 1)];
-        learnPetSkill(basePet, pickSkill, true);
+      if (inheritable.length > 0 && Math.random() < PET_SYNTHESIS_INHERIT_CHANCE) {
+        let remaining = inheritable.slice();
+        let learnedAny = false;
+        while (remaining.length > 0) {
+          if (learnedAny) {
+            const slotsLeft = Math.max(0, Math.floor(Number(basePet.skillSlots || PET_BASE_SKILL_SLOTS)) - (basePet.skills || []).length);
+            if (slotsLeft <= 0) break;
+          }
+          const pickIndex = randInt(0, remaining.length - 1);
+          const pickSkill = remaining.splice(pickIndex, 1)[0];
+          learnPetSkill(basePet, pickSkill, true);
+          learnedAny = true;
+          if (remaining.length === 0) break;
+          if (Math.random() >= PET_SYNTHESIS_MULTI_SKILL_CHANCE) break;
+        }
       }
 
       petState.pets = petState.pets.filter((pet) => pet.id !== feedPet.id);
