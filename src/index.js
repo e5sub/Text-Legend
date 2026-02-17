@@ -6258,6 +6258,9 @@ function getAutoFullBestRoom(player) {
 }
 
 function selectLeastPopulatedRoomAuto(zoneId, roomId, realmId) {
+  if (zoneId === PERSONAL_BOSS_ZONE_ID || String(roomId || '').includes('__u_')) {
+    return roomId;
+  }
   const baseRoomId = String(roomId || '').replace(/\d+$/, '');
   const roomOptions = [];
   const tryAddRoom = (candidateRoomId) => {

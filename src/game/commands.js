@@ -271,6 +271,9 @@ function formatSvipStatus(player) {
 // 负载均衡：选择玩家最少的房间
 // 当目标房间有多个变体时（如 plains, plains1, plains2, plains3），自动分配到人最少的那个
 function selectLeastPopulatedRoom(zoneId, roomId, onlinePlayers, currentPlayer = null, partyApi = null) {
+  if (zoneId === PERSONAL_BOSS_ZONE_ID || String(roomId || '').includes('__u_')) {
+    return roomId;
+  }
   const baseRoomId = roomId.replace(/\d+$/, '');
   const roomOptions = [];
 
