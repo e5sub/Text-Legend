@@ -9762,24 +9762,32 @@ io.on('connection', (socket) => {
       if (player.gold < PET_SYNTHESIS_COST_GOLD) return fail('gold not enough');
       player.gold -= PET_SYNTHESIS_COST_GOLD;
 
-      const mainRarity = PET_RARITY_ORDER.includes(mainPet.rarity) ? mainPet.rarity : 'normal';
-      const growthRange = PET_RARITY_GROWTH_RANGE[mainRarity] || PET_RARITY_GROWTH_RANGE.normal;
-      const mixGrowth = Number(mainPet.growth || growthRange[0]) * 0.85 + Number(subPet.growth || growthRange[0]) * 0.15;
-      mainPet.growth = Math.max(growthRange[0], Math.min(growthRange[1], Number(mixGrowth.toFixed(3))));
+      const keepMain = Math.random() < 0.5;
+      const basePet = keepMain ? mainPet : subPet;
+      const feedPet = keepMain ? subPet : mainPet;
 
-      const aptRange = PET_RARITY_APTITUDE_RANGE[mainRarity] || PET_RARITY_APTITUDE_RANGE.normal;
+      const baseRarity = PET_RARITY_ORDER.includes(basePet.rarity) ? basePet.rarity : 'normal';
+      const growthRange = PET_RARITY_GROWTH_RANGE[baseRarity] || PET_RARITY_GROWTH_RANGE.normal;
+      const mixGrowth = Number(basePet.growth || growthRange[0]) * 0.85 + Number(feedPet.growth || growthRange[0]) * 0.15;
+      basePet.growth = Math.max(growthRange[0], Math.min(growthRange[1], Number(mixGrowth.toFixed(3))));
+
+      const aptRange = PET_RARITY_APTITUDE_RANGE[baseRarity] || PET_RARITY_APTITUDE_RANGE.normal;
       ['hp', 'atk', 'def', 'mag', 'speed'].forEach((key) => {
-        const mainVal = Math.floor(Number(mainPet?.aptitude?.[key] || aptRange[key][0]));
-        const subVal = Math.floor(Number(subPet?.aptitude?.[key] || aptRange[key][0]));
-        const mixed = Math.floor(mainVal * 0.75 + subVal * 0.25 + randInt(0, 6));
-        mainPet.aptitude[key] = Math.max(aptRange[key][0], Math.min(aptRange[key][1], mixed));
+        const baseVal = Math.floor(Number(basePet?.aptitude?.[key] || aptRange[key][0]));
+        const feedVal = Math.floor(Number(feedPet?.aptitude?.[key] || aptRange[key][0]));
+        const mixed = Math.floor(baseVal * 0.75 + feedVal * 0.25 + randInt(0, 6));
+        const maxBySum = baseVal + feedVal;
+        basePet.aptitude[key] = Math.max(
+          aptRange[key][0],
+          Math.min(aptRange[key][1], maxBySum, mixed)
+        );
       });
 
       let unlocked = false;
-      const slotsNow = Math.max(PET_BASE_SKILL_SLOTS, Math.floor(Number(mainPet.skillSlots || PET_BASE_SKILL_SLOTS)));
+      const slotsNow = Math.max(PET_BASE_SKILL_SLOTS, Math.floor(Number(basePet.skillSlots || PET_BASE_SKILL_SLOTS)));
       
-      const mainSkills = Array.isArray(mainPet.skills) ? mainPet.skills : [];
-      const subSkills = Array.isArray(subPet.skills) ? subPet.skills : [];
+      const mainSkills = Array.isArray(basePet.skills) ? basePet.skills : [];
+      const subSkills = Array.isArray(feedPet.skills) ? feedPet.skills : [];
       const mainUniqueSkills = new Set(mainSkills);
       const subUniqueSkills = new Set(subSkills);
       
@@ -9800,23 +9808,23 @@ io.on('connection', (socket) => {
       }
       
       if (slotsNow >= 4 && slotsNow < maxSkillSlots && Math.random() < unlockChance) {
-        mainPet.skillSlots = slotsNow + 1;
+        basePet.skillSlots = slotsNow + 1;
         unlocked = true;
       }
       
       const inheritable = [...subUniqueSkills].filter((skillId) => skillId && !mainUniqueSkills.has(skillId));
       if (inheritable.length > 0 && Math.random() < 0.6) {
         const pickSkill = inheritable[randInt(0, inheritable.length - 1)];
-        learnPetSkill(mainPet, pickSkill, true);
+        learnPetSkill(basePet, pickSkill, true);
       }
 
-      petState.pets = petState.pets.filter((pet) => pet.id !== subPet.id);
-      if (petState.activePetId === subPet.id) {
-        petState.activePetId = mainPet.id;
+      petState.pets = petState.pets.filter((pet) => pet.id !== feedPet.id);
+      if (petState.activePetId === feedPet.id) {
+        petState.activePetId = basePet.id;
       }
       dirty = true;
       const unlockText = unlocked ? ' | slot unlocked' : '';
-      emitResult(true, `synthesis success: ${mainPet.name}${unlockText}`);
+      emitResult(true, `synthesis success: ${basePet.name}${unlockText}`);
     } else {
       return fail('unknown action');
     }
