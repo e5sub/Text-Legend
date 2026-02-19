@@ -12472,7 +12472,7 @@ async function combatTick() {
         player.send(`你释放了 ${skillName}，${target.name} 躲过了你的攻击。`);
       }
       target.send(`你躲过了 ${player.name} 的攻击。`);
-      tryTriggerTreasureAutoPassiveOnHit(player, target, { targetType: 'player', roomRealmId, baseDamage: dmg });
+      tryTriggerTreasureAutoPassiveOnHit(player, target, { targetType: 'player', roomRealmId, baseDamage: 0 });
       if (skill && skill.type === 'dot') {
         player.send('施毒失败。');
       }
