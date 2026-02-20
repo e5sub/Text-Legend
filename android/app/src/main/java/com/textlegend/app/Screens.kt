@@ -3680,10 +3680,11 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
       LaunchedEffect(skills) {
           if (skills.isEmpty()) return@LaunchedEffect
           if (selected.isNotEmpty()) return@LaunchedEffect
+          val available = skills.map { it.id }.toSet()
           val saved = prefs.getAutoAfkSkillSelection()
               ?.split(",")
               ?.map { it.trim() }
-              ?.filter { it.isNotBlank() }
+              ?.filter { it.isNotBlank() && it in available }
               .orEmpty()
           if (saved.isNotEmpty()) {
               selected.addAll(saved)

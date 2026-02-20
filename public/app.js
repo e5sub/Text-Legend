@@ -797,6 +797,14 @@ let realmInitPromise = null;
 let sponsorNames = new Set(); // 存储赞助玩家名称
 let sponsorCustomTitles = new Map(); // 存储赞助玩家自定义称号
 
+function sanitizeAutoAfkSkillIds(ids) {
+  const available = new Set(
+    Array.isArray(lastState?.skills) ? lastState.skills.map((s) => String(s.id || '').trim()).filter(Boolean) : []
+  );
+  if (available.size === 0) return [];
+  return Array.from(new Set((Array.isArray(ids) ? ids : []).map((id) => String(id || '').trim()).filter((id) => available.has(id))));
+}
+
 function showToast(message, duration = 1600) {
   authToast.textContent = message;
   authToast.classList.remove('hidden');
@@ -3365,20 +3373,28 @@ function executeBatchTraining() {
 function showAfkModal(skills, activeIds) {
   if (!afkUi.modal || !afkUi.list) return;
   hideItemTooltip();
+  const available = new Set((skills || []).map((s) => String(s.id || '').trim()).filter(Boolean));
   afkUi.selected = new Set();
   if (activeIds === 'all') {
     skills.forEach((skill) => afkUi.selected.add(skill.id));
   } else if (Array.isArray(activeIds)) {
-    activeIds.forEach((id) => afkUi.selected.add(id));
+    activeIds.forEach((id) => {
+      const sid = String(id || '').trim();
+      if (available.has(sid)) afkUi.selected.add(sid);
+    });
   } else if (typeof activeIds === 'string' && activeIds) {
-    afkUi.selected.add(activeIds);
+    const sid = String(activeIds).trim();
+    if (available.has(sid)) afkUi.selected.add(sid);
   }
   if (afkUi.selected.size === 0 && skills.length) {
     try {
       const raw = localStorage.getItem(AUTOAFK_SKILL_STORAGE_KEY);
       const saved = raw ? JSON.parse(raw) : null;
       if (Array.isArray(saved) && saved.length) {
-        saved.forEach((id) => afkUi.selected.add(id));
+        saved.forEach((id) => {
+          const sid = String(id || '').trim();
+          if (available.has(sid)) afkUi.selected.add(sid);
+        });
       }
     } catch {
       // ignore storage errors
@@ -8536,21 +8552,20 @@ if (document.getElementById('rank-modal')) {
       const bosses = Array.isArray(lastState?.auto_full_boss_list) ? lastState.auto_full_boss_list.slice() : [];
       const selected = Array.from(autoFullBossSelection).filter(Boolean);
       const useAll = selected.length === 0 || selected.length === bosses.length;
-      let skillIds = Array.from(afkUi.selected || []).filter(Boolean);
+      let skillIds = sanitizeAutoAfkSkillIds(Array.from(afkUi.selected || []));
       if (!skillIds.length) {
         try {
           const raw = localStorage.getItem(AUTOAFK_SKILL_STORAGE_KEY);
           const stored = raw ? JSON.parse(raw) : [];
           if (Array.isArray(stored)) {
-            skillIds = stored.filter(Boolean);
+            skillIds = sanitizeAutoAfkSkillIds(stored);
           }
         } catch {
           // ignore storage errors
         }
       }
       if (!skillIds.length) {
-        const allSkills = Array.isArray(lastState?.skills) ? lastState.skills.map((s) => s.id).filter(Boolean) : [];
-        skillIds = allSkills;
+        skillIds = sanitizeAutoAfkSkillIds(Array.isArray(lastState?.skills) ? lastState.skills.map((s) => s.id) : []);
       }
       if (skillIds.length) {
         try {
@@ -8584,10 +8599,9 @@ if (document.getElementById('rank-modal')) {
 if (afkUi.start) {
   afkUi.start.addEventListener('click', () => {
     if (!socket) return;
-    let ids = Array.from(afkUi.selected || []).filter(Boolean);
+    let ids = sanitizeAutoAfkSkillIds(Array.from(afkUi.selected || []));
     if (!ids.length) {
-      const learned = Array.isArray(lastState?.skills) ? lastState.skills.map((s) => s.id).filter(Boolean) : [];
-      ids = learned;
+      ids = sanitizeAutoAfkSkillIds(Array.isArray(lastState?.skills) ? lastState.skills.map((s) => s.id) : []);
     }
     try {
       if (ids.length) {
