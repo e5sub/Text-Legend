@@ -6053,12 +6053,20 @@ function isSvipActive(player) {
   return normalizeSvipStatus(player);
 }
 
+function normalizeBossName(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '')
+    .replace(/[\u00b7:\uff1a-]/g, '');
+}
+
 function getAutoFullBossFilterSet(player) {
   const list = player?.flags?.autoFullBossFilter;
   if (!Array.isArray(list)) return null;
   if (list.length === 0) return new Set();
   const normalized = list
-    .map((name) => String(name || '').trim().toLowerCase())
+    .map((name) => normalizeBossName(name))
     .filter(Boolean);
   return new Set(normalized);
 }
@@ -6067,7 +6075,7 @@ function isAutoFullBossAllowed(player, mobTemplate) {
   const filter = getAutoFullBossFilterSet(player);
   if (filter == null) return true;
   if (filter.size === 0) return false;
-  const name = String(mobTemplate?.name || '').trim().toLowerCase();
+  const name = normalizeBossName(mobTemplate?.name || '');
   if (!name) return false;
   return filter.has(name);
 }
