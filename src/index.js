@@ -6026,8 +6026,13 @@ function getAutoFullTrialInfo(player, now = Date.now()) {
 function normalizeVipStatus(player) {
   if (!player) return false;
   if (!player.flags) player.flags = {};
+  const now = Date.now();
   const expiresAt = Number(player.flags.vipExpiresAt || 0);
-  if (player.flags.vip && expiresAt && expiresAt <= Date.now()) {
+  if (expiresAt > now) {
+    player.flags.vip = true;
+    return true;
+  }
+  if (player.flags.vip && expiresAt && expiresAt <= now) {
     player.flags.vip = false;
     player.flags.vipExpiresAt = null;
   }
@@ -6041,8 +6046,13 @@ function isVipActive(player) {
 function normalizeSvipStatus(player) {
   if (!player) return false;
   if (!player.flags) player.flags = {};
+  const now = Date.now();
   const expiresAt = Number(player.flags.svipExpiresAt || 0);
-  if (player.flags.svip && expiresAt && expiresAt <= Date.now()) {
+  if (expiresAt > now) {
+    player.flags.svip = true;
+    return true;
+  }
+  if (player.flags.svip && expiresAt && expiresAt <= now) {
     player.flags.svip = false;
     player.flags.svipExpiresAt = null;
   }
@@ -7070,6 +7080,12 @@ function buildRoomExits(zoneId, roomId, player = null) {
     else delete exitsSource.east;
     if (svipPermanent) exitsSource.up = 'perma_lair';
     else delete exitsSource.up;
+  }
+  if (player && zoneId === 'mg_plains' && /^gate\d*$/.test(String(roomId || ''))) {
+    const vipActive = normalizeVipStatus(player);
+    const svipActive = normalizeSvipStatus(player);
+    if (vipActive || svipActive) exitsSource.vip = 'pboss:entry';
+    else delete exitsSource.vip;
   }
   const allExits = Object.entries(exitsSource).map(([dir, dest]) => {
     let destZoneId = zoneId;
