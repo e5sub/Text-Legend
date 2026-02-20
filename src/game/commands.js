@@ -4,7 +4,7 @@ import { ITEM_TEMPLATES, SHOP_STOCKS } from './items.js';
 import { MOB_TEMPLATES } from './mobs.js';
 import {
   BOOK_SKILLS,
-  DEFAULT_SKILLS,
+  getInitialSkillsForClass,
   getSkill,
   getLearnedSkills,
   getSkillLevel,
@@ -1602,7 +1602,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       player.gold -= fee;
       removeItem(player, 'scroll_recall', 1);
       player.classId = classId;
-      player.skills = [DEFAULT_SKILLS[classId]].filter(Boolean);
+      player.skills = getInitialSkillsForClass(classId);
       if (!player.flags) player.flags = {};
       delete player.flags.skillMastery;
       player.flags.autoSkillId = null;

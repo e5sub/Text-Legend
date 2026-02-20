@@ -1,3 +1,5 @@
+import { ITEM_TEMPLATES } from './items.js';
+
 export const SKILLS = {
   warrior: {
     slash: { id: 'slash', name: '\u57fa\u672c\u5251\u672f', mp: 0, power: 1.0, type: 'attack', effect: '对单体造成100%物理伤害。' },
@@ -109,6 +111,20 @@ export const BOOK_SKILLS = {
   book_tao_white_tiger: { classId: 'taoist', skillId: 'white_tiger' },
   book_tao_moon_fairy: { classId: 'taoist', skillId: 'moon_fairy' }
 };
+
+export function getInitialSkillsForClass(classId) {
+  const skillIds = [];
+  Object.entries(BOOK_SKILLS).forEach(([bookId, mapping]) => {
+    if (!mapping || mapping.classId !== classId || !mapping.skillId) return;
+    const rarity = String(ITEM_TEMPLATES[bookId]?.rarity || '').toLowerCase();
+    if (rarity === 'common') {
+      skillIds.push(mapping.skillId);
+    }
+  });
+  const base = DEFAULT_SKILLS[classId];
+  if (base) skillIds.push(base);
+  return Array.from(new Set(skillIds.filter(Boolean)));
+}
 
 export const SKILL_MASTERY_LEVELS = [0, 100, 400];
 const MAX_SKILL_LEVEL = SKILL_MASTERY_LEVELS.length;

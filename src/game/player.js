@@ -1,6 +1,6 @@
 ﻿import { CLASSES, getStartPosition, expForLevel, maxBagSlots } from './constants.js';
 import { ITEM_TEMPLATES } from './items.js';
-import { DEFAULT_SKILLS } from './skills.js';
+import { getInitialSkillsForClass } from './skills.js';
 import { clamp } from './utils.js';
 import { getClassLevelBonusConfig as getClassLevelBonusFromConfig, getRefineBonusPerLevel } from './settings.js';
 import { getTreasureBonus, getTreasureRandomAttrBonus, normalizeTreasureState } from './treasure.js';
@@ -176,7 +176,7 @@ export function newCharacter(name, classId) {
       bracelet_right: null
     },
     quests: {},
-    skills: [DEFAULT_SKILLS[classId]].filter(Boolean),
+    skills: getInitialSkillsForClass(classId),
     flags: {
       tutorial: true,
       pkValue: 0,
