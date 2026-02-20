@@ -8583,15 +8583,26 @@ if (document.getElementById('rank-modal')) {
   }
 if (afkUi.start) {
   afkUi.start.addEventListener('click', () => {
-    if (!socket || !afkUi.selected) return;
-    const ids = Array.from(afkUi.selected);
-    if (!ids.length) return;
+    if (!socket) return;
+    let ids = Array.from(afkUi.selected || []).filter(Boolean);
+    if (!ids.length) {
+      const learned = Array.isArray(lastState?.skills) ? lastState.skills.map((s) => s.id).filter(Boolean) : [];
+      ids = learned;
+    }
     try {
-      localStorage.setItem(AUTOAFK_SKILL_STORAGE_KEY, JSON.stringify(ids));
+      if (ids.length) {
+        localStorage.setItem(AUTOAFK_SKILL_STORAGE_KEY, JSON.stringify(ids));
+      } else {
+        localStorage.removeItem(AUTOAFK_SKILL_STORAGE_KEY);
+      }
     } catch {
       // ignore storage errors
     }
-    socket.emit('cmd', { text: `autoskill set ${ids.join(',')}` });
+    if (ids.length) {
+      socket.emit('cmd', { text: `autoskill set ${ids.join(',')}` });
+    } else {
+      socket.emit('cmd', { text: 'autoskill all' });
+    }
     if (afkUi.modal) afkUi.modal.classList.add('hidden');
   });
 }
