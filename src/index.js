@@ -10789,22 +10789,20 @@ io.on('connection', (socket) => {
         .map((id) => String(id || '').trim())
         .filter((id) => id && getPetSkillDef(id))));
 
-      const baseSlots = Math.max(
-        PET_BASE_SKILL_SLOTS,
-        Math.floor(Number(basePet.skillSlots || PET_BASE_SKILL_SLOTS)),
-        Math.floor(Number(feedPet.skillSlots || PET_BASE_SKILL_SLOTS))
-      );
-      let nextSkillSlots = baseSlots;
-      let slotGain = 0;
+      const mainSlots = Math.max(PET_BASE_SKILL_SLOTS, Math.floor(Number(basePet.skillSlots || PET_BASE_SKILL_SLOTS)));
+      const subSlots = Math.max(PET_BASE_SKILL_SLOTS, Math.floor(Number(feedPet.skillSlots || PET_BASE_SKILL_SLOTS)));
+      const parentMinSlots = Math.max(PET_BASE_SKILL_SLOTS, Math.min(mainSlots, subSlots));
+      const parentMaxSlots = Math.max(parentMinSlots, Math.min(PET_MAX_SKILL_SLOTS, Math.max(mainSlots, subSlots)));
+      // 梦幻风炼妖不做父母最大格数保底：先在父母区间随机，再小概率扩格
+      let nextSkillSlots = randInt(parentMinSlots, parentMaxSlots);
       if (Math.random() < 0.35) {
         nextSkillSlots += 1;
-        slotGain += 1;
       }
       if (Math.random() < 0.10) {
         nextSkillSlots += 1;
-        slotGain += 1;
       }
       nextSkillSlots = Math.max(PET_BASE_SKILL_SLOTS, Math.min(PET_MAX_SKILL_SLOTS, nextSkillSlots));
+      const slotDelta = nextSkillSlots - mainSlots;
       basePet.skillSlots = nextSkillSlots;
 
       let inheritCount = randInt(2, 4);
@@ -10831,7 +10829,9 @@ io.on('connection', (socket) => {
         petState.activePetId = basePet.id;
       }
       dirty = true;
-      const slotText = slotGain > 0 ? ` | slot +${slotGain}` : '';
+      let slotText = '';
+      if (slotDelta > 0) slotText = ` | slot +${slotDelta}`;
+      else if (slotDelta < 0) slotText = ` | slot ${slotDelta}`;
       if (logLoot) {
         logLoot(
           `[pet][alchemy] ${player.name} main=${beforeMain.name}/${beforeMain.id} sub=${beforeSub.name}/${beforeSub.id} ` +
