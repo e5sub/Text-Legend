@@ -94,6 +94,7 @@ import {
   getActivityStatePayload,
   getMobRewardActivityBonus,
   recordBossKillActivities,
+  recordTreasurePetFestivalActivity,
   getChinaDateParts,
   formatPrevDateKey,
   formatPrevWeekKey,
@@ -10477,6 +10478,8 @@ io.on('connection', (socket) => {
       dirty = true;
       const replacedText = learned.replaced ? ` (replaced ${learned.replaced})` : '';
       const unlockText = unlocked ? ' | slot unlocked' : '';
+      const activityMsgs = recordTreasurePetFestivalActivity(player, { petBookUses: 1 });
+      activityMsgs.forEach((msg) => player.send?.(msg));
       emitResult(true, `book used: ${book.skillName}${replacedText}${unlockText}`);
     } else if (action === 'synthesize' || action === 'synthesis') {
       const mainPet = getPetById(clean?.mainPetId);
@@ -10582,6 +10585,8 @@ io.on('connection', (socket) => {
           `rarity=${baseRarity}`
         );
       }
+      const activityMsgs = recordTreasurePetFestivalActivity(player, { petSyntheses: 1 });
+      activityMsgs.forEach((msg) => player.send?.(msg));
       emitResult(true, `synthesis success: ${basePet.name} | growth ${basePet.growth.toFixed(3)} | skills ${basePet.skills.length}/${basePet.skillSlots}${slotText}`);
     } else {
       return fail('unknown action');
@@ -11846,7 +11851,7 @@ async function processMobDeath(player, mob, online) {
         partyMult,
         treasureExpPct: Number(member.flags?.treasureExpBonusPct || 0)
       });
-      const activityBonus = getMobRewardActivityBonus(member, template);
+      const activityBonus = getMobRewardActivityBonus(member, template, Date.now(), { zoneId: mobZoneId, roomId: mobRoomId });
       const finalExp = Math.floor(shareExp * rewardMult * (activityBonus.expMult || 1));
       const finalGold = Math.floor(shareGold * (activityBonus.goldMult || 1));
       member.gold += finalGold;

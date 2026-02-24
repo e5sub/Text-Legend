@@ -1,4 +1,12 @@
+import { WORLD } from './world.js';
+import { MOB_TEMPLATES } from './mobs.js';
+
 const CN_TZ_OFFSET_MS = 8 * 60 * 60 * 1000;
+
+const DOUBLE_DUNGEON_ZONE_IDS = ['dssv', 'mine', 'wgc', 'sm', 'wms', 'zm', 'cr'];
+const WORLD_BOSS_BOUNTY_IDS = Object.values(MOB_TEMPLATES || {})
+  .filter((m) => m && m.id && m.worldBoss && m.id !== 'cross_world_boss' && m.id !== 'vip_personal_boss' && m.id !== 'svip_personal_boss')
+  .map((m) => m.id);
 
 const ACTIVITY_DEFS = [
   { id: 'demon_slayer_order', name: '限时屠魔令', type: 'daily', desc: '击杀各类BOSS获得积分（个人）' },
@@ -6,11 +14,14 @@ const ACTIVITY_DEFS = [
   { id: 'refine_carnival', name: '锻造狂欢', type: 'weekly', desc: '锻造材料减免与里程碑统计' },
   { id: 'guild_boss_assault', name: '行会攻坚赛', type: 'weekly', desc: '击杀BOSS累计行会战功（个人贡献）' },
   { id: 'cross_hunter', name: '跨服猎王', type: 'weekly', desc: '跨服玩法时段加成活动' },
-  { id: 'treasure_pet_festival', name: '宝藏奇缘', type: 'weekly', desc: '法宝/宠物养成节日（预留）' },
+  { id: 'treasure_pet_festival', name: '宝藏奇缘', type: 'weekly', desc: '法宝/宠物养成节日（主活动）' },
+  { id: 'double_dungeon', name: '双倍秘境', type: 'daily', desc: '每日轮换地图，经验金币双倍' },
+  { id: 'pet_carnival_day', name: '宠物狂欢日', type: 'weekly', desc: '宠物打书/合宠活跃加成' },
+  { id: 'treasure_sprint_day', name: '法宝冲刺日', type: 'weekly', desc: '法宝升级/升段活跃加成' },
+  { id: 'world_boss_bounty', name: '世界BOSS悬赏', type: 'daily', desc: '每日指定悬赏BOSS，击杀得悬赏积分' },
   { id: 'newbie_catchup', name: '新手追赶计划', type: 'always', desc: '低等级角色额外经验/金币加成' },
   { id: 'lucky_drop_day', name: '幸运掉落日', type: 'weekly', desc: '指定时段BOSS活动积分额外加成' }
 ];
-
 function getChinaDate(now = Date.now()) {
   const d = new Date(now + CN_TZ_OFFSET_MS);
   const year = d.getUTCFullYear();
@@ -51,6 +62,35 @@ function inWindow(minuteOfDay, start, end) {
   return minuteOfDay >= start && minuteOfDay < end;
 }
 
+function dailyIndex(dateKey = '') {
+  return String(dateKey || '')
+    .split('')
+    .reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
+}
+
+export function getDoubleDungeonTarget(now = Date.now()) {
+  const t = getChinaDate(now);
+  const zones = DOUBLE_DUNGEON_ZONE_IDS.filter((id) => WORLD?.[id]);
+  const zoneId = zones.length ? zones[dailyIndex(t.dateKey) % zones.length] : 'bq_plains';
+  return {
+    zoneId,
+    zoneName: WORLD?.[zoneId]?.name || zoneId,
+    expMult: 2,
+    goldMult: 2
+  };
+}
+
+export function getWorldBossBountyTarget(now = Date.now()) {
+  const t = getChinaDate(now);
+  const list = WORLD_BOSS_BOUNTY_IDS.length ? WORLD_BOSS_BOUNTY_IDS : ['cross_world_boss'];
+  const mobId = list[dailyIndex(`${t.dateKey}:bounty`) % list.length];
+  const mob = MOB_TEMPLATES?.[mobId];
+  return {
+    mobId,
+    mobName: mob?.name || mobId
+  };
+}
+
 export function isActivityActive(id, now = Date.now()) {
   const t = getChinaDate(now);
   switch (id) {
@@ -66,6 +106,14 @@ export function isActivityActive(id, now = Date.now()) {
       return t.weekday === 6 && inWindow(t.minuteOfDay, 19 * 60 + 30, 20 * 60 + 30); // Sat 19:30-20:30
     case 'treasure_pet_festival':
       return t.weekday === 0; // Sun
+    case 'double_dungeon':
+      return inWindow(t.minuteOfDay, 18 * 60, 24 * 60); // daily evening
+    case 'pet_carnival_day':
+      return t.weekday === 5; // Fri
+    case 'treasure_sprint_day':
+      return t.weekday === 6; // Sat
+    case 'world_boss_bounty':
+      return true;
     case 'newbie_catchup':
       return true;
     case 'lucky_drop_day':
@@ -98,12 +146,30 @@ export function normalizeActivityProgress(player, now = Date.now()) {
     ap._dailyKey = t.dateKey;
     ap.demonSlayer = { points: 0, bossKills: 0, lastHitBonus: 0 };
     ap.guildAssault = { contribution: 0 };
+    ap.luckyDropDay = { points: 0, bossKills: 0, lastHitBonus: 0 };
+    ap.doubleDungeon = { zoneId: getDoubleDungeonTarget(now).zoneId, kills: 0, score: 0 };
+    ap.worldBossBounty = { mobId: getWorldBossBountyTarget(now).mobId, points: 0, kills: 0, lastHitBonus: 0 };
+    ap.petCarnival = { petBookUses: 0, petSyntheses: 0, score: 0 };
+    ap.treasureSprint = { treasureUpgrades: 0, treasureAdvances: 0, score: 0 };
     ap.refineCarnival = ap.refineCarnival && ap.refineCarnival._weekKey === t.weekKey
       ? ap.refineCarnival
       : { _weekKey: t.weekKey, attempts: 0, milestones: {} };
   }
   if (!ap.cultivationRush || ap.cultivationRush._weekKey !== t.weekKey) {
     ap.cultivationRush = { _weekKey: t.weekKey, kills: 0 };
+  }
+  if (!ap.crossHunter || ap.crossHunter._weekKey !== t.weekKey) {
+    ap.crossHunter = { _weekKey: t.weekKey, points: 0, kills: 0 };
+  }
+  if (!ap.treasurePetFestival || ap.treasurePetFestival._weekKey !== t.weekKey) {
+    ap.treasurePetFestival = {
+      _weekKey: t.weekKey,
+      treasureUpgrades: 0,
+      treasureAdvances: 0,
+      petBookUses: 0,
+      petSyntheses: 0,
+      score: 0
+    };
   }
   if (!ap.refineCarnival || ap.refineCarnival._weekKey !== t.weekKey) {
     ap.refineCarnival = { _weekKey: t.weekKey, attempts: 0, milestones: {} };
@@ -114,12 +180,25 @@ export function normalizeActivityProgress(player, now = Date.now()) {
 export function getActivityStatePayload(player, now = Date.now()) {
   const active = listActiveActivities(now);
   const ap = normalizeActivityProgress(player, now);
+  const doubleDungeonTarget = getDoubleDungeonTarget(now);
+  const bountyTarget = getWorldBossBountyTarget(now);
   return {
     active,
+    meta: {
+      double_dungeon: doubleDungeonTarget,
+      world_boss_bounty: bountyTarget
+    },
     progress: {
       demon_slayer_order: ap.demonSlayer || { points: 0, bossKills: 0, lastHitBonus: 0 },
       cultivation_rush_week: ap.cultivationRush || { kills: 0 },
       guild_boss_assault: ap.guildAssault || { contribution: 0 },
+      cross_hunter: ap.crossHunter || { points: 0, kills: 0 },
+      treasure_pet_festival: ap.treasurePetFestival || { treasureUpgrades: 0, treasureAdvances: 0, petBookUses: 0, petSyntheses: 0, score: 0 },
+      double_dungeon: ap.doubleDungeon || { zoneId: doubleDungeonTarget.zoneId, kills: 0, score: 0 },
+      pet_carnival_day: ap.petCarnival || { petBookUses: 0, petSyntheses: 0, score: 0 },
+      treasure_sprint_day: ap.treasureSprint || { treasureUpgrades: 0, treasureAdvances: 0, score: 0 },
+      world_boss_bounty: ap.worldBossBounty || { mobId: bountyTarget.mobId, points: 0, kills: 0, lastHitBonus: 0 },
+      lucky_drop_day: ap.luckyDropDay || { points: 0, bossKills: 0, lastHitBonus: 0 },
       refine_carnival: {
         attempts: Number(ap.refineCarnival?.attempts || 0),
         milestones: ap.refineCarnival?.milestones || {}
@@ -128,7 +207,7 @@ export function getActivityStatePayload(player, now = Date.now()) {
   };
 }
 
-export function getMobRewardActivityBonus(member, mobTemplate, now = Date.now()) {
+export function getMobRewardActivityBonus(member, mobTemplate, now = Date.now(), { zoneId = '' } = {}) {
   let expMult = 1;
   let goldMult = 1;
   const notes = [];
@@ -150,9 +229,22 @@ export function getMobRewardActivityBonus(member, mobTemplate, now = Date.now())
     goldMult *= 1.2;
     notes.push('修真冲关周');
   }
+  if (zoneId && isActivityActive('double_dungeon', now)) {
+    const target = getDoubleDungeonTarget(now);
+    if (String(zoneId) === String(target.zoneId)) {
+      expMult *= Number(target.expMult || 2);
+      goldMult *= Number(target.goldMult || 2);
+      const ap = normalizeActivityProgress(member, now);
+      if (!ap.doubleDungeon || ap.doubleDungeon.zoneId !== target.zoneId) {
+        ap.doubleDungeon = { zoneId: target.zoneId, kills: 0, score: 0 };
+      }
+      ap.doubleDungeon.kills = Math.max(0, Number(ap.doubleDungeon.kills || 0)) + 1;
+      ap.doubleDungeon.score = Math.max(0, Number(ap.doubleDungeon.score || 0)) + 1;
+      notes.push(`双倍秘境:${target.zoneName}`);
+    }
+  }
   return { expMult, goldMult, notes };
 }
-
 export function getRefineMaterialCountForActivity(baseCount, now = Date.now()) {
   const safeBase = Math.max(1, Number(baseCount || 1));
   if (!isActivityActive('refine_carnival', now)) {
@@ -178,6 +270,56 @@ export function recordRefineActivity(player, { success = false, newLevel = 0 } =
   return msgs;
 }
 
+export function recordTreasurePetFestivalActivity(player, {
+  treasureUpgrades = 0,
+  treasureAdvances = 0,
+  petBookUses = 0,
+  petSyntheses = 0
+} = {}, now = Date.now()) {
+  const ap = normalizeActivityProgress(player, now);
+  const msgs = [];
+
+  const treasureDelta = Math.max(0, Number(treasureUpgrades || 0)) + Math.max(0, Number(treasureAdvances || 0));
+  const petDelta = Math.max(0, Number(petBookUses || 0)) * 2 + Math.max(0, Number(petSyntheses || 0)) * 8;
+
+  if (isActivityActive('treasure_pet_festival', now)) {
+    const fest = ap.treasurePetFestival || (ap.treasurePetFestival = {
+      _weekKey: getChinaDate(now).weekKey,
+      treasureUpgrades: 0,
+      treasureAdvances: 0,
+      petBookUses: 0,
+      petSyntheses: 0,
+      score: 0
+    });
+    fest.treasureUpgrades = Math.max(0, Number(fest.treasureUpgrades || 0)) + Math.max(0, Number(treasureUpgrades || 0));
+    fest.treasureAdvances = Math.max(0, Number(fest.treasureAdvances || 0)) + Math.max(0, Number(treasureAdvances || 0));
+    fest.petBookUses = Math.max(0, Number(fest.petBookUses || 0)) + Math.max(0, Number(petBookUses || 0));
+    fest.petSyntheses = Math.max(0, Number(fest.petSyntheses || 0)) + Math.max(0, Number(petSyntheses || 0));
+    const deltaScore = treasureDelta + petDelta;
+    fest.score = Math.max(0, Number(fest.score || 0)) + deltaScore;
+    if (deltaScore > 0) msgs.push(`宝藏奇缘：活跃度 +${deltaScore}（当前 ${fest.score}）`);
+  }
+
+  if (isActivityActive('pet_carnival_day', now) && (petBookUses > 0 || petSyntheses > 0)) {
+    const pc = ap.petCarnival || (ap.petCarnival = { petBookUses: 0, petSyntheses: 0, score: 0 });
+    pc.petBookUses = Math.max(0, Number(pc.petBookUses || 0)) + Math.max(0, Number(petBookUses || 0));
+    pc.petSyntheses = Math.max(0, Number(pc.petSyntheses || 0)) + Math.max(0, Number(petSyntheses || 0));
+    const deltaScore = Math.max(0, Number(petBookUses || 0)) * 3 + Math.max(0, Number(petSyntheses || 0)) * 12;
+    pc.score = Math.max(0, Number(pc.score || 0)) + deltaScore;
+    msgs.push(`宠物狂欢日：积分 +${deltaScore}（当前 ${pc.score}）`);
+  }
+
+  if (isActivityActive('treasure_sprint_day', now) && (treasureUpgrades > 0 || treasureAdvances > 0)) {
+    const ts = ap.treasureSprint || (ap.treasureSprint = { treasureUpgrades: 0, treasureAdvances: 0, score: 0 });
+    ts.treasureUpgrades = Math.max(0, Number(ts.treasureUpgrades || 0)) + Math.max(0, Number(treasureUpgrades || 0));
+    ts.treasureAdvances = Math.max(0, Number(ts.treasureAdvances || 0)) + Math.max(0, Number(treasureAdvances || 0));
+    const deltaScore = Math.max(0, Number(treasureUpgrades || 0)) * 2 + Math.max(0, Number(treasureAdvances || 0)) * 4;
+    ts.score = Math.max(0, Number(ts.score || 0)) + deltaScore;
+    msgs.push(`法宝冲刺日：积分 +${deltaScore}（当前 ${ts.score}）`);
+  }
+
+  return msgs;
+}
 function isBossForPoints(template) {
   if (!template) return false;
   if (template.id === 'vip_personal_boss' || template.id === 'svip_personal_boss') return false;
@@ -250,6 +392,63 @@ export function recordBossKillActivities({
     });
   }
 
+  if (isActivityActive('lucky_drop_day', now)) {
+    damageEntries.forEach(([name], idx) => {
+      const p = playerResolver(name);
+      if (!p) return;
+      normalizeActivityProgress(p, now);
+      const ap = p.flags.activityProgress;
+      const gain = idx === 0 ? 6 : 2;
+      ap.luckyDropDay.points = Math.max(0, Number(ap.luckyDropDay?.points || 0)) + gain;
+      ap.luckyDropDay.bossKills = Math.max(0, Number(ap.luckyDropDay?.bossKills || 0)) + 1;
+      if (idx === 0) messages.push({ player: p, text: `幸运掉落日：BOSS伤害第一，幸运积分+${gain}` });
+    });
+    if (lastHitName) {
+      const p = playerResolver(lastHitName);
+      if (p) {
+        normalizeActivityProgress(p, now);
+        const ap = p.flags.activityProgress;
+        const gain = 3;
+        ap.luckyDropDay.points = Math.max(0, Number(ap.luckyDropDay?.points || 0)) + gain;
+        ap.luckyDropDay.lastHitBonus = Math.max(0, Number(ap.luckyDropDay?.lastHitBonus || 0)) + gain;
+        messages.push({ player: p, text: `幸运掉落日：尾刀奖励，幸运积分+${gain}` });
+      }
+    }
+  }
+
+  if (isActivityActive('world_boss_bounty', now)) {
+    const bounty = getWorldBossBountyTarget(now);
+    if (String(template?.id || '') === String(bounty.mobId)) {
+      damageEntries.forEach(([name], idx) => {
+        const p = playerResolver(name);
+        if (!p) return;
+        normalizeActivityProgress(p, now);
+        const ap = p.flags.activityProgress;
+        if (!ap.worldBossBounty || ap.worldBossBounty.mobId !== bounty.mobId) {
+          ap.worldBossBounty = { mobId: bounty.mobId, points: 0, kills: 0, lastHitBonus: 0 };
+        }
+        const gain = idx === 0 ? 18 : 6;
+        ap.worldBossBounty.points = Math.max(0, Number(ap.worldBossBounty?.points || 0)) + gain;
+        ap.worldBossBounty.kills = Math.max(0, Number(ap.worldBossBounty?.kills || 0)) + 1;
+        if (idx === 0) messages.push({ player: p, text: `世界BOSS悬赏：伤害第一，悬赏积分+${gain}` });
+      });
+      if (lastHitName) {
+        const p = playerResolver(lastHitName);
+        if (p) {
+          normalizeActivityProgress(p, now);
+          const ap = p.flags.activityProgress;
+          if (!ap.worldBossBounty || ap.worldBossBounty.mobId !== bounty.mobId) {
+            ap.worldBossBounty = { mobId: bounty.mobId, points: 0, kills: 0, lastHitBonus: 0 };
+          }
+          const gain = 5;
+          ap.worldBossBounty.points = Math.max(0, Number(ap.worldBossBounty?.points || 0)) + gain;
+          ap.worldBossBounty.lastHitBonus = Math.max(0, Number(ap.worldBossBounty?.lastHitBonus || 0)) + gain;
+          messages.push({ player: p, text: `世界BOSS悬赏：尾刀奖励，悬赏积分+${gain}` });
+        }
+      }
+    }
+  }
+
   if (isCrossBoss && isActivityActive('cross_hunter', now)) {
     damageEntries.slice(0, 10).forEach(([name], idx) => {
       const p = playerResolver(name);
@@ -258,6 +457,9 @@ export function recordBossKillActivities({
       const ap = p.flags.activityProgress;
       const gain = idx === 0 ? 20 : 8;
       ap.demonSlayer.points = Math.max(0, Number(ap.demonSlayer?.points || 0)) + gain;
+      ap.crossHunter.points = Math.max(0, Number(ap.crossHunter?.points || 0)) + gain;
+      ap.crossHunter.kills = Math.max(0, Number(ap.crossHunter?.kills || 0)) + 1;
+      if (idx === 0) messages.push({ player: p, text: `跨服猎王：跨服BOSS伤害第一，猎王积分+${gain}` });
     });
   }
 
@@ -267,19 +469,27 @@ export function recordBossKillActivities({
 export function getActivityChatLines(player, now = Date.now()) {
   const active = listActiveActivities(now);
   const ap = normalizeActivityProgress(player, now);
+  const doubleDungeon = getDoubleDungeonTarget(now);
+  const bounty = getWorldBossBountyTarget(now);
   const lines = [];
   if (!active.length) {
     lines.push('当前没有进行中的限时活动。');
   } else {
     lines.push(`当前活动：${active.map((a) => a.name).join('、')}`);
   }
+  lines.push(`双倍秘境：${doubleDungeon.zoneName}（击杀 ${Number(ap.doubleDungeon?.kills || 0)}）`);
+  lines.push(`世界BOSS悬赏：${bounty.mobName}（积分 ${Number(ap.worldBossBounty?.points || 0)} / 击杀 ${Number(ap.worldBossBounty?.kills || 0)}）`);
+  lines.push(`宠物狂欢日：积分 ${Number(ap.petCarnival?.score || 0)}（打书 ${Number(ap.petCarnival?.petBookUses || 0)} / 合宠 ${Number(ap.petCarnival?.petSyntheses || 0)}）`);
+  lines.push(`法宝冲刺日：积分 ${Number(ap.treasureSprint?.score || 0)}（升级 ${Number(ap.treasureSprint?.treasureUpgrades || 0)} / 升段 ${Number(ap.treasureSprint?.treasureAdvances || 0)}）`);
   lines.push(`屠魔令积分：${Number(ap.demonSlayer?.points || 0)}（BOSS击杀 ${Number(ap.demonSlayer?.bossKills || 0)}）`);
   lines.push(`修真冲关周：修真BOSS击杀 ${Number(ap.cultivationRush?.kills || 0)}`);
   lines.push(`行会攻坚赛个人贡献：${Number(ap.guildAssault?.contribution || 0)}`);
-  lines.push(`锻造狂欢次数：${Number(ap.refineCarnival?.attempts || 0)}（+10/${ap.refineCarnival?.milestones?.['10'] ? '已达成' : '未达成'}，+20/${ap.refineCarnival?.milestones?.['20'] ? '已达成' : '未达成'}，+30/${ap.refineCarnival?.milestones?.['30'] ? '已达成' : '未达成'}）`);
+  lines.push(`跨服猎王：积分 ${Number(ap.crossHunter?.points || 0)}（击杀 ${Number(ap.crossHunter?.kills || 0)}）`);
+  lines.push(`宝藏奇缘：活跃 ${Number(ap.treasurePetFestival?.score || 0)}（法宝升级 ${Number(ap.treasurePetFestival?.treasureUpgrades || 0)} / 升段 ${Number(ap.treasurePetFestival?.treasureAdvances || 0)} / 打书 ${Number(ap.treasurePetFestival?.petBookUses || 0)} / 合宠 ${Number(ap.treasurePetFestival?.petSyntheses || 0)}）`);
+  lines.push(`幸运掉落日：积分 ${Number(ap.luckyDropDay?.points || 0)}（BOSS击杀 ${Number(ap.luckyDropDay?.bossKills || 0)}）`);
+  lines.push(`锻造狂欢次数：${Number(ap.refineCarnival?.attempts || 0)}（+10 ${ap.refineCarnival?.milestones?.['10'] ? '已达成' : '未达成'} / +20 ${ap.refineCarnival?.milestones?.['20'] ? '已达成' : '未达成'} / +30 ${ap.refineCarnival?.milestones?.['30'] ? '已达成' : '未达成'}）`);
   return lines;
 }
-
 function ensureClaimStore(player, now = Date.now()) {
   const t = getChinaDate(now);
   const ap = normalizeActivityProgress(player, now);
@@ -299,12 +509,26 @@ function getProgressSnapshot(player, now = Date.now()) {
     demonPoints: Number(ap.demonSlayer?.points || 0),
     cultivationKills: Number(ap.cultivationRush?.kills || 0),
     guildContribution: Number(ap.guildAssault?.contribution || 0),
-    refineAttempts: Number(ap.refineCarnival?.attempts || 0)
+    refineAttempts: Number(ap.refineCarnival?.attempts || 0),
+    crossHunterPoints: Number(ap.crossHunter?.points || 0),
+    treasurePetScore: Number(ap.treasurePetFestival?.score || 0),
+    luckyDropPoints: Number(ap.luckyDropDay?.points || 0),
+    doubleDungeonScore: Number(ap.doubleDungeon?.score || 0),
+    worldBossBountyPoints: Number(ap.worldBossBounty?.points || 0),
+    petCarnivalScore: Number(ap.petCarnival?.score || 0),
+    treasureSprintScore: Number(ap.treasureSprint?.score || 0)
   };
 }
-
 function rewardDefsForClaims() {
   return [
+    { key: 'double_dungeon_30', period: 'daily', title: '双倍秘境奖励', threshold: 30, metric: 'doubleDungeonScore', gold: 80000, body: '达成双倍秘境击杀 30。' },
+    { key: 'double_dungeon_100', period: 'daily', title: '双倍秘境奖励', threshold: 100, metric: 'doubleDungeonScore', gold: 220000, body: '达成双倍秘境击杀 100。' },
+    { key: 'bounty_20', period: 'daily', title: '世界BOSS悬赏奖励', threshold: 20, metric: 'worldBossBountyPoints', gold: 120000, body: '达成世界BOSS悬赏积分 20。' },
+    { key: 'bounty_60', period: 'daily', title: '世界BOSS悬赏奖励', threshold: 60, metric: 'worldBossBountyPoints', gold: 320000, body: '达成世界BOSS悬赏积分 60。' },
+    { key: 'pet_carnival_20', period: 'daily', title: '宠物狂欢日奖励', threshold: 20, metric: 'petCarnivalScore', gold: 100000, body: '达成宠物狂欢日积分 20。' },
+    { key: 'pet_carnival_60', period: 'daily', title: '宠物狂欢日奖励', threshold: 60, metric: 'petCarnivalScore', gold: 260000, body: '达成宠物狂欢日积分 60。' },
+    { key: 'treasure_sprint_20', period: 'daily', title: '法宝冲刺日奖励', threshold: 20, metric: 'treasureSprintScore', gold: 100000, body: '达成法宝冲刺日积分 20。' },
+    { key: 'treasure_sprint_60', period: 'daily', title: '法宝冲刺日奖励', threshold: 60, metric: 'treasureSprintScore', gold: 260000, body: '达成法宝冲刺日积分 60。' },
     { key: 'demon_20', period: 'daily', title: '屠魔令积分奖励', threshold: 20, metric: 'demonPoints', gold: 50000, body: '达成屠魔令积分 20。' },
     { key: 'demon_60', period: 'daily', title: '屠魔令积分奖励', threshold: 60, metric: 'demonPoints', gold: 150000, body: '达成屠魔令积分 60。' },
     { key: 'demon_120', period: 'daily', title: '屠魔令积分奖励', threshold: 120, metric: 'demonPoints', gold: 300000, body: '达成屠魔令积分 120。' },
@@ -312,11 +536,16 @@ function rewardDefsForClaims() {
     { key: 'cult_15', period: 'weekly', title: '修真冲关周奖励', threshold: 15, metric: 'cultivationKills', gold: 300000, body: '达成修真BOSS击杀 15。' },
     { key: 'guild_30', period: 'daily', title: '行会攻坚赛奖励', threshold: 30, metric: 'guildContribution', gold: 120000, body: '达成行会攻坚贡献 30。' },
     { key: 'guild_80', period: 'daily', title: '行会攻坚赛奖励', threshold: 80, metric: 'guildContribution', gold: 300000, body: '达成行会攻坚贡献 80。' },
+    { key: 'lucky_20', period: 'daily', title: '幸运掉落日奖励', threshold: 20, metric: 'luckyDropPoints', gold: 80000, body: '达成幸运掉落日积分 20。' },
+    { key: 'lucky_60', period: 'daily', title: '幸运掉落日奖励', threshold: 60, metric: 'luckyDropPoints', gold: 220000, body: '达成幸运掉落日积分 60。' },
     { key: 'refine_20', period: 'weekly', title: '锻造狂欢奖励', threshold: 20, metric: 'refineAttempts', gold: 100000, body: '达成锻造狂欢次数 20。' },
-    { key: 'refine_60', period: 'weekly', title: '锻造狂欢奖励', threshold: 60, metric: 'refineAttempts', gold: 300000, body: '达成锻造狂欢次数 60。' }
+    { key: 'refine_60', period: 'weekly', title: '锻造狂欢奖励', threshold: 60, metric: 'refineAttempts', gold: 300000, body: '达成锻造狂欢次数 60。' },
+    { key: 'cross_30', period: 'weekly', title: '跨服猎王奖励', threshold: 30, metric: 'crossHunterPoints', gold: 150000, body: '达成跨服猎王积分 30。' },
+    { key: 'cross_90', period: 'weekly', title: '跨服猎王奖励', threshold: 90, metric: 'crossHunterPoints', gold: 420000, body: '达成跨服猎王积分 90。' },
+    { key: 'tpf_20', period: 'weekly', title: '宝藏奇缘奖励', threshold: 20, metric: 'treasurePetScore', gold: 120000, body: '达成宝藏奇缘活跃度 20。' },
+    { key: 'tpf_80', period: 'weekly', title: '宝藏奇缘奖励', threshold: 80, metric: 'treasurePetScore', gold: 360000, body: '达成宝藏奇缘活跃度 80。' }
   ];
 }
-
 export async function claimActivityRewardsByMail(player, {
   sendMail,
   realmId = 1,
@@ -386,26 +615,22 @@ export function getActivityLeaderboardsByPeriod(allCharacters, { dailyKey = null
   const dailyOk = (row) => !dailyKey || getAp(row)?._dailyKey === dailyKey;
   const weeklyRefineOk = (row) => !weekKey || getAp(row)?.refineCarnival?._weekKey === weekKey;
   const weeklyCultivationOk = (row) => !weekKey || getAp(row)?.cultivationRush?._weekKey === weekKey;
+  const weeklyCrossOk = (row) => !weekKey || getAp(row)?.crossHunter?._weekKey === weekKey;
+  const weeklyTreasurePetOk = (row) => !weekKey || getAp(row)?.treasurePetFestival?._weekKey === weekKey;
   return {
-    demon_slayer_order: rankRows(rows, (row) => {
-      if (!dailyOk(row)) return 0;
-      return getAp(row)?.demonSlayer?.points || 0;
-    }, limit),
-    cultivation_rush_week: rankRows(rows, (row) => {
-      if (!weeklyCultivationOk(row)) return 0;
-      return getAp(row)?.cultivationRush?.kills || 0;
-    }, limit),
-    guild_boss_assault: rankRows(rows, (row) => {
-      if (!dailyOk(row)) return 0;
-      return getAp(row)?.guildAssault?.contribution || 0;
-    }, limit),
-    refine_carnival: rankRows(rows, (row) => {
-      if (!weeklyRefineOk(row)) return 0;
-      return getAp(row)?.refineCarnival?.attempts || 0;
-    }, limit)
+    double_dungeon: rankRows(rows, (row) => dailyOk(row) ? (getAp(row)?.doubleDungeon?.score || 0) : 0, limit),
+    world_boss_bounty: rankRows(rows, (row) => dailyOk(row) ? (getAp(row)?.worldBossBounty?.points || 0) : 0, limit),
+    pet_carnival_day: rankRows(rows, (row) => dailyOk(row) ? (getAp(row)?.petCarnival?.score || 0) : 0, limit),
+    treasure_sprint_day: rankRows(rows, (row) => dailyOk(row) ? (getAp(row)?.treasureSprint?.score || 0) : 0, limit),
+    demon_slayer_order: rankRows(rows, (row) => dailyOk(row) ? (getAp(row)?.demonSlayer?.points || 0) : 0, limit),
+    cultivation_rush_week: rankRows(rows, (row) => weeklyCultivationOk(row) ? (getAp(row)?.cultivationRush?.kills || 0) : 0, limit),
+    guild_boss_assault: rankRows(rows, (row) => dailyOk(row) ? (getAp(row)?.guildAssault?.contribution || 0) : 0, limit),
+    lucky_drop_day: rankRows(rows, (row) => dailyOk(row) ? (getAp(row)?.luckyDropDay?.points || 0) : 0, limit),
+    refine_carnival: rankRows(rows, (row) => weeklyRefineOk(row) ? (getAp(row)?.refineCarnival?.attempts || 0) : 0, limit),
+    cross_hunter: rankRows(rows, (row) => weeklyCrossOk(row) ? (getAp(row)?.crossHunter?.points || 0) : 0, limit),
+    treasure_pet_festival: rankRows(rows, (row) => weeklyTreasurePetOk(row) ? (getAp(row)?.treasurePetFestival?.score || 0) : 0, limit)
   };
 }
-
 export function formatActivityLeaderboardLines(boards, type = 'all') {
   const sections = [];
   const pushBoard = (label, key, unit) => {
@@ -420,13 +645,19 @@ export function formatActivityLeaderboardLines(boards, type = 'all') {
       sections.push(`${idx + 1}. ${row.name} Lv${row.level || 0} ${entry.score}${unit}`);
     });
   };
+  if (type === 'all' || type === 'double') pushBoard('双倍秘境击杀榜', 'double_dungeon', '次');
+  if (type === 'all' || type === 'bounty') pushBoard('世界BOSS悬赏榜', 'world_boss_bounty', '分');
+  if (type === 'all' || type === 'pet_carnival') pushBoard('宠物狂欢日积分榜', 'pet_carnival_day', '分');
+  if (type === 'all' || type === 'treasure_sprint') pushBoard('法宝冲刺日积分榜', 'treasure_sprint_day', '分');
   if (type === 'all' || type === 'demon') pushBoard('屠魔令积分榜', 'demon_slayer_order', '分');
   if (type === 'all' || type === 'cultivation') pushBoard('修真冲关榜', 'cultivation_rush_week', '次');
   if (type === 'all' || type === 'guild') pushBoard('行会攻坚个人贡献榜', 'guild_boss_assault', '点');
+  if (type === 'all' || type === 'lucky') pushBoard('幸运掉落日积分榜', 'lucky_drop_day', '分');
   if (type === 'all' || type === 'refine') pushBoard('锻造狂欢次数榜', 'refine_carnival', '次');
+  if (type === 'all' || type === 'cross') pushBoard('跨服猎王榜', 'cross_hunter', '分');
+  if (type === 'all' || type === 'treasure') pushBoard('宝藏奇缘活跃榜', 'treasure_pet_festival', '点');
   return sections;
 }
-
 function rankingRewardGold(rank, base) {
   if (rank === 1) return base * 10;
   if (rank === 2) return base * 6;
@@ -454,18 +685,25 @@ export function buildActivitySettlementRewards(boards, { dailyKey = null, weekKe
         charName: row.name,
         realmId: row.realmId || 1,
         title: `${label}排行奖励`,
-        body: `${label}${period === 'daily' ? '（日榜）' : '（周榜）'}第${rank}名，成绩 ${entry.score}，奖励 ${gold} 金币。`,
+        body: `${label}${period === 'daily' ? '（日榜）' : '（周榜）'}第${rank}名，成绩 ${entry.score}，奖励${gold} 金币。`,
         gold
       });
     });
   };
   if (dailyKey) {
+    pushRewards('double_dungeon', '双倍秘境击杀榜', 'daily', dailyKey, 40000);
+    pushRewards('world_boss_bounty', '世界BOSS悬赏榜', 'daily', dailyKey, 70000);
+    pushRewards('pet_carnival_day', '宠物狂欢日积分榜', 'daily', dailyKey, 60000);
+    pushRewards('treasure_sprint_day', '法宝冲刺日积分榜', 'daily', dailyKey, 60000);
     pushRewards('demon_slayer_order', '屠魔令积分榜', 'daily', dailyKey, 50000);
     pushRewards('guild_boss_assault', '行会攻坚个人贡献榜', 'daily', dailyKey, 60000);
+    pushRewards('lucky_drop_day', '幸运掉落日积分榜', 'daily', dailyKey, 45000);
   }
   if (weekKey) {
     pushRewards('cultivation_rush_week', '修真冲关榜', 'weekly', weekKey, 100000);
     pushRewards('refine_carnival', '锻造狂欢次数榜', 'weekly', weekKey, 80000);
+    pushRewards('cross_hunter', '跨服猎王榜', 'weekly', weekKey, 90000);
+    pushRewards('treasure_pet_festival', '宝藏奇缘活跃榜', 'weekly', weekKey, 85000);
   }
   return rewards;
 }

@@ -22,7 +22,8 @@ import {
   formatActivityLeaderboardLines,
   claimActivityRewardsByMail,
   getRefineMaterialCountForActivity,
-  recordRefineActivity
+  recordRefineActivity,
+  recordTreasurePetFestivalActivity
 } from './activity.js';
 import { clamp, randInt } from './utils.js';
 import { applyDamage } from './combat.js';
@@ -1967,8 +1968,10 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         ) + 1;
         computeDerived(player);
         player.forceStateRefresh = true;
+        const activityMsgs = recordTreasurePetFestivalActivity(player, { treasureUpgrades: 1 });
         const def = getTreasureDef(equipped.id);
         send(`法宝升级成功：${def?.name || equipped.id} Lv${level} -> Lv${level + 1}（消耗法宝经验丹 x${need}，随机属性 ${treasureRandomAttrLabel(attrKey)}+1）。`);
+        activityMsgs.forEach((msg) => send(msg));
         return;
       }
       if (sub === 'advance' || sub === '升段') {
@@ -2041,10 +2044,12 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         const newStage = getTreasureStageByAdvanceCount(newAdvance);
         computeDerived(player);
         player.forceStateRefresh = true;
+        const activityMsgs = recordTreasurePetFestivalActivity(player, { treasureAdvances: finalTimes });
         const def = getTreasureDef(equipped.id);
         const stageUpText = newStage > oldStage ? `，阶位提升：${oldStage}阶 -> ${newStage}阶` : '';
         const consumedCount = finalTimes * need;
         send(`法宝升段成功：${def?.name || equipped.id} 段数 ${oldAdvance} -> ${newAdvance}（本次升段 ${finalTimes} 次，消耗法宝 x${consumedCount}，每段效果+${(TREASURE_ADVANCE_EFFECT_BONUS_PER_STACK * 100).toFixed(1)}%${stageUpText}）。`);
+        activityMsgs.forEach((msg) => send(msg));
         return;
       }
       send('请在【法宝】面板中操作法宝。');
@@ -3090,8 +3095,23 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           修真: 'cultivation',
           guild: 'guild',
           行会: 'guild',
+          lucky: 'lucky',
+          幸运: 'lucky',
+          double: 'double',
+          秘境: 'double',
+          bounty: 'bounty',
+          悬赏: 'bounty',
+          petcarnival: 'pet_carnival',
+          宠物狂欢: 'pet_carnival',
+          treasuresprint: 'treasure_sprint',
+          法宝冲刺: 'treasure_sprint',
           refine: 'refine',
-          锻造: 'refine'
+          锻造: 'refine',
+          cross: 'cross',
+          跨服: 'cross',
+          treasure: 'treasure',
+          宝藏: 'treasure',
+          奇缘: 'treasure'
         };
         const rankType = typeMap[typeRaw] || (typeRaw ? 'all' : 'all');
         const rows = await resolveAllCharacters();
@@ -3101,7 +3121,14 @@ export async function handleCommand({ player, players, allCharacters, playersByN
             { req: 'demon', key: 'demon_slayer_order', title: '屠魔令积分榜', unit: '分' },
             { req: 'cultivation', key: 'cultivation_rush_week', title: '修真冲关榜', unit: '次' },
             { req: 'guild', key: 'guild_boss_assault', title: '行会攻坚个人贡献榜', unit: '点' },
-            { req: 'refine', key: 'refine_carnival', title: '锻造狂欢次数榜', unit: '次' }
+            { req: 'lucky', key: 'lucky_drop_day', title: '幸运掉落日积分榜', unit: '分' },
+            { req: 'double', key: 'double_dungeon', title: '双倍秘境击杀榜', unit: '次' },
+            { req: 'bounty', key: 'world_boss_bounty', title: '世界BOSS悬赏榜', unit: '分' },
+            { req: 'pet_carnival', key: 'pet_carnival_day', title: '宠物狂欢日积分榜', unit: '分' },
+            { req: 'treasure_sprint', key: 'treasure_sprint_day', title: '法宝冲刺日积分榜', unit: '分' },
+            { req: 'refine', key: 'refine_carnival', title: '锻造狂欢次数榜', unit: '次' },
+            { req: 'cross', key: 'cross_hunter', title: '跨服猎王榜', unit: '分' },
+            { req: 'treasure', key: 'treasure_pet_festival', title: '宝藏奇缘活跃榜', unit: '点' }
           ];
           const sections = sectionDefs
             .filter((def) => rankType === 'all' || rankType === def.req)
