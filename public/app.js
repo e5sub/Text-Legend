@@ -4375,7 +4375,10 @@ function showAutoFullBossModal() {
     const tabsWrap = rankModal.querySelector('.rank-tabs');
     if (titleEl) titleEl.textContent = title;
     rankModal.dataset.mode = mode;
-    if (tabsWrap) tabsWrap.classList.toggle('hidden', !showTabs);
+    if (tabsWrap) {
+      tabsWrap.classList.toggle('hidden', !showTabs);
+      tabsWrap.style.display = showTabs ? '' : 'none';
+    }
   }
 
   function renderActivityRankModalLoading(label = '活动排行榜') {
