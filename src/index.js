@@ -11528,13 +11528,15 @@ async function processMobDeath(player, mob, online) {
       console.warn('Failed to persist world boss kill count:', err);
     });
   }
-  if (template.specialBoss && !template.worldBoss) {
+  const isPersonalBoss = template.id === 'vip_personal_boss' || template.id === 'svip_personal_boss';
+  const isCultivationBossMob = Boolean(template.id && template.id.startsWith('cultivation_boss_'));
+  if (template.specialBoss && !template.worldBoss && !isPersonalBoss && !isCultivationBossMob) {
     const nextKills = incrementSpecialBossKills(1, roomRealmId);
     void setSpecialBossKillCount(nextKills, roomRealmId).catch((err) => {
       console.warn('Failed to persist special boss kill count:', err);
     });
   }
-  if (template.id && template.id.startsWith('cultivation_boss_')) {
+  if (isCultivationBossMob) {
     const nextKills = incrementCultivationBossKills(1, roomRealmId);
     void setCultivationBossKillCount(nextKills, roomRealmId).catch((err) => {
       console.warn('Failed to persist cultivation boss kill count:', err);

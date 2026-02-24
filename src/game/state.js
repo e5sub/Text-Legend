@@ -37,9 +37,11 @@ function getZhuxianTowerFloorScale(zoneId, roomId) {
 
 function scaledStats(tpl, realmId = 1, zoneId, roomId) {
   if (!tpl) return { hp: 0, atk: 0, def: 0, mdef: 0 };
+  const isPersonalBoss = tpl.id === 'vip_personal_boss' || tpl.id === 'svip_personal_boss';
+  const isCultivationBoss = Boolean(tpl.id && tpl.id.startsWith('cultivation_boss_'));
 
   // 特殊BOSS：仅应用击杀次数成长。
-  if (tpl.specialBoss && !tpl.worldBoss) {
+  if (tpl.specialBoss && !tpl.worldBoss && !isPersonalBoss && !isCultivationBoss) {
     const count = specialBossKillCounts.get(realmId) || 0;
     const growth = 1 + Math.floor(count / 5) * 0.01;
     return {
@@ -63,7 +65,7 @@ function scaledStats(tpl, realmId = 1, zoneId, roomId) {
   }
 
   // 修真BOSS：应用击杀次数成长。
-  if (tpl.id && tpl.id.startsWith('cultivation_boss_')) {
+  if (isCultivationBoss) {
     const count = cultivationBossKillCounts.get(realmId) || 0;
     const growth = 1 + Math.floor(count / 5) * 0.01;
     return {
