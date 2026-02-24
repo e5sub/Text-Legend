@@ -21,6 +21,9 @@ import {
   getActivityLeaderboards,
   formatActivityLeaderboardLines,
   claimActivityRewardsByMail,
+  normalizeActivityProgress,
+  getActivityPointBalance,
+  spendActivityPoints,
   getRefineMaterialCountForActivity,
   recordRefineActivity,
   recordTreasurePetFestivalActivity
@@ -74,6 +77,105 @@ const PET_RARITY_APTITUDE_RANGE = {
   ultimate: { hp: [6200, 8000], atk: [300, 440], def: [280, 420], mag: [300, 440], agility: [280, 420] }
 };
 const PET_BASE_SKILL_SLOTS = 3;
+const ACTIVITY_POINT_SHOP_MAX_REDEEM_QTY = 99;
+
+function normalizeActivityPointShopConfig(raw) {
+  const source = raw && typeof raw === 'object' ? raw : {};
+  const list = Array.isArray(source.items) ? source.items : [];
+  const items = list
+    .map((entry, index) => {
+      const id = String(entry?.id || '').trim();
+      if (!id) return null;
+      const rewardItems = Array.isArray(entry?.reward?.items)
+        ? entry.reward.items
+          .map((it) => ({
+            id: String(it?.id || '').trim(),
+            qty: Math.max(1, Math.floor(Number(it?.qty || 1)))
+          }))
+          .filter((it) => it.id)
+        : [];
+      return {
+        id,
+        name: String(entry?.name || id).trim(),
+        desc: String(entry?.desc || '').trim(),
+        active: entry?.active !== false,
+        cost: Math.max(1, Math.floor(Number(entry?.cost || 0))),
+        limitType: ['daily', 'weekly', 'lifetime', 'none'].includes(String(entry?.limitType || 'none')) ? String(entry.limitType || 'none') : 'none',
+        limit: Math.max(0, Math.floor(Number(entry?.limit || 0))),
+        minLevel: Math.max(0, Math.floor(Number(entry?.minLevel || 0))),
+        maxLevel: Math.max(0, Math.floor(Number(entry?.maxLevel || 0))),
+        needVip: Boolean(entry?.needVip),
+        needSvip: Boolean(entry?.needSvip),
+        reward: {
+          gold: Math.max(0, Math.floor(Number(entry?.reward?.gold || 0))),
+          items: rewardItems
+        },
+        sort: Number.isFinite(Number(entry?.sort)) ? Number(entry.sort) : index
+      };
+    })
+    .filter((it) => it && it.cost > 0 && (it.reward.gold > 0 || it.reward.items.length > 0))
+    .sort((a, b) => (a.sort - b.sort) || a.id.localeCompare(b.id));
+  return { version: 1, items };
+}
+
+function getActivityPointShopCountStore(player, now = Date.now()) {
+  const ap = normalizeActivityProgress(player, now);
+  if (!ap.pointShopRedeems || typeof ap.pointShopRedeems !== 'object') ap.pointShopRedeems = {};
+  if (!ap.pointShopRedeems.daily || typeof ap.pointShopRedeems.daily !== 'object') ap.pointShopRedeems.daily = { keys: {} };
+  if (!ap.pointShopRedeems.weekly || typeof ap.pointShopRedeems.weekly !== 'object') ap.pointShopRedeems.weekly = { keys: {} };
+  if (!ap.pointShopRedeems.lifetime || typeof ap.pointShopRedeems.lifetime !== 'object') ap.pointShopRedeems.lifetime = {};
+  return ap.pointShopRedeems;
+}
+
+function getActivityPointShopRedeemCount(player, shopItem, now = Date.now()) {
+  const store = getActivityPointShopCountStore(player, now);
+  const key = String(shopItem?.id || '');
+  switch (String(shopItem?.limitType || 'none')) {
+    case 'daily':
+      return Math.max(0, Math.floor(Number(store.daily?.keys?.[key] || 0)));
+    case 'weekly':
+      return Math.max(0, Math.floor(Number(store.weekly?.keys?.[key] || 0)));
+    case 'lifetime':
+      return Math.max(0, Math.floor(Number(store.lifetime?.[key] || 0)));
+    default:
+      return 0;
+  }
+}
+
+function addActivityPointShopRedeemCount(player, shopItem, delta = 1, now = Date.now()) {
+  const inc = Math.max(0, Math.floor(Number(delta || 0)));
+  if (inc <= 0) return;
+  const store = getActivityPointShopCountStore(player, now);
+  const key = String(shopItem?.id || '');
+  if (!key) return;
+  switch (String(shopItem?.limitType || 'none')) {
+    case 'daily':
+      if (!store.daily.keys) store.daily.keys = {};
+      store.daily.keys[key] = Math.max(0, Math.floor(Number(store.daily.keys[key] || 0))) + inc;
+      break;
+    case 'weekly':
+      if (!store.weekly.keys) store.weekly.keys = {};
+      store.weekly.keys[key] = Math.max(0, Math.floor(Number(store.weekly.keys[key] || 0))) + inc;
+      break;
+    case 'lifetime':
+      store.lifetime[key] = Math.max(0, Math.floor(Number(store.lifetime[key] || 0))) + inc;
+      break;
+    default:
+      break;
+  }
+}
+
+function describeActivityPointShopReward(reward = {}) {
+  const parts = [];
+  const gold = Math.max(0, Math.floor(Number(reward?.gold || 0)));
+  if (gold > 0) parts.push(`${gold}金币`);
+  const items = Array.isArray(reward?.items) ? reward.items : [];
+  for (const it of items) {
+    const tpl = ITEM_TEMPLATES[it.id];
+    parts.push(`${tpl?.name || it.id} x${Math.max(1, Math.floor(Number(it.qty || 1)))}`);
+  }
+  return parts.join('，') || '无';
+}
 
 // 宠物状态标准化
 function normalizePetState(player) {
@@ -1227,7 +1329,7 @@ function partyStatus(party) {
   return `队伍成员: ${party.members.join(', ')}`;
 }
 
-export async function handleCommand({ player, players, allCharacters, playersByName, input, source, send, partyApi, guildApi, tradeApi, rechargeApi, svipApi, mailApi, consignApi, onMove, logLoot, realmId, emitAnnouncement }) {
+export async function handleCommand({ player, players, allCharacters, playersByName, input, source, send, partyApi, guildApi, tradeApi, rechargeApi, svipApi, mailApi, activityApi, consignApi, onMove, logLoot, realmId, emitAnnouncement }) {
   const resolveAllCharacters = async () => {
     if (typeof allCharacters === 'function') {
       const rows = await allCharacters();
@@ -3084,7 +3186,8 @@ export async function handleCommand({ player, players, allCharacters, playersByN
     case 'event':
     case 'events':
     case '活动': {
-      const sub = String(args || '').trim().toLowerCase();
+      const rawSub = String(args || '').trim();
+      const sub = rawSub.toLowerCase();
       if (sub.startsWith('rank') || sub.startsWith('榜')) {
         const typeRaw = sub.replace(/^rank\s*/, '').replace(/^榜\s*/, '').trim();
         const typeMap = {
@@ -3153,18 +3256,122 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         rankLines.forEach((line) => send(line));
         return;
       }
+      if (sub === 'shop' || sub === '商城' || sub === 'pointshop' || sub === '积分商城') {
+        const config = normalizeActivityPointShopConfig(await activityApi?.getPointShopConfig?.());
+        const now = Date.now();
+        const list = (config.items || []).filter((it) => it.active !== false);
+        if (source === 'ui' && player?.socket) {
+          const rows = list.map((it) => {
+            const redeemed = getActivityPointShopRedeemCount(player, it, now);
+            const limit = Math.max(0, Math.floor(Number(it.limit || 0)));
+            const limitText = (it.limitType && it.limitType !== 'none' && limit > 0)
+              ? `${it.limitType}:${redeemed}/${limit}`
+              : '不限';
+            return {
+              id: it.id,
+              name: it.name,
+              desc: it.desc || '',
+              cost: it.cost,
+              rewardText: describeActivityPointShopReward(it.reward),
+              minLevel: it.minLevel || 0,
+              maxLevel: it.maxLevel || 0,
+              needVip: !!it.needVip,
+              needSvip: !!it.needSvip,
+              limitType: it.limitType || 'none',
+              limit: limit,
+              redeemed,
+              limitText
+            };
+          });
+          player.socket.emit('activity_point_shop_data', {
+            points: getActivityPointBalance(player, now),
+            items: rows
+          });
+          return;
+        }
+        send(`活动积分：${getActivityPointBalance(player, now)}`);
+        if (!list.length) {
+          send('积分商城暂无商品。');
+          return;
+        }
+        list.forEach((it) => {
+          const redeemed = getActivityPointShopRedeemCount(player, it, now);
+          const limit = Math.max(0, Math.floor(Number(it.limit || 0)));
+          const limitText = (it.limitType && it.limitType !== 'none' && limit > 0) ? ` 限制:${it.limitType} ${redeemed}/${limit}` : '';
+          send(`[${it.id}] ${it.name} - ${it.cost}积分 - ${describeActivityPointShopReward(it.reward)}${limitText}`);
+        });
+        send('输入 `活动 兑换 商品ID` 进行兑换。');
+        return;
+      }
+      if (sub.startsWith('redeem') || sub.startsWith('兑换')) {
+        const rest = rawSub.replace(/^(redeem|兑换)\s*/i, '').trim();
+        const [shopIdRaw, qtyRaw] = rest.split(/\s+/).filter(Boolean);
+        const shopId = String(shopIdRaw || '').trim();
+        const qty = Math.min(ACTIVITY_POINT_SHOP_MAX_REDEEM_QTY, Math.max(1, Math.floor(Number(qtyRaw || 1))));
+        if (!shopId) {
+          return send('请输入要兑换的商品ID，例如：活动 兑换 商品ID');
+        }
+        const config = normalizeActivityPointShopConfig(await activityApi?.getPointShopConfig?.());
+        const item = (config.items || []).find((it) => String(it.id) === shopId && it.active !== false);
+        if (!item) return send('积分商城没有这个商品。');
+        if (item.minLevel > 0 && Number(player.level || 0) < item.minLevel) return send(`等级不足，需要 ${item.minLevel} 级。`);
+        if (item.maxLevel > 0 && Number(player.level || 0) > item.maxLevel) return send(`等级过高，需要不高于 ${item.maxLevel} 级。`);
+        if (item.needVip && !normalizeVipStatus(player)) return send('该商品需要VIP。');
+        if (item.needSvip && !normalizeSvipStatus(player)) return send('该商品需要SVIP。');
+        const redeemed = getActivityPointShopRedeemCount(player, item);
+        if (item.limitType && item.limitType !== 'none' && item.limit > 0 && (redeemed + qty) > item.limit) {
+          return send(`兑换次数超限：当前 ${redeemed}/${item.limit}。`);
+        }
+        const rewardItems = [];
+        for (const rewardItem of (Array.isArray(item.reward?.items) ? item.reward.items : [])) {
+          const itemId = String(rewardItem?.id || '').trim();
+          const itemQty = Math.max(1, Math.floor(Number(rewardItem?.qty || 1))) * qty;
+          if (!ITEM_TEMPLATES[itemId]) {
+            return send(`商城配置错误：不存在物品 ${itemId}`);
+          }
+          rewardItems.push({ id: itemId, qty: itemQty });
+        }
+        const rewardGold = Math.max(0, Math.floor(Number(item.reward?.gold || 0))) * qty;
+        const totalCost = Math.max(1, Math.floor(Number(item.cost || 0))) * qty;
+        const spendRes = spendActivityPoints(player, totalCost);
+        if (!spendRes.ok) return send(spendRes.error || '活动积分不足。');
+        try {
+          if (typeof mailApi?.sendMail !== 'function') throw new Error('邮件系统不可用');
+          await mailApi.sendMail(
+            player.userId,
+            player.name,
+            '系统',
+            null,
+            `活动积分商城兑换：${item.name}`,
+            `已扣除活动积分 ${totalCost}。\n兑换奖励：${describeActivityPointShopReward({ gold: rewardGold, items: rewardItems })}${qty > 1 ? `\n数量：${qty}` : ''}`,
+            rewardItems.length ? rewardItems : null,
+            rewardGold,
+            realmId || player.realmId || 1
+          );
+          addActivityPointShopRedeemCount(player, item, qty);
+          player.forceStateRefresh = true;
+          send(`兑换成功：${item.name} x${qty}，消耗 ${totalCost} 活动积分（剩余 ${spendRes.balance}）。奖励已发送到邮件。`);
+          return;
+        } catch (err) {
+          // 回滚积分
+          normalizeActivityProgress(player).activityPoints = Math.max(0, Number(normalizeActivityProgress(player).activityPoints || 0)) + totalCost;
+          normalizeActivityProgress(player).activityPointsSpent = Math.max(0, Number(normalizeActivityProgress(player).activityPointsSpent || 0) - totalCost);
+          return send(`兑换失败：${err.message || '邮件发送失败'}`);
+        }
+      }
       if (sub === 'claim' || sub === '领取') {
         const sendMailFn = mailApi?.sendMail;
         const result = await claimActivityRewardsByMail(player, {
           sendMail: sendMailFn,
           realmId: realmId || player.realmId || 1
         });
+        if (result?.ok && result?.sent) player.forceStateRefresh = true;
         result.messages.forEach((line) => send(line));
         return;
       }
       const lines = getActivityChatLines(player);
       lines.forEach((line) => send(line));
-      send('输入 `活动 rank` 查看排行榜，`活动 claim` 领取可用奖励（邮件发放）。');
+      send('输入 `活动 rank` 查看排行榜，`活动 claim` 领取奖励，`活动 shop` 查看积分商城。');
       return;
     }
     case 'forge': {

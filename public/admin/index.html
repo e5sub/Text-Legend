@@ -424,6 +424,46 @@
 
         <div class="block" data-collapsible>
           <div class="block-title">
+            <h2>活动积分商城配置</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <p class="muted" style="margin-bottom: 8px;">
+              后台维护活动积分商城商品（可视化配置）。奖励物品格式：`物品ID*数量,物品ID*数量`
+            </p>
+            <div class="row" style="margin-bottom: 8px; gap: 8px;">
+              <button id="activity-point-shop-load-btn" class="btn-small">加载</button>
+              <button id="activity-point-shop-add-btn" class="btn-small">+ 添加商品</button>
+              <button id="activity-point-shop-save-btn" class="btn-small">保存</button>
+            </div>
+            <div class="table-container">
+              <table style="font-size: 12px;">
+                <thead>
+                  <tr>
+                    <th>启用</th>
+                    <th>ID</th>
+                    <th>名称</th>
+                    <th>积分</th>
+                    <th>限制</th>
+                    <th>等级</th>
+                    <th>VIP</th>
+                    <th>奖励金币</th>
+                    <th>奖励物品</th>
+                    <th>描述</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="activity-point-shop-list">
+                  <tr><td colspan="11" style="text-align:center;color:#999;">点击加载</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div id="activity-point-shop-msg" class="msg"></div>
+          </div>
+        </div>
+
+        <div class="block" data-collapsible>
+          <div class="block-title">
             <h2>每日幸运玩家</h2>
             <button class="btn-small block-toggle">折叠</button>
           </div>

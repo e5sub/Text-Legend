@@ -174,7 +174,45 @@ export function normalizeActivityProgress(player, now = Date.now()) {
   if (!ap.refineCarnival || ap.refineCarnival._weekKey !== t.weekKey) {
     ap.refineCarnival = { _weekKey: t.weekKey, attempts: 0, milestones: {} };
   }
+  ap.activityPoints = Math.max(0, Math.floor(Number(ap.activityPoints || 0)));
+  ap.activityPointsEarned = Math.max(0, Math.floor(Number(ap.activityPointsEarned || 0)));
+  ap.activityPointsSpent = Math.max(0, Math.floor(Number(ap.activityPointsSpent || 0)));
+  if (!ap.pointShopRedeems || typeof ap.pointShopRedeems !== 'object') ap.pointShopRedeems = {};
+  if (!ap.pointShopRedeems.daily || ap.pointShopRedeems.daily._dateKey !== t.dateKey) {
+    ap.pointShopRedeems.daily = { _dateKey: t.dateKey, keys: {} };
+  }
+  if (!ap.pointShopRedeems.weekly || ap.pointShopRedeems.weekly._weekKey !== t.weekKey) {
+    ap.pointShopRedeems.weekly = { _weekKey: t.weekKey, keys: {} };
+  }
+  if (!ap.pointShopRedeems.lifetime || typeof ap.pointShopRedeems.lifetime !== 'object') {
+    ap.pointShopRedeems.lifetime = {};
+  }
   return ap;
+}
+
+export function getActivityPointBalance(player, now = Date.now()) {
+  const ap = normalizeActivityProgress(player, now);
+  return Math.max(0, Math.floor(Number(ap.activityPoints || 0)));
+}
+
+export function addActivityPoints(player, amount, now = Date.now()) {
+  const gain = Math.max(0, Math.floor(Number(amount || 0)));
+  const ap = normalizeActivityProgress(player, now);
+  if (gain <= 0) return { ok: true, amount: 0, balance: Number(ap.activityPoints || 0) };
+  ap.activityPoints = Math.max(0, Math.floor(Number(ap.activityPoints || 0))) + gain;
+  ap.activityPointsEarned = Math.max(0, Math.floor(Number(ap.activityPointsEarned || 0))) + gain;
+  return { ok: true, amount: gain, balance: ap.activityPoints };
+}
+
+export function spendActivityPoints(player, amount, now = Date.now()) {
+  const cost = Math.max(0, Math.floor(Number(amount || 0)));
+  const ap = normalizeActivityProgress(player, now);
+  const balance = Math.max(0, Math.floor(Number(ap.activityPoints || 0)));
+  if (cost <= 0) return { ok: true, amount: 0, balance };
+  if (balance < cost) return { ok: false, error: 'activity points not enough', balance };
+  ap.activityPoints = balance - cost;
+  ap.activityPointsSpent = Math.max(0, Math.floor(Number(ap.activityPointsSpent || 0))) + cost;
+  return { ok: true, amount: cost, balance: ap.activityPoints };
 }
 
 export function getActivityStatePayload(player, now = Date.now()) {
@@ -187,6 +225,11 @@ export function getActivityStatePayload(player, now = Date.now()) {
     meta: {
       double_dungeon: doubleDungeonTarget,
       world_boss_bounty: bountyTarget
+    },
+    currency: {
+      activity_points: Number(ap.activityPoints || 0),
+      activity_points_earned: Number(ap.activityPointsEarned || 0),
+      activity_points_spent: Number(ap.activityPointsSpent || 0)
     },
     progress: {
       demon_slayer_order: ap.demonSlayer || { points: 0, bossKills: 0, lastHitBonus: 0 },
@@ -240,6 +283,7 @@ export function getMobRewardActivityBonus(member, mobTemplate, now = Date.now(),
       }
       ap.doubleDungeon.kills = Math.max(0, Number(ap.doubleDungeon.kills || 0)) + 1;
       ap.doubleDungeon.score = Math.max(0, Number(ap.doubleDungeon.score || 0)) + 1;
+      addActivityPoints(member, 1, now);
       notes.push(`双倍秘境:${target.zoneName}`);
     }
   }
@@ -259,6 +303,7 @@ export function recordRefineActivity(player, { success = false, newLevel = 0 } =
   const ap = normalizeActivityProgress(player, now);
   const carnival = ap.refineCarnival || (ap.refineCarnival = { _weekKey: getChinaDate(now).weekKey, attempts: 0, milestones: {} });
   carnival.attempts = Math.max(0, Number(carnival.attempts || 0)) + 1;
+  addActivityPoints(player, 1, now);
   const msgs = [];
   if (success && [10, 20, 30].includes(Number(newLevel || 0)) && !carnival.milestones?.[String(newLevel)]) {
     if (!carnival.milestones) carnival.milestones = {};
@@ -297,6 +342,7 @@ export function recordTreasurePetFestivalActivity(player, {
     fest.petSyntheses = Math.max(0, Number(fest.petSyntheses || 0)) + Math.max(0, Number(petSyntheses || 0));
     const deltaScore = treasureDelta + petDelta;
     fest.score = Math.max(0, Number(fest.score || 0)) + deltaScore;
+    if (deltaScore > 0) addActivityPoints(player, Math.max(1, Math.floor(deltaScore / 10)), now);
     if (deltaScore > 0) msgs.push(`宝藏奇缘：活跃度 +${deltaScore}（当前 ${fest.score}）`);
   }
 
@@ -306,6 +352,7 @@ export function recordTreasurePetFestivalActivity(player, {
     pc.petSyntheses = Math.max(0, Number(pc.petSyntheses || 0)) + Math.max(0, Number(petSyntheses || 0));
     const deltaScore = Math.max(0, Number(petBookUses || 0)) * 3 + Math.max(0, Number(petSyntheses || 0)) * 12;
     pc.score = Math.max(0, Number(pc.score || 0)) + deltaScore;
+    if (deltaScore > 0) addActivityPoints(player, Math.max(1, Math.floor(deltaScore / 10)), now);
     msgs.push(`宠物狂欢日：积分 +${deltaScore}（当前 ${pc.score}）`);
   }
 
@@ -315,6 +362,7 @@ export function recordTreasurePetFestivalActivity(player, {
     ts.treasureAdvances = Math.max(0, Number(ts.treasureAdvances || 0)) + Math.max(0, Number(treasureAdvances || 0));
     const deltaScore = Math.max(0, Number(treasureUpgrades || 0)) * 2 + Math.max(0, Number(treasureAdvances || 0)) * 4;
     ts.score = Math.max(0, Number(ts.score || 0)) + deltaScore;
+    if (deltaScore > 0) addActivityPoints(player, Math.max(1, Math.floor(deltaScore / 10)), now);
     msgs.push(`法宝冲刺日：积分 +${deltaScore}（当前 ${ts.score}）`);
   }
 
@@ -353,6 +401,7 @@ export function recordBossKillActivities({
       const gain = Math.floor((idx === 0 ? 10 : 3) * pointBonus);
       ap.demonSlayer.points = Math.max(0, Number(ap.demonSlayer?.points || 0)) + gain;
       ap.demonSlayer.bossKills = Math.max(0, Number(ap.demonSlayer?.bossKills || 0)) + 1;
+      addActivityPoints(p, idx === 0 ? 2 : 1, now);
       awarded.add(name);
       if (idx === 0) {
         messages.push({ player: p, text: `限时屠魔令：伤害第1，积分 +${gain}` });
@@ -366,6 +415,7 @@ export function recordBossKillActivities({
         const gain = Math.floor(5 * pointBonus);
         ap.demonSlayer.points = Math.max(0, Number(ap.demonSlayer?.points || 0)) + gain;
         ap.demonSlayer.lastHitBonus = Math.max(0, Number(ap.demonSlayer?.lastHitBonus || 0)) + gain;
+        addActivityPoints(p, 1, now);
         messages.push({ player: p, text: `限时屠魔令：尾刀奖励，积分 +${gain}` });
       }
     }
@@ -378,6 +428,7 @@ export function recordBossKillActivities({
       normalizeActivityProgress(p, now);
       const ap = p.flags.activityProgress;
       ap.cultivationRush.kills = Math.max(0, Number(ap.cultivationRush?.kills || 0)) + 1;
+      addActivityPoints(p, 1, now);
     });
   }
 
@@ -389,6 +440,7 @@ export function recordBossKillActivities({
       const ap = p.flags.activityProgress;
       const gain = idx === 0 ? 15 : 5;
       ap.guildAssault.contribution = Math.max(0, Number(ap.guildAssault?.contribution || 0)) + gain;
+      addActivityPoints(p, idx === 0 ? 2 : 1, now);
     });
   }
 
@@ -401,6 +453,7 @@ export function recordBossKillActivities({
       const gain = idx === 0 ? 6 : 2;
       ap.luckyDropDay.points = Math.max(0, Number(ap.luckyDropDay?.points || 0)) + gain;
       ap.luckyDropDay.bossKills = Math.max(0, Number(ap.luckyDropDay?.bossKills || 0)) + 1;
+      addActivityPoints(p, 1, now);
       if (idx === 0) messages.push({ player: p, text: `幸运掉落日：BOSS伤害第一，幸运积分+${gain}` });
     });
     if (lastHitName) {
@@ -411,6 +464,7 @@ export function recordBossKillActivities({
         const gain = 3;
         ap.luckyDropDay.points = Math.max(0, Number(ap.luckyDropDay?.points || 0)) + gain;
         ap.luckyDropDay.lastHitBonus = Math.max(0, Number(ap.luckyDropDay?.lastHitBonus || 0)) + gain;
+        addActivityPoints(p, 1, now);
         messages.push({ player: p, text: `幸运掉落日：尾刀奖励，幸运积分+${gain}` });
       }
     }
@@ -430,6 +484,7 @@ export function recordBossKillActivities({
         const gain = idx === 0 ? 18 : 6;
         ap.worldBossBounty.points = Math.max(0, Number(ap.worldBossBounty?.points || 0)) + gain;
         ap.worldBossBounty.kills = Math.max(0, Number(ap.worldBossBounty?.kills || 0)) + 1;
+        addActivityPoints(p, idx === 0 ? 2 : 1, now);
         if (idx === 0) messages.push({ player: p, text: `世界BOSS悬赏：伤害第一，悬赏积分+${gain}` });
       });
       if (lastHitName) {
@@ -443,6 +498,7 @@ export function recordBossKillActivities({
           const gain = 5;
           ap.worldBossBounty.points = Math.max(0, Number(ap.worldBossBounty?.points || 0)) + gain;
           ap.worldBossBounty.lastHitBonus = Math.max(0, Number(ap.worldBossBounty?.lastHitBonus || 0)) + gain;
+          addActivityPoints(p, 1, now);
           messages.push({ player: p, text: `世界BOSS悬赏：尾刀奖励，悬赏积分+${gain}` });
         }
       }
@@ -459,6 +515,7 @@ export function recordBossKillActivities({
       ap.demonSlayer.points = Math.max(0, Number(ap.demonSlayer?.points || 0)) + gain;
       ap.crossHunter.points = Math.max(0, Number(ap.crossHunter?.points || 0)) + gain;
       ap.crossHunter.kills = Math.max(0, Number(ap.crossHunter?.kills || 0)) + 1;
+      addActivityPoints(p, idx === 0 ? 3 : 1, now);
       if (idx === 0) messages.push({ player: p, text: `跨服猎王：跨服BOSS伤害第一，猎王积分+${gain}` });
     });
   }

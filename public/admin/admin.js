@@ -419,6 +419,12 @@ const crossRankStartHourInput = document.getElementById('cross-rank-start-hour')
 const crossRankStartMinuteInput = document.getElementById('cross-rank-start-minute');
 const crossRankDurationInput = document.getElementById('cross-rank-duration');
 const eventTimeMsg = document.getElementById('event-time-msg');
+const activityPointShopMsg = document.getElementById('activity-point-shop-msg');
+const activityPointShopLoadBtn = document.getElementById('activity-point-shop-load-btn');
+const activityPointShopAddBtn = document.getElementById('activity-point-shop-add-btn');
+const activityPointShopSaveBtn = document.getElementById('activity-point-shop-save-btn');
+const activityPointShopList = document.getElementById('activity-point-shop-list');
+let activityPointShopRowsCache = [];
 
 // 每日幸运玩家相关
 const dailyLuckyMsg = document.getElementById('daily-lucky-msg');
@@ -494,6 +500,155 @@ async function saveEventTimeSettings() {
   } catch (err) {
     eventTimeMsg.textContent = `保存失败: ${err.message}`;
     eventTimeMsg.style.color = 'red';
+  }
+}
+
+async function loadActivityPointShopConfig() {
+  if (!activityPointShopList || !activityPointShopMsg) return;
+  activityPointShopMsg.textContent = '';
+  try {
+    const data = await api('/admin/activity-point-shop', 'GET');
+    const config = data?.config || { version: 1, items: [] };
+    activityPointShopRowsCache = Array.isArray(config.items) ? config.items : [];
+    renderActivityPointShopRows();
+    activityPointShopMsg.textContent = '加载成功';
+    activityPointShopMsg.style.color = 'green';
+    setTimeout(() => { activityPointShopMsg.textContent = ''; }, 1500);
+  } catch (err) {
+    activityPointShopMsg.textContent = `加载失败: ${err.message}`;
+    activityPointShopMsg.style.color = 'red';
+  }
+}
+
+function formatRewardItemsInput(items) {
+  if (!Array.isArray(items) || !items.length) return '';
+  return items
+    .map((it) => {
+      const id = String(it?.id || '').trim();
+      const qty = Math.max(1, Math.floor(Number(it?.qty || 1)));
+      return id ? `${id}*${qty}` : '';
+    })
+    .filter(Boolean)
+    .join(', ');
+}
+
+function parseRewardItemsInput(text) {
+  const raw = String(text || '').trim();
+  if (!raw) return [];
+  return raw.split(',')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => {
+      const [idRaw, qtyRaw] = part.split('*').map((s) => String(s || '').trim());
+      return {
+        id: idRaw,
+        qty: Math.max(1, Math.floor(Number(qtyRaw || 1)))
+      };
+    })
+    .filter((it) => it.id);
+}
+
+function activityPointShopEmptyItem() {
+  return {
+    id: '',
+    name: '',
+    desc: '',
+    active: true,
+    cost: 1,
+    limitType: 'none',
+    limit: 0,
+    minLevel: 0,
+    maxLevel: 0,
+    needVip: false,
+    needSvip: false,
+    reward: { gold: 0, items: [] }
+  };
+}
+
+function renderActivityPointShopRows() {
+  if (!activityPointShopList) return;
+  const rows = Array.isArray(activityPointShopRowsCache) ? activityPointShopRowsCache : [];
+  activityPointShopList.innerHTML = '';
+  if (!rows.length) {
+    activityPointShopList.innerHTML = '<tr><td colspan="11" style="text-align:center;color:#999;">暂无商品，点击“添加商品”</td></tr>';
+    return;
+  }
+  rows.forEach((item, index) => {
+    const tr = document.createElement('tr');
+    tr.dataset.index = String(index);
+    const reward = item.reward || {};
+    tr.innerHTML = `
+      <td><input type="checkbox" data-k="active" ${item.active !== false ? 'checked' : ''}></td>
+      <td><input data-k="id" type="text" value="${String(item.id || '').replace(/"/g, '&quot;')}" style="width:120px;"></td>
+      <td><input data-k="name" type="text" value="${String(item.name || '').replace(/"/g, '&quot;')}" style="width:120px;"></td>
+      <td><input data-k="cost" type="number" min="1" value="${Math.max(1, Number(item.cost || 1))}" style="width:70px;"></td>
+      <td>
+        <select data-k="limitType" style="width:78px;">
+          <option value="none"${String(item.limitType||'none')==='none'?' selected':''}>不限</option>
+          <option value="daily"${String(item.limitType)==='daily'?' selected':''}>每日</option>
+          <option value="weekly"${String(item.limitType)==='weekly'?' selected':''}>每周</option>
+          <option value="lifetime"${String(item.limitType)==='lifetime'?' selected':''}>终身</option>
+        </select>
+        <input data-k="limit" type="number" min="0" value="${Math.max(0, Number(item.limit || 0))}" style="width:58px; margin-top:4px;">
+      </td>
+      <td>
+        <input data-k="minLevel" type="number" min="0" value="${Math.max(0, Number(item.minLevel || 0))}" style="width:58px;" placeholder="最低">
+        <input data-k="maxLevel" type="number" min="0" value="${Math.max(0, Number(item.maxLevel || 0))}" style="width:58px; margin-top:4px;" placeholder="最高">
+      </td>
+      <td>
+        <label style="display:block;"><input data-k="needVip" type="checkbox" ${item.needVip ? 'checked' : ''}>VIP</label>
+        <label style="display:block;"><input data-k="needSvip" type="checkbox" ${item.needSvip ? 'checked' : ''}>SVIP</label>
+      </td>
+      <td><input data-k="rewardGold" type="number" min="0" value="${Math.max(0, Number(reward.gold || 0))}" style="width:88px;"></td>
+      <td><input data-k="rewardItems" type="text" value="${formatRewardItemsInput(reward.items).replace(/"/g, '&quot;')}" style="width:220px;" placeholder="item_id*1,item_id*2"></td>
+      <td><input data-k="desc" type="text" value="${String(item.desc || '').replace(/"/g, '&quot;')}" style="width:160px;"></td>
+      <td><button type="button" class="btn-small" data-act="del">删除</button></td>
+    `;
+    activityPointShopList.appendChild(tr);
+  });
+}
+
+function collectActivityPointShopConfigFromUi() {
+  const rows = [];
+  if (!activityPointShopList) return { version: 1, items: rows };
+  activityPointShopList.querySelectorAll('tr[data-index]').forEach((tr) => {
+    const getVal = (k) => tr.querySelector(`[data-k="${k}"]`);
+    const item = {
+      active: !!getVal('active')?.checked,
+      id: String(getVal('id')?.value || '').trim(),
+      name: String(getVal('name')?.value || '').trim(),
+      cost: Math.max(1, Math.floor(Number(getVal('cost')?.value || 1))),
+      limitType: String(getVal('limitType')?.value || 'none'),
+      limit: Math.max(0, Math.floor(Number(getVal('limit')?.value || 0))),
+      minLevel: Math.max(0, Math.floor(Number(getVal('minLevel')?.value || 0))),
+      maxLevel: Math.max(0, Math.floor(Number(getVal('maxLevel')?.value || 0))),
+      needVip: !!getVal('needVip')?.checked,
+      needSvip: !!getVal('needSvip')?.checked,
+      desc: String(getVal('desc')?.value || '').trim(),
+      reward: {
+        gold: Math.max(0, Math.floor(Number(getVal('rewardGold')?.value || 0))),
+        items: parseRewardItemsInput(getVal('rewardItems')?.value || '')
+      }
+    };
+    if (item.id) rows.push(item);
+  });
+  return { version: 1, items: rows };
+}
+
+async function saveActivityPointShopConfig() {
+  if (!activityPointShopList || !activityPointShopMsg) return;
+  activityPointShopMsg.textContent = '';
+  try {
+    const config = collectActivityPointShopConfigFromUi();
+    const data = await api('/admin/activity-point-shop/update', 'POST', { config });
+    activityPointShopRowsCache = Array.isArray(data?.config?.items) ? data.config.items : config.items;
+    renderActivityPointShopRows();
+    activityPointShopMsg.textContent = '保存成功';
+    activityPointShopMsg.style.color = 'green';
+    setTimeout(() => { activityPointShopMsg.textContent = ''; }, 1500);
+  } catch (err) {
+    activityPointShopMsg.textContent = `保存失败: ${err.message}`;
+    activityPointShopMsg.style.color = 'red';
   }
 }
 
@@ -1783,6 +1938,8 @@ async function login() {
     await loadSpecialBossSettings();
     await loadCultivationBossSettings();
     await loadPersonalBossSettings();
+    await loadEventTimeSettings();
+    await loadActivityPointShopConfig();
   } catch (err) {
     loginMsg.textContent = err.message;
   }
@@ -6004,6 +6161,7 @@ async function initDashboard() {
     loadCultivationBossSettings();
     loadPersonalBossSettings();
     loadEventTimeSettings();
+    loadActivityPointShopConfig();
     loadClassBonusConfig();
     loadTrainingFruitSettings();
     loadTrainingSettings();
@@ -6020,6 +6178,27 @@ initCollapsibleBlocks();
 
 document.getElementById('admin-login-btn').addEventListener('click', login);
 document.getElementById('refresh-users').addEventListener('click', () => refreshUsers(currentUsersPage));
+if (activityPointShopLoadBtn) activityPointShopLoadBtn.addEventListener('click', loadActivityPointShopConfig);
+if (activityPointShopAddBtn) {
+  activityPointShopAddBtn.addEventListener('click', () => {
+    if (!Array.isArray(activityPointShopRowsCache)) activityPointShopRowsCache = [];
+    activityPointShopRowsCache.push(activityPointShopEmptyItem());
+    renderActivityPointShopRows();
+  });
+}
+if (activityPointShopSaveBtn) activityPointShopSaveBtn.addEventListener('click', saveActivityPointShopConfig);
+if (activityPointShopList) {
+  activityPointShopList.addEventListener('click', (e) => {
+    const btn = e.target?.closest?.('button[data-act="del"]');
+    if (!btn) return;
+    const tr = btn.closest('tr[data-index]');
+    const index = Number(tr?.dataset?.index);
+    if (!Number.isInteger(index) || index < 0) return;
+    if (!Array.isArray(activityPointShopRowsCache)) activityPointShopRowsCache = [];
+    activityPointShopRowsCache.splice(index, 1);
+    renderActivityPointShopRows();
+  });
+}
 if (usersSearchBtn) {
   usersSearchBtn.addEventListener('click', () => {
     currentUsersSearch = (usersSearchInput?.value || '').trim();

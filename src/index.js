@@ -171,6 +171,8 @@ import {
   setTreasureTowerXuanmingDropChance
 } from './game/treasure.js';
 
+const ACTIVITY_POINT_SHOP_SETTING_KEY = 'activity_point_shop_config_v1';
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -501,6 +503,72 @@ async function requireAdmin(req) {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) return null;
   return verifyAdminSession(token);
+}
+
+function normalizeActivityPointShopConfig(raw) {
+  const src = raw && typeof raw === 'object' ? raw : {};
+  const list = Array.isArray(src.items) ? src.items : [];
+  const items = list.map((entry, index) => {
+    const id = String(entry?.id || '').trim();
+    if (!id) return null;
+    const rewardItems = Array.isArray(entry?.reward?.items) ? entry.reward.items : [];
+    return {
+      id,
+      name: String(entry?.name || id).trim(),
+      desc: String(entry?.desc || '').trim(),
+      active: entry?.active !== false,
+      cost: Math.max(1, Math.floor(Number(entry?.cost || 0))),
+      limitType: ['none', 'daily', 'weekly', 'lifetime'].includes(String(entry?.limitType || 'none'))
+        ? String(entry?.limitType || 'none')
+        : 'none',
+      limit: Math.max(0, Math.floor(Number(entry?.limit || 0))),
+      minLevel: Math.max(0, Math.floor(Number(entry?.minLevel || 0))),
+      maxLevel: Math.max(0, Math.floor(Number(entry?.maxLevel || 0))),
+      needVip: Boolean(entry?.needVip),
+      needSvip: Boolean(entry?.needSvip),
+      reward: {
+        gold: Math.max(0, Math.floor(Number(entry?.reward?.gold || 0))),
+        items: rewardItems
+          .map((it) => ({
+            id: String(it?.id || '').trim(),
+            qty: Math.max(1, Math.floor(Number(it?.qty || 1)))
+          }))
+          .filter((it) => it.id)
+      },
+      sort: Number.isFinite(Number(entry?.sort)) ? Number(entry.sort) : index
+    };
+  }).filter((it) => it && it.cost > 0 && (it.reward.gold > 0 || it.reward.items.length > 0));
+  items.sort((a, b) => (a.sort - b.sort) || a.id.localeCompare(b.id));
+  return { version: 1, items };
+}
+
+function validateActivityPointShopConfig(config) {
+  const normalized = normalizeActivityPointShopConfig(config);
+  const seen = new Set();
+  for (const item of normalized.items) {
+    if (seen.has(item.id)) throw new Error(`商品ID重复: ${item.id}`);
+    seen.add(item.id);
+    for (const rewardItem of item.reward.items) {
+      if (!ITEM_TEMPLATES[rewardItem.id]) {
+        throw new Error(`商品 ${item.id} 包含不存在的物品: ${rewardItem.id}`);
+      }
+    }
+  }
+  return normalized;
+}
+
+let activityPointShopConfigCache = null;
+async function getActivityPointShopConfigCached(forceRefresh = false) {
+  if (!forceRefresh && activityPointShopConfigCache) return activityPointShopConfigCache;
+  let raw = {};
+  try {
+    raw = await getSetting(ACTIVITY_POINT_SHOP_SETTING_KEY, '{}');
+    if (typeof raw === 'string') raw = JSON.parse(raw || '{}');
+  } catch {
+    raw = {};
+  }
+  activityPointShopConfigCache = normalizeActivityPointShopConfig(raw);
+  return activityPointShopConfigCache;
 }
 
 const BACKUP_TABLES = [
@@ -1107,6 +1175,31 @@ app.get('/admin/event-time-settings', async (req, res) => {
       durationMinutes: crossRankConfig.durationMinutes
     }
   });
+});
+
+app.get('/admin/activity-point-shop', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  try {
+    const config = await getActivityPointShopConfigCached(true);
+    res.json({ ok: true, config });
+  } catch (err) {
+    res.status(500).json({ error: err.message || '加载失败' });
+  }
+});
+
+app.post('/admin/activity-point-shop/update', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  try {
+    const payload = req.body?.config ?? req.body ?? {};
+    const config = validateActivityPointShopConfig(payload);
+    await setSetting(ACTIVITY_POINT_SHOP_SETTING_KEY, JSON.stringify(config));
+    activityPointShopConfigCache = config;
+    res.json({ ok: true, config });
+  } catch (err) {
+    res.status(400).json({ error: err.message || '保存失败' });
+  }
 });
 
 app.post('/admin/event-time-settings/update', async (req, res) => {
@@ -10381,6 +10474,9 @@ io.on('connection', (socket) => {
       },
       rechargeApi,
       tradeApi,
+      activityApi: {
+        getPointShopConfig: () => getActivityPointShopConfigCached(false)
+      },
       consignApi,
       mailApi: {
         sendMail,

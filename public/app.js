@@ -4436,6 +4436,60 @@ function showAutoFullBossModal() {
     rankModal.classList.remove('hidden');
   }
 
+  async function showActivityPointShopModal(payload) {
+    const points = Math.max(0, Math.floor(Number(payload?.points || 0)));
+    const items = Array.isArray(payload?.items) ? payload.items : [];
+    const options = items.map((it) => {
+      const tags = [];
+      if (it.minLevel > 0) tags.push(`Lv>=${it.minLevel}`);
+      if (it.maxLevel > 0) tags.push(`Lv<=${it.maxLevel}`);
+      if (it.needVip) tags.push('VIP');
+      if (it.needSvip) tags.push('SVIP');
+      if (it.limitText && it.limitText !== '不限') tags.push(it.limitText);
+      const extra = tags.length ? ` | ${tags.join(' / ')}` : '';
+      return {
+        value: `redeem:${it.id}`,
+        label: `${it.name}（${Number(it.cost || 0)}积分）`,
+        description: `${it.rewardText || ''}${extra}${it.desc ? ` | ${it.desc}` : ''}`
+      };
+    });
+    await promptMultiSelectModal({
+      title: '活动积分商城',
+      text: `当前活动积分：${points}\n点击商品立即发起兑换（奖励通过邮件发放）`,
+      options,
+      selectedValues: [],
+      singleSelect: true,
+      submitOnSelect: true,
+      closeOnSelect: true,
+      hideOk: true,
+      cancelText: '关闭',
+      onSelect: async (value) => {
+        const raw = String(value || '');
+        if (!raw.startsWith('redeem:')) return;
+        const itemId = raw.slice('redeem:'.length);
+        const item = items.find((x) => String(x.id) === itemId);
+        if (!item) return;
+        let qty = 1;
+        const canStack = !item.limit || item.limitType === 'none' || Number(item.limit || 0) > 1;
+        if (canStack) {
+          const input = await promptModal({
+            title: '兑换数量',
+            text: `${item.name}\n单价：${Number(item.cost || 0)} 积分`,
+            placeholder: '输入数量（默认1）',
+            value: '1',
+            allowEmpty: true
+          });
+          if (input === null) return;
+          const n = Number((input || '1').trim() || '1');
+          qty = Number.isFinite(n) ? Math.max(1, Math.floor(n)) : 1;
+        }
+        if (!socket) return showToast('未连接服务器');
+        socket.emit('cmd', { text: `活动 redeem ${itemId} ${qty}`, source: 'ui' });
+        showToast(`已请求兑换：${item.name} x${qty}`);
+      }
+    });
+  }
+
   function runActivityCenterAction(action) {
     if (!socket) {
       showToast('未连接服务器');
@@ -4453,6 +4507,11 @@ function showAutoFullBossModal() {
     if (action === 'claim') {
       socket.emit('cmd', { text: '活动 claim', source: 'ui' });
       showToast('已请求领取活动奖励（请留意聊天/邮件）');
+      return;
+    }
+    if (action === 'shop') {
+      socket.emit('cmd', { text: '活动 shop', source: 'ui' });
+      showToast('已请求活动积分商城');
       return;
     }
     if (action === 'rank_all') {
@@ -4533,6 +4592,7 @@ function showAutoFullBossModal() {
     const activityState = lastState?.activities || {};
     const activeList = Array.isArray(activityState.active) ? activityState.active : [];
     const meta = activityState.meta || {};
+    const currency = activityState.currency || {};
     const progress = activityState.progress || {};
     const doubleDungeon = progress.double_dungeon || {};
     const petCarnival = progress.pet_carnival_day || {};
@@ -4550,6 +4610,7 @@ function showAutoFullBossModal() {
     const bountyMeta = meta.world_boss_bounty || {};
     const summaryLines = [
       activeList.length ? `当前活动：${activeList.map((a) => a.name).join('、')}` : '当前没有进行中的限时活动',
+      `活动积分：${Number(currency.activity_points || 0)}（累计获得 ${Number(currency.activity_points_earned || 0)} / 消费 ${Number(currency.activity_points_spent || 0)}）`,
       `双倍秘境：${ddMeta.zoneName || doubleDungeon.zoneId || '-'}（击杀 ${Number(doubleDungeon.kills || 0)}）`,
       `世界BOSS悬赏：${bountyMeta.mobName || bounty.mobId || '-'}（积分 ${Number(bounty.points || 0)} / 击杀 ${Number(bounty.kills || 0)}）`,
       `宠物狂欢日：${Number(petCarnival.score || 0)} 分（打书 ${Number(petCarnival.petBookUses || 0)} / 合宠 ${Number(petCarnival.petSyntheses || 0)}）`,
@@ -4569,6 +4630,7 @@ function showAutoFullBossModal() {
       options: [
         { value: 'refresh', label: '刷新活动状态' },
         { value: 'claim', label: '领取活动奖励' },
+        { value: 'shop', label: '积分商城' },
         { value: 'rank_all', label: '查看全部排行榜' },
         { value: 'rank_double', label: '查看双倍秘境榜' },
         { value: 'rank_bounty', label: '查看悬赏榜' },
@@ -4585,7 +4647,7 @@ function showAutoFullBossModal() {
       selectedValues: [],
       singleSelect: true,
       submitOnSelect: true,
-      closeOnSelect: (value) => String(value || '').startsWith('rank_'),
+      closeOnSelect: (value) => String(value || '').startsWith('rank_') || String(value || '') === 'shop',
       hideOk: true,
       cancelText: '关闭',
       onSelect: (value) => runActivityCenterAction(value)
@@ -7841,6 +7903,9 @@ function enterGame(name) {
   });
   socket.on('activity_rank_data', (payload) => {
     renderActivityRankModal(payload || {});
+  });
+  socket.on('activity_point_shop_data', (payload) => {
+    showActivityPointShopModal(payload || {});
   });
   socket.on('guild_members', (payload) => {
     if (!payload || !payload.ok) {
