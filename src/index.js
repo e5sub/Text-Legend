@@ -4339,6 +4339,12 @@ function hasSpecialEffects(effects) {
   return effects && Object.keys(effects).length > 0;
 }
 
+function isBlockedCommonCharacterSkillBookDrop(itemId) {
+  const item = ITEM_TEMPLATES[itemId];
+  if (!item) return false;
+  return item.type === 'book' && String(item.rarity || '') === 'common';
+}
+
 function rollRarityDrop(mobTemplate, bonus = 1) {
   if (!isBossMob(mobTemplate)) return null;
   const table = RARITY_BOSS;
@@ -4354,6 +4360,7 @@ function rollRarityDrop(mobTemplate, bonus = 1) {
       // 排除bossOnly标记的装备，这些应该只在特定BOSS掉落
       const filteredPool = pool.filter((id) => {
         const item = ITEM_TEMPLATES[id];
+        if (isBlockedCommonCharacterSkillBookDrop(id)) return false;
         if (item?.bossOnly) return false;
         if (item?.worldBossOnly && !isWorldBossDropMob(mobTemplate)) return false;
         if (item?.crossWorldBossOnly && !allowUltimateDrop) return false;
@@ -4742,6 +4749,7 @@ function dropLoot(mobTemplate, bonus = 1) {
   if (mobTemplate.drops) {
     mobTemplate.drops.forEach((drop) => {
       const dropItem = ITEM_TEMPLATES[drop.id];
+      if (isBlockedCommonCharacterSkillBookDrop(drop.id)) return;
       if (dropItem?.bossOnly && !isBossMob(mobTemplate)) return;
       if (dropItem?.worldBossOnly && !isWorldBossDropMob(mobTemplate)) return;
       if (dropItem?.crossWorldBossOnly && !allowUltimateDrop) return;
