@@ -5110,6 +5110,12 @@ const tradeApi = {
 };
 
 const CONSIGN_EQUIPMENT_TYPES = new Set(['weapon', 'armor', 'accessory', 'book']);
+function isConsignPetSkillBook(itemId, item) {
+  return String(itemId || '').startsWith('pet_book_') || item?.type === 'pet_book';
+}
+function isConsignSellAllowed(itemId, item) {
+  return CONSIGN_EQUIPMENT_TYPES.has(item?.type) || isConsignPetSkillBook(itemId, item);
+}
 const CONSIGN_FEE_RATE = 0.1;
 const CONSIGN_EXPIRE_DEFAULT_HOURS = 48;
 const CONSIGN_CLEANUP_INTERVAL_MS = 10 * 60 * 1000;
@@ -5152,7 +5158,7 @@ const consignApi = {
       if (!itemResult.ok) return { ok: false, msg: '未找到物品。' };
       const item = ITEM_TEMPLATES[itemId];
 
-      if (!CONSIGN_EQUIPMENT_TYPES.has(item.type)) return { ok: false, msg: '仅可寄售装备。' };
+      if (!isConsignSellAllowed(itemId, item)) return { ok: false, msg: '仅可寄售装备或宠物技能书。' };
 
       // 检查物品是否可寄售
       if (item?.unconsignable) return { ok: false, msg: '该物品不可寄售。' };

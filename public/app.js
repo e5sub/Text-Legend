@@ -2230,16 +2230,20 @@ function renderConsignMine(items) {
 function renderConsignInventory(items) {
   if (!consignUi.inventoryList) return;
   consignUi.inventoryList.innerHTML = '';
-  const equipItems = (items || []).filter((item) =>
-    item && ['weapon', 'armor', 'accessory', 'book'].includes(item.type)
+  const sellableItems = (items || []).filter((item) =>
+    item && (
+      ['weapon', 'armor', 'accessory', 'book'].includes(item.type) ||
+      String(item.id || '').startsWith('pet_book_') ||
+      item.type === 'pet_book'
+    )
   );
-  const sortedItems = equipItems.slice().sort(sortByRarityDesc);
+  const sortedItems = sellableItems.slice().sort(sortByRarityDesc);
   consignInventoryItems = sortedItems;
   const { totalPages, page, slice } = paginateItems(sortedItems, consignInventoryPage);
   consignInventoryPage = page;
   if (!slice.length) {
     const empty = document.createElement('div');
-    empty.textContent = '\u6CA1\u6709\u53EF\u5BC4\u552E\u7684\u88C5\u5907';
+    empty.textContent = '\u6CA1\u6709\u53EF\u5BC4\u552E\u7684\u7269\u54C1';
     consignUi.inventoryList.appendChild(empty);
     return;
   }

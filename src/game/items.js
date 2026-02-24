@@ -15,7 +15,7 @@
   scroll_random: { id: 'scroll_random', name: '随机卷', type: 'consumable', teleport: { zone: 'bq_plains', room: 'plains' }, price: 220 },
   scroll_recall: { id: 'scroll_recall', name: '转职令牌', type: 'consumable', price: 380, worldBossOnly: true },
 
-  training_fruit: { id: 'training_fruit', name: '修炼果', type: 'consumable', price: 1800, untradable: true, unconsignable: true, unmail: true },
+  training_fruit: { id: 'training_fruit', name: '修炼果', type: 'consumable', price: 1800, rarity: 'epic', untradable: true, unconsignable: true, unmail: true },
   treasure_exp_material: { id: 'treasure_exp_material', name: '法宝经验丹', type: 'material', price: 0, untradable: true, unconsignable: true, unmail: true },
   willow_dew: { id: 'willow_dew', name: '金柳露', type: 'material', price: 0, untradable: true, unconsignable: true, unmail: true },
   // 法宝（第一期）
