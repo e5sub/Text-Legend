@@ -6513,6 +6513,7 @@ function selectLeastPopulatedRoomAuto(zoneId, roomId, realmId) {
 
 function findAliveBossTarget(player) {
   if (!player) return null;
+  ensureAutoFullPersonalBossTargets(player);
   const realmIds = Array.from(new Set([player.realmId || 1, CROSS_REALM_REALM_ID]));
   const crossBossCooldownUntil = Number(player.flags?.autoFullCrossBossCooldownUntil || 0);
   const playerCultivationLevel = getCultivationLevel(player);
@@ -6563,6 +6564,29 @@ function findAliveBossTarget(player) {
     }
   }
   return best;
+}
+
+function ensureAutoFullPersonalBossTargets(player, now = Date.now()) {
+  if (!player) return;
+  if (!player.flags) player.flags = {};
+  const nextAt = Number(player.flags.autoFullPersonalBossWarmupAt || 0);
+  if (nextAt > now) return;
+  player.flags.autoFullPersonalBossWarmupAt = now + 5000;
+
+  const roomIds = [];
+  const svipActive = isSvipActive(player);
+  const vipActive = isVipActive(player) || svipActive;
+  const svipPermanent = svipActive && !Number(player.flags?.svipExpiresAt || 0);
+  if (vipActive) roomIds.push(getPlayerPersonalBossRoomId(player, 'vip_lair'));
+  if (svipActive) roomIds.push(getPlayerPersonalBossRoomId(player, 'svip_lair'));
+  if (svipPermanent) roomIds.push(getPlayerPersonalBossRoomId(player, 'perma_lair'));
+
+  for (const roomId of roomIds) {
+    if (!roomId) continue;
+    ensurePersonalBossRoom(roomId);
+    const roomRealmId = getRoomRealmId(PERSONAL_BOSS_ZONE_ID, roomId, player.realmId || 1);
+    spawnMobs(PERSONAL_BOSS_ZONE_ID, roomId, roomRealmId);
+  }
 }
 
 function findBossInRoom(roomMobs, player) {
