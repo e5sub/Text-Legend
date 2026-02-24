@@ -7808,8 +7808,8 @@ let PET_SKILL_EFFECTS = {
   pet_sunder_adv: '被动：协战概率施加撕裂压制（约18%~24%，降防/降魔御至约85%~88%）',
   pet_arcane_echo: '被动：协战概率追加回响伤害（约8%~12%，追加约16%~22%）',
   pet_arcane_echo_adv: '被动：协战概率追加回响伤害（约14%~20%，追加约24%~32%）',
-  pet_aoe: '被动：协战概率触发横扫（PVE约18%，额外1目标，伤害约30%）',
-  pet_aoe_adv: '被动：协战概率触发横扫（PVE约30%，额外2目标，伤害约45%）',
+  pet_aoe: '被动：协战概率触发横扫（PVE约18%：额外1目标/30%；PVP约10%：主目标追加18%）',
+  pet_aoe_adv: '被动：协战概率触发横扫（PVE约30%：额外2目标/45%；PVP约18%：主目标追加28%）',
   pet_divine_guard: '被动：协战后概率给予主人神佑减伤（PVE约12%/减伤15%，PVP约8%/减伤12%）',
   pet_kill_soul: '被动：宠物协战击杀时恢复主人生命/法力（各约最大值4.5%）',
   pet_war_horn: '被动：协战概率施加禁疗（额外概率约8%~20%，持续5秒，治疗约10%）',
@@ -9207,6 +9207,16 @@ function calcPetAssistDamageToPlayer(attacker, target) {
   }
   if (hasPetSkillOnPet(pet, 'pet_arcane_echo')) { typeMods.arcaneEchoChance += 0.08; typeMods.arcaneEchoRatio = Math.max(typeMods.arcaneEchoRatio, 0.16); }
   if (hasPetSkillOnPet(pet, 'pet_arcane_echo_adv')) { typeMods.arcaneEchoChance += 0.14; typeMods.arcaneEchoRatio = Math.max(typeMods.arcaneEchoRatio, 0.24); }
+  if (hasPetSkillOnPet(pet, 'pet_aoe')) {
+    typeMods.aoeChance += 0.1;
+    typeMods.aoeTargets = Math.max(typeMods.aoeTargets, 1);
+    typeMods.aoeRatio = Math.max(typeMods.aoeRatio, 0.18);
+  }
+  if (hasPetSkillOnPet(pet, 'pet_aoe_adv')) {
+    typeMods.aoeChance += 0.18;
+    typeMods.aoeTargets = Math.max(typeMods.aoeTargets, 1);
+    typeMods.aoeRatio = Math.max(typeMods.aoeRatio, 0.28);
+  }
   if (hasPetSkillOnPet(pet, 'pet_divine_guard')) {
     typeMods.divineGuardChance = 0.08;
     typeMods.divineGuardDamageMul = 0.88;
@@ -9311,6 +9321,13 @@ function applyPetAssistAttackToPlayer(attacker, target) {
     if (echoDealt > 0) {
       attacker.send(`${petName} echo ${target.name} ${echoDealt}`);
       target.send(`${petName} echo hit ${echoDealt}`);
+    }
+  }
+  if (assist.typeMods.aoeChance > 0 && Math.random() <= assist.typeMods.aoeChance && target.hp > 0) {
+    const sweepDealt = applyDamageToPlayer(target, Math.max(1, Math.floor(dealt * (assist.typeMods.aoeRatio || 0.18))));
+    if (sweepDealt > 0) {
+      attacker.send(`${petName} sweep ${target.name} ${sweepDealt}`);
+      target.send(`${petName} sweep hit ${sweepDealt}`);
     }
   }
   if (assist.typeMods.quickStrikeChance > 0 && Math.random() <= assist.typeMods.quickStrikeChance && target.hp > 0) {
