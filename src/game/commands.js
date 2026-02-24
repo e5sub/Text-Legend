@@ -3096,6 +3096,32 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         const rankType = typeMap[typeRaw] || (typeRaw ? 'all' : 'all');
         const rows = await resolveAllCharacters();
         const boards = getActivityLeaderboards(rows);
+        if (source === 'ui' && player?.socket) {
+          const sectionDefs = [
+            { req: 'demon', key: 'demon_slayer_order', title: '屠魔令积分榜', unit: '分' },
+            { req: 'cultivation', key: 'cultivation_rush_week', title: '修真冲关榜', unit: '次' },
+            { req: 'guild', key: 'guild_boss_assault', title: '行会攻坚个人贡献榜', unit: '点' },
+            { req: 'refine', key: 'refine_carnival', title: '锻造狂欢次数榜', unit: '次' }
+          ];
+          const sections = sectionDefs
+            .filter((def) => rankType === 'all' || rankType === def.req)
+            .map((def) => ({
+              key: def.key,
+              title: def.title,
+              unit: def.unit,
+              rows: Array.isArray(boards?.[def.key]) ? boards[def.key].map((entry, idx) => ({
+                rank: idx + 1,
+                name: entry?.row?.name || '未知',
+                level: Number(entry?.row?.level || 0),
+                score: Number(entry?.score || 0)
+              })) : []
+            }));
+          player.socket.emit('activity_rank_data', {
+            type: rankType,
+            sections
+          });
+          return;
+        }
         const rankLines = formatActivityLeaderboardLines(boards, rankType);
         rankLines.forEach((line) => send(line));
         return;

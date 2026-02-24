@@ -1911,7 +1911,9 @@ function promptMultiSelectModal({
   singleSelect = false,
   submitOnSelect = false,
   onSelect = null,
-  closeOnSelect = true
+  closeOnSelect = true,
+  hideOk = false,
+  cancelText = null
 }) {
   if (!promptUi.modal || !promptUi.input || !promptUi.options) return Promise.resolve(null);
   return new Promise((resolve) => {
@@ -1964,6 +1966,14 @@ function promptMultiSelectModal({
         promptUi.extra.classList.add('hidden');
         promptUi.extra.textContent = '';
       }
+      if (promptUi.ok) {
+        promptUi.ok.classList.remove('hidden');
+        promptUi.ok.disabled = false;
+        promptUi.ok.textContent = '确定';
+      }
+      if (promptUi.cancel) {
+        promptUi.cancel.textContent = '取消';
+      }
     };
 
     promptUi.title.textContent = title || '选择';
@@ -1982,6 +1992,12 @@ function promptMultiSelectModal({
     }
     promptUi.options.classList.remove('hidden');
     promptUi.options.innerHTML = '';
+    if (promptUi.ok) {
+      promptUi.ok.classList.toggle('hidden', !!hideOk);
+    }
+    if (promptUi.cancel && cancelText) {
+      promptUi.cancel.textContent = cancelText;
+    }
 
     (options || []).forEach((opt) => {
       const btn = document.createElement('button');
@@ -2022,7 +2038,10 @@ function promptMultiSelectModal({
     promptUi.modal.addEventListener('keydown', onKey);
     promptUi.modal.addEventListener('click', onBackdrop);
     promptUi.modal.classList.remove('hidden');
-    setTimeout(() => promptUi.ok.focus(), 0);
+    setTimeout(() => {
+      if (hideOk) promptUi.cancel?.focus();
+      else promptUi.ok?.focus();
+    }, 0);
   });
 }
 
@@ -4346,6 +4365,70 @@ function showAutoFullBossModal() {
     renderRankModal('warrior');
   }
 
+  function setRankModalPresentation({ title = '玩家排行', showTabs = true } = {}) {
+    const rankModal = document.getElementById('rank-modal');
+    if (!rankModal) return;
+    const titleEl = rankModal.querySelector('.modal-title');
+    const tabsWrap = rankModal.querySelector('.rank-tabs');
+    if (titleEl) titleEl.textContent = title;
+    if (tabsWrap) tabsWrap.classList.toggle('hidden', !showTabs);
+  }
+
+  function renderActivityRankModalLoading(label = '活动排行榜') {
+    const rankModal = document.getElementById('rank-modal');
+    const rankList = document.getElementById('rank-list');
+    if (!rankModal || !rankList) return;
+    setRankModalPresentation({ title: label, showTabs: false });
+    rankList.innerHTML = '<div class="modal-text">加载中...</div>';
+    rankModal.classList.remove('hidden');
+  }
+
+  function renderActivityRankModal(payload) {
+    const rankModal = document.getElementById('rank-modal');
+    const rankList = document.getElementById('rank-list');
+    if (!rankModal || !rankList) return;
+    setRankModalPresentation({ title: '活动排行榜', showTabs: false });
+    rankList.innerHTML = '';
+    const sections = Array.isArray(payload?.sections) ? payload.sections : [];
+    if (!sections.length) {
+      rankList.innerHTML = '<div class="modal-text">暂无数据</div>';
+      rankModal.classList.remove('hidden');
+      return;
+    }
+    sections.forEach((section) => {
+      const header = document.createElement('div');
+      header.className = 'modal-text';
+      header.style.fontWeight = '700';
+      header.style.margin = '8px 0 6px';
+      header.textContent = section.title || '排行榜';
+      rankList.appendChild(header);
+      const rows = Array.isArray(section.rows) ? section.rows : [];
+      if (!rows.length) {
+        const empty = document.createElement('div');
+        empty.className = 'rank-item';
+        empty.textContent = '暂无数据';
+        rankList.appendChild(empty);
+        return;
+      }
+      rows.forEach((row) => {
+        const item = document.createElement('div');
+        item.className = 'rank-item';
+        const pos = document.createElement('span');
+        pos.className = 'rank-pos';
+        pos.textContent = `${Number(row.rank || 0)}.`;
+        const name = document.createElement('span');
+        name.textContent = `${row.name || '未知'} Lv${Number(row.level || 0)}`;
+        const value = document.createElement('span');
+        value.textContent = `${Number(row.score || 0)}${section.unit || ''}`;
+        item.appendChild(pos);
+        item.appendChild(name);
+        item.appendChild(value);
+        rankList.appendChild(item);
+      });
+    });
+    rankModal.classList.remove('hidden');
+  }
+
   function runActivityCenterAction(action) {
     if (!socket) {
       showToast('未连接服务器');
@@ -4360,12 +4443,41 @@ function showAutoFullBossModal() {
       showToast('已请求刷新活动状态');
       return;
     }
-    if (action === 'claim') socket.emit('cmd', { text: '活动 claim', source: 'ui' });
-    if (action === 'rank_all') socket.emit('cmd', { text: '活动 rank', source: 'ui' });
-    if (action === 'rank_demon') socket.emit('cmd', { text: '活动 rank 屠魔', source: 'ui' });
-    if (action === 'rank_cult') socket.emit('cmd', { text: '活动 rank 修真', source: 'ui' });
-    if (action === 'rank_guild') socket.emit('cmd', { text: '活动 rank 行会', source: 'ui' });
-    if (action === 'rank_refine') socket.emit('cmd', { text: '活动 rank 锻造', source: 'ui' });
+    if (action === 'claim') {
+      socket.emit('cmd', { text: '活动 claim', source: 'ui' });
+      showToast('已请求领取活动奖励（请留意聊天/邮件）');
+      return;
+    }
+    if (action === 'rank_all') {
+      renderActivityRankModalLoading('活动排行榜');
+      socket.emit('cmd', { text: '活动 rank', source: 'ui' });
+      showToast('已请求活动排行榜');
+      return;
+    }
+    if (action === 'rank_demon') {
+      renderActivityRankModalLoading('屠魔榜');
+      socket.emit('cmd', { text: '活动 rank 屠魔', source: 'ui' });
+      showToast('已请求屠魔榜');
+      return;
+    }
+    if (action === 'rank_cult') {
+      renderActivityRankModalLoading('修真榜');
+      socket.emit('cmd', { text: '活动 rank 修真', source: 'ui' });
+      showToast('已请求修真榜');
+      return;
+    }
+    if (action === 'rank_guild') {
+      renderActivityRankModalLoading('行会攻坚榜');
+      socket.emit('cmd', { text: '活动 rank 行会', source: 'ui' });
+      showToast('已请求行会攻坚榜');
+      return;
+    }
+    if (action === 'rank_refine') {
+      renderActivityRankModalLoading('锻造榜');
+      socket.emit('cmd', { text: '活动 rank 锻造', source: 'ui' });
+      showToast('已请求锻造榜');
+      return;
+    }
   }
 
   async function showActivityCenterModal() {
@@ -4401,6 +4513,8 @@ function showAutoFullBossModal() {
       singleSelect: true,
       submitOnSelect: true,
       closeOnSelect: false,
+      hideOk: true,
+      cancelText: '关闭',
       onSelect: (value) => runActivityCenterAction(value)
     });
   }
@@ -4410,6 +4524,7 @@ function showAutoFullBossModal() {
     const rankList = document.getElementById('rank-list');
     const tabs = document.querySelectorAll('.rank-tab');
 
+    setRankModalPresentation({ title: '玩家排行', showTabs: true });
     // Update active tab
     tabs.forEach(tab => tab.classList.remove('active'));
     document.getElementById(`rank-tab-${classType}`).classList.add('active');
@@ -7647,6 +7762,9 @@ function enterGame(name) {
     const ok = Boolean(payload?.ok);
     const msg = String(payload?.msg || (ok ? '宠物操作成功。' : '宠物操作失败。'));
     showToast(msg, ok ? 1400 : 1800);
+  });
+  socket.on('activity_rank_data', (payload) => {
+    renderActivityRankModal(payload || {});
   });
   socket.on('guild_members', (payload) => {
     if (!payload || !payload.ok) {
