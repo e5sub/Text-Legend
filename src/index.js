@@ -91,6 +91,16 @@ import { runMigrations } from './db/migrate.js';
 import { newCharacter, computeDerived, gainExp, addItem, removeItem, getItemKey, normalizeInventory, normalizeEquipment, getDurabilityMax, getRepairCost } from './game/player.js';
 import { handleCommand, awardKill, summonStats } from './game/commands.js';
 import {
+  getActivityStatePayload,
+  getMobRewardActivityBonus,
+  recordBossKillActivities,
+  getChinaDateParts,
+  formatPrevDateKey,
+  formatPrevWeekKey,
+  getActivityLeaderboardsByPeriod,
+  buildActivitySettlementRewards
+} from './game/activity.js';
+import {
   validateNumber,
   validateItemId,
   validateItemQty,
@@ -5972,6 +5982,69 @@ async function getAllCharactersCached(realmId = 1) {
   return inFlight;
 }
 
+let activitySettlementRunning = false;
+
+async function runActivityRankingSettlements() {
+  if (activitySettlementRunning) return;
+  activitySettlementRunning = true;
+  try {
+    const now = Date.now();
+    const t = getChinaDateParts(now);
+    const shouldSettleDaily = t.hour === 0 && t.minute < 10;
+    const shouldSettleWeekly = t.weekday === 1 && t.hour === 0 && t.minute < 15;
+    if (!shouldSettleDaily && !shouldSettleWeekly) return;
+
+    const realms = realmCache.length ? realmCache : await listRealms();
+    for (const realm of realms) {
+      const realmId = Number(realm?.id || 1) || 1;
+      if (shouldSettleDaily) {
+        const targetDailyKey = formatPrevDateKey(now);
+        const doneKey = `activity_settle_daily_done_${realmId}_${targetDailyKey}`;
+        if (String(await getSetting(doneKey, '0') || '0') !== '1') {
+          const rows = await listAllCharacters(realmId);
+          const boards = getActivityLeaderboardsByPeriod(rows, { dailyKey: targetDailyKey, weekKey: null, limit: 10 });
+          const rewards = buildActivitySettlementRewards(boards, { dailyKey: targetDailyKey, weekKey: null });
+          for (const reward of rewards) {
+            const sentKey = `activity_settle_daily_${realmId}_${targetDailyKey}_${reward.boardKey}_${reward.rank}_${reward.userId}`;
+            if (String(await getSetting(sentKey, '0') || '0') === '1') continue;
+            try {
+              await sendMail(reward.userId, reward.charName, '系统', null, reward.title, reward.body, null, reward.gold, reward.realmId || realmId);
+              await setSetting(sentKey, '1');
+            } catch (err) {
+              console.warn('Failed to send daily activity settlement reward:', err);
+            }
+          }
+          await setSetting(doneKey, '1');
+        }
+      }
+      if (shouldSettleWeekly) {
+        const targetWeekKey = formatPrevWeekKey(now);
+        const doneKey = `activity_settle_weekly_done_${realmId}_${targetWeekKey}`;
+        if (String(await getSetting(doneKey, '0') || '0') !== '1') {
+          const rows = await listAllCharacters(realmId);
+          const boards = getActivityLeaderboardsByPeriod(rows, { dailyKey: null, weekKey: targetWeekKey, limit: 10 });
+          const rewards = buildActivitySettlementRewards(boards, { dailyKey: null, weekKey: targetWeekKey });
+          for (const reward of rewards) {
+            const sentKey = `activity_settle_weekly_${realmId}_${targetWeekKey}_${reward.boardKey}_${reward.rank}_${reward.userId}`;
+            if (String(await getSetting(sentKey, '0') || '0') === '1') continue;
+            try {
+              await sendMail(reward.userId, reward.charName, '系统', null, reward.title, reward.body, null, reward.gold, reward.realmId || realmId);
+              await setSetting(sentKey, '1');
+            } catch (err) {
+              console.warn('Failed to send weekly activity settlement reward:', err);
+            }
+          }
+          await setSetting(doneKey, '1');
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to run activity ranking settlements:', err);
+  } finally {
+    activitySettlementRunning = false;
+  }
+}
+
 const AUTO_FULL_BOSS_LIST = Array.from(new Set(
   Object.values(MOB_TEMPLATES)
     .filter((tpl) => tpl && tpl.name && isBossMob(tpl))
@@ -8826,6 +8899,7 @@ async function buildState(player) {
     training: player.flags?.training || { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 },
     online: { count: onlineCount },
     daily_lucky: dailyLuckyInfo,
+    activities: getActivityStatePayload(player),
     zhuxian_tower: {
       highestClearedFloor: Math.max(0, Math.floor(Number(zhuxianTowerProgress.highestClearedFloor || 0))),
       currentChallengeFloor: Math.max(1, Math.floor(Number(zhuxianTowerProgress.highestClearedFloor || 0)) + 1),
@@ -10302,6 +10376,7 @@ io.on('connection', (socket) => {
       tradeApi,
       consignApi,
       mailApi: {
+        sendMail,
         listMail,
         markMailRead
       }
@@ -11687,6 +11762,17 @@ async function processMobDeath(player, mob, online) {
     bossClassFirstDamageRewardGiven.delete(`${roomRealmId}:${mob.id}`);
   }
   const { rankMap, entries } = isSpecialBossMob ? buildDamageRankMap(mob, damageSnapshot) : { rankMap: {}, entries: [] };
+  if (isBoss) {
+    const activityMsgs = recordBossKillActivities({
+      template,
+      damageEntries: entries,
+      lastHitName: lastHitSnapshot || null,
+      playerResolver: (name) => playersByName(name, roomRealmId) || null
+    });
+    activityMsgs.forEach((entry) => {
+      if (entry?.player?.send && entry?.text) entry.player.send(entry.text);
+    });
+  }
   let lootOwner = player;
   if (!party || partyMembersForReward.length === 0) {
     let ownerName = null;
@@ -11732,8 +11818,9 @@ async function processMobDeath(player, mob, online) {
         partyMult,
         treasureExpPct: Number(member.flags?.treasureExpBonusPct || 0)
       });
-      const finalExp = Math.floor(shareExp * rewardMult);
-      const finalGold = shareGold;
+      const activityBonus = getMobRewardActivityBonus(member, template);
+      const finalExp = Math.floor(shareExp * rewardMult * (activityBonus.expMult || 1));
+      const finalGold = Math.floor(shareGold * (activityBonus.goldMult || 1));
       member.gold += finalGold;
       const leveled = gainExp(member, finalExp);
       const petExpResult = gainActivePetExp(member, finalExp);
@@ -13530,6 +13617,12 @@ async function start() {
 
   // 启动每日幸运玩家定时任务
   setupDailyLucky();
+
+  // 活动排行榜结算（每日/每周）自动发奖（邮件）
+  setInterval(async () => {
+    await runActivityRankingSettlements();
+  }, 60 * 1000);
+  await runActivityRankingSettlements();
 
   setRespawnStore({
     set: (realmId, zoneId, roomId, slotIndex, templateId, respawnAt) => {

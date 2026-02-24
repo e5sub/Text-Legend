@@ -4253,6 +4253,53 @@ function showAutoFullBossModal() {
     renderRankModal('warrior');
   }
 
+  async function showActivityCenterModal() {
+    const activityState = lastState?.activities || {};
+    const activeList = Array.isArray(activityState.active) ? activityState.active : [];
+    const progress = activityState.progress || {};
+    const demon = progress.demon_slayer_order || {};
+    const cult = progress.cultivation_rush_week || {};
+    const guild = progress.guild_boss_assault || {};
+    const refine = progress.refine_carnival || {};
+    const milestone = refine.milestones || {};
+    const summaryLines = [
+      activeList.length ? `当前活动：${activeList.map((a) => a.name).join('、')}` : '当前没有进行中的限时活动',
+      `屠魔令积分：${Number(demon.points || 0)}（击杀 ${Number(demon.bossKills || 0)}）`,
+      `修真冲关：${Number(cult.kills || 0)} 次`,
+      `行会攻坚贡献：${Number(guild.contribution || 0)} 点`,
+      `锻造狂欢：${Number(refine.attempts || 0)} 次（+10 ${milestone['10'] ? '已达成' : '未达成'} / +20 ${milestone['20'] ? '已达成' : '未达成'} / +30 ${milestone['30'] ? '已达成' : '未达成'}）`,
+      '选择操作（可多选）'
+    ];
+    const selected = await promptMultiSelectModal({
+      title: '活动中心',
+      text: summaryLines.join('\n'),
+      options: [
+        { value: 'refresh', label: '刷新活动状态' },
+        { value: 'claim', label: '领取活动奖励' },
+        { value: 'rank_all', label: '查看全部排行榜' },
+        { value: 'rank_demon', label: '查看屠魔榜' },
+        { value: 'rank_cult', label: '查看修真榜' },
+        { value: 'rank_guild', label: '查看行会攻坚榜' },
+        { value: 'rank_refine', label: '查看锻造榜' }
+      ],
+      selectedValues: []
+    });
+    if (!selected || !selected.length) return;
+    if (!socket) {
+      showToast('未连接服务器');
+      return;
+    }
+    if (selected.includes('refresh') && isStateThrottleActive()) {
+      socket.emit('state_request', { reason: 'activity:center' });
+    }
+    if (selected.includes('claim')) socket.emit('cmd', { text: '活动 claim', source: 'ui' });
+    if (selected.includes('rank_all')) socket.emit('cmd', { text: '活动 rank', source: 'ui' });
+    if (selected.includes('rank_demon')) socket.emit('cmd', { text: '活动 rank 屠魔', source: 'ui' });
+    if (selected.includes('rank_cult')) socket.emit('cmd', { text: '活动 rank 修真', source: 'ui' });
+    if (selected.includes('rank_guild')) socket.emit('cmd', { text: '活动 rank 行会', source: 'ui' });
+    if (selected.includes('rank_refine')) socket.emit('cmd', { text: '活动 rank 锻造', source: 'ui' });
+  }
+
   function renderRankModal(classType) {
     const rankModal = document.getElementById('rank-modal');
     const rankList = document.getElementById('rank-list');
@@ -6696,7 +6743,8 @@ function renderState(state) {
     { id: 'effect', label: '\u7279\u6548\u91CD\u7F6E' },
     { id: 'drops', label: '\u5957\u88c5\u6389\u843d' },
     { id: 'switch', label: '\u5207\u6362\u89d2\u8272' },
-    { id: 'rank', label: '\u73a9\u5bb6\u6392\u884c' }
+    { id: 'rank', label: '\u73a9\u5bb6\u6392\u884c' },
+    { id: 'activity_center', label: '\u6D3B\u52A8\u4E2D\u5FC3' }
   ];
   // 只对非VIP玩家显示VIP激活按钮，并且自助领取功能开启时显示领取按钮
   if (!state.stats || !state.stats.vip) {
@@ -6804,6 +6852,10 @@ function renderState(state) {
     }
     if (a.id === 'treasure') {
       showTreasureModal();
+      return;
+    }
+    if (a.id === 'activity_center') {
+      await showActivityCenterModal();
       return;
     }
     if (a.id === 'drops') {

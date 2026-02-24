@@ -16,6 +16,14 @@ import {
 import { addItem, addItemToList, removeItem, removeItemFromList, equipItem, unequipItem, bagLimit, gainExp, computeDerived, getDurabilityMax, getRepairCost, getItemKey, sameEffects } from './player.js';
 import { CLASSES, expForLevel, getStartPosition, ROOM_VARIANT_COUNT } from './constants.js';
 import { getRoom, getAliveMobs, spawnMobs } from './state.js';
+import {
+  getActivityChatLines,
+  getActivityLeaderboards,
+  formatActivityLeaderboardLines,
+  claimActivityRewardsByMail,
+  getRefineMaterialCountForActivity,
+  recordRefineActivity
+} from './activity.js';
 import { clamp, randInt } from './utils.js';
 import { applyDamage } from './combat.js';
 import {
@@ -3064,6 +3072,44 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       }
       return;
     }
+    case 'event':
+    case 'events':
+    case '活动': {
+      const sub = String(args || '').trim().toLowerCase();
+      if (sub.startsWith('rank') || sub.startsWith('榜')) {
+        const typeRaw = sub.replace(/^rank\s*/, '').replace(/^榜\s*/, '').trim();
+        const typeMap = {
+          demon: 'demon',
+          slayer: 'demon',
+          屠魔: 'demon',
+          cultivation: 'cultivation',
+          修真: 'cultivation',
+          guild: 'guild',
+          行会: 'guild',
+          refine: 'refine',
+          锻造: 'refine'
+        };
+        const rankType = typeMap[typeRaw] || (typeRaw ? 'all' : 'all');
+        const rows = await resolveAllCharacters();
+        const boards = getActivityLeaderboards(rows);
+        const rankLines = formatActivityLeaderboardLines(boards, rankType);
+        rankLines.forEach((line) => send(line));
+        return;
+      }
+      if (sub === 'claim' || sub === '领取') {
+        const sendMailFn = mailApi?.sendMail;
+        const result = await claimActivityRewardsByMail(player, {
+          sendMail: sendMailFn,
+          realmId: realmId || player.realmId || 1
+        });
+        result.messages.forEach((line) => send(line));
+        return;
+      }
+      const lines = getActivityChatLines(player);
+      lines.forEach((line) => send(line));
+      send('输入 `活动 rank` 查看排行榜，`活动 claim` 领取可用奖励（邮件发放）。');
+      return;
+    }
     case 'forge': {
       if (source !== 'ui') return;
       if (!args) return;
@@ -3192,7 +3238,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
             Object.values(SHOP_STOCKS).forEach(stockList => {
               stockList.forEach(itemId => allShopItems.add(itemId));
             });
-            const materialCount = getRefineMaterialCount();
+            const { count: materialCount } = getRefineMaterialCountForActivity(getRefineMaterialCount());
             const materials = [];
             const inventory = Array.isArray(player.inventory) ? player.inventory.slice() : [];
             for (const invSlot of inventory) {
@@ -3231,6 +3277,8 @@ export async function handleCommand({ player, players, allCharacters, playersByN
             const success = Math.random() * 100 < successRate;
             const newRefineLevel = success ? nextRefineLevel : (isProtected ? currentRefineLevel : Math.max(0, currentRefineLevel - 1));
             equipped.refine_level = newRefineLevel;
+            const carnivalMsgs = recordRefineActivity(player, { success, newLevel: newRefineLevel });
+            carnivalMsgs.forEach((msg) => results.push(msg));
             current = newRefineLevel;
           }
           results.push(`${item.name}: 当前 +${equipped.refine_level || 0}`);
@@ -3298,7 +3346,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
             stockList.forEach(itemId => allShopItems.add(itemId));
           });
 
-          const materialCount = getRefineMaterialCount();
+          const { count: materialCount } = getRefineMaterialCountForActivity(getRefineMaterialCount());
           const materials = [];
           const inventory = Array.isArray(player.inventory) ? player.inventory.slice() : [];
           for (const slot of inventory) {
@@ -3341,6 +3389,8 @@ export async function handleCommand({ player, players, allCharacters, playersByN
             ? nextRefineLevel
             : (isProtected ? currentRefineLevel : Math.max(0, currentRefineLevel - 1));
           player.equipment[mainEquippedSlot].refine_level = newRefineLevel;
+          const carnivalMsgs = recordRefineActivity(player, { success, newLevel: newRefineLevel });
+          carnivalMsgs.forEach((msg) => send(msg));
           current = newRefineLevel;
         }
         if (!stopReason && current < targetLevel) {
@@ -3372,7 +3422,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       });
 
       // 收集并消耗材料（从配置读取数量）
-      const materialCount = getRefineMaterialCount();
+      const { count: materialCount } = getRefineMaterialCountForActivity(getRefineMaterialCount());
       const materials = [];
       const inventory = Array.isArray(player.inventory) ? player.inventory.slice() : [];
       for (const slot of inventory) {
@@ -3424,6 +3474,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       } else {
         mainResolved.slot.refine_level = newRefineLevel;
       }
+      const refineActivityMsgs = recordRefineActivity(player, { success, newLevel: newRefineLevel });
 
       computeDerived(player);
       player.forceStateRefresh = true;
@@ -3450,6 +3501,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           }
         }
       }
+      refineActivityMsgs.forEach((msg) => send(msg));
       return;
     }
     case 'effect': {
