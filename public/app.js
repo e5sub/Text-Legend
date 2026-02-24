@@ -565,6 +565,7 @@ const petUi = {
   list: document.getElementById('pet-list'),
   detail: document.getElementById('pet-detail'),
   equipList: document.getElementById('pet-equip-list'),
+  bagEquipList: document.getElementById('pet-bag-equip-list'),
   equipItem: document.getElementById('pet-equip-item'),
   equipBtn: document.getElementById('pet-equip-btn'),
   unequipSlot: document.getElementById('pet-unequip-slot'),
@@ -2651,7 +2652,7 @@ function renderPetModal() {
     } else if (!equippedItems.length) {
       const empty = document.createElement('div');
       empty.className = 'pet-book-entry';
-      empty.textContent = '暂无已穿戴装备';
+      empty.textContent = '暂无已穿戴装备（点击下方背包装备可直接穿戴）';
       petUi.equipList.appendChild(empty);
     } else {
       equippedItems.forEach((item) => {
@@ -2659,8 +2660,45 @@ function renderPetModal() {
         row.className = 'pet-book-entry';
         applyRarityClass(row, item);
         const slotLabel = petEquipSlotLabels[item.slot] || item.slot || '装备';
-        row.textContent = `${slotLabel}: ${formatItemName(item)}`;
+        row.textContent = `${slotLabel}: ${formatItemName(item)}（点击卸下）`;
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', () => {
+          if (!selected?.id || !item.slot) return;
+          sendPetAction('unequip_item', { petId: selected.id, slot: item.slot });
+        });
         petUi.equipList.appendChild(row);
+      });
+    }
+  }
+  if (petUi.bagEquipList) {
+    petUi.bagEquipList.innerHTML = '';
+    const equipables = (Array.isArray(lastState?.items) ? lastState.items : [])
+      .filter((item) => item && item.slot)
+      .filter((item) => Number(item.qty || 0) > 0);
+    if (!selected) {
+      const empty = document.createElement('div');
+      empty.className = 'pet-book-entry';
+      empty.textContent = '请选择宠物';
+      petUi.bagEquipList.appendChild(empty);
+    } else if (!equipables.length) {
+      const empty = document.createElement('div');
+      empty.className = 'pet-book-entry';
+      empty.textContent = '背包里没有可穿戴装备';
+      petUi.bagEquipList.appendChild(empty);
+    } else {
+      equipables.forEach((item) => {
+        const row = document.createElement('div');
+        row.className = 'pet-book-entry';
+        applyRarityClass(row, item);
+        row.textContent = `${formatItemName(item)} x${Number(item.qty || 1)}（点击穿戴）`;
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', () => {
+          if (!selected?.id) return;
+          const itemKey = String(item.key || item.id || '');
+          if (!itemKey) return;
+          sendPetAction('equip_item', { petId: selected.id, itemKey });
+        });
+        petUi.bagEquipList.appendChild(row);
       });
     }
   }
@@ -2685,7 +2723,7 @@ function renderPetModal() {
     petUi.unequipSlot.innerHTML = '';
     const emptyOpt = document.createElement('option');
     emptyOpt.value = '';
-    emptyOpt.textContent = '选择已穿戴部位';
+    emptyOpt.textContent = '选择卸下部位';
     petUi.unequipSlot.appendChild(emptyOpt);
     const equippedItems = Array.isArray(selected?.equippedItems) ? selected.equippedItems : [];
     equippedItems.forEach((item) => {

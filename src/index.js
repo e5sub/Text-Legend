@@ -9422,6 +9422,24 @@ function buildPetEquippedItemPayload(pet, slotKey) {
   return { ...item, slot: slotKey };
 }
 
+function resolvePetEquipSlotForItem(pet, itemTpl) {
+  if (!pet || !itemTpl?.slot) return null;
+  pet.equipment = normalizePetEquipmentState(pet.equipment);
+  const rawSlot = String(itemTpl.slot);
+  if (rawSlot === 'ring') {
+    if (!pet.equipment.ring_left) return 'ring_left';
+    if (!pet.equipment.ring_right) return 'ring_right';
+    return null;
+  }
+  if (rawSlot === 'bracelet') {
+    if (!pet.equipment.bracelet_left) return 'bracelet_left';
+    if (!pet.equipment.bracelet_right) return 'bracelet_right';
+    return null;
+  }
+  if (PET_EQUIP_SLOT_KEYS.includes(rawSlot)) return rawSlot;
+  return null;
+}
+
 function calcPetPower(pet) {
   if (!pet) return 0;
   const aptitude = pet.aptitude || {};
@@ -11778,8 +11796,12 @@ io.on('connection', (socket) => {
       const inv = player.inventory[invIndex];
       const itemTpl = ITEM_TEMPLATES[inv?.id];
       if (!itemTpl || !itemTpl.slot) return fail('only equipment can be equipped');
-      const slotKey = String(itemTpl.slot);
-      if (!PET_EQUIP_SLOT_KEYS.includes(slotKey)) return fail('unsupported pet equip slot');
+      const slotKey = resolvePetEquipSlotForItem(pet, itemTpl);
+      if (!slotKey) {
+        if (String(itemTpl.slot) === 'ring') return fail('pet ring slots are full');
+        if (String(itemTpl.slot) === 'bracelet') return fail('pet bracelet slots are full');
+        return fail('unsupported or occupied pet equip slot');
+      }
       if (pet.equipment[slotKey]) return fail('pet slot already occupied');
 
       const equipEntry = {
@@ -11800,7 +11822,7 @@ io.on('connection', (socket) => {
       pet.equipment[slotKey] = equipEntry;
       normalizeInventory(player);
       dirty = true;
-      emitResult(true, `pet equipped: ${itemTpl.name}`);
+      emitResult(true, `pet equipped: ${itemTpl.name} -> ${slotKey}`);
     } else if (action === 'unequip_item') {
       const pet = getPetById(clean?.petId);
       if (!pet) return fail('pet not found');
