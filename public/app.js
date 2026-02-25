@@ -3399,6 +3399,22 @@ function renderTreasureModal() {
     });
     return map;
   })();
+  const compactTreasurePassiveText = (text) => {
+    const raw = String(text || '').trim();
+    if (!raw) return '被动：暂无说明';
+    const detailIdx = raw.indexOf('（每级：');
+    if (detailIdx > 0) return `${raw.slice(0, detailIdx)}（悬停查看详情）`;
+    if (raw.length <= 28) return raw;
+    return `${raw.slice(0, 28)}...`;
+  };
+  const bindTreasurePassiveTooltip = (node, text) => {
+    const raw = String(text || '').trim();
+    if (!node || !raw) return;
+    node.style.cursor = 'help';
+    node.addEventListener('mouseenter', (evt) => showItemTooltip(raw, evt));
+    node.addEventListener('mousemove', (evt) => positionTooltip(evt.clientX, evt.clientY));
+    node.addEventListener('mouseleave', hideItemTooltip);
+  };
   const bagItems = getTreasureBagItems();
   const treasureMaterialMap = new Map();
   bagItems.forEach((item) => {
@@ -3437,9 +3453,10 @@ function renderTreasureModal() {
       treasureUi.equippedList.appendChild(card);
       continue;
     }
+    const passiveText = treasurePassiveById.get(entry.id) || '被动：暂无说明';
     card.innerHTML = `
       <div>${entry.name || entry.id}</div>
-      <div class="forge-item-meta">${treasurePassiveById.get(entry.id) || '被动：暂无说明'}</div>
+      <div class="forge-item-meta treasure-passive-meta">${compactTreasurePassiveText(passiveText)}</div>
       <div class="forge-item-meta">Lv${entry.level}/${maxLevel} | 阶${Math.floor(Number(entry.stage || 0))} 段${Math.floor(Number(entry.advanceCount || 0))}</div>
       <div class="forge-item-meta">效果加成 +${Number(entry.effectBonusPct || 0).toFixed(1)}%</div>
       <div class="forge-item-meta">${(() => {
@@ -3456,6 +3473,7 @@ function renderTreasureModal() {
         <button type="button" data-action="unequip" data-slot="${slot}">卸下</button>
       </div>
     `;
+    bindTreasurePassiveTooltip(card.querySelector('.treasure-passive-meta'), passiveText);
     const upgradeBtn = card.querySelector('button[data-action="upgrade"]');
     const advanceBtn = card.querySelector('button[data-action="advance"]');
     const unequipBtn = card.querySelector('button[data-action="unequip"]');
@@ -3550,13 +3568,15 @@ function renderTreasureModal() {
     card.className = 'forge-item';
     applyRarityClass(card, item);
     const equippedAlready = occupiedIds.has(item.id);
+    const passiveText = treasurePassiveById.get(item.id) || '被动：暂无说明';
     card.innerHTML = `
       <div>${formatItemName(item)} x${Math.floor(Number(item.qty || 0))}</div>
-      <div class="forge-item-meta">${treasurePassiveById.get(item.id) || '被动：暂无说明'}</div>
+      <div class="forge-item-meta treasure-passive-meta">${compactTreasurePassiveText(passiveText)}</div>
       <div class="treasure-actions">
         <button type="button" data-action="equip" data-id="${item.id}">装备</button>
       </div>
     `;
+    bindTreasurePassiveTooltip(card.querySelector('.treasure-passive-meta'), passiveText);
     const equipBtn = card.querySelector('button[data-action="equip"]');
     if (equipBtn) {
       equipBtn.disabled = equippedAlready || !hasEmptySlot;
