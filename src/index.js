@@ -12289,6 +12289,19 @@ io.on('connection', (socket) => {
       return;
     }
 
+    // 同账号仅允许一个角色在线：允许同角色重登（走下面的顶号逻辑），禁止其他角色并发登录
+    const hasOtherCharacterOnline = Array.from(players.values()).some((onlinePlayer) => {
+      if (!onlinePlayer) return false;
+      if ((onlinePlayer.userId || 0) !== session.user_id) return false;
+      const onlineRealmId = onlinePlayer.realmId || 1;
+      return onlinePlayer.name !== loaded.name || onlineRealmId !== (loaded.realmId || realmInfo.realmId);
+    });
+    if (hasOtherCharacterOnline) {
+      socket.emit('auth_error', { error: '同一账号不能同时登录多个角色。' });
+      socket.disconnect();
+      return;
+    }
+
     // 检查是否已有同名角色在线，如果有则踢掉之前的连接
     const existingSocketId = Array.from(players.keys()).find(key => players.get(key)?.name === name);
     if (existingSocketId) {
