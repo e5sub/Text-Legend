@@ -72,3 +72,18 @@ export async function listUsedRechargeUserIds() {
     .map((row) => Math.floor(Number(row?.userId || 0)))
     .filter((uid, idx, arr) => Number.isFinite(uid) && uid > 0 && arr.indexOf(uid) === idx);
 }
+
+export async function listUsedRechargeCharacters() {
+  const rows = await knex('recharge_cards')
+    .whereNotNull('used_at')
+    .whereNotNull('used_by_user_id')
+    .where('used_by_user_id', '>', 0)
+    .whereNotNull('used_by_char_name')
+    .distinct('used_by_user_id as userId', 'used_by_char_name as charName');
+  return rows
+    .map((row) => ({
+      userId: Math.floor(Number(row?.userId || 0)),
+      charName: String(row?.charName || '').trim()
+    }))
+    .filter((row, idx, arr) => row.userId > 0 && row.charName && arr.findIndex((x) => x.userId === row.userId && x.charName === row.charName) === idx);
+}

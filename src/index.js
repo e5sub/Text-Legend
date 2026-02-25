@@ -17,7 +17,7 @@ import { addGuildMember, createGuild, getGuildByName, getGuildByNameInRealm, get
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
 import { sendMail, listMail, listSentMail, markMailRead, markMailClaimed, deleteMail } from './db/mail.js';
 import { createVipCodes, listVipCodes, countVipCodes, useVipCode } from './db/vip.js';
-import { createRechargeCards, listRechargeCards, countRechargeCards, useRechargeCard, countUsedRechargeCardsByUser, listUsedRechargeUserIds } from './db/recharge.js';
+import { createRechargeCards, listRechargeCards, countRechargeCards, useRechargeCard, countUsedRechargeCardsByUser, listUsedRechargeCharacters } from './db/recharge.js';
 import { getSetting, setSetting, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getSvipPrices, setSvipPrices, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getPetTrainingFruitDropRate as getPetTrainingFruitDropRateDb, setPetTrainingFruitDropRate as setPetTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getPetSettings, setPetSettings, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb, getEquipSkillDropChance as getEquipSkillDropChanceDb, setEquipSkillDropChance as setEquipSkillDropChanceDb, getTreasureSlotCount as getTreasureSlotCountDb, setTreasureSlotCount as setTreasureSlotCountDb, getTreasureMaxLevel as getTreasureMaxLevelDb, setTreasureMaxLevel as setTreasureMaxLevelDb, getTreasureUpgradeConsume as getTreasureUpgradeConsumeDb, setTreasureUpgradeConsume as setTreasureUpgradeConsumeDb, getTreasureAdvanceConsume as getTreasureAdvanceConsumeDb, setTreasureAdvanceConsume as setTreasureAdvanceConsumeDb, getTreasureAdvancePerStage as getTreasureAdvancePerStageDb, setTreasureAdvancePerStage as setTreasureAdvancePerStageDb, getTreasureAdvanceEffectBonusPerStack as getTreasureAdvanceEffectBonusPerStackDb, setTreasureAdvanceEffectBonusPerStack as setTreasureAdvanceEffectBonusPerStackDb, getTreasureWorldBossDropMultiplier as getTreasureWorldBossDropMultiplierDb, setTreasureWorldBossDropMultiplier as setTreasureWorldBossDropMultiplierDb, getTreasureCrossWorldBossDropMultiplier as getTreasureCrossWorldBossDropMultiplierDb, setTreasureCrossWorldBossDropMultiplier as setTreasureCrossWorldBossDropMultiplierDb, getTreasureTowerXuanmingDropChance as getTreasureTowerXuanmingDropChanceDb, setTreasureTowerXuanmingDropChance as setTreasureTowerXuanmingDropChanceDb, getCmdRateLimits, setCmdRateLimits, getCmdCooldowns, setCmdCooldowns } from './db/settings.js';
 import { listRealms, getRealmById, updateRealmName, createRealm } from './db/realms.js';
 import {
@@ -247,6 +247,13 @@ function firstRechargeRewardMarkerKey(userId) {
   return `first_recharge_reward_marked_user_${Math.max(0, Math.floor(Number(userId) || 0))}`;
 }
 
+function firstRechargeReissueCharacterMarkerKey(userId, charName, realmId = 1) {
+  const uid = Math.max(0, Math.floor(Number(userId) || 0));
+  const rid = Math.max(1, Math.floor(Number(realmId || 1) || 1));
+  const name = String(charName || '').trim();
+  return `first_recharge_reissue_marked_char_${uid}_${rid}_${name}`;
+}
+
 async function hasFirstRechargeRewardMarker(userId) {
   const uid = Math.max(0, Math.floor(Number(userId) || 0));
   if (!uid) return false;
@@ -264,6 +271,31 @@ async function markFirstRechargeRewardIssued(userId, payload = {}) {
     charName: String(payload?.charName || '')
   };
   await setSetting(firstRechargeRewardMarkerKey(uid), JSON.stringify(data));
+  return true;
+}
+
+async function hasFirstRechargeReissueCharacterMarker(userId, charName, realmId = 1) {
+  const uid = Math.max(0, Math.floor(Number(userId) || 0));
+  const rid = Math.max(1, Math.floor(Number(realmId || 1) || 1));
+  const name = String(charName || '').trim();
+  if (!uid || !name) return false;
+  const value = await getSetting(firstRechargeReissueCharacterMarkerKey(uid, name, rid), '');
+  return Boolean(String(value || '').trim());
+}
+
+async function markFirstRechargeReissueCharacterIssued(userId, charName, realmId = 1, payload = {}) {
+  const uid = Math.max(0, Math.floor(Number(userId) || 0));
+  const rid = Math.max(1, Math.floor(Number(realmId || 1) || 1));
+  const name = String(charName || '').trim();
+  if (!uid || !name) return false;
+  const data = {
+    at: Date.now(),
+    source: String(payload?.source || 'unknown'),
+    operator: String(payload?.operator || ''),
+    charName: name,
+    realmId: rid
+  };
+  await setSetting(firstRechargeReissueCharacterMarkerKey(uid, name, rid), JSON.stringify(data));
   return true;
 }
 
@@ -1222,8 +1254,9 @@ app.post('/admin/first-recharge-settings/reissue', async (req, res) => {
     };
   }
   if (!userId) return res.status(400).json({ error: '角色账号信息异常。' });
-  if (await hasFirstRechargeRewardMarker(userId)) {
-    return res.status(400).json({ error: '该账号已领取/补发过首充福利，不能重复补发。' });
+  const targetRealmId = Math.max(1, Math.floor(Number(player?.realmId || realmId) || realmId));
+  if (await hasFirstRechargeReissueCharacterMarker(userId, targetName, targetRealmId)) {
+    return res.status(400).json({ error: '该角色已补发过首充福利，不能重复补发。' });
   }
   const config = { ...getFirstRechargeWelfareConfigSnapshot(), enabled: true };
   const grant = grantFirstRechargeWelfareToPlayer(player, config);
@@ -1236,6 +1269,7 @@ app.post('/admin/first-recharge-settings/reissue', async (req, res) => {
     await savePlayer(player);
   }
   const operator = String(admin?.user?.username || admin?.user?.name || admin?.user?.id || '').trim();
+  await markFirstRechargeReissueCharacterIssued(userId, targetName, targetRealmId, { source: 'admin_reissue', operator });
   await markFirstRechargeRewardIssued(userId, { source: 'admin_reissue', operator, charName: targetName });
   res.json({
     ok: true,
@@ -1256,64 +1290,62 @@ app.post('/admin/first-recharge-settings/reissue-all', async (req, res) => {
     if (realmInfo.error) return res.status(400).json({ error: realmInfo.error });
     preferredRealmId = realmInfo.realmId;
   }
-  const [userIds, realms] = await Promise.all([
-    listUsedRechargeUserIds(),
-    listRealms()
-  ]);
-  const realmList = Array.isArray(realms) ? realms.map((r) => Number(r.id)).filter((id) => id > 0) : [];
-  const orderedRealmIds = preferredRealmId
-    ? [preferredRealmId, ...realmList.filter((id) => id !== preferredRealmId)]
-    : realmList;
+  const rechargeChars = await listUsedRechargeCharacters();
   const onlinePlayers = Array.from(players.values());
-  const onlineByUserId = new Map();
+  const onlineByCharKey = new Map();
   for (const p of onlinePlayers) {
     const uid = Math.floor(Number(p?.userId || 0));
+    const name = String(p?.name || '').trim();
+    const rid = Math.floor(Number(p?.realmId || 1)) || 1;
     if (!uid) continue;
-    if (!onlineByUserId.has(uid)) {
-      onlineByUserId.set(uid, p);
-      continue;
+    if (!name) continue;
+    onlineByCharKey.set(`${uid}|${rid}|${name}`, p);
+  }
+  const candidateRows = [];
+  const seenCandidates = new Set();
+  for (const entry of rechargeChars) {
+    const uid = Math.floor(Number(entry?.userId || 0));
+    const charName = String(entry?.charName || '').trim();
+    if (!uid || !charName) continue;
+    let row = null;
+    if (preferredRealmId) {
+      row = await knex('characters')
+        .where({ user_id: uid, name: charName, realm_id: preferredRealmId })
+        .first();
+    } else {
+      row = await knex('characters')
+        .where({ user_id: uid, name: charName })
+        .orderBy('level', 'desc')
+        .first();
     }
-    const current = onlineByUserId.get(uid);
-    if (preferredRealmId && p.realmId === preferredRealmId && current?.realmId !== preferredRealmId) {
-      onlineByUserId.set(uid, p);
-    }
+    if (!row) continue;
+    const key = `${uid}|${row.realm_id || 1}|${row.name}`;
+    if (seenCandidates.has(key)) continue;
+    seenCandidates.add(key);
+    candidateRows.push(row);
   }
   const stats = {
-    totalRechargeUsers: userIds.length,
+    totalRechargeChars: candidateRows.length,
     markedSkipped: 0,
     success: 0,
     noCharacterSkipped: 0,
     failed: 0
   };
   const failures = [];
-  for (const userId of userIds) {
+  for (const row of candidateRows) {
+    const userId = Math.floor(Number(row?.user_id || 0));
     try {
-      if (await hasFirstRechargeRewardMarker(userId)) {
+      if (await hasFirstRechargeReissueCharacterMarker(userId, String(row?.name || ''), Math.floor(Number(row?.realm_id || 1) || 1))) {
         stats.markedSkipped += 1;
         continue;
       }
-      let player = onlineByUserId.get(userId) || null;
+      const rowRealmId = Math.floor(Number(row?.realm_id || 1)) || 1;
+      const rowName = String(row?.name || '').trim();
+      let player = onlineByCharKey.get(`${userId}|${rowRealmId}|${rowName}`) || null;
       let saveOffline = null;
       let targetName = player?.name || '';
       if (!player) {
-        let targetRow = null;
-        for (const rid of orderedRealmIds) {
-          const chars = await listCharacters(userId, rid);
-          if (Array.isArray(chars) && chars.length) {
-            const pick = chars
-              .slice()
-              .sort((a, b) => Number(b.level || 0) - Number(a.level || 0))[0];
-            targetRow = { user_id: userId, name: pick.name, realm_id: rid };
-            break;
-          }
-        }
-        if (!targetRow && !orderedRealmIds.length) {
-          const fallbackRow = await knex('characters')
-            .where({ user_id: userId })
-            .orderBy('level', 'desc')
-            .first();
-          if (fallbackRow) targetRow = fallbackRow;
-        }
+        const targetRow = row;
         if (!targetRow) {
           stats.noCharacterSkipped += 1;
           continue;
@@ -1339,6 +1371,7 @@ app.post('/admin/first-recharge-settings/reissue-all', async (req, res) => {
       if (saveOffline) await saveOffline();
       else await savePlayer(player);
       const operator = String(admin?.user?.username || admin?.user?.name || admin?.user?.id || '').trim();
+      await markFirstRechargeReissueCharacterIssued(userId, targetName, player.realmId || rowRealmId, { source: 'admin_reissue_all', operator });
       await markFirstRechargeRewardIssued(userId, { source: 'admin_reissue_all', operator, charName: targetName });
       stats.success += 1;
     } catch (err) {

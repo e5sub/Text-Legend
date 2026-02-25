@@ -2947,7 +2947,7 @@ async function reissueAllRechargeUsersFirstRechargeWelfare() {
   try {
     const data = await api('/admin/first-recharge-settings/reissue-all', 'POST', { realmId });
     const summary = [
-      `充值账号${Number(data?.totalRechargeUsers || 0)}`,
+      `充值角色${Number(data?.totalRechargeChars || data?.totalRechargeUsers || 0)}`,
       `成功${Number(data?.success || 0)}`,
       `已标记跳过${Number(data?.markedSkipped || 0)}`,
       `无角色跳过${Number(data?.noCharacterSkipped || 0)}`,
