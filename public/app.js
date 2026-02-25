@@ -2652,7 +2652,7 @@ function renderPetModal() {
     } else if (!equippedItems.length) {
       const empty = document.createElement('div');
       empty.className = 'pet-book-entry';
-      empty.textContent = '暂无已穿戴装备（点击下方背包装备可直接穿戴）';
+      empty.textContent = '暂无已穿戴装备';
       petUi.equipList.appendChild(empty);
     } else {
       equippedItems.forEach((item) => {
@@ -2664,7 +2664,6 @@ function renderPetModal() {
         nameSpan.textContent = formatItemName(item);
         applyRarityClass(nameSpan, item);
         row.appendChild(nameSpan);
-        row.appendChild(document.createTextNode('（点击卸下）'));
         row.style.cursor = 'pointer';
         row.addEventListener('click', () => {
           if (!selected?.id || !item.slot) return;
@@ -2697,7 +2696,6 @@ function renderPetModal() {
         nameSpan.textContent = `${formatItemName(item)} x${Number(item.qty || 1)}`;
         applyRarityClass(nameSpan, item);
         row.appendChild(nameSpan);
-        row.appendChild(document.createTextNode('（点击穿戴）'));
         row.style.cursor = 'pointer';
         row.addEventListener('click', () => {
           if (!selected?.id) return;
