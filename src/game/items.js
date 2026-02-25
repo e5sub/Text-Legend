@@ -17,6 +17,7 @@
 
   training_fruit: { id: 'training_fruit', name: '修炼果', type: 'consumable', price: 1800, rarity: 'epic', untradable: true, unconsignable: true, unmail: true },
   pet_training_fruit: { id: 'pet_training_fruit', name: '宠物修炼果', type: 'consumable', price: 1800, rarity: 'epic', untradable: true, unconsignable: true, unmail: true },
+  rename_card: { id: 'rename_card', name: '改名卡', type: 'material', price: 0, rarity: 'epic', untradable: true, unconsignable: true, unmail: true },
   cultivation_rebirth_stone: { id: 'cultivation_rebirth_stone', name: '修真转生石', type: 'material', price: 0, rarity: 'ultimate', untradable: true, unconsignable: true, unmail: true, crossWorldBossOnly: true },
   treasure_exp_material: { id: 'treasure_exp_material', name: '法宝经验丹', type: 'material', price: 0, untradable: true, unconsignable: true, unmail: true },
   willow_dew: { id: 'willow_dew', name: '金柳露', type: 'material', price: 0, untradable: true, unconsignable: true, unmail: true },

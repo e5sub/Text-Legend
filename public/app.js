@@ -9034,6 +9034,28 @@ if (ui.invite) {
     }
   });
 }
+if (ui.name) {
+  ui.name.style.cursor = 'pointer';
+  ui.name.title = '点击改名（需改名卡x1）';
+  ui.name.addEventListener('click', async () => {
+    if (!socket || !lastState?.player) return;
+    const currentName = String(lastState.player.name || ui.name.textContent || '').trim();
+    if (!currentName || currentName === '-') return;
+    const nextName = await promptModal({
+      title: '角色改名',
+      text: `请输入新角色名（需消耗改名卡x1）\n当前角色名：${currentName}`,
+      placeholder: '新角色名',
+      value: currentName
+    });
+    if (!nextName) return;
+    const finalName = String(nextName).trim();
+    if (!finalName || finalName === currentName) {
+      showToast('新角色名不能与当前相同');
+      return;
+    }
+    socket.emit('cmd', { text: `rename ${finalName}`, source: 'ui' });
+  });
+}
 
 if (ui.svipPlan) {
   ui.svipPlan.addEventListener('change', () => {

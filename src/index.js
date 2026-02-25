@@ -6021,6 +6021,129 @@ function playersByName(name, realmId = null) {
   return list.find((p) => p.name === name && (!realmId || p.realmId === realmId));
 }
 
+async function renameCharacterEverywhere({ userId, realmId = 1, oldName, newName }) {
+  const uid = Math.max(0, Math.floor(Number(userId) || 0));
+  const rid = Math.max(1, Math.floor(Number(realmId || 1) || 1));
+  const fromName = String(oldName || '').trim();
+  const toName = String(newName || '').trim();
+  if (!uid || !fromName || !toName || fromName === toName) return false;
+
+  await knex.transaction(async (trx) => {
+    const existing = await trx('characters')
+      .where({ name: toName })
+      .first();
+    if (existing) {
+      throw new Error('角色名已存在。');
+    }
+
+    const updated = await trx('characters')
+      .where({ user_id: uid, realm_id: rid, name: fromName })
+      .update({ name: toName, updated_at: trx.fn.now() });
+    if (!updated) {
+      throw new Error('角色数据不存在或已变更。');
+    }
+
+    await trx('guild_members')
+      .where({ user_id: uid, realm_id: rid, char_name: fromName })
+      .update({ char_name: toName });
+    await trx('guilds')
+      .where({ leader_user_id: uid, realm_id: rid, leader_char_name: fromName })
+      .update({ leader_char_name: toName, updated_at: trx.fn.now() });
+    await trx('guild_applications')
+      .where({ user_id: uid, realm_id: rid, char_name: fromName })
+      .update({ char_name: toName, applied_at: trx.fn.now() });
+
+    await trx('mails')
+      .where({ realm_id: rid, to_user_id: uid, to_name: fromName })
+      .update({ to_name: toName });
+    await trx('mails')
+      .where({ realm_id: rid, from_user_id: uid, from_name: fromName })
+      .update({ from_name: toName });
+
+    await trx('consignments')
+      .where({ realm_id: rid, seller_name: fromName })
+      .update({ seller_name: toName });
+    await trx('consignment_history')
+      .where({ realm_id: rid, seller_name: fromName })
+      .update({ seller_name: toName });
+
+    await trx('recharge_cards')
+      .where({ used_by_user_id: uid, used_by_char_name: fromName })
+      .update({ used_by_char_name: toName });
+
+    await trx('sponsors')
+      .where({ player_name: fromName })
+      .update({ player_name: toName });
+  });
+
+  return true;
+}
+
+async function applyOnlineCharacterRename(player, newName) {
+  if (!player) return false;
+  const oldName = String(player.name || '').trim();
+  const nextName = String(newName || '').trim();
+  const realmId = Math.max(1, Math.floor(Number(player.realmId || 1) || 1));
+  if (!oldName || !nextName || oldName === nextName) return false;
+  const realmState = getRealmState(realmId);
+
+  const party = getPartyByMember(oldName, realmId);
+  if (party) {
+    party.members = party.members.map((name) => (name === oldName ? nextName : name));
+    if (party.leader === oldName) party.leader = nextName;
+    await persistParty(party, realmId);
+  }
+
+  const cleanupInviteMap = (map) => {
+    if (!(map instanceof Map)) return;
+    const entries = Array.from(map.entries());
+    map.clear();
+    entries.forEach(([key, value]) => {
+      const nextKey = key === oldName ? nextName : key;
+      if (nextKey === oldName) return;
+      if (value && typeof value === 'object') {
+        const nextValue = { ...value };
+        if (nextValue.from === oldName) nextValue.from = nextName;
+        map.set(nextKey, nextValue);
+      } else {
+        map.set(nextKey, value);
+      }
+    });
+  };
+  cleanupInviteMap(realmState.partyInvites);
+  cleanupInviteMap(realmState.partyFollowInvites);
+  cleanupInviteMap(realmState.guildInvites);
+
+  // 交易邀请直接清理，避免改名前后的姓名混用导致状态错乱
+  if (realmState.tradeInvites instanceof Map) {
+    for (const [key, value] of Array.from(realmState.tradeInvites.entries())) {
+      if (key === oldName || value?.from === oldName) {
+        realmState.tradeInvites.delete(key);
+      }
+    }
+  }
+
+  if (player.flags) {
+    if (Array.isArray(player.flags.partyMembers)) {
+      player.flags.partyMembers = player.flags.partyMembers.map((name) => (name === oldName ? nextName : name));
+    }
+    if (player.flags.partyLeader === oldName) player.flags.partyLeader = nextName;
+  }
+
+  if (onlinePlayerRankTitles.has(oldName)) {
+    const title = onlinePlayerRankTitles.get(oldName);
+    onlinePlayerRankTitles.delete(oldName);
+    if (title) onlinePlayerRankTitles.set(nextName, title);
+  }
+
+  player.name = nextName;
+  if (player.guild && player.guild.role) {
+    player.guild = { ...player.guild };
+  }
+  player.forceStateRefresh = true;
+  return true;
+}
+
 function ensureOffer(trade, playerName) {
   if (!trade.offers[playerName]) {
     trade.offers[playerName] = { gold: 0, yuanbao: 0, items: [] };
@@ -13062,6 +13185,34 @@ io.on('connection', (socket) => {
         getPointShopConfig: () => getActivityPointShopConfigCached(false)
       },
       consignApi,
+      characterApi: {
+        renameSelf: async (newName) => {
+          const oldName = String(player.name || '').trim();
+          const targetName = String(newName || '').trim();
+          const nameResult = validatePlayerName(targetName);
+          if (!nameResult.ok) return { ok: false, msg: nameResult.error || '角色名不合法。' };
+          const finalName = nameResult.value;
+          if (finalName === oldName) return { ok: false, msg: '新角色名不能与当前相同。' };
+          if (getTradeByPlayerAny(oldName, player.realmId || 1).trade) {
+            return { ok: false, msg: '交易状态中无法改名，请先取消交易。' };
+          }
+          if (playersByName(finalName, player.realmId || 1)) return { ok: false, msg: '该角色名已在线。' };
+          const existed = await findCharacterByName(finalName);
+          if (existed) return { ok: false, msg: '该角色名已存在。' };
+          try {
+            await renameCharacterEverywhere({
+              userId: player.userId,
+              realmId: player.realmId || 1,
+              oldName,
+              newName: finalName
+            });
+            await applyOnlineCharacterRename(player, finalName);
+            return { ok: true, oldName, newName: finalName };
+          } catch (err) {
+            return { ok: false, msg: err?.message || '改名失败。' };
+          }
+        }
+      },
       mailApi: {
         sendMail,
         listMail,

@@ -1442,7 +1442,7 @@ function partyStatus(party) {
   return `队伍成员: ${party.members.join(', ')}`;
 }
 
-export async function handleCommand({ player, players, allCharacters, playersByName, input, source, send, partyApi, guildApi, tradeApi, rechargeApi, svipApi, mailApi, activityApi, consignApi, onMove, logLoot, realmId, emitAnnouncement }) {
+export async function handleCommand({ player, players, allCharacters, playersByName, input, source, send, partyApi, guildApi, tradeApi, rechargeApi, svipApi, mailApi, activityApi, consignApi, characterApi, onMove, logLoot, realmId, emitAnnouncement }) {
   const resolveAllCharacters = async () => {
     if (typeof allCharacters === 'function') {
       const rows = await allCharacters();
@@ -1480,6 +1480,29 @@ export async function handleCommand({ player, players, allCharacters, playersByN
 
   switch (cmd) {
     case 'help': {
+      return;
+    }
+    case 'rename': {
+      const nextName = String(args || '').trim();
+      if (!nextName) {
+        send('用法: rename 新角色名（需消耗改名卡x1）');
+        return;
+      }
+      if (!characterApi || typeof characterApi.renameSelf !== 'function') {
+        send('改名功能暂不可用。');
+        return;
+      }
+      if (!removeItem(player, 'rename_card', 1)) {
+        send('改名需要改名卡 x1。');
+        return;
+      }
+      const result = await characterApi.renameSelf(nextName);
+      if (!result?.ok) {
+        addItem(player, 'rename_card', 1);
+        send(result?.msg || '改名失败。');
+        return;
+      }
+      send(`角色改名成功：${result.oldName} -> ${result.newName}`);
       return;
     }
     case 'look': {
