@@ -8455,6 +8455,11 @@ function enterGame(name) {
     const msg = String(payload?.msg || (ok ? '宠物操作成功。' : '宠物操作失败。'));
     showToast(msg, ok ? 1400 : 1800);
   });
+  socket.on('character_action_result', (payload) => {
+    const ok = Boolean(payload?.ok);
+    const msg = String(payload?.msg || (ok ? '角色操作成功。' : '角色操作失败。'));
+    showToast(msg, ok ? 2200 : 2600);
+  });
   socket.on('activity_rank_data', (payload) => {
     renderActivityRankModal(payload || {});
   });
@@ -9036,19 +9041,43 @@ if (ui.invite) {
 }
 if (ui.name) {
   ui.name.style.cursor = 'pointer';
-  ui.name.title = '点击改名（需改名卡x1）';
+  ui.name.title = '点击角色操作（改名/迁移）';
   ui.name.addEventListener('click', async () => {
     if (!socket || !lastState?.player) return;
     const currentName = String(lastState.player.name || ui.name.textContent || '').trim();
     if (!currentName || currentName === '-') return;
-    const nextName = await promptModal({
-      title: '角色改名',
-      text: `请输入新角色名（需消耗改名卡x1）\n当前角色名：${currentName}`,
-      placeholder: '新角色名',
-      value: currentName
+    const actionInput = await promptModal({
+      title: '角色操作',
+      text: `输入新角色名可改名（需改名卡x1）\n点击“角色迁移”可迁移到其他账号（需10元宝）\n当前角色名：${currentName}`,
+      placeholder: '新角色名（留空则不改名）',
+      value: currentName,
+      extra: { text: '角色迁移' }
     });
-    if (!nextName) return;
-    const finalName = String(nextName).trim();
+    if (!actionInput) return;
+    if (actionInput === '__extra__') {
+      const target = await promptDualModal({
+        title: '角色迁移',
+        text: `将当前角色迁移到目标账号（收费10元宝）\n迁移成功后会自动下线，请使用目标账号登录。`,
+        labelMain: '目标账号',
+        labelSecondary: '目标密码',
+        placeholderMain: '目标账号用户名',
+        placeholderSecondary: '目标账号密码',
+        typeMain: 'text',
+        typeSecondary: 'password'
+      });
+      if (!target) return;
+      const targetUsername = String(target.main || '').trim();
+      const targetPassword = String(target.secondary || '');
+      if (!targetUsername || !targetPassword) return;
+      if (!window.confirm(`确认迁移角色【${currentName}】到账号【${targetUsername}】吗？将扣除10元宝并自动下线。`)) return;
+      socket.emit('character_action', {
+        action: 'migrate',
+        targetUsername,
+        targetPassword
+      });
+      return;
+    }
+    const finalName = String(actionInput).trim();
     if (!finalName || finalName === currentName) {
       showToast('新角色名不能与当前相同');
       return;

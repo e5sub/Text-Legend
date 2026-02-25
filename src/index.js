@@ -6049,6 +6049,8 @@ function playersByName(name, realmId = null) {
   return list.find((p) => p.name === name && (!realmId || p.realmId === realmId));
 }
 
+const CHARACTER_MIGRATE_YUANBAO_COST = 10;
+
 async function renameCharacterEverywhere({ userId, realmId = 1, oldName, newName }) {
   const uid = Math.max(0, Math.floor(Number(userId) || 0));
   const rid = Math.max(1, Math.floor(Number(realmId || 1) || 1));
@@ -6107,7 +6109,7 @@ async function renameCharacterEverywhere({ userId, realmId = 1, oldName, newName
   return true;
 }
 
-async function migrateCharacterToUser({ realmId = 1, charName, targetUserId }) {
+async function migrateCharacterToUser({ realmId = 1, charName, targetUserId, allowOnline = false }) {
   const rid = Math.max(1, Math.floor(Number(realmId || 1) || 1));
   const name = String(charName || '').trim();
   const toUserId = Math.max(0, Math.floor(Number(targetUserId) || 0));
@@ -6116,7 +6118,7 @@ async function migrateCharacterToUser({ realmId = 1, charName, targetUserId }) {
   }
 
   const online = playersByName(name, rid);
-  if (online) {
+  if (!allowOnline && online) {
     throw new Error('角色在线中，无法迁移，请先下线。');
   }
 
@@ -13824,6 +13826,77 @@ io.on('connection', (socket) => {
     normalizePetState(player);
     await sendState(player);
     await savePlayer(player);
+  });
+
+  socket.on('character_action', async (payload) => {
+    const player = players.get(socket.id);
+    if (!player) return;
+    const { clean } = sanitizePayload(payload, ['action', 'targetUsername', 'targetPassword'], 'character_action');
+    const action = String(clean?.action || '').trim().toLowerCase();
+    if (action !== 'migrate') {
+      socket.emit('character_action_result', { ok: false, msg: '未知角色操作。' });
+      return;
+    }
+
+    const targetUsername = String(clean?.targetUsername || '').trim();
+    const targetPassword = String(clean?.targetPassword || '');
+    if (!targetUsername || !targetPassword) {
+      socket.emit('character_action_result', { ok: false, msg: '请输入目标账号和密码。' });
+      return;
+    }
+    if (Number(player.yuanbao || 0) < CHARACTER_MIGRATE_YUANBAO_COST) {
+      socket.emit('character_action_result', { ok: false, msg: `角色迁移需要 ${CHARACTER_MIGRATE_YUANBAO_COST} 元宝。` });
+      return;
+    }
+
+    let charged = false;
+    const prevYuanbao = Number(player.yuanbao || 0);
+    try {
+      const targetUser = await verifyUser(targetUsername, targetPassword);
+      if (!targetUser) {
+        socket.emit('character_action_result', { ok: false, msg: '目标账号或密码错误。' });
+        return;
+      }
+      if (Number(targetUser.id || 0) === Number(player.userId || 0)) {
+        socket.emit('character_action_result', { ok: false, msg: '目标账号不能是当前账号。' });
+        return;
+      }
+      const targetHasOnline = Array.from(players.values()).some((p) => p && Number(p.userId || 0) === Number(targetUser.id || 0));
+      if (targetHasOnline) {
+        socket.emit('character_action_result', { ok: false, msg: '目标账号当前有角色在线，请先下线后再迁移。' });
+        return;
+      }
+
+      player.yuanbao = Math.max(0, Number(player.yuanbao || 0) - CHARACTER_MIGRATE_YUANBAO_COST);
+      charged = true;
+      player.forceStateRefresh = true;
+      await savePlayer(player);
+
+      await migrateCharacterToUser({
+        realmId: player.realmId || 1,
+        charName: player.name,
+        targetUserId: targetUser.id,
+        allowOnline: true
+      });
+
+      player.userId = Number(targetUser.id || 0);
+      player.send(`角色迁移成功，已扣除 ${CHARACTER_MIGRATE_YUANBAO_COST} 元宝，请重新登录目标账号。`);
+      socket.emit('character_action_result', {
+        ok: true,
+        msg: `角色已迁移到账号【${targetUsername}】，已扣除 ${CHARACTER_MIGRATE_YUANBAO_COST} 元宝，请重新登录。`
+      });
+      setTimeout(() => {
+        try { socket.disconnect(true); } catch {}
+      }, 300);
+    } catch (err) {
+      if (charged && players.get(socket.id) === player) {
+        player.yuanbao = Math.max(0, prevYuanbao);
+        player.forceStateRefresh = true;
+        await savePlayer(player).catch(() => {});
+        await sendState(player).catch(() => {});
+      }
+      socket.emit('character_action_result', { ok: false, msg: String(err?.message || err || '角色迁移失败。') });
+    }
   });
 
   socket.on('mail_list', async () => {
