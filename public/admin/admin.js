@@ -36,6 +36,9 @@ const firstRechargePetTrainingFruitInput = document.getElementById('first-rechar
 const firstRechargeTreasureExpInput = document.getElementById('first-recharge-treasure-exp');
 const firstRechargeLoadBtn = document.getElementById('first-recharge-load-btn');
 const firstRechargeSaveBtn = document.getElementById('first-recharge-save-btn');
+const firstRechargeReissueCharInput = document.getElementById('first-recharge-reissue-char');
+const firstRechargeReissueRealmInput = document.getElementById('first-recharge-reissue-realm');
+const firstRechargeReissueBtn = document.getElementById('first-recharge-reissue-btn');
 const firstRechargeMsg = document.getElementById('first-recharge-msg');
 const vipSelfClaimStatus = document.getElementById('vip-self-claim-status');
 const vipSelfClaimMsg = document.getElementById('vip-self-claim-msg');
@@ -2903,6 +2906,28 @@ async function saveFirstRechargeSettings() {
     setTimeout(() => setFirstRechargeMsg(''), 1500);
   } catch (err) {
     setFirstRechargeMsg(`保存失败: ${err.message}`, 'red');
+  }
+}
+
+async function reissueFirstRechargeWelfare() {
+  if (!firstRechargeMsg) return;
+  const charName = String(firstRechargeReissueCharInput?.value || '').trim();
+  const realmId = Math.max(1, Math.floor(Number(firstRechargeReissueRealmInput?.value || 1) || 1));
+  if (!charName) {
+    setFirstRechargeMsg('请输入要补发的角色名', 'red');
+    return;
+  }
+  if (!window.confirm(`确认给角色【${charName}】补发首充礼包吗？补发后该账号会打标，后续不可重复补发。`)) {
+    return;
+  }
+  setFirstRechargeMsg('补发中...');
+  try {
+    const data = await api('/admin/first-recharge-settings/reissue', 'POST', { charName, realmId });
+    const rewardText = Array.isArray(data?.rewardText) && data.rewardText.length ? `：${data.rewardText.join('、')}` : '';
+    setFirstRechargeMsg(`补发成功（${data?.online ? '在线' : '离线'}）${rewardText}`, 'green');
+    setTimeout(() => setFirstRechargeMsg(''), 2500);
+  } catch (err) {
+    setFirstRechargeMsg(`补发失败: ${err.message}`, 'red');
   }
 }
 
@@ -6448,6 +6473,7 @@ document.getElementById('recharge-create-btn').addEventListener('click', createR
 document.getElementById('recharge-list-btn').addEventListener('click', listRechargeCodes);
 if (firstRechargeLoadBtn) firstRechargeLoadBtn.addEventListener('click', loadFirstRechargeSettings);
 if (firstRechargeSaveBtn) firstRechargeSaveBtn.addEventListener('click', saveFirstRechargeSettings);
+if (firstRechargeReissueBtn) firstRechargeReissueBtn.addEventListener('click', reissueFirstRechargeWelfare);
 if (vipCodesPrev) {
   vipCodesPrev.addEventListener('click', () => {
     vipCodesPageIndex = Math.max(0, vipCodesPageIndex - 1);

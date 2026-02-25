@@ -240,6 +240,59 @@ async function setFirstRechargeWelfareConfig(raw) {
   return normalized;
 }
 
+function firstRechargeRewardMarkerKey(userId) {
+  return `first_recharge_reward_marked_user_${Math.max(0, Math.floor(Number(userId) || 0))}`;
+}
+
+async function hasFirstRechargeRewardMarker(userId) {
+  const uid = Math.max(0, Math.floor(Number(userId) || 0));
+  if (!uid) return false;
+  const value = await getSetting(firstRechargeRewardMarkerKey(uid), '');
+  return Boolean(String(value || '').trim());
+}
+
+async function markFirstRechargeRewardIssued(userId, payload = {}) {
+  const uid = Math.max(0, Math.floor(Number(userId) || 0));
+  if (!uid) return false;
+  const data = {
+    at: Date.now(),
+    source: String(payload?.source || 'unknown'),
+    operator: String(payload?.operator || ''),
+    charName: String(payload?.charName || '')
+  };
+  await setSetting(firstRechargeRewardMarkerKey(uid), JSON.stringify(data));
+  return true;
+}
+
+function grantFirstRechargeWelfareToPlayer(player, config = null) {
+  if (!player) return { ok: false, reason: 'player_not_found', rewardText: [] };
+  const cfg = normalizeFirstRechargeWelfareConfig(config || getFirstRechargeWelfareConfigSnapshot());
+  if (cfg.enabled === false) return { ok: false, reason: 'disabled', rewardText: [] };
+  if (!player.flags) player.flags = {};
+  player.flags.firstRechargeRewardClaimed = true;
+  player.flags.firstRechargeRewardAt = Date.now();
+  const rewardText = [];
+  const extraYuanbao = Math.max(0, Math.floor(Number(cfg.yuanbao || 0)));
+  const extraGold = Math.max(0, Math.floor(Number(cfg.gold || 0)));
+  if (extraYuanbao > 0) {
+    player.yuanbao = Math.max(0, Math.floor(Number(player.yuanbao || 0))) + extraYuanbao;
+    rewardText.push(`元宝+${extraYuanbao}`);
+  }
+  if (extraGold > 0) {
+    player.gold = Math.max(0, Math.floor(Number(player.gold || 0))) + extraGold;
+    rewardText.push(`金币+${extraGold}`);
+  }
+  (cfg.items || []).forEach((entry) => {
+    const itemId = String(entry?.id || '').trim();
+    const qty = Math.max(0, Math.floor(Number(entry?.qty || 0)));
+    if (!itemId || qty <= 0) return;
+    addItem(player, itemId, qty);
+    rewardText.push(`${ITEM_TEMPLATES[itemId]?.name || itemId}x${qty}`);
+  });
+  player.forceStateRefresh = true;
+  return { ok: true, rewardText, config: cfg };
+}
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -1121,6 +1174,64 @@ app.post('/admin/first-recharge-settings/update', async (req, res) => {
   } catch (err) {
     res.status(400).json({ error: err.message || '首充福利配置更新失败' });
   }
+});
+
+app.post('/admin/first-recharge-settings/reissue', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const charName = String(req.body?.charName || '').trim();
+  const rawRealmId = req.body?.realmId;
+  if (!charName) return res.status(400).json({ error: '请输入角色名。' });
+  let realmInfo = await resolveRealmId(rawRealmId);
+  if (realmInfo.error) {
+    const realms = await listRealms();
+    if (Array.isArray(realms) && realms.length > 0) {
+      realmInfo = { realmId: realms[0].id };
+    } else {
+      return res.status(400).json({ error: realmInfo.error });
+    }
+  }
+  const realmId = realmInfo.realmId;
+  let player = playersByName(charName, realmId);
+  let userId = Math.max(0, Math.floor(Number(player?.userId || 0)));
+  let targetName = player?.name || charName;
+  let saveOffline = null;
+  if (!player) {
+    const row = await findCharacterByNameInRealm(charName, realmId);
+    if (!row) return res.status(404).json({ error: '角色不存在。' });
+    player = await loadCharacter(row.user_id, row.name, row.realm_id || 1);
+    if (!player) return res.status(404).json({ error: '角色数据不存在。' });
+    userId = Math.max(0, Math.floor(Number(row.user_id || player.userId || 0)));
+    targetName = row.name || player.name || charName;
+    player.userId = userId || player.userId;
+    player.realmId = row.realm_id || player.realmId || realmId;
+    saveOffline = async () => {
+      await saveCharacter(row.user_id, player, row.realm_id || 1);
+    };
+  }
+  if (!userId) return res.status(400).json({ error: '角色账号信息异常。' });
+  if (await hasFirstRechargeRewardMarker(userId)) {
+    return res.status(400).json({ error: '该账号已领取/补发过首充福利，不能重复补发。' });
+  }
+  const config = { ...getFirstRechargeWelfareConfigSnapshot(), enabled: true };
+  const grant = grantFirstRechargeWelfareToPlayer(player, config);
+  if (!grant?.ok) {
+    return res.status(400).json({ error: '首充福利补发失败。' });
+  }
+  if (typeof saveOffline === 'function') {
+    await saveOffline();
+  } else {
+    await savePlayer(player);
+  }
+  const operator = String(admin?.user?.username || admin?.user?.name || admin?.user?.id || '').trim();
+  await markFirstRechargeRewardIssued(userId, { source: 'admin_reissue', operator, charName: targetName });
+  res.json({
+    ok: true,
+    charName: targetName,
+    realmId,
+    online: !saveOffline,
+    rewardText: Array.isArray(grant.rewardText) ? grant.rewardText : []
+  });
 });
 
 app.get('/admin/vip/self-claim-status', async (req, res) => {
@@ -5540,33 +5651,14 @@ const rechargeApi = {
     if (!amount) return { ok: false, msg: '卡密金额异常。' };
     const firstRechargeCfg = getFirstRechargeWelfareConfigSnapshot();
     const redeemedCount = await countUsedRechargeCardsByUser(player.userId);
-    const isFirstRecharge = firstRechargeCfg.enabled !== false && redeemedCount === 1;
+    const rewardMarked = await hasFirstRechargeRewardMarker(player.userId);
+    const isFirstRecharge = firstRechargeCfg.enabled !== false && redeemedCount === 1 && !rewardMarked;
     player.yuanbao = (player.yuanbao || 0) + amount;
     let firstRechargeMsg = '';
     if (isFirstRecharge) {
-      if (!player.flags) player.flags = {};
-      player.flags.firstRechargeRewardClaimed = true;
-      player.flags.firstRechargeRewardAt = Date.now();
-      const extraYuanbao = Math.max(0, Math.floor(Number(firstRechargeCfg.yuanbao || 0)));
-      const extraGold = Math.max(0, Math.floor(Number(firstRechargeCfg.gold || 0)));
-      if (extraYuanbao > 0) player.yuanbao = (player.yuanbao || 0) + extraYuanbao;
-      if (extraGold > 0) player.gold = Math.max(0, Math.floor(Number(player.gold || 0))) + extraGold;
-      (firstRechargeCfg.items || []).forEach((entry) => {
-        const itemId = String(entry?.id || '').trim();
-        const qty = Math.max(0, Math.floor(Number(entry?.qty || 0)));
-        if (!itemId || qty <= 0) return;
-        addItem(player, itemId, qty);
-      });
-      const rewardText = [];
-      if (extraYuanbao > 0) rewardText.push(`元宝+${extraYuanbao}`);
-      if (extraGold > 0) rewardText.push(`金币+${extraGold}`);
-      (firstRechargeCfg.items || []).forEach((entry) => {
-        const itemId = String(entry?.id || '').trim();
-        const qty = Math.max(0, Math.floor(Number(entry?.qty || 0)));
-        if (!itemId || qty <= 0) return;
-        const name = ITEM_TEMPLATES[itemId]?.name || itemId;
-        rewardText.push(`${name}x${qty}`);
-      });
+      const grant = grantFirstRechargeWelfareToPlayer(player, firstRechargeCfg);
+      const rewardText = Array.isArray(grant.rewardText) ? grant.rewardText : [];
+      await markFirstRechargeRewardIssued(player.userId, { source: 'auto_recharge', charName: player.name });
       if (rewardText.length) {
         firstRechargeMsg = `\n首充福利已发放：${rewardText.join('、')}。`;
       }
