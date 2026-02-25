@@ -40,6 +40,7 @@ const firstRechargeSaveBtn = document.getElementById('first-recharge-save-btn');
 const firstRechargeReissueCharInput = document.getElementById('first-recharge-reissue-char');
 const firstRechargeReissueRealmInput = document.getElementById('first-recharge-reissue-realm');
 const firstRechargeReissueBtn = document.getElementById('first-recharge-reissue-btn');
+const firstRechargeReissueDivineBeastBtn = document.getElementById('first-recharge-reissue-divine-beast-btn');
 const firstRechargeReissueAllBtn = document.getElementById('first-recharge-reissue-all-btn');
 const firstRechargeMsg = document.getElementById('first-recharge-msg');
 const vipSelfClaimStatus = document.getElementById('vip-self-claim-status');
@@ -2932,6 +2933,26 @@ async function reissueFirstRechargeWelfare() {
     setTimeout(() => setFirstRechargeMsg(''), 2500);
   } catch (err) {
     setFirstRechargeMsg(`补发失败: ${err.message}`, 'red');
+  }
+}
+
+async function reissueDivineBeastForCharacter() {
+  if (!firstRechargeMsg) return;
+  const charName = String(firstRechargeReissueCharInput?.value || '').trim();
+  const realmId = Math.max(1, Math.floor(Number(firstRechargeReissueRealmInput?.value || 1) || 1));
+  if (!charName) {
+    setFirstRechargeMsg('请输入要补发的角色名', 'red');
+    return;
+  }
+  if (!window.confirm(`确认给角色【${charName}】补发马年神兽吗？`)) return;
+  setFirstRechargeMsg('补发马年神兽中...');
+  try {
+    const data = await api('/admin/first-recharge-settings/reissue-divine-beast', 'POST', { charName, realmId });
+    const petName = String(data?.pet?.name || data?.pet?.role || '马年神兽');
+    setFirstRechargeMsg(`马年神兽补发成功（${data?.online ? '在线' : '离线'}）：${petName}`, 'green');
+    setTimeout(() => setFirstRechargeMsg(''), 2500);
+  } catch (err) {
+    setFirstRechargeMsg(`补发马年神兽失败: ${err.message}`, 'red');
   }
 }
 
@@ -6503,6 +6524,7 @@ document.getElementById('recharge-list-btn').addEventListener('click', listRecha
 if (firstRechargeLoadBtn) firstRechargeLoadBtn.addEventListener('click', loadFirstRechargeSettings);
 if (firstRechargeSaveBtn) firstRechargeSaveBtn.addEventListener('click', saveFirstRechargeSettings);
 if (firstRechargeReissueBtn) firstRechargeReissueBtn.addEventListener('click', reissueFirstRechargeWelfare);
+if (firstRechargeReissueDivineBeastBtn) firstRechargeReissueDivineBeastBtn.addEventListener('click', reissueDivineBeastForCharacter);
 if (firstRechargeReissueAllBtn) firstRechargeReissueAllBtn.addEventListener('click', reissueAllRechargeUsersFirstRechargeWelfare);
 if (vipCodesPrev) {
   vipCodesPrev.addEventListener('click', () => {

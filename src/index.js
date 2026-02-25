@@ -254,6 +254,13 @@ function firstRechargeReissueCharacterMarkerKey(userId, charName, realmId = 1) {
   return `first_recharge_reissue_marked_char_${uid}_${rid}_${name}`;
 }
 
+function divineBeastReissueCharacterMarkerKey(userId, charName, realmId = 1) {
+  const uid = Math.max(0, Math.floor(Number(userId) || 0));
+  const rid = Math.max(1, Math.floor(Number(realmId || 1) || 1));
+  const name = String(charName || '').trim();
+  return `divine_beast_reissue_marked_char_${uid}_${rid}_${name}`;
+}
+
 async function hasFirstRechargeRewardMarker(userId) {
   const uid = Math.max(0, Math.floor(Number(userId) || 0));
   if (!uid) return false;
@@ -299,6 +306,43 @@ async function markFirstRechargeReissueCharacterIssued(userId, charName, realmId
   return true;
 }
 
+async function hasDivineBeastReissueCharacterMarker(userId, charName, realmId = 1) {
+  const uid = Math.max(0, Math.floor(Number(userId) || 0));
+  const rid = Math.max(1, Math.floor(Number(realmId || 1) || 1));
+  const name = String(charName || '').trim();
+  if (!uid || !name) return false;
+  const value = await getSetting(divineBeastReissueCharacterMarkerKey(uid, name, rid), '');
+  return Boolean(String(value || '').trim());
+}
+
+async function markDivineBeastReissueCharacterIssued(userId, charName, realmId = 1, payload = {}) {
+  const uid = Math.max(0, Math.floor(Number(userId) || 0));
+  const rid = Math.max(1, Math.floor(Number(realmId || 1) || 1));
+  const name = String(charName || '').trim();
+  if (!uid || !name) return false;
+  const data = {
+    at: Date.now(),
+    source: String(payload?.source || 'unknown'),
+    operator: String(payload?.operator || ''),
+    charName: name,
+    realmId: rid
+  };
+  await setSetting(divineBeastReissueCharacterMarkerKey(uid, name, rid), JSON.stringify(data));
+  return true;
+}
+
+function grantDivineBeastPetToPlayer(player) {
+  if (!player) return { ok: false, reason: 'player_not_found' };
+  const petState = normalizePetState(player);
+  if (!petState) return { ok: false, reason: 'pet_state_invalid' };
+  const divineBeast = createRandomPet('ultimate', { fixedSpecies: '马年神兽' });
+  if (!divineBeast) return { ok: false, reason: 'create_failed' };
+  petState.pets.push(divineBeast);
+  if (!petState.activePetId) petState.activePetId = divineBeast.id;
+  player.forceStateRefresh = true;
+  return { ok: true, pet: divineBeast };
+}
+
 function grantFirstRechargeWelfareToPlayer(player, config = null) {
   if (!player) return { ok: false, reason: 'player_not_found', rewardText: [] };
   const cfg = normalizeFirstRechargeWelfareConfig(config || getFirstRechargeWelfareConfigSnapshot());
@@ -325,13 +369,8 @@ function grantFirstRechargeWelfareToPlayer(player, config = null) {
     rewardText.push(`${ITEM_TEMPLATES[itemId]?.name || itemId}x${qty}`);
   });
   if (cfg.grantDivineBeast !== false) {
-    const petState = normalizePetState(player);
-    const divineBeast = petState ? createRandomPet('ultimate', { fixedSpecies: '马年神兽' }) : null;
-    if (petState && divineBeast) {
-      petState.pets.push(divineBeast);
-      if (!petState.activePetId) petState.activePetId = divineBeast.id;
-      rewardText.push('马年神兽x1');
-    }
+    const petGrant = grantDivineBeastPetToPlayer(player);
+    if (petGrant?.ok && petGrant.pet) rewardText.push(`${petGrant.pet.role || '马年神兽'}x1`);
   }
   player.forceStateRefresh = true;
   return { ok: true, rewardText, config: cfg };
@@ -1284,6 +1323,74 @@ app.post('/admin/first-recharge-settings/reissue', async (req, res) => {
     realmId,
     online: !saveOffline,
     rewardText: Array.isArray(grant.rewardText) ? grant.rewardText : []
+  });
+});
+
+app.post('/admin/first-recharge-settings/reissue-divine-beast', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const charName = String(req.body?.charName || '').trim();
+  const rawRealmId = req.body?.realmId;
+  if (!charName) return res.status(400).json({ error: '请输入角色名。' });
+  let realmInfo = await resolveRealmId(rawRealmId);
+  if (realmInfo.error) {
+    const realms = await listRealms();
+    if (Array.isArray(realms) && realms.length > 0) {
+      realmInfo = { realmId: realms[0].id };
+    } else {
+      return res.status(400).json({ error: realmInfo.error });
+    }
+  }
+  const realmId = realmInfo.realmId;
+  let player = playersByName(charName, realmId);
+  let userId = Math.max(0, Math.floor(Number(player?.userId || 0)));
+  let targetName = player?.name || charName;
+  let saveOffline = null;
+  if (!player) {
+    const row = await findCharacterByNameInRealm(charName, realmId);
+    if (!row) return res.status(404).json({ error: '角色不存在。' });
+    player = await loadCharacter(row.user_id, row.name, row.realm_id || 1);
+    if (!player) return res.status(404).json({ error: '角色数据不存在。' });
+    userId = Math.max(0, Math.floor(Number(row.user_id || player.userId || 0)));
+    targetName = row.name || player.name || charName;
+    player.userId = userId || player.userId;
+    player.realmId = row.realm_id || player.realmId || realmId;
+    saveOffline = async () => {
+      await saveCharacter(row.user_id, player, row.realm_id || 1);
+    };
+  }
+  if (!userId) return res.status(400).json({ error: '角色账号信息异常。' });
+  const targetRealmId = Math.max(1, Math.floor(Number(player?.realmId || realmId) || realmId));
+  if (await hasDivineBeastReissueCharacterMarker(userId, targetName, targetRealmId)) {
+    return res.status(400).json({ error: '该角色已补发过马年神兽，不能重复补发。' });
+  }
+  const petGrant = grantDivineBeastPetToPlayer(player);
+  if (!petGrant?.ok || !petGrant.pet) {
+    return res.status(400).json({ error: '马年神兽补发失败。' });
+  }
+  if (typeof saveOffline === 'function') {
+    await saveOffline();
+  } else {
+    await savePlayer(player);
+    if (player?.socket) {
+      player.forceStateRefresh = true;
+      await sendState(player);
+      if (typeof player.send === 'function') player.send('管理员已补发马年神兽，请查看宠物。');
+    }
+  }
+  const operator = String(admin?.user?.username || admin?.user?.name || admin?.user?.id || '').trim();
+  await markDivineBeastReissueCharacterIssued(userId, targetName, targetRealmId, { source: 'admin_reissue_divine_beast', operator });
+  res.json({
+    ok: true,
+    charName: targetName,
+    realmId: targetRealmId,
+    online: !saveOffline,
+    pet: {
+      id: petGrant.pet.id,
+      name: petGrant.pet.name,
+      role: petGrant.pet.role,
+      rarity: petGrant.pet.rarity
+    }
   });
 });
 
@@ -10254,10 +10361,8 @@ function createRandomPet(rarity = 'normal', options = {}) {
   const speciesPool = excludedSpecies
     ? rawSpeciesPool.filter((name) => !excludedSpecies.has(String(name || '').trim()))
     : rawSpeciesPool;
-  if (!speciesPool.length) return null;
-  const role = fixedSpecies && rawSpeciesPool.includes(fixedSpecies)
-    ? fixedSpecies
-    : speciesPool[randInt(0, speciesPool.length - 1)];
+  const role = fixedSpecies || (speciesPool.length ? speciesPool[randInt(0, speciesPool.length - 1)] : '');
+  if (!role) return null;
   const growthRange = PET_RARITY_GROWTH_RANGE[safeRarity] || PET_RARITY_GROWTH_RANGE.normal;
   const growth = Number((growthRange[0] + Math.random() * (growthRange[1] - growthRange[0])).toFixed(3));
   const isDivineBeast = String(role) === '马年神兽';

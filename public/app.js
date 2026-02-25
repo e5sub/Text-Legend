@@ -2791,6 +2791,7 @@ function renderPetModal() {
   }
 
   if (petUi.useBook) {
+    const prevBookId = String(petUi.useBook.value || '');
     petUi.useBook.innerHTML = '';
     ownedBooks.forEach((book) => {
       const opt = document.createElement('option');
@@ -2798,6 +2799,9 @@ function renderPetModal() {
       opt.textContent = `${book.name} x${book.qty}`;
       petUi.useBook.appendChild(opt);
     });
+    if (prevBookId && ownedBooks.some((book) => String(book.id) === prevBookId)) {
+      petUi.useBook.value = prevBookId;
+    }
   }
   if (petUi.synthMain && petUi.synthSub) {
     const prevMainId = String(petUi.synthMain.value || '');
