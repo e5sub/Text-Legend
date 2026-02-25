@@ -15,6 +15,7 @@ let trainingFruitCoefficient = 0.5;
 
 // 修炼果爆率配置（可由后台动态配置，0.01 = 1%）
 let trainingFruitDropRate = 0.01;
+let petTrainingFruitDropRate = 0.01;
 
 // 修炼系统每级效果配置（可由后台动态配置）
 let trainingPerLevelConfig = {
@@ -115,6 +116,16 @@ export function setTrainingFruitDropRate(rate) {
  */
 export function getTrainingFruitDropRate() {
   return trainingFruitDropRate;
+}
+
+export function setPetTrainingFruitDropRate(rate) {
+  if (typeof rate === 'number' && rate >= 0 && rate <= 1) {
+    petTrainingFruitDropRate = rate;
+  }
+}
+
+export function getPetTrainingFruitDropRate() {
+  return petTrainingFruitDropRate;
 }
 
 /**

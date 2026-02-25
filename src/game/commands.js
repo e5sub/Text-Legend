@@ -634,6 +634,7 @@ const TRAINING_ALIASES = {
   dex: 'dex',
   敏捷: 'dex'
 };
+const PET_TRAINING_KEYS = ['hp', 'mp', 'atk', 'def', 'mag', 'mdef', 'dex'];
 const ZHUXIAN_TOWER_ZONE_ID = 'zxft';
 const ZHUXIAN_TOWER_FLOOR_PATTERN = /^floor_(\d+)_x(?:__u_(.+))?$/;
 const PERSONAL_BOSS_ZONE_ID = 'pboss';
@@ -1266,8 +1267,25 @@ function skillByName(player, name) {
 function trainingCost(player, key) {
   const training = player.flags?.training || {};
   const currentLevel = Number(training[key] || 0);
+  return trainingCostByLevel(currentLevel);
+}
+
+function trainingCostByLevel(currentLevel) {
   const base = 10000;
   return Math.max(1, Math.floor(base + currentLevel * (base * 0.2)));
+}
+
+function normalizeTrainingRecord(record) {
+  const src = record && typeof record === 'object' ? record : {};
+  return {
+    hp: Math.max(0, Math.floor(Number(src.hp || 0))),
+    mp: Math.max(0, Math.floor(Number(src.mp || 0))),
+    atk: Math.max(0, Math.floor(Number(src.atk || 0))),
+    def: Math.max(0, Math.floor(Number(src.def || 0))),
+    mag: Math.max(0, Math.floor(Number(src.mag || 0))),
+    mdef: Math.max(0, Math.floor(Number(src.mdef || 0))),
+    dex: Math.max(0, Math.floor(Number(src.dex || 0)))
+  };
 }
 
 function getHealMultiplier(target) {
@@ -5131,6 +5149,87 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         send('宠物已收回。');
         return;
       }
+
+      if (sub === 'train' || sub === 'training' || sub === '修炼') {
+        const petId = parts[1];
+        if (!petId) return send('请指定要修炼的宠物ID。');
+        const petState = normalizePetState(player);
+        if (!petState) return send('宠物系统未初始化。');
+        const pet = petState.pets.find((p) => p.id === petId);
+        if (!pet) return send('找不到指定的宠物。');
+        pet.training = normalizeTrainingRecord(pet.training);
+
+        const attrArgs = parts.slice(2);
+        if (attrArgs.length === 0) {
+          const perLevelCfg = getTrainingPerLevelConfig();
+          PET_TRAINING_KEYS.forEach((key) => {
+            const info = TRAINING_OPTIONS[key];
+            const level = Math.max(0, Math.floor(Number(pet.training?.[key] || 0)));
+            const totalBonus = level * Number(perLevelCfg[key] || 0);
+            const cost = trainingCostByLevel(level);
+            send(`${info.label}: Lv${level} (属性+${totalBonus.toFixed(2)}), 消耗 ${cost} 金币 + 宠物修炼果x1`);
+          });
+          send('用法: pet train <宠物ID> 属性 次数(可选)');
+          return;
+        }
+
+        let key = null;
+        let trainCount = 1;
+        if (attrArgs.length >= 2) {
+          const countStr = attrArgs[attrArgs.length - 1];
+          const parsedCount = parseInt(countStr, 10);
+          if (!isNaN(parsedCount) && parsedCount > 0) {
+            trainCount = parsedCount;
+            const keyStr = attrArgs.slice(0, -1).join('');
+            key = TRAINING_ALIASES[keyStr] || TRAINING_ALIASES[keyStr.toLowerCase()];
+          } else {
+            const keyStr = attrArgs.join('');
+            key = TRAINING_ALIASES[keyStr] || TRAINING_ALIASES[keyStr.toLowerCase()];
+          }
+        } else {
+          const keyStr = attrArgs[0];
+          key = TRAINING_ALIASES[keyStr] || TRAINING_ALIASES[keyStr.toLowerCase()];
+        }
+
+        if (!key || !TRAINING_OPTIONS[key] || !PET_TRAINING_KEYS.includes(key)) {
+          send('可修炼属性: 生命, 魔法值, 攻击, 防御, 魔法, 魔御, 敏捷');
+          send('格式: pet train <宠物ID> 属性 次数(可选)');
+          return;
+        }
+
+        const fruitOwned = Math.max(0, Math.floor(Number((player.inventory || []).find((i) => i?.id === 'pet_training_fruit')?.qty || 0)));
+        if (fruitOwned < trainCount) {
+          return send(`宠物修炼果不足。需要 ${trainCount} 个，当前只有 ${fruitOwned} 个。`);
+        }
+
+        let totalCost = 0;
+        const currentLevel = Math.max(0, Math.floor(Number(pet.training[key] || 0)));
+        for (let i = 0; i < trainCount; i += 1) {
+          totalCost += trainingCostByLevel(currentLevel + i);
+        }
+        if (player.gold < totalCost) {
+          return send(`金币不足。需要 ${totalCost} 金币，当前只有 ${player.gold} 金币。`);
+        }
+
+        if (!removeItem(player, 'pet_training_fruit', trainCount)) {
+          return send('宠物修炼果扣除失败，请重试。');
+        }
+        player.gold -= totalCost;
+        pet.training[key] = currentLevel + trainCount;
+        const newLevel = pet.training[key];
+        const perLevel = Number(getTrainingPerLevelConfig()[key] || 0);
+        const totalBonus = newLevel * perLevel;
+        player.forceStateRefresh = true;
+
+        if (trainCount === 1) {
+          send(`宠物修炼成功: ${pet.name} ${TRAINING_OPTIONS[key].label} 升至 Lv${newLevel} (属性+${totalBonus.toFixed(2)})。`);
+          send(`消耗 ${totalCost} 金币、宠物修炼果 x1。`);
+        } else {
+          send(`宠物批量修炼成功: ${pet.name} ${TRAINING_OPTIONS[key].label} 从 Lv${currentLevel} 升至 Lv${newLevel} (属性+${totalBonus.toFixed(2)})。`);
+          send(`共 ${trainCount} 次，消耗 ${totalCost} 金币、宠物修炼果 x${trainCount}。`);
+        }
+        return;
+      }
       
       if (sub === 'reset') {
         // 使用金柳露重置宠物资质
@@ -5177,7 +5276,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         return;
       }
       
-      send('宠物命令用法: pet activate <宠物ID> / pet release / pet reset <宠物ID>');
+      send('宠物命令用法: pet activate <宠物ID> / pet release / pet reset <宠物ID> / pet train <宠物ID> 属性 [次数]');
       return;
     }
     default:

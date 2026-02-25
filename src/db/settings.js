@@ -830,6 +830,17 @@ export async function setTrainingFruitDropRate(rate) {
   await setSetting('training_fruit_drop_rate', String(normalized));
 }
 
+export async function getPetTrainingFruitDropRate() {
+  const value = await getSetting('pet_training_fruit_drop_rate', '0.01');
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? Math.max(0, Math.min(1, parsed)) : 0.01;
+}
+
+export async function setPetTrainingFruitDropRate(rate) {
+  const normalized = Math.max(0, Math.min(1, Number(rate) || 0.01));
+  await setSetting('pet_training_fruit_drop_rate', String(normalized));
+}
+
 // 特效装备掉落配置
 export async function getEffectDropSingleChance() {
   const value = await getSetting('effect_drop_single_chance', '0.009');

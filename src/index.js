@@ -18,7 +18,7 @@ import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from '.
 import { sendMail, listMail, listSentMail, markMailRead, markMailClaimed, deleteMail } from './db/mail.js';
 import { createVipCodes, listVipCodes, countVipCodes, useVipCode } from './db/vip.js';
 import { createRechargeCards, listRechargeCards, countRechargeCards, useRechargeCard } from './db/recharge.js';
-import { getSetting, setSetting, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getSvipPrices, setSvipPrices, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getPetSettings, setPetSettings, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb, getEquipSkillDropChance as getEquipSkillDropChanceDb, setEquipSkillDropChance as setEquipSkillDropChanceDb, getTreasureSlotCount as getTreasureSlotCountDb, setTreasureSlotCount as setTreasureSlotCountDb, getTreasureMaxLevel as getTreasureMaxLevelDb, setTreasureMaxLevel as setTreasureMaxLevelDb, getTreasureUpgradeConsume as getTreasureUpgradeConsumeDb, setTreasureUpgradeConsume as setTreasureUpgradeConsumeDb, getTreasureAdvanceConsume as getTreasureAdvanceConsumeDb, setTreasureAdvanceConsume as setTreasureAdvanceConsumeDb, getTreasureAdvancePerStage as getTreasureAdvancePerStageDb, setTreasureAdvancePerStage as setTreasureAdvancePerStageDb, getTreasureAdvanceEffectBonusPerStack as getTreasureAdvanceEffectBonusPerStackDb, setTreasureAdvanceEffectBonusPerStack as setTreasureAdvanceEffectBonusPerStackDb, getTreasureWorldBossDropMultiplier as getTreasureWorldBossDropMultiplierDb, setTreasureWorldBossDropMultiplier as setTreasureWorldBossDropMultiplierDb, getTreasureCrossWorldBossDropMultiplier as getTreasureCrossWorldBossDropMultiplierDb, setTreasureCrossWorldBossDropMultiplier as setTreasureCrossWorldBossDropMultiplierDb, getTreasureTowerXuanmingDropChance as getTreasureTowerXuanmingDropChanceDb, setTreasureTowerXuanmingDropChance as setTreasureTowerXuanmingDropChanceDb, getCmdRateLimits, setCmdRateLimits, getCmdCooldowns, setCmdCooldowns } from './db/settings.js';
+import { getSetting, setSetting, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getSvipPrices, setSvipPrices, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getPetTrainingFruitDropRate as getPetTrainingFruitDropRateDb, setPetTrainingFruitDropRate as setPetTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getPetSettings, setPetSettings, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb, getEquipSkillDropChance as getEquipSkillDropChanceDb, setEquipSkillDropChance as setEquipSkillDropChanceDb, getTreasureSlotCount as getTreasureSlotCountDb, setTreasureSlotCount as setTreasureSlotCountDb, getTreasureMaxLevel as getTreasureMaxLevelDb, setTreasureMaxLevel as setTreasureMaxLevelDb, getTreasureUpgradeConsume as getTreasureUpgradeConsumeDb, setTreasureUpgradeConsume as setTreasureUpgradeConsumeDb, getTreasureAdvanceConsume as getTreasureAdvanceConsumeDb, setTreasureAdvanceConsume as setTreasureAdvanceConsumeDb, getTreasureAdvancePerStage as getTreasureAdvancePerStageDb, setTreasureAdvancePerStage as setTreasureAdvancePerStageDb, getTreasureAdvanceEffectBonusPerStack as getTreasureAdvanceEffectBonusPerStackDb, setTreasureAdvanceEffectBonusPerStack as setTreasureAdvanceEffectBonusPerStackDb, getTreasureWorldBossDropMultiplier as getTreasureWorldBossDropMultiplierDb, setTreasureWorldBossDropMultiplier as setTreasureWorldBossDropMultiplierDb, getTreasureCrossWorldBossDropMultiplier as getTreasureCrossWorldBossDropMultiplierDb, setTreasureCrossWorldBossDropMultiplier as setTreasureCrossWorldBossDropMultiplierDb, getTreasureTowerXuanmingDropChance as getTreasureTowerXuanmingDropChanceDb, setTreasureTowerXuanmingDropChance as setTreasureTowerXuanmingDropChanceDb, getCmdRateLimits, setCmdRateLimits, getCmdCooldowns, setCmdCooldowns } from './db/settings.js';
 import { listRealms, getRealmById, updateRealmName, createRealm } from './db/realms.js';
 import {
   listMobRespawns,
@@ -137,8 +137,11 @@ import {
   setAllClassLevelBonusConfigs,
   setClassLevelBonusConfig as setClassLevelBonusConfigMem,
   getTrainingFruitDropRate,
+  getPetTrainingFruitDropRate,
+  getTrainingPerLevelConfig,
   setTrainingFruitCoefficient,
   setTrainingFruitDropRate as setTrainingFruitDropRateConfig,
+  setPetTrainingFruitDropRate as setPetTrainingFruitDropRateConfig,
   setTrainingPerLevelConfig as setTrainingPerLevelConfigMem
 } from './game/settings.js';
 import {
@@ -1322,7 +1325,8 @@ app.get('/admin/training-fruit-settings', async (req, res) => {
     if (!admin) return res.status(401).json({ error: '无管理员权限。' });
     const coefficient = await getTrainingFruitCoefficientDb();
     const dropRate = await getTrainingFruitDropRateDb();
-    res.json({ ok: true, coefficient, dropRate });
+    const petDropRate = await getPetTrainingFruitDropRateDb();
+    res.json({ ok: true, coefficient, dropRate, petDropRate });
   } catch (err) {
     console.error('修炼果配置加载失败:', err);
     res.status(500).json({ error: err.message || '加载失败' });
@@ -1332,7 +1336,7 @@ app.get('/admin/training-fruit-settings', async (req, res) => {
 app.post('/admin/training-fruit-settings/update', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
-  const { coefficient, dropRate } = req.body || {};
+  const { coefficient, dropRate, petDropRate } = req.body || {};
   if (coefficient !== undefined) {
     const parsed = Number(coefficient);
     if (isNaN(parsed) || parsed < 0) {
@@ -1347,12 +1351,21 @@ app.post('/admin/training-fruit-settings/update', async (req, res) => {
     }
     await setTrainingFruitDropRateDb(parsed);
   }
+  if (petDropRate !== undefined) {
+    const parsed = Number(petDropRate);
+    if (isNaN(parsed) || parsed < 0 || parsed > 1) {
+      return res.status(400).json({ error: '宠物修炼果爆率必须为有效数字且在0到1之间' });
+    }
+    await setPetTrainingFruitDropRateDb(parsed);
+  }
   // 更新内存中的配置
   const newCoefficient = await getTrainingFruitCoefficientDb();
   const newDropRate = await getTrainingFruitDropRateDb();
+  const newPetDropRate = await getPetTrainingFruitDropRateDb();
   setTrainingFruitCoefficient(newCoefficient);
   setTrainingFruitDropRateConfig(newDropRate);
-  res.json({ ok: true, coefficient: newCoefficient, dropRate: newDropRate });
+  setPetTrainingFruitDropRateConfig(newPetDropRate);
+  res.json({ ok: true, coefficient: newCoefficient, dropRate: newDropRate, petDropRate: newPetDropRate });
 });
 
 // 修炼系统配置
@@ -4774,6 +4787,10 @@ function dropLoot(mobTemplate, bonus = 1) {
   if (Math.random() <= trainingChance) {
     loot.push({ id: 'training_fruit', effects: null });
   }
+  const petTrainingChance = Math.min(1, getPetTrainingFruitDropRate());
+  if (Math.random() <= petTrainingChance) {
+    loot.push({ id: 'pet_training_fruit', effects: null });
+  }
   const rarityDrop = rollRarityDrop(mobTemplate, finalBonus);
   if (rarityDrop) {
     loot.push({ id: rarityDrop, effects: rollEquipmentEffects(rarityDrop) });
@@ -5618,6 +5635,14 @@ function distributeLootWithBonus(party, partyMembers, mobTemplate, bonusResolver
     logLoot(`[loot][party] ${trainingTarget.name} <- training_fruit`);
     results.push({ id: 'training_fruit', effects: null, target: trainingTarget });
     notifyParty(trainingTarget, 'training_fruit', null);
+  }
+  const petTrainingTarget = partyMembers[randInt(0, partyMembers.length - 1)];
+  const petTrainingChance = Math.min(1, getPetTrainingFruitDropRate());
+  if (Math.random() <= petTrainingChance) {
+    addItem(petTrainingTarget, 'pet_training_fruit', 1, null);
+    logLoot(`[loot][party] ${petTrainingTarget.name} <- pet_training_fruit`);
+    results.push({ id: 'pet_training_fruit', effects: null, target: petTrainingTarget });
+    notifyParty(petTrainingTarget, 'pet_training_fruit', null);
   }
 
   const rarityTarget = partyMembers[randInt(0, partyMembers.length - 1)];
@@ -7202,10 +7227,15 @@ function applyOfflineRewards(player) {
   const expGain = Math.floor(offlineMinutes * player.level * offlineMultiplier * rewardMult);
   const goldGain = Math.floor(offlineMinutes * player.level * offlineMultiplier);
   let fruitGain = 0;
+  let petFruitGain = 0;
   const fruitDropRate = getTrainingFruitDropRate();
+  const petFruitDropRate = getPetTrainingFruitDropRate();
   for (let i = 0; i < offlineMinutes; i += 1) {
     if (Math.random() <= fruitDropRate) {
       fruitGain += 1;
+    }
+    if (Math.random() <= petFruitDropRate) {
+      petFruitGain += 1;
     }
   }
   gainExp(player, expGain);
@@ -7214,9 +7244,15 @@ function applyOfflineRewards(player) {
   if (fruitGain > 0) {
     addItem(player, 'training_fruit', fruitGain);
   }
+  if (petFruitGain > 0) {
+    addItem(player, 'pet_training_fruit', petFruitGain);
+  }
   player.flags.offlineAt = null;
-  if (fruitGain > 0) {
-    player.send(`离线挂机收益: ${expGain} 经验, ${goldGain} 金币, 修炼果 x${fruitGain}。`);
+  if (fruitGain > 0 || petFruitGain > 0) {
+    const extraParts = [];
+    if (fruitGain > 0) extraParts.push(`修炼果 x${fruitGain}`);
+    if (petFruitGain > 0) extraParts.push(`宠物修炼果 x${petFruitGain}`);
+    player.send(`离线挂机收益: ${expGain} 经验, ${goldGain} 金币, ${extraParts.join('，')}。`);
   } else {
     player.send(`离线挂机收益: ${expGain} 经验, ${goldGain} 金币。`);
   }
@@ -8808,15 +8844,16 @@ function calcPetAssistDamage(player, mob) {
   if (!pet || !mob || Number(mob.hp || 0) <= 0) return null;
   const aptitude = pet.aptitude || {};
   const equipStats = getPetEquipmentCombatStats(pet);
+  const petTrainingBonus = getPetTrainingBonus(pet);
   const growth = Math.max(0.8, Number(pet.growth || 1));
   const level = Math.max(1, Math.floor(Number(pet.level || 1)));
   const battleType = normalizePetBattleType(pet, aptitude);
   const mobDef = Math.max(0, Number(mob.def || 0));
   const mobMdef = Math.max(0, Number(mob.mdef || 0));
-  const petAtk = Number(aptitude.atk || 0) + Number(equipStats.atk || 0);
-  const petMag = Number(aptitude.mag || 0) + Number(equipStats.mag || 0) + Number(equipStats.spirit || 0);
-  const petHp = Number(aptitude.hp || 0) + Number(equipStats.hp || 0);
-  const petDef = Number(aptitude.def || 0) + Number(equipStats.def || 0);
+  const petAtk = Number(aptitude.atk || 0) + Number(equipStats.atk || 0) + Number(petTrainingBonus.atk || 0) + Number(petTrainingBonus.dex || 0);
+  const petMag = Number(aptitude.mag || 0) + Number(equipStats.mag || 0) + Number(equipStats.spirit || 0) + Number(petTrainingBonus.mag || 0);
+  const petHp = Number(aptitude.hp || 0) + Number(equipStats.hp || 0) + Number(petTrainingBonus.hp || 0);
+  const petDef = Number(aptitude.def || 0) + Number(equipStats.def || 0) + Number(petTrainingBonus.def || 0);
 
   let base = 0;
   const typeMods = {
@@ -9117,15 +9154,16 @@ function calcPetAssistDamageToPlayer(attacker, target) {
   if (!pet || !target || Number(target.hp || 0) <= 0) return null;
   const aptitude = pet.aptitude || {};
   const equipStats = getPetEquipmentCombatStats(pet);
+  const petTrainingBonus = getPetTrainingBonus(pet);
   const growth = Math.max(0.8, Number(pet.growth || 1));
   const level = Math.max(1, Math.floor(Number(pet.level || 1)));
   const battleType = normalizePetBattleType(pet, aptitude);
   const targetDef = Math.max(0, Number(target.def || 0));
   const targetMdef = Math.max(0, Number(target.mdef || 0));
-  const petAtk = Number(aptitude.atk || 0) + Number(equipStats.atk || 0);
-  const petMag = Number(aptitude.mag || 0) + Number(equipStats.mag || 0) + Number(equipStats.spirit || 0);
-  const petHp = Number(aptitude.hp || 0) + Number(equipStats.hp || 0);
-  const petDef = Number(aptitude.def || 0) + Number(equipStats.def || 0);
+  const petAtk = Number(aptitude.atk || 0) + Number(equipStats.atk || 0) + Number(petTrainingBonus.atk || 0) + Number(petTrainingBonus.dex || 0);
+  const petMag = Number(aptitude.mag || 0) + Number(equipStats.mag || 0) + Number(equipStats.spirit || 0) + Number(petTrainingBonus.mag || 0);
+  const petHp = Number(aptitude.hp || 0) + Number(equipStats.hp || 0) + Number(petTrainingBonus.hp || 0);
+  const petDef = Number(aptitude.def || 0) + Number(equipStats.def || 0) + Number(petTrainingBonus.def || 0);
 
   let base = 0;
   const typeMods = {
@@ -9502,22 +9540,51 @@ function calcPetPower(pet) {
   );
 }
 
+function normalizePetTrainingRecord(record) {
+  const src = record && typeof record === 'object' ? record : {};
+  return {
+    hp: Math.max(0, Math.floor(Number(src.hp || 0))),
+    mp: Math.max(0, Math.floor(Number(src.mp || 0))),
+    atk: Math.max(0, Math.floor(Number(src.atk || 0))),
+    def: Math.max(0, Math.floor(Number(src.def || 0))),
+    mag: Math.max(0, Math.floor(Number(src.mag || 0))),
+    mdef: Math.max(0, Math.floor(Number(src.mdef || 0))),
+    dex: Math.max(0, Math.floor(Number(src.dex || 0)))
+  };
+}
+
+function getPetTrainingBonus(pet) {
+  const training = normalizePetTrainingRecord(pet?.training);
+  const perLevel = getTrainingPerLevelConfig();
+  return {
+    levels: training,
+    hp: Number(training.hp || 0) * Number(perLevel.hp || 0),
+    mp: Number(training.mp || 0) * Number(perLevel.mp || 0),
+    atk: Number(training.atk || 0) * Number(perLevel.atk || 0),
+    def: Number(training.def || 0) * Number(perLevel.def || 0),
+    mag: Number(training.mag || 0) * Number(perLevel.mag || 0),
+    mdef: Number(training.mdef || 0) * Number(perLevel.mdef || 0),
+    dex: Number(training.dex || 0) * Number(perLevel.dex || 0)
+  };
+}
+
 function calcPetBattlePanelDerivedStats(pet) {
   if (!pet) return { maxHp: 1, maxMp: 1, atk: 1, def: 0, mdef: 0 };
   const apt = pet.aptitude || {};
   const level = Math.max(1, Number(pet.level || 1));
   const growth = Math.max(0.8, Number(pet.growth || 1));
+  const trainingBonus = getPetTrainingBonus(pet);
   const battleType = String(pet.battleType || normalizePetBattleType(pet, apt));
   const typeMul = battleType === 'magic'
     ? { hp: 0.95, mp: 1.2, atk: 0.8, def: 0.95, mdef: 1.15 }
     : battleType === 'tank'
       ? { hp: 1.2, mp: 0.8, atk: 0.8, def: 1.2, mdef: 1.0 }
       : { hp: 1.0, mp: 0.9, atk: 1.2, def: 1.0, mdef: 0.9 };
-  const maxHp = Math.max(1, Math.floor(((Number(apt.hp || 0) * 3.8) + (Number(apt.def || 0) * 1.2) + level * 38) * growth * typeMul.hp));
-  const maxMp = Math.max(1, Math.floor(((Number(apt.mag || 0) * 2.8) + level * 22) * Math.max(0.9, growth) * typeMul.mp));
-  const atk = Math.max(1, Math.floor(((Number(apt.atk || 0) * 1.35) + level * 5) * growth * typeMul.atk));
-  const def = Math.max(0, Math.floor(((Number(apt.def || 0) * 1.2) + level * 4) * growth * typeMul.def));
-  const mdef = Math.max(0, Math.floor((((Number(apt.mag || 0) * 0.75) + (Number(apt.def || 0) * 0.65)) + level * 4) * growth * typeMul.mdef));
+  const maxHp = Math.max(1, Math.floor((((Number(apt.hp || 0) + Number(trainingBonus.hp || 0)) * 3.8) + ((Number(apt.def || 0) + Number(trainingBonus.def || 0)) * 1.2) + level * 38) * growth * typeMul.hp));
+  const maxMp = Math.max(1, Math.floor((((Number(apt.mag || 0) + Number(trainingBonus.mag || 0)) * 2.8) + level * 22) * Math.max(0.9, growth) * typeMul.mp + Number(trainingBonus.mp || 0)));
+  const atk = Math.max(1, Math.floor((((Number(apt.atk || 0) + Number(trainingBonus.atk || 0) + Number(trainingBonus.dex || 0)) * 1.35) + level * 5) * growth * typeMul.atk));
+  const def = Math.max(0, Math.floor((((Number(apt.def || 0) + Number(trainingBonus.def || 0)) * 1.2) + level * 4) * growth * typeMul.def));
+  const mdef = Math.max(0, Math.floor(((((Number(apt.mag || 0) + Number(trainingBonus.mag || 0)) * 0.75) + ((Number(apt.def || 0) + Number(trainingBonus.def || 0)) * 0.65)) + level * 4) * growth * typeMul.mdef + Number(trainingBonus.mdef || 0)));
   return { maxHp, maxMp, atk, def, mdef };
 }
 
@@ -9603,6 +9670,7 @@ function normalizePetState(player) {
         .filter((skillId) => Boolean(getPetSkillDef(skillId)))
         .slice(0, skillSlots);
       const equipment = normalizePetEquipmentState(pet.equipment);
+      const training = normalizePetTrainingRecord(pet.training);
       const levelRaw = Math.floor(Number(pet.level || playerLevel));
       const level = Math.max(1, Math.min(petLevelCap, Number.isFinite(levelRaw) ? levelRaw : playerLevel));
       const expNeed = getPetLevelExpNeed(level);
@@ -9625,6 +9693,7 @@ function normalizePetState(player) {
         aptitude,
         skillSlots,
         skills,
+        training,
         equipment,
         combatMp,
         combatMpUpdatedAt
@@ -9868,6 +9937,7 @@ function gainActivePetExp(player, expGain) {
 function buildPetStatePayload(player) {
   const state = normalizePetState(player);
   const pets = (state?.pets || []).map((pet) => ({
+    training: normalizePetTrainingRecord(pet.training),
     id: pet.id,
     rarity: pet.rarity || 'normal',
     rarityLabel: PET_RARITY_LABELS[pet.rarity] || PET_RARITY_LABELS.normal,
@@ -15294,6 +15364,8 @@ async function start() {
   setTrainingFruitCoefficient(trainingFruitCoefficient);
   const trainingFruitDropRate = await getTrainingFruitDropRateDb();
   setTrainingFruitDropRateConfig(trainingFruitDropRate);
+  const petTrainingFruitDropRate = await getPetTrainingFruitDropRateDb();
+  setPetTrainingFruitDropRateConfig(petTrainingFruitDropRate);
 
   // 加载修炼系统配置
   const trainingPerLevelConfig = await getTrainingPerLevelConfigDb();
