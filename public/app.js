@@ -7770,7 +7770,7 @@ async function apiGet(path, withAuth = false) {
 async function copyInviteLink() {
   if (!token) throw new Error('请先登录后再生成邀请链接');
   const data = await apiGet('/api/invite-link', true);
-  const link = String(data?.link || '').trim();
+  const link = normalizeInviteLinkForClient(String(data?.link || '').trim(), String(data?.code || '').trim());
   if (!link) throw new Error('邀请链接生成失败');
   try {
     if (navigator.clipboard?.writeText) {
@@ -7787,6 +7787,20 @@ async function copyInviteLink() {
     document.body.removeChild(input);
   }
   return { link, code: String(data?.code || '').trim() };
+}
+
+function normalizeInviteLinkForClient(rawLink, code = '') {
+  const safeCode = String(code || '').trim();
+  try {
+    const parsed = new URL(String(rawLink || '').trim(), window.location.origin);
+    parsed.protocol = window.location.protocol;
+    parsed.host = window.location.host;
+    if (safeCode) parsed.searchParams.set('invite', safeCode);
+    return parsed.toString();
+  } catch {
+    if (!safeCode) return '';
+    return `${window.location.origin}/?invite=${encodeURIComponent(safeCode)}`;
+  }
 }
 
 async function showInviteStatsPanel() {
@@ -7815,7 +7829,7 @@ async function showInviteStatsPanel() {
     title: '邀请系统',
     text,
     placeholder: '邀请链接',
-    value: String(data?.link || ''),
+    value: normalizeInviteLinkForClient(String(data?.link || '').trim(), String(data?.code || '').trim()),
     allowEmpty: true,
     extra: { text: '复制链接' }
   });
