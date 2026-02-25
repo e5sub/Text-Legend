@@ -13939,7 +13939,11 @@ io.on('connection', (socket) => {
     }
 
     const isOwner = player.guild && String(player.guild.id) === String(sabakState.ownerGuildId);
-    const isLeaderOrVice = player.guild && (player.guild.role === 'leader' || player.guild.role === 'vice');
+    const isLeaderOrVice = player.guild && (
+      player.guild.role === 'leader' ||
+      player.guild.role === 'vice_leader' ||
+      player.guild.role === 'vice'
+    );
     const now = new Date();
     const registerEnd = new Date(sabakWindowRange(now).start.getTime() - 10 * 60 * 1000);
     const hasRegisteredToday = player.guild
