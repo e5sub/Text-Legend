@@ -6200,7 +6200,7 @@ async function renameCharacterEverywhere({ userId, realmId = 1, oldName, newName
       .update({ char_name: toName });
     await trx('guilds')
       .where({ leader_user_id: uid, realm_id: rid, leader_char_name: fromName })
-      .update({ leader_char_name: toName, updated_at: trx.fn.now() });
+      .update({ leader_char_name: toName });
     await trx('guild_applications')
       .where({ user_id: uid, realm_id: rid, char_name: fromName })
       .update({ char_name: toName, applied_at: trx.fn.now() });
