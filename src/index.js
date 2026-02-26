@@ -13388,11 +13388,19 @@ io.on('connection', (socket) => {
     const existingSocketId = Array.from(players.keys()).find(key => players.get(key)?.name === name);
     let replacedExistingSession = false;
     let replacedManagedSession = false;
+    let managedSummonsSnapshot = [];
     if (existingSocketId) {
       const existingPlayer = players.get(existingSocketId);
       if (existingPlayer) {
         const existingIsManaged = isManagedHostedPlayer(existingPlayer);
         if (existingIsManaged) {
+          managedSummonsSnapshot = getAliveSummons(existingPlayer).map((summon) => ({
+            id: summon.id,
+            exp: summon.exp || 0,
+            level: summon.level || summon.summonLevel || 1,
+            hp: summon.hp || 0,
+            max_hp: summon.max_hp || 0
+          }));
           await savePlayer(existingPlayer);
           players.delete(existingSocketId);
           replacedExistingSession = true;
@@ -13465,9 +13473,11 @@ io.on('connection', (socket) => {
     }
 
     // 自动恢复召唤兽
-    const savedSummons = Array.isArray(loaded.flags.savedSummons)
-      ? loaded.flags.savedSummons
-      : (loaded.flags.savedSummon ? [loaded.flags.savedSummon] : []);
+    const savedSummons = managedSummonsSnapshot.length
+      ? managedSummonsSnapshot
+      : (Array.isArray(loaded.flags.savedSummons)
+        ? loaded.flags.savedSummons
+        : (loaded.flags.savedSummon ? [loaded.flags.savedSummon] : []));
     if (savedSummons.length) {
       savedSummons.forEach((saved) => {
         const skill = getSkill(loaded.classId, saved.id);
