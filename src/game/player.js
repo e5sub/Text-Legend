@@ -833,31 +833,41 @@ export function computeDerived(player) {
   const bonusSpirit = levelBonus.spiritPerLevel * levelUp;
   const bonusMdef = levelBonus.mdefPerLevel * levelUp;
 
-  player.max_hp = base.con * 10 + cls.hpPerLevel * level + stats.con * 2 + trainingBonus.hp + trainingFruitBonus.hp + bonusHp;
-  player.max_mp = base.spirit * 8 + cls.mpPerLevel * level + stats.spirit * 2 + trainingBonus.mp + trainingFruitBonus.mp + bonusMp;
-
-  player.atk = Math.floor((stats.str + trainingBonus.atk + trainingFruitBonus.atk + bonusAtk) * (1 + petAtkPct));
-  player.def = Math.floor((stats.con + trainingBonus.def + trainingFruitBonus.def + bonusDef) * (1 + petDefPct));
+  const baseDerivedStats = {
+    max_hp: base.con * 10 + cls.hpPerLevel * level + stats.con * 2 + bonusHp,
+    max_mp: base.spirit * 8 + cls.mpPerLevel * level + stats.spirit * 2 + bonusMp,
+    atk: stats.str + bonusAtk,
+    def: stats.con + bonusDef,
+    dex: 0,
+    mag: 0,
+    spirit: 0,
+    mdef: 0
+  };
   const bonusDex = levelBonus.dexPerLevel * levelUp;
-  player.dex = Math.floor((stats.dex + trainingBonus.dex + trainingFruitBonus.dex + bonusDex) * (1 + petDexPct));
-  player.mag = Math.floor((stats.int + trainingBonus.mag + trainingFruitBonus.mag + bonusMag) * (1 + petMagPct));
-  player.spirit = Math.floor((stats.spirit + trainingBonus.spirit + trainingFruitBonus.spirit + bonusSpirit) * (1 + petSpiritPct));
-  player.mdef = Math.floor((trainingBonus.mdef + trainingFruitBonus.mdef + mdefBonus + bonusMdef) * (1 + petDefPct));
-  player.max_hp = Math.floor(player.max_hp * (1 + petMaxHpPct));
-  player.max_mp = Math.floor(player.max_mp * (1 + petMaxMpPct));
+  baseDerivedStats.dex = stats.dex + bonusDex;
+  baseDerivedStats.mag = stats.int + bonusMag;
+  baseDerivedStats.spirit = stats.spirit + bonusSpirit;
+  baseDerivedStats.mdef = mdefBonus + bonusMdef;
+  player.atk = Math.floor(baseDerivedStats.atk * (1 + petAtkPct));
+  player.def = Math.floor(baseDerivedStats.def * (1 + petDefPct));
+  player.dex = Math.floor(baseDerivedStats.dex * (1 + petDexPct));
+  player.mag = Math.floor(baseDerivedStats.mag * (1 + petMagPct));
+  player.spirit = Math.floor(baseDerivedStats.spirit * (1 + petSpiritPct));
+  player.mdef = Math.floor(baseDerivedStats.mdef * (1 + petDefPct));
+  player.max_hp = Math.floor(baseDerivedStats.max_hp * (1 + petMaxHpPct));
+  player.max_mp = Math.floor(baseDerivedStats.max_mp * (1 + petMaxMpPct));
   player.elementAtk = elementAtk;
   const treasureBonus = getTreasureBonus(player);
   const treasureRandomAttr = getTreasureRandomAttrBonus(player);
-  const applyPct = (value, pct) => Math.floor(value * (1 + Math.max(0, Number(pct) || 0)));
   const treasureSharedAtkPct = Math.max(0, Number(treasureBonus.atkPct) || 0);
-  player.atk = applyPct(player.atk, treasureSharedAtkPct);
-  player.def = applyPct(player.def, treasureBonus.defPct);
-  player.mdef = applyPct(player.mdef, treasureBonus.mdefPct);
-  player.mag = applyPct(player.mag, treasureSharedAtkPct);
-  player.spirit = applyPct(player.spirit, treasureSharedAtkPct);
-  player.dex = applyPct(player.dex, treasureBonus.dexPct);
-  player.max_hp = applyPct(player.max_hp, treasureBonus.maxHpPct);
-  player.max_mp = applyPct(player.max_mp, treasureBonus.maxMpPct);
+  player.atk += Math.floor(baseDerivedStats.atk * treasureSharedAtkPct);
+  player.def += Math.floor(baseDerivedStats.def * Math.max(0, Number(treasureBonus.defPct) || 0));
+  player.mdef += Math.floor(baseDerivedStats.mdef * Math.max(0, Number(treasureBonus.mdefPct) || 0));
+  player.mag += Math.floor(baseDerivedStats.mag * treasureSharedAtkPct);
+  player.spirit += Math.floor(baseDerivedStats.spirit * treasureSharedAtkPct);
+  player.dex += Math.floor(baseDerivedStats.dex * Math.max(0, Number(treasureBonus.dexPct) || 0));
+  player.max_hp += Math.floor(baseDerivedStats.max_hp * Math.max(0, Number(treasureBonus.maxHpPct) || 0));
+  player.max_mp += Math.floor(baseDerivedStats.max_mp * Math.max(0, Number(treasureBonus.maxMpPct) || 0));
   player.max_hp += Math.max(0, treasureRandomAttr.hp || 0);
   player.max_mp += Math.max(0, treasureRandomAttr.mp || 0);
   player.atk += Math.max(0, treasureRandomAttr.atk || 0);
@@ -899,40 +909,50 @@ export function computeDerived(player) {
   } else {
     delete player.flags.equipSkillId;
   }
-  player.evadeChance = evadeChance + (player.dex || 0) * 0.0001 + Math.max(0, treasureBonus.evadePct || 0); // 1点敏捷增加0.0001闪避
-
   const dailyLucky = player.flags?.dailyLucky;
   if (dailyLucky && dailyLucky.attr && Number(dailyLucky.multiplier) > 1) {
-    const mult = Number(dailyLucky.multiplier);
+    const extraPct = Number(dailyLucky.multiplier) - 1;
     switch (dailyLucky.attr) {
       case 'atk':
-        player.atk = Math.floor(player.atk * mult);
+        player.atk += Math.floor(baseDerivedStats.atk * extraPct);
         break;
       case 'def':
-        player.def = Math.floor(player.def * mult);
+        player.def += Math.floor(baseDerivedStats.def * extraPct);
         break;
       case 'mag':
-        player.mag = Math.floor(player.mag * mult);
+        player.mag += Math.floor(baseDerivedStats.mag * extraPct);
         break;
       case 'mdef':
-        player.mdef = Math.floor(player.mdef * mult);
+        player.mdef += Math.floor(baseDerivedStats.mdef * extraPct);
         break;
       case 'spirit':
-        player.spirit = Math.floor(player.spirit * mult);
+        player.spirit += Math.floor(baseDerivedStats.spirit * extraPct);
         break;
       case 'dex':
-        player.dex = Math.floor(player.dex * mult);
+        player.dex += Math.floor(baseDerivedStats.dex * extraPct);
         break;
       case 'max_hp':
-        player.max_hp = Math.floor(player.max_hp * mult);
+        player.max_hp += Math.floor(baseDerivedStats.max_hp * extraPct);
         break;
       case 'max_mp':
-        player.max_mp = Math.floor(player.max_mp * mult);
+        player.max_mp += Math.floor(baseDerivedStats.max_mp * extraPct);
         break;
       default:
         break;
     }
   }
+
+  // 修炼/修炼果属性最后加入，不参与其他百分比加成
+  player.max_hp += trainingBonus.hp + trainingFruitBonus.hp;
+  player.max_mp += trainingBonus.mp + trainingFruitBonus.mp;
+  player.atk += trainingBonus.atk + trainingFruitBonus.atk;
+  player.def += trainingBonus.def + trainingFruitBonus.def;
+  player.mag += trainingBonus.mag + trainingFruitBonus.mag;
+  player.spirit += trainingBonus.spirit + trainingFruitBonus.spirit;
+  player.mdef += trainingBonus.mdef + trainingFruitBonus.mdef;
+  player.dex += trainingBonus.dex + trainingFruitBonus.dex;
+
+  player.evadeChance = evadeChance + (player.dex || 0) * 0.0001 + Math.max(0, treasureBonus.evadePct || 0); // 1点敏捷增加0.0001闪避
 
   player.hp = clamp(player.hp, 1, player.max_hp);
   player.mp = clamp(player.mp, 0, player.max_mp);
