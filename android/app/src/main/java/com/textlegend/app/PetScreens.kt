@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
 
@@ -39,7 +40,7 @@ fun PetDialog(
     val pets = petState?.pets ?: emptyList()
     val activePetId = petState?.activePetId
     val activePet = pets.find { it.id == activePetId }
-    val books = petState?.books ?: emptyMap()
+    val books = normalizePetBooksMap(petState?.books)
 
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf("我的宠物", "技能书库")
@@ -798,6 +799,17 @@ private fun formatPetEquippedName(item: PetEquippedItem): String {
 private fun formatBagEquipName(item: ItemInfo): String {
     val refine = if (item.refine_level > 0) " +${item.refine_level}" else ""
     return item.name + refine
+}
+
+private fun normalizePetBooksMap(raw: JsonElement?): Map<String, Int> {
+    val obj = raw as? JsonObject ?: return emptyMap()
+    if (obj.isEmpty()) return emptyMap()
+    val out = LinkedHashMap<String, Int>()
+    for ((key, value) in obj) {
+        val qty = value.jsonPrimitive.contentOrNull?.toIntOrNull() ?: continue
+        if (qty > 0) out[key] = qty
+    }
+    return out
 }
 
 private fun formatPetEquipStatsText(

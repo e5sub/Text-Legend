@@ -553,7 +553,7 @@ data class ChatLocation(
 data class PetState(
     @SerialName("active_pet_id") val activePetId: String? = null,
     val pets: List<PetInfo> = emptyList(),
-    val books: Map<String, Int> = emptyMap()
+    val books: JsonElement? = null
 )
 
 @Serializable
