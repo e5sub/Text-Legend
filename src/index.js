@@ -4541,6 +4541,14 @@ function listOnlinePlayers(realmId = null) {
   return list.filter((p) => p.realmId === realmId);
 }
 
+function hasActiveSocket(player) {
+  return Boolean(player?.socket?.emit);
+}
+
+function listConnectedPlayers(realmId = null) {
+  return listOnlinePlayers(realmId).filter((p) => hasActiveSocket(p));
+}
+
 function isManagedHostedPlayer(player) {
   return Boolean(player && !player.socket && (player.flags?.offlineManagedAuto || player.flags?.offlineManagedPending));
 }
@@ -4569,7 +4577,7 @@ function sendTo(player, message) {
 
 function sendToRoom(realmId, zoneId, roomId, message) {
   const effectiveRealmId = getRoomRealmId(zoneId, roomId, realmId);
-  const roomPlayers = listOnlinePlayers(effectiveRealmId)
+  const roomPlayers = listConnectedPlayers(effectiveRealmId)
     .filter((p) => p.position.zone === zoneId && p.position.room === roomId);
   roomPlayers.forEach((p) => sendTo(p, message));
 }
@@ -9364,7 +9372,7 @@ function getRoomCommonState(zoneId, roomId, realmId = 1) {
     bossClassRank = buildBossClassRank(bossMob, entries, effectiveRealmId);
   }
 
-  const roomPlayers = listOnlinePlayers(effectiveRealmId)
+  const roomPlayers = listConnectedPlayers(effectiveRealmId)
     .filter((p) => p.position.zone === zoneId && p.position.room === roomId)
     .map((p) => ({
       name: p.name,
@@ -11777,7 +11785,7 @@ async function buildState(player) {
       ? deadBosses.sort((a, b) => (a.respawnAt || Infinity) - (b.respawnAt || Infinity))[0]?.respawnAt
       : null;
     exits = buildRoomExits(player.position.zone, player.position.room, player);
-    roomPlayers = listOnlinePlayers(roomRealmId)
+    roomPlayers = listConnectedPlayers(roomRealmId)
       .filter((p) => p.position.zone === player.position.zone && p.position.room === player.position.room)
       .map((p) => ({
         name: p.name,
@@ -12132,6 +12140,18 @@ async function sendState(player) {
     delete state.refine_config;
     delete state.effect_reset_config;
   }
+  const dedupeFields = ['items', 'warehouse', 'equipment', 'skills', 'treasure', 'pet', 'trade'];
+  if (!player._stateFieldHashes) player._stateFieldHashes = {};
+  const fieldHashes = player._stateFieldHashes;
+  dedupeFields.forEach((field) => {
+    if (!(field in state)) return;
+    const nextHash = JSON.stringify(state[field]);
+    if (!forceSend && fieldHashes[field] === nextHash) {
+      delete state[field];
+      return;
+    }
+    fieldHashes[field] = nextHash;
+  });
   player.socket.emit('state', state);
   player.forceStateRefresh = false;
   if (exitsHash && key) {
@@ -12206,7 +12226,7 @@ function buildRoomStatePayload(zoneId, roomId, realmId = 1) {
 async function sendRoomState(zoneId, roomId, realmId = 1) {
   const effectiveRealmId = getRoomRealmId(zoneId, roomId, realmId);
   const roomCacheKey = `${effectiveRealmId}:${zoneId}:${roomId}`;
-  const players = listOnlinePlayers(effectiveRealmId)
+  const players = listConnectedPlayers(effectiveRealmId)
     .filter((p) => p.position.zone === zoneId && p.position.room === roomId);
   
   if (players.length === 0) {
@@ -12235,7 +12255,6 @@ async function sendRoomState(zoneId, roomId, realmId = 1) {
     Number(roomState?.bossRespawn || 0) > 0 ||
     Number(roomState?.worldBossNextRespawn || 0) > 0;
   players.forEach((p) => {
-    if (!p.socket) return;
     if (hasBossRespawnTimer) {
       p.socket.emit('room_state', roomState);
     } else {
