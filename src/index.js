@@ -688,7 +688,7 @@ if (ADMIN_BASE !== '/admin') {
   app.use((req, res, next) => {
     const reqPath = String(req.path || req.url || '');
     if (reqPath === '/admin' || reqPath.startsWith('/admin/')) {
-      return res.status(404).send('Not Found');
+      return res.status(404).send('未找到页面');
     }
     return next();
   });
@@ -10837,7 +10837,7 @@ function applyPetAssistAttackToMob(player, mob, roomRealmId, allMobs = null) {
           const aoeDealt = Math.max(0, Number(aoeResult?.damageTaken || 0));
           if (aoeDealt > 0) {
             hits += 1;
-            player.send(`${petName} aoe ${aoeTarget.name} ${aoeDealt}`);
+            player.send(`${petName} 范围波及 ${aoeTarget.name}，造成 ${aoeDealt} 点伤害。`);
           }
         }
       }

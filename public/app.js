@@ -7780,7 +7780,7 @@ async function apiPost(path, body) {
     body: JSON.stringify(body)
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Request failed');
+  if (!res.ok) throw new Error(data.error || '请求失败');
   return data;
 }
 
@@ -7791,7 +7791,7 @@ async function apiGet(path, withAuth = false) {
   }
   const res = await fetch(path, { headers });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Request failed');
+  if (!res.ok) throw new Error(data.error || '请求失败');
   return data;
 }
 
