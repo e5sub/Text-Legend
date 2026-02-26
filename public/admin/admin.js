@@ -446,9 +446,11 @@ const activityPointShopMsg = document.getElementById('activity-point-shop-msg');
 const activityPointShopLoadBtn = document.getElementById('activity-point-shop-load-btn');
 const activityPointShopAddBtn = document.getElementById('activity-point-shop-add-btn');
 const activityPointShopSaveBtn = document.getElementById('activity-point-shop-save-btn');
+const activityPointShopItemSearchInput = document.getElementById('activity-point-shop-item-search');
 const activityPointShopList = document.getElementById('activity-point-shop-list');
 let activityPointShopRowsCache = [];
 let activityPointShopItemOptionsCache = [];
+let activityPointShopItemSearchKeyword = '';
 
 // 每日幸运玩家相关
 const dailyLuckyMsg = document.getElementById('daily-lucky-msg');
@@ -533,6 +535,9 @@ async function loadActivityPointShopConfig() {
   try {
     const data = await api('/admin/activity-point-shop', 'GET');
     const config = data?.config || { version: 2, items: [] };
+    if (activityPointShopItemSearchInput) {
+      activityPointShopItemSearchKeyword = String(activityPointShopItemSearchInput.value || '').trim();
+    }
     activityPointShopItemOptionsCache = Array.isArray(data?.itemOptions) ? data.itemOptions : [];
     activityPointShopRowsCache = (Array.isArray(config.items) ? config.items : []).map((item, index) => ({
       _id: String(item?.id || `aps_${index + 1}`),
@@ -553,8 +558,7 @@ function activityPointShopEmptyItem() {
   return {
     _id: `aps_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
     itemId: '',
-    cost: 1,
-    _search: ''
+    cost: 1
   };
 }
 
@@ -565,7 +569,7 @@ function getActivityPointShopItemDisplayText(item) {
 
 function buildActivityPointShopItemSelectHtml(selectedId = '', keyword = '') {
   const selected = String(selectedId || '').trim();
-  const kw = String(keyword || '').trim().toLowerCase();
+  const kw = String(keyword || activityPointShopItemSearchKeyword || '').trim().toLowerCase();
   const options = Array.isArray(activityPointShopItemOptionsCache) ? activityPointShopItemOptionsCache : [];
   const filtered = kw
     ? options.filter((it) => {
@@ -600,11 +604,9 @@ function renderActivityPointShopRows() {
     const tr = document.createElement('tr');
     tr.dataset.index = String(index);
     tr.dataset.shopId = String(item?._id || '');
-    const searchText = String(item?._search || '').replace(/"/g, '&quot;');
     tr.innerHTML = `
       <td>
-        <input data-k="itemSearch" type="text" value="${searchText}" placeholder="搜索物品名/ID" style="width: 360px; margin-bottom:4px;">
-        ${buildActivityPointShopItemSelectHtml(item.itemId, item._search || '')}
+        ${buildActivityPointShopItemSelectHtml(item.itemId)}
       </td>
       <td><input data-k="cost" type="number" min="1" value="${Math.max(1, Number(item.cost || 1))}" style="width:70px;"></td>
       <td><button type="button" class="btn-small" data-act="del">删除</button></td>
@@ -639,8 +641,7 @@ async function saveActivityPointShopConfig() {
     activityPointShopRowsCache = (Array.isArray(data?.config?.items) ? data.config.items : config.items).map((item, index) => ({
       _id: String(item?.id || `aps_${index + 1}`),
       itemId: String(item?.itemId || '').trim(),
-      cost: Math.max(1, Math.floor(Number(item?.cost || 1))),
-      _search: ''
+      cost: Math.max(1, Math.floor(Number(item?.cost || 1)))
     })).filter((row) => row.itemId);
     renderActivityPointShopRows();
     activityPointShopMsg.textContent = '保存成功';
@@ -6406,22 +6407,13 @@ async function resetPetSkillEffectsToDefault() {
   }
 }
 if (activityPointShopSaveBtn) activityPointShopSaveBtn.addEventListener('click', saveActivityPointShopConfig);
-if (activityPointShopList) {
-  activityPointShopList.addEventListener('input', (e) => {
-    const input = e.target?.closest?.('input[data-k="itemSearch"]');
-    if (!input) return;
-    const tr = input.closest('tr[data-index]');
-    const index = Number(tr?.dataset?.index);
-    if (!Number.isInteger(index) || index < 0) return;
-    if (!Array.isArray(activityPointShopRowsCache) || !activityPointShopRowsCache[index]) return;
-    activityPointShopRowsCache[index]._search = String(input.value || '');
-    const selectWrapCell = tr.querySelector('td');
-    const oldSelect = tr.querySelector('select[data-k="itemId"]');
-    const selectedId = String(oldSelect?.value || activityPointShopRowsCache[index].itemId || '').trim();
-    if (selectWrapCell && oldSelect) {
-      oldSelect.outerHTML = buildActivityPointShopItemSelectHtml(selectedId, activityPointShopRowsCache[index]._search || '');
-    }
+if (activityPointShopItemSearchInput) {
+  activityPointShopItemSearchInput.addEventListener('input', () => {
+    activityPointShopItemSearchKeyword = String(activityPointShopItemSearchInput.value || '').trim();
+    renderActivityPointShopRows();
   });
+}
+if (activityPointShopList) {
   activityPointShopList.addEventListener('change', (e) => {
     const select = e.target?.closest?.('select[data-k="itemId"]');
     if (!select) return;

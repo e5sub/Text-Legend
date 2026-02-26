@@ -13363,7 +13363,7 @@ io.on('connection', (socket) => {
       }
     }
 
-    const loaded = await loadCharacter(session.user_id, name, realmInfo.realmId);
+    let loaded = await loadCharacter(session.user_id, name, realmInfo.realmId);
     if (!loaded) {
       socket.emit('auth_error', { error: '角色不存在。' });
       socket.disconnect();
@@ -13385,6 +13385,7 @@ io.on('connection', (socket) => {
 
     // 检查是否已有同名角色在线，如果有则踢掉之前的连接
     const existingSocketId = Array.from(players.keys()).find(key => players.get(key)?.name === name);
+    let replacedExistingSession = false;
     if (existingSocketId) {
       const existingPlayer = players.get(existingSocketId);
       if (existingPlayer) {
@@ -13392,6 +13393,7 @@ io.on('connection', (socket) => {
         if (existingIsManaged) {
           await savePlayer(existingPlayer);
           players.delete(existingSocketId);
+          replacedExistingSession = true;
         } else {
           // 通知旧连接被踢下线
           existingPlayer.send('您的账号在别处登录，您已被强制下线。');
@@ -13401,6 +13403,7 @@ io.on('connection', (socket) => {
           existingPlayer.socket?.disconnect?.();
           // 移除旧的玩家数据
           players.delete(existingSocketId);
+          replacedExistingSession = true;
           // 从队伍中移除
           const party = getPartyByMember(name, existingPlayer.realmId || realmInfo.realmId);
           if (party) {
@@ -13411,6 +13414,17 @@ io.on('connection', (socket) => {
           }
         }
       }
+    }
+
+    // 顶号/接管后重新读取角色，确保拿到刚保存的最新 flags（如托管期间保存的召唤兽）。
+    if (replacedExistingSession) {
+      const reloaded = await loadCharacter(session.user_id, name, realmInfo.realmId);
+      if (!reloaded) {
+        socket.emit('auth_error', { error: '角色读取失败，请重试。' });
+        socket.disconnect();
+        return;
+      }
+      loaded = reloaded;
     }
 
     computeDerived(loaded);
@@ -17375,9 +17389,6 @@ async function start() {
 
   setRespawnStore({
     set: (realmId, zoneId, roomId, slotIndex, templateId, respawnAt) => {
-      if (isPersonalBossInstanceRoom(zoneId, roomId)) {
-        return clearMobRespawn(realmId, zoneId, roomId, slotIndex);
-      }
       return upsertMobRespawn(realmId, zoneId, roomId, slotIndex, templateId, respawnAt);
     },
     clear: (realmId, zoneId, roomId, slotIndex) =>
@@ -17411,12 +17422,6 @@ async function start() {
   }
   const activeRespawns = [];
   for (const row of respawnRows) {
-    if (isPersonalBossInstanceRoom(row.zone_id, row.room_id)) {
-      const realmValue = row.realm_id ?? row.realmId;
-      const realmId = (realmValue === undefined || realmValue === null) ? 1 : Number(realmValue);
-      await clearMobRespawn(Number.isNaN(realmId) ? 1 : realmId, row.zone_id, row.room_id, row.slot_index);
-      continue;
-    }
     if (row.respawn_at && Number(row.respawn_at) > now) {
       activeRespawns.push(row);
     } else if (row.current_hp && row.current_hp > 0) {
@@ -17437,7 +17442,6 @@ async function start() {
       for (const realmId of realmIds) {
         const aliveMobs = getAllAliveMobs(realmId);
         for (const mob of aliveMobs) {
-          if (isPersonalBossInstanceRoom(mob.zoneId, mob.roomId)) continue;
           await saveMobState(
             realmId,
             mob.zoneId,
