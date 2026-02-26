@@ -366,6 +366,28 @@ class SocketManager(private val json: Json) {
         })
     }
 
+    fun petUseBook(petId: String, bookId: String) {
+        socket?.emit("pet_action", JSONObject().apply {
+            put("action", "use_book")
+            put("petId", petId)
+            put("bookId", bookId)
+        })
+    }
+
+    fun petSynthesize(mainPetId: String, subPetId: String) {
+        socket?.emit("pet_action", JSONObject().apply {
+            put("action", "synthesize")
+            put("mainPetId", mainPetId)
+            put("subPetId", subPetId)
+        })
+    }
+
+    fun petSynthesizeBelowEpic() {
+        socket?.emit("pet_action", JSONObject().apply {
+            put("action", "synthesize_below_epic")
+        })
+    }
+
     fun petEquipItem(petId: String, itemKey: String) {
         socket?.emit("pet_action", JSONObject().apply {
             put("action", "equip_item")

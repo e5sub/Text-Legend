@@ -2700,7 +2700,7 @@ function renderPetModal() {
       }
       row.appendChild(nameSpan);
       row.appendChild(document.createTextNode(
-        ` | ${getPetBattleTypeText(pet)} | 等级:${Number(pet.level || 1)}/${Number(pet.levelCap || 1)} EXP:${Number(pet.exp || 0)}/${Number(pet.expNeed || 0)} | 成长:${Number(pet.growth || 1).toFixed(3)} | 技能:${(pet.skills || []).length}/${pet.skillSlots} | 战力:${pet.power || 0}`
+        ` | ${getPetBattleTypeText(pet)} | 等级:${Number(pet.level || 1)}/${Number(pet.levelCap || 1)} EXP:${Number(pet.exp || 0)}/${Number(pet.expNeed || 0)} | 成长:${Number(pet.growth || 1).toFixed(3)} | 战力:${pet.power || 0}`
       ));
       const listEffects = Array.isArray(pet.skillEffects) ? pet.skillEffects.filter((text) => String(text || '').trim()) : [];
       if (listEffects.length) {
@@ -2751,7 +2751,7 @@ function renderPetModal() {
     });
     const skillLine = document.createElement('div');
     const skillLabel = document.createElement('span');
-    skillLabel.textContent = `技能(${(selected.skills || []).length}/${selected.skillSlots}): `;
+    skillLabel.textContent = '技能: ';
     skillLine.appendChild(skillLabel);
     const skillNames = Array.isArray(selected.skillNames) ? selected.skillNames : [];
     const skillEffects = Array.isArray(selected.skillEffects) ? selected.skillEffects : [];

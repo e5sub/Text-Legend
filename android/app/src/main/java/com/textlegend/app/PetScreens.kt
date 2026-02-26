@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -26,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
 
@@ -84,7 +86,7 @@ fun PetDialog(
 
         when (selectedTab) {
             0 -> PetListTab(vm, pets, activePet, state?.items ?: emptyList(), onDismiss)
-            1 -> PetBooksTab(vm, books)
+            1 -> PetBooksTab(vm, books, pets)
         }
     }
 }
@@ -101,6 +103,8 @@ private fun PetListTab(
     var showResetDialog by remember { mutableStateOf(false) }
     var showTrainDialog by remember { mutableStateOf(false) }
     var showEquipDialog by remember { mutableStateOf(false) }
+    var showSynthesizeDialog by remember { mutableStateOf(false) }
+    var showBatchSynthesizeConfirm by remember { mutableStateOf(false) }
     var selectedPetId by remember { mutableStateOf<String?>(null) }
     val selectedPet = pets.find { it.id == selectedPetId }
 
@@ -135,6 +139,26 @@ private fun PetListTab(
                 },
                 onViewDetails = { onDismiss() } // TODO: 打开详情对话框
             )
+        }
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedButton(
+                    onClick = { showSynthesizeDialog = true },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("宠物合成")
+                }
+                Button(
+                    onClick = { showBatchSynthesizeConfirm = true },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8E24AA))
+                ) {
+                    Text("一键合成")
+                }
+            }
         }
     }
 
@@ -180,6 +204,34 @@ private fun PetListTab(
             onDismiss = {
                 showEquipDialog = false
                 selectedPetId = null
+            }
+        )
+    }
+    if (showSynthesizeDialog) {
+        PetSynthesizeDialog(
+            pets = pets,
+            onConfirm = { mainPetId, subPetId ->
+                vm.petSynthesize(mainPetId, subPetId)
+                showSynthesizeDialog = false
+            },
+            onDismiss = { showSynthesizeDialog = false }
+        )
+    }
+    if (showBatchSynthesizeConfirm) {
+        AlertDialog(
+            onDismissRequest = { showBatchSynthesizeConfirm = false },
+            title = { Text("一键合成（史诗以下）") },
+            text = {
+                Text("将自动合成所有史诗以下且未出战、未穿戴装备的宠物，直到宠物不足或金币不足。")
+            },
+            confirmButton = {
+                Button(onClick = {
+                    vm.petSynthesizeBelowEpic()
+                    showBatchSynthesizeConfirm = false
+                }) { Text("确认执行") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBatchSynthesizeConfirm = false }) { Text("取消") }
             }
         )
     }
@@ -246,6 +298,7 @@ private fun PetCard(
     onEquip: () -> Unit,
     onViewDetails: () -> Unit
 ) {
+    var skillDialog by remember { mutableStateOf<Pair<String, String>?>(null) }
     val rarityLabel = PetData.getRarityLabel(pet.rarity)
     val rarityColor = when (pet.rarity) {
         "normal" -> Color.Gray
@@ -332,7 +385,7 @@ private fun PetCard(
             Spacer(modifier = Modifier.height(8.dp))
 
             // 技能槽和技能
-            Text(text = "技能(${pet.skills.size}/${pet.skillSlots})", fontSize = 12.sp)
+            Text(text = "技能", fontSize = 12.sp)
             if (pet.skills.isEmpty()) {
                 Text(text = "暂无技能", fontSize = 12.sp, color = Color.Gray)
             } else {
@@ -342,14 +395,24 @@ private fun PetCard(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    items(pet.skills) { skillId ->
+                    itemsIndexed(pet.skills) { idx, skillId ->
                         val skill = PetData.getSkillDef(skillId)
+                        val skillName = petSkillDisplayName(
+                            skillId,
+                            pet.skillNames.getOrNull(idx) ?: skill?.name
+                        )
+                        val effectText = petSkillEffectDisplay(
+                            skillId,
+                            pet.skillEffects.getOrNull(idx)
+                        )
                         Surface(
                             color = Color(0xFFE0E0E0),
-                            modifier = Modifier.clickable { /* TODO: 查看技能详情 */ }
+                            modifier = Modifier.clickable {
+                                skillDialog = skillName to effectText
+                            }
                         ) {
                             Text(
-                                text = petSkillDisplayName(skillId, skill?.name),
+                                text = skillName,
                                 fontSize = 10.sp,
                                 color = Color(0xFF212121),
                                 modifier = Modifier.padding(4.dp)
@@ -357,6 +420,18 @@ private fun PetCard(
                         }
                     }
                 }
+            }
+            if (skillDialog != null) {
+                val (name, effect) = skillDialog!!
+                AlertDialog(
+                    onDismissRequest = { skillDialog = null },
+                    title = { Text(name) },
+                    text = { Text(effect.ifBlank { "暂无技能说明" }) },
+                    confirmButton = {
+                        TextButton(onClick = { skillDialog = null }) { Text("关闭") }
+                    },
+                    dismissButton = {}
+                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -583,8 +658,10 @@ private fun PetEquipDialog(
 @Composable
 private fun PetBooksTab(
     vm: GameViewModel,
-    books: Map<String, Int>
+    books: Map<String, Int>,
+    pets: List<PetInfo>
 ) {
+    var useBookTarget by remember { mutableStateOf<Pair<String, String>?>(null) }
     if (books.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text("暂无技能书，可通过挑战BOSS获得技能书。")
@@ -604,14 +681,37 @@ private fun PetBooksTab(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(bookList) { (id, book, qty) ->
-            PetBookCard(book = book, qty = qty)
+            PetBookCard(
+                book = book,
+                qty = qty,
+                onUse = {
+                    if (pets.isEmpty()) {
+                        vm.showToast("暂无宠物可打书")
+                    } else {
+                        useBookTarget = id to book.skillName
+                    }
+                }
+            )
         }
+    }
+
+    if (useBookTarget != null) {
+        val (bookId, bookName) = useBookTarget!!
+        PetUseBookDialog(
+            pets = pets,
+            bookName = bookName,
+            onConfirm = { petId ->
+                vm.petUseBook(petId, bookId)
+                useBookTarget = null
+            },
+            onDismiss = { useBookTarget = null }
+        )
     }
 }
 
 // 技能书卡片
 @Composable
-private fun PetBookCard(book: PetBookInfo, qty: Int) {
+private fun PetBookCard(book: PetBookInfo, qty: Int, onUse: () -> Unit) {
     val skill = PetData.getSkillDef(book.skillId)
     val effect = PetData.SKILL_EFFECTS[book.skillId] ?: "未知效果"
     val tierColor = when (book.tier) {
@@ -654,8 +754,151 @@ private fun PetBookCard(book: PetBookInfo, qty: Int) {
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(text = effect, fontSize = 12.sp, color = Color.DarkGray)
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedButton(onClick = onUse, modifier = Modifier.fillMaxWidth()) {
+                Text("打书")
+            }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PetUseBookDialog(
+    pets: List<PetInfo>,
+    bookName: String,
+    onConfirm: (petId: String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var selectedPetId by remember { mutableStateOf(pets.firstOrNull()?.id ?: "") }
+    val selectedPet = pets.find { it.id == selectedPetId }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("宠物打书") },
+        text = {
+            Column {
+                Text("技能书：$bookName")
+                Spacer(modifier = Modifier.height(8.dp))
+                ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
+                    OutlinedTextField(
+                        value = selectedPet?.name ?: "",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("选择宠物") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        pets.forEach { pet ->
+                            DropdownMenuItem(
+                                text = { Text(pet.name) },
+                                onClick = {
+                                    selectedPetId = pet.id
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                enabled = selectedPetId.isNotBlank(),
+                onClick = { if (selectedPetId.isNotBlank()) onConfirm(selectedPetId) }
+            ) { Text("确认打书") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PetSynthesizeDialog(
+    pets: List<PetInfo>,
+    onConfirm: (mainPetId: String, subPetId: String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    if (pets.size < 2) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("宠物合成") },
+            text = { Text("至少需要两只宠物才能合成。") },
+            confirmButton = { TextButton(onClick = onDismiss) { Text("关闭") } },
+            dismissButton = {}
+        )
+        return
+    }
+    var mainExpanded by remember { mutableStateOf(false) }
+    var subExpanded by remember { mutableStateOf(false) }
+    var mainPetId by remember { mutableStateOf(pets.first().id) }
+    var subPetId by remember { mutableStateOf(pets.getOrNull(1)?.id ?: pets.first().id) }
+    val mainPet = pets.find { it.id == mainPetId }
+    val subCandidates = pets.filter { it.id != mainPetId }
+    if (subCandidates.none { it.id == subPetId }) {
+        subPetId = subCandidates.firstOrNull()?.id ?: ""
+    }
+    val subPet = subCandidates.find { it.id == subPetId }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("宠物合成") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("主宠外形保留，副宠作为材料（消耗金币）")
+                ExposedDropdownMenuBox(expanded = mainExpanded, onExpandedChange = { mainExpanded = !mainExpanded }) {
+                    OutlinedTextField(
+                        value = mainPet?.name ?: "",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("主宠") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = mainExpanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(expanded = mainExpanded, onDismissRequest = { mainExpanded = false }) {
+                        pets.forEach { pet ->
+                            DropdownMenuItem(
+                                text = { Text("${pet.name} Lv${pet.level}") },
+                                onClick = {
+                                    mainPetId = pet.id
+                                    mainExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+                ExposedDropdownMenuBox(expanded = subExpanded, onExpandedChange = { subExpanded = !subExpanded }) {
+                    OutlinedTextField(
+                        value = subPet?.name ?: "",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("副宠（材料）") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = subExpanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(expanded = subExpanded, onDismissRequest = { subExpanded = false }) {
+                        subCandidates.forEach { pet ->
+                            DropdownMenuItem(
+                                text = { Text("${pet.name} Lv${pet.level}") },
+                                onClick = {
+                                    subPetId = pet.id
+                                    subExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                enabled = mainPetId.isNotBlank() && subPetId.isNotBlank() && mainPetId != subPetId,
+                onClick = { onConfirm(mainPetId, subPetId) }
+            ) { Text("确认合成") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } }
+    )
 }
 
 @Composable
@@ -845,13 +1088,31 @@ private fun petSkillDisplayName(skillId: String, rawName: String?): String {
     }
 }
 
+private fun petSkillEffectDisplay(skillId: String, serverEffect: String?): String {
+    val effect = serverEffect?.trim().orEmpty()
+    if (effect.isNotBlank()) return effect
+    return PetData.SKILL_EFFECTS[skillId]?.trim().orEmpty()
+}
+
 private fun normalizePetBooksMap(raw: JsonElement?): Map<String, Int> {
-    val obj = raw as? JsonObject ?: return emptyMap()
-    if (obj.isEmpty()) return emptyMap()
     val out = LinkedHashMap<String, Int>()
-    for ((key, value) in obj) {
-        val qty = value.jsonPrimitive.contentOrNull?.toIntOrNull() ?: continue
-        if (qty > 0) out[key] = qty
+    when (raw) {
+        is JsonObject -> {
+            if (raw.isEmpty()) return emptyMap()
+            for ((key, value) in raw) {
+                val qty = value.jsonPrimitive.contentOrNull?.toIntOrNull() ?: continue
+                if (qty > 0) out[key] = qty
+            }
+        }
+        is JsonArray -> {
+            raw.forEach { entry ->
+                val obj = entry as? JsonObject ?: return@forEach
+                val id = obj["id"]?.jsonPrimitive?.contentOrNull?.trim().orEmpty()
+                val qty = obj["qty"]?.jsonPrimitive?.contentOrNull?.toIntOrNull() ?: 0
+                if (id.isNotBlank() && qty > 0) out[id] = qty
+            }
+        }
+        else -> return emptyMap()
     }
     return out
 }

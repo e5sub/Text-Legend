@@ -551,7 +551,7 @@ data class ChatLocation(
 // 宠物系统数据模型
 @Serializable
 data class PetState(
-    @SerialName("active_pet_id") val activePetId: String? = null,
+    val activePetId: String? = null,
     val pets: List<PetInfo> = emptyList(),
     val books: JsonElement? = null
 )
@@ -566,8 +566,10 @@ data class PetInfo(
     val role: String = "",
     val growth: Double = 1.0,
     val aptitude: PetAptitude = PetAptitude(),
-    @SerialName("skill_slots") val skillSlots: Int = 3,
+    val skillSlots: Int = 3,
     val skills: List<String> = emptyList(),
+    val skillNames: List<String> = emptyList(),
+    val skillEffects: List<String> = emptyList(),
     val equippedItems: List<PetEquippedItem> = emptyList()
 )
 

@@ -348,6 +348,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     fun characterRename(newName: String) = socket.characterRename(newName)
     fun characterMigrate(targetUsername: String, targetPassword: String) = socket.characterMigrate(targetUsername, targetPassword)
     fun petTrain(petId: String, attr: String, count: Int) = socket.petTrain(petId, attr, count)
+    fun petUseBook(petId: String, bookId: String) = socket.petUseBook(petId, bookId)
+    fun petSynthesize(mainPetId: String, subPetId: String) = socket.petSynthesize(mainPetId, subPetId)
+    fun petSynthesizeBelowEpic() = socket.petSynthesizeBelowEpic()
     fun petEquipItem(petId: String, itemKey: String) = socket.petEquipItem(petId, itemKey)
     fun petUnequipItem(petId: String, slot: String) = socket.petUnequipItem(petId, slot)
 
