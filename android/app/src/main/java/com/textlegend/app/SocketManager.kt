@@ -409,7 +409,7 @@ class SocketManager(private val json: Json) {
         val merged = JSONObject(base.toString())
         val patchKeys = patch.keys()
         while (patchKeys.hasNext()) {
-            val key = patchKeys.next()
+            val key = patchKeys.next()?.toString() ?: continue
             merged.put(key, patch.opt(key))
         }
         mergeNestedObject(merged, base, patch, "player")
@@ -422,7 +422,7 @@ class SocketManager(private val json: Json) {
         val merged = JSONObject(base.toString())
         val patchKeys = patch.keys()
         while (patchKeys.hasNext()) {
-            val key = patchKeys.next()
+            val key = patchKeys.next()?.toString() ?: continue
             merged.put(key, patch.opt(key))
         }
         mergeNestedObject(merged, base, patch, "room")
@@ -445,7 +445,7 @@ class SocketManager(private val json: Json) {
         val next = JSONObject(baseObj!!.toString())
         val keys = patchObj!!.keys()
         while (keys.hasNext()) {
-            val field = keys.next()
+            val field = keys.next()?.toString() ?: continue
             next.put(field, patchObj.opt(field))
         }
         merged.put(key, next)
