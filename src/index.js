@@ -13387,6 +13387,7 @@ io.on('connection', (socket) => {
     // 检查是否已有同名角色在线，如果有则踢掉之前的连接
     const existingSocketId = Array.from(players.keys()).find(key => players.get(key)?.name === name);
     let replacedExistingSession = false;
+    let replacedManagedSession = false;
     if (existingSocketId) {
       const existingPlayer = players.get(existingSocketId);
       if (existingPlayer) {
@@ -13395,6 +13396,7 @@ io.on('connection', (socket) => {
           await savePlayer(existingPlayer);
           players.delete(existingSocketId);
           replacedExistingSession = true;
+          replacedManagedSession = true;
         } else {
           // 通知旧连接被踢下线
           existingPlayer.send('您的账号在别处登录，您已被强制下线。');
@@ -13469,12 +13471,14 @@ io.on('connection', (socket) => {
     if (savedSummons.length) {
       savedSummons.forEach((saved) => {
         const skill = getSkill(loaded.classId, saved.id);
-        if (skill && loaded.mp >= skill.mp) {
+        if (skill && (replacedManagedSession || loaded.mp >= skill.mp)) {
           const skillLevel = getSkillLevel(loaded, skill.id);
           const summon = summonStats(loaded, skill, skillLevel);
           const restored = { ...summon, exp: saved.exp || 0 };
           restored.hp = Math.min(saved.hp || restored.max_hp, restored.max_hp);
-          loaded.mp = clamp(loaded.mp - skill.mp, 0, loaded.max_mp);
+          if (!replacedManagedSession) {
+            loaded.mp = clamp(loaded.mp - skill.mp, 0, loaded.max_mp);
+          }
           addOrReplaceSummon(loaded, restored);
           loaded.send(`${restored.name} 已重新召唤 (等级 ${restored.level})。`);
         }
