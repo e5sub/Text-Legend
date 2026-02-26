@@ -6329,17 +6329,64 @@ function findInventorySlot(player, itemId, effects = null) {
   return player.inventory.find((i) => i.id === itemId);
 }
 
+function normalizeTradeItemInstanceAttrs(attrs = {}) {
+  if (!attrs || typeof attrs !== 'object') return {};
+  return {
+    durability: attrs.durability == null ? null : Number(attrs.durability),
+    max_durability: attrs.max_durability == null ? null : Number(attrs.max_durability),
+    refine_level: attrs.refine_level == null ? 0 : Math.max(0, Math.floor(Number(attrs.refine_level || 0))),
+    base_roll_pct: attrs.base_roll_pct == null ? null : Math.max(50, Math.min(150, Math.floor(Number(attrs.base_roll_pct || 100) || 100)))
+  };
+}
+
+function sameTradeItemInstanceAttrs(a = {}, b = {}) {
+  const na = normalizeTradeItemInstanceAttrs(a);
+  const nb = normalizeTradeItemInstanceAttrs(b);
+  return (na.durability ?? null) === (nb.durability ?? null)
+    && (na.max_durability ?? null) === (nb.max_durability ?? null)
+    && Number(na.refine_level || 0) === Number(nb.refine_level || 0)
+    && (na.base_roll_pct ?? null) === (nb.base_roll_pct ?? null);
+}
+
+function findInventorySlotForTrade(player, slot) {
+  if (!slot) return null;
+  const attrs = normalizeTradeItemInstanceAttrs(slot);
+  return (player?.inventory || []).find((i) => {
+    if (!i || i.id !== slot.id) return false;
+    if (!sameEffects(i.effects, slot.effects)) return false;
+    return sameTradeItemInstanceAttrs(i, attrs);
+  }) || null;
+}
+
 function hasOfferItems(player, offer) {
   return offer.items.every((slot) => {
-    const inv = findInventorySlot(player, slot.id, slot.effects);
+    const inv = findInventorySlotForTrade(player, slot);
     return inv && inv.qty >= slot.qty;
   });
 }
 
 function applyOfferItems(from, to, offer) {
   offer.items.forEach((slot) => {
-    removeItem(from, slot.id, slot.qty, slot.effects);
-    addItem(to, slot.id, slot.qty, slot.effects);
+    removeItem(
+      from,
+      slot.id,
+      slot.qty,
+      slot.effects || null,
+      slot.durability ?? null,
+      slot.max_durability ?? null,
+      slot.refine_level ?? null,
+      slot.base_roll_pct ?? null
+    );
+    addItem(
+      to,
+      slot.id,
+      slot.qty,
+      slot.effects || null,
+      slot.durability ?? null,
+      slot.max_durability ?? null,
+      slot.refine_level ?? null,
+      slot.base_roll_pct ?? null
+    );
   });
 }
 
@@ -6404,7 +6451,7 @@ const tradeApi = {
     player.send('交易建立。');
     return { ok: true, trade };
   },
-  addItem(player, itemId, qty, effects = null) {
+  addItem(player, itemId, qty, effects = null, itemAttrs = null) {
     const { trade } = getTradeByPlayerAny(player.name, player.realmId || 1);
     if (!trade) return { ok: false, msg: '你不在交易中。' };
     if (isCultivationRoom(player.position.zone)) return { ok: false, msg: '修真房间内无法交易。' };
@@ -6424,18 +6471,36 @@ const tradeApi = {
     const effectsResult = validateEffects(effects);
     if (!effectsResult.ok) return { ok: false, msg: effectsResult.error };
     
-    // 验证玩家拥有该物品
-    const hasItemResult = validatePlayerHasItem(player, itemId, qtyResult.value, effectsResult.value);
-    if (!hasItemResult.ok) return { ok: false, msg: hasItemResult.error };
+    const sourceSlot = findInventorySlotForTrade(player, {
+      id: itemId,
+      effects: effectsResult.value,
+      ...(itemAttrs || {})
+    });
+    if (!sourceSlot || Number(sourceSlot.qty || 0) < qtyResult.value) {
+      return { ok: false, msg: '背包中没有符合条件的物品。' };
+    }
 
     // 检查物品是否可交易
     const item = ITEM_TEMPLATES[itemId];
     if (item?.untradable) return { ok: false, msg: '该物品不可交易。' };
 
     const offer = ensureOffer(trade, player.name);
-    const existing = offer.items.find((i) => i.id === itemId && sameEffects(i.effects, effects));
+    const slotPayload = {
+      id: itemId,
+      qty: qtyResult.value,
+      effects: normalizeEffects(effectsResult.value),
+      durability: sourceSlot.durability ?? null,
+      max_durability: sourceSlot.max_durability ?? null,
+      refine_level: sourceSlot.refine_level ?? 0,
+      base_roll_pct: sourceSlot.base_roll_pct ?? null
+    };
+    const existing = offer.items.find((i) =>
+      i.id === itemId &&
+      sameEffects(i.effects, slotPayload.effects) &&
+      sameTradeItemInstanceAttrs(i, slotPayload)
+    );
     if (existing) existing.qty += qtyResult.value;
-    else offer.items.push({ id: itemId, qty: qtyResult.value, effects: normalizeEffects(effects) });
+    else offer.items.push(slotPayload);
     return { ok: true, trade };
   },
   addGold(player, amount) {
@@ -6586,7 +6651,7 @@ const consignApi = {
         qty: row.qty,
         price: row.price,
         currency: row.currency || 'gold',
-        item: buildItemView(row.item_id, parseJson(row.effects_json), row.durability, row.max_durability, row.refine_level ?? 0)
+        item: buildItemView(row.item_id, parseJson(row.effects_json), row.durability, row.max_durability, row.refine_level ?? 0, row.base_roll_pct ?? null)
       }));
       player.socket?.emit?.('consign_list', { type: 'market', items });
       return items;
@@ -6600,7 +6665,7 @@ const consignApi = {
         qty: row.qty,
         price: row.price,
         currency: row.currency || 'gold',
-        item: buildItemView(row.item_id, parseJson(row.effects_json), row.durability, row.max_durability, row.refine_level ?? 0)
+        item: buildItemView(row.item_id, parseJson(row.effects_json), row.durability, row.max_durability, row.refine_level ?? 0, row.base_roll_pct ?? null)
       }));
       player.socket?.emit?.('consign_list', { type: 'mine', items });
       return items;
@@ -6635,8 +6700,9 @@ const consignApi = {
       const durability = validateDurability(invSlot.durability).value ?? null;
       const maxDurability = validateMaxDurability(invSlot.max_durability).value ?? null;
       const refineLevel = Number.isFinite(invSlot.refine_level) ? invSlot.refine_level : 0;
+      const baseRollPct = invSlot.base_roll_pct == null ? null : Math.max(50, Math.min(150, Math.floor(Number(invSlot.base_roll_pct || 100) || 100)));
 
-      if (!removeItem(player, itemId, qtyResult.value, effectsResult.value, durability, maxDurability, refineLevel)) {
+      if (!removeItem(player, itemId, qtyResult.value, effectsResult.value, durability, maxDurability, refineLevel, baseRollPct)) {
         return { ok: false, msg: '背包里没有足够数量。' };
       }
       const id = await createConsignment({
@@ -6649,6 +6715,7 @@ const consignApi = {
         durability,
         maxDurability,
         refineLevel,
+        baseRollPct,
         realmId: player.realmId || 1
       });
       await consignApi.listMine(player);
@@ -6684,7 +6751,7 @@ const consignApi = {
     } else {
       player.gold -= serverTotal;
     }
-    addItem(player, row.item_id, qtyResult.value, parseJson(row.effects_json), row.durability, row.max_durability, row.refine_level ?? null);
+    addItem(player, row.item_id, qtyResult.value, parseJson(row.effects_json), row.durability, row.max_durability, row.refine_level ?? null, row.base_roll_pct ?? null);
 
     const remain = row.qty - qtyResult.value;
     if (remain > 0) {
@@ -6705,6 +6772,7 @@ const consignApi = {
       durability: row.durability,
       maxDurability: row.max_durability,
       refineLevel: row.refine_level ?? null,
+      baseRollPct: row.base_roll_pct ?? null,
       realmId: player.realmId || 1
     });
 
@@ -6748,7 +6816,7 @@ const consignApi = {
     const row = await getConsignment(idResult.value, player.realmId || 1);
     if (!row) return { ok: false, msg: '寄售不存在。' };
     if (row.seller_name !== player.name) return { ok: false, msg: '只能取消自己的寄售。' };
-    addItem(player, row.item_id, row.qty, parseJson(row.effects_json), row.durability, row.max_durability, row.refine_level ?? null);
+    addItem(player, row.item_id, row.qty, parseJson(row.effects_json), row.durability, row.max_durability, row.refine_level ?? null, row.base_roll_pct ?? null);
     await deleteConsignment(idResult.value, player.realmId || 1);
     await consignApi.listMine(player);
     await consignApi.listMarket(player);
@@ -6764,7 +6832,7 @@ const consignApi = {
       price: row.price,
       currency: row.currency || 'gold',
       total: row.price * row.qty,
-      item: buildItemView(row.item_id, parseJson(row.effects_json), row.durability, row.max_durability, row.refine_level ?? 0),
+      item: buildItemView(row.item_id, parseJson(row.effects_json), row.durability, row.max_durability, row.refine_level ?? 0, row.base_roll_pct ?? null),
       soldAt: row.sold_at
     }));
     player.socket?.emit?.('consign_history', { items });
@@ -6905,7 +6973,7 @@ async function cleanupExpiredConsignments(realmId = 1) {
       const effects = parseJson(row.effects_json);
       const seller = playersByName(row.seller_name, realmId);
       if (seller) {
-        addItem(seller, row.item_id, qty, effects, row.durability, row.max_durability, row.refine_level ?? null);
+        addItem(seller, row.item_id, qty, effects, row.durability, row.max_durability, row.refine_level ?? null, row.base_roll_pct ?? null);
         seller.send(`寄售到期自动下架：${ITEM_TEMPLATES[row.item_id]?.name || row.item_id} x${qty} 已返还背包。`);
         seller.forceStateRefresh = true;
         refreshedSellers.add(seller);
@@ -6915,7 +6983,7 @@ async function cleanupExpiredConsignments(realmId = 1) {
         if (sellerRow) {
           const sellerPlayer = await loadCharacter(sellerRow.user_id, sellerRow.name, sellerRow.realm_id || 1);
           if (sellerPlayer) {
-            addItem(sellerPlayer, row.item_id, qty, effects, row.durability, row.max_durability, row.refine_level ?? null);
+            addItem(sellerPlayer, row.item_id, qty, effects, row.durability, row.max_durability, row.refine_level ?? null, row.base_roll_pct ?? null);
             await saveCharacter(sellerRow.user_id, sellerPlayer, sellerRow.realm_id || 1);
           }
         }
@@ -14051,7 +14119,8 @@ io.on('connection', (socket) => {
           entry.effects || null,
           entry.durability ?? null,
           entry.max_durability ?? null,
-          entry.refine_level ?? null
+          entry.refine_level ?? null,
+          entry.base_roll_pct ?? null
         );
       });
     }

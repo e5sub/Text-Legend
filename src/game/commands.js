@@ -4970,7 +4970,18 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         const itemName = offerParts.join(' ');
         const resolved = resolveInventoryItem(player, itemName);
         if (!resolved.slot || !resolved.item) return send('背包里没有该物品。');
-        const res = tradeApi.addItem(player, resolved.slot.id, qty, resolved.slot.effects || null);
+        const res = tradeApi.addItem(
+          player,
+          resolved.slot.id,
+          qty,
+          resolved.slot.effects || null,
+          {
+            durability: resolved.slot.durability ?? null,
+            max_durability: resolved.slot.max_durability ?? null,
+            refine_level: resolved.slot.refine_level ?? null,
+            base_roll_pct: resolved.slot.base_roll_pct ?? null
+          }
+        );
         if (!res.ok) return send(res.msg);
         const otherName = trade.a.name === player.name ? trade.b.name : trade.a.name;
         const other = players.find((p) => p.name === otherName);
