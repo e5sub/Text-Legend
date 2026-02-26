@@ -102,6 +102,8 @@ const tradeInviteCooldown = new Map();
 let trainingConfig = null; // 修炼配置
 let deviceId = null;
 let deviceFingerprint = null;
+let pendingRenameFallbackTimer = null;
+let pendingRenameFallbackName = '';
 const localHpCache = {
   players: new Map(),
   mobs: new Map()
@@ -8482,6 +8484,11 @@ function enterGame(name) {
     showToast(msg, ok ? 1400 : 1800);
   });
   socket.on('character_action_result', (payload) => {
+    if (pendingRenameFallbackTimer) {
+      clearTimeout(pendingRenameFallbackTimer);
+      pendingRenameFallbackTimer = null;
+      pendingRenameFallbackName = '';
+    }
     const ok = Boolean(payload?.ok);
     const msg = String(payload?.msg || (ok ? '角色操作成功。' : '角色操作失败。'));
     showToast(msg, ok ? 2200 : 2600);
@@ -9128,10 +9135,29 @@ if (ui.name) {
       showToast('新角色名不能与当前相同');
       return;
     }
+    showToast('已提交改名请求…', 1200);
+    if (pendingRenameFallbackTimer) {
+      clearTimeout(pendingRenameFallbackTimer);
+      pendingRenameFallbackTimer = null;
+    }
+    pendingRenameFallbackName = finalName;
     socket.emit('character_action', {
       action: 'rename',
       newName: finalName
     });
+    pendingRenameFallbackTimer = setTimeout(() => {
+      const current = String(lastState?.player?.name || ui.name.textContent || '').trim();
+      if (!socket || !pendingRenameFallbackName) return;
+      if (current && current === pendingRenameFallbackName) {
+        pendingRenameFallbackTimer = null;
+        pendingRenameFallbackName = '';
+        return;
+      }
+      const fallbackName = pendingRenameFallbackName;
+      pendingRenameFallbackTimer = null;
+      pendingRenameFallbackName = '';
+      socket.emit('cmd', { text: `rename ${fallbackName}`, source: 'ui-fallback' });
+    }, 1200);
   });
 }
 

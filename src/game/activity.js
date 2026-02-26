@@ -209,7 +209,7 @@ export function spendActivityPoints(player, amount, now = Date.now()) {
   const ap = normalizeActivityProgress(player, now);
   const balance = Math.max(0, Math.floor(Number(ap.activityPoints || 0)));
   if (cost <= 0) return { ok: true, amount: 0, balance };
-  if (balance < cost) return { ok: false, error: 'activity points not enough', balance };
+  if (balance < cost) return { ok: false, error: '活动积分不足。', balance };
   ap.activityPoints = balance - cost;
   ap.activityPointsSpent = Math.max(0, Math.floor(Number(ap.activityPointsSpent || 0))) + cost;
   return { ok: true, amount: cost, balance: ap.activityPoints };
