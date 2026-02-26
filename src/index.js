@@ -18,7 +18,7 @@ import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from '.
 import { sendMail, listMail, listSentMail, markMailRead, markMailClaimed, deleteMail } from './db/mail.js';
 import { createVipCodes, listVipCodes, countVipCodes, useVipCode } from './db/vip.js';
 import { createRechargeCards, listRechargeCards, countRechargeCards, useRechargeCard, listUsedRechargeCharacters } from './db/recharge.js';
-import { getSetting, setSetting, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getSvipPrices, setSvipPrices, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getConsignExpireHours, setConsignExpireHours, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getPetTrainingFruitDropRate as getPetTrainingFruitDropRateDb, setPetTrainingFruitDropRate as setPetTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getPetSettings, setPetSettings, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb, getEquipSkillDropChance as getEquipSkillDropChanceDb, setEquipSkillDropChance as setEquipSkillDropChanceDb, getTreasureSlotCount as getTreasureSlotCountDb, setTreasureSlotCount as setTreasureSlotCountDb, getTreasureMaxLevel as getTreasureMaxLevelDb, setTreasureMaxLevel as setTreasureMaxLevelDb, getTreasureUpgradeConsume as getTreasureUpgradeConsumeDb, setTreasureUpgradeConsume as setTreasureUpgradeConsumeDb, getTreasureAdvanceConsume as getTreasureAdvanceConsumeDb, setTreasureAdvanceConsume as setTreasureAdvanceConsumeDb, getTreasureAdvancePerStage as getTreasureAdvancePerStageDb, setTreasureAdvancePerStage as setTreasureAdvancePerStageDb, getTreasureAdvanceEffectBonusPerStack as getTreasureAdvanceEffectBonusPerStackDb, setTreasureAdvanceEffectBonusPerStack as setTreasureAdvanceEffectBonusPerStackDb, getTreasureWorldBossDropMultiplier as getTreasureWorldBossDropMultiplierDb, setTreasureWorldBossDropMultiplier as setTreasureWorldBossDropMultiplierDb, getTreasureCrossWorldBossDropMultiplier as getTreasureCrossWorldBossDropMultiplierDb, setTreasureCrossWorldBossDropMultiplier as setTreasureCrossWorldBossDropMultiplierDb, getTreasureTowerXuanmingDropChance as getTreasureTowerXuanmingDropChanceDb, setTreasureTowerXuanmingDropChance as setTreasureTowerXuanmingDropChanceDb, getCmdRateLimits, setCmdRateLimits, getCmdCooldowns, setCmdCooldowns } from './db/settings.js';
+import { getSetting, setSetting, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getSvipPrices, setSvipPrices, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getPetTrainingFruitDropRate as getPetTrainingFruitDropRateDb, setPetTrainingFruitDropRate as setPetTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getPetSettings, setPetSettings, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb, getEquipSkillDropChance as getEquipSkillDropChanceDb, setEquipSkillDropChance as setEquipSkillDropChanceDb, getTreasureSlotCount as getTreasureSlotCountDb, setTreasureSlotCount as setTreasureSlotCountDb, getTreasureMaxLevel as getTreasureMaxLevelDb, setTreasureMaxLevel as setTreasureMaxLevelDb, getTreasureUpgradeConsume as getTreasureUpgradeConsumeDb, setTreasureUpgradeConsume as setTreasureUpgradeConsumeDb, getTreasureAdvanceConsume as getTreasureAdvanceConsumeDb, setTreasureAdvanceConsume as setTreasureAdvanceConsumeDb, getTreasureAdvancePerStage as getTreasureAdvancePerStageDb, setTreasureAdvancePerStage as setTreasureAdvancePerStageDb, getTreasureAdvanceEffectBonusPerStack as getTreasureAdvanceEffectBonusPerStackDb, setTreasureAdvanceEffectBonusPerStack as setTreasureAdvanceEffectBonusPerStackDb, getTreasureWorldBossDropMultiplier as getTreasureWorldBossDropMultiplierDb, setTreasureWorldBossDropMultiplier as setTreasureWorldBossDropMultiplierDb, getTreasureCrossWorldBossDropMultiplier as getTreasureCrossWorldBossDropMultiplierDb, setTreasureCrossWorldBossDropMultiplier as setTreasureCrossWorldBossDropMultiplierDb, getTreasureTowerXuanmingDropChance as getTreasureTowerXuanmingDropChanceDb, setTreasureTowerXuanmingDropChance as setTreasureTowerXuanmingDropChanceDb, getCmdRateLimits, setCmdRateLimits, getCmdCooldowns, setCmdCooldowns } from './db/settings.js';
 import { listRealms, getRealmById, updateRealmName, createRealm } from './db/realms.js';
 import {
   listMobRespawns,
@@ -174,7 +174,7 @@ import {
   setTreasureTowerXuanmingDropChance
 } from './game/treasure.js';
 
-const ACTIVITY_POINT_SHOP_SETTING_KEY = 'activity_point_shop_config_v1';
+const ACTIVITY_POINT_SHOP_SETTING_KEY = 'activity_point_shop_config_v2';
 const FIRST_RECHARGE_WELFARE_SETTING_KEY = 'first_recharge_welfare_config_v1';
 const INVITE_REWARD_SETTING_KEY = 'invite_reward_config_v1';
 const INVITE_RECHARGE_BONUS_RATE = 0.2;
@@ -1049,37 +1049,47 @@ function normalizeActivityPointShopConfig(raw) {
   const src = raw && typeof raw === 'object' ? raw : {};
   const list = Array.isArray(src.items) ? src.items : [];
   const items = list.map((entry, index) => {
-    const id = String(entry?.id || '').trim();
-    if (!id) return null;
-    const rewardItems = Array.isArray(entry?.reward?.items) ? entry.reward.items : [];
+    const itemId = String(entry?.itemId || '').trim();
+    if (!itemId) return null;
+    const id = String(entry?.id || `aps_${index + 1}_${itemId}`).trim();
     return {
       id,
-      name: String(entry?.name || id).trim(),
-      desc: String(entry?.desc || '').trim(),
-      active: entry?.active !== false,
       cost: Math.max(1, Math.floor(Number(entry?.cost || 0))),
-      limitType: ['none', 'daily', 'weekly', 'lifetime'].includes(String(entry?.limitType || 'none'))
-        ? String(entry?.limitType || 'none')
-        : 'none',
-      limit: Math.max(0, Math.floor(Number(entry?.limit || 0))),
-      minLevel: Math.max(0, Math.floor(Number(entry?.minLevel || 0))),
-      maxLevel: Math.max(0, Math.floor(Number(entry?.maxLevel || 0))),
-      needVip: Boolean(entry?.needVip),
-      needSvip: Boolean(entry?.needSvip),
+      itemId,
+      sort: Number.isFinite(Number(entry?.sort)) ? Number(entry.sort) : index
+    };
+  }).filter((it) => it && it.cost > 0 && it.itemId);
+  items.sort((a, b) => (a.sort - b.sort) || a.id.localeCompare(b.id));
+  return { version: 2, items };
+}
+
+function expandActivityPointShopConfigForRuntime(simpleConfig) {
+  const src = simpleConfig && typeof simpleConfig === 'object' ? simpleConfig : { version: 2, items: [] };
+  const list = Array.isArray(src.items) ? src.items : [];
+  const items = list.map((entry, index) => {
+    const itemId = String(entry?.itemId || '').trim();
+    if (!itemId || !ITEM_TEMPLATES[itemId]) return null;
+    return {
+      id: String(entry?.id || `aps_${index + 1}_${itemId}`).trim(),
+      name: String(ITEM_TEMPLATES[itemId]?.name || itemId),
+      desc: '',
+      active: true,
+      cost: Math.max(1, Math.floor(Number(entry?.cost || 1))),
+      limitType: 'none',
+      limit: 0,
+      minLevel: 0,
+      maxLevel: 0,
+      needVip: false,
+      needSvip: false,
       reward: {
-        gold: Math.max(0, Math.floor(Number(entry?.reward?.gold || 0))),
-        items: rewardItems
-          .map((it) => ({
-            id: String(it?.id || '').trim(),
-            qty: Math.max(1, Math.floor(Number(it?.qty || 1)))
-          }))
-          .filter((it) => it.id)
+        gold: 0,
+        items: [{ id: itemId, qty: 1 }]
       },
       sort: Number.isFinite(Number(entry?.sort)) ? Number(entry.sort) : index
     };
-  }).filter((it) => it && it.cost > 0 && (it.reward.gold > 0 || it.reward.items.length > 0));
+  }).filter(Boolean);
   items.sort((a, b) => (a.sort - b.sort) || a.id.localeCompare(b.id));
-  return { version: 1, items };
+  return { version: 2, items };
 }
 
 function validateActivityPointShopConfig(config) {
@@ -1088,10 +1098,8 @@ function validateActivityPointShopConfig(config) {
   for (const item of normalized.items) {
     if (seen.has(item.id)) throw new Error(`商品ID重复: ${item.id}`);
     seen.add(item.id);
-    for (const rewardItem of item.reward.items) {
-      if (!ITEM_TEMPLATES[rewardItem.id]) {
-        throw new Error(`商品 ${item.id} 包含不存在的物品: ${rewardItem.id}`);
-      }
+    if (!ITEM_TEMPLATES[item.itemId]) {
+      throw new Error(`商品 ${item.id} 包含不存在的物品: ${item.itemId}`);
     }
   }
   return normalized;
@@ -1107,7 +1115,8 @@ async function getActivityPointShopConfigCached(forceRefresh = false) {
   } catch {
     raw = {};
   }
-  activityPointShopConfigCache = normalizeActivityPointShopConfig(raw);
+  const simpleConfig = normalizeActivityPointShopConfig(raw);
+  activityPointShopConfigCache = expandActivityPointShopConfigForRuntime(simpleConfig);
   return activityPointShopConfigCache;
 }
 
@@ -2248,21 +2257,13 @@ app.post('/admin/state-throttle-toggle', async (req, res) => {
 app.get('/admin/consign-expire-status', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
-  const hours = await getConsignExpireHours();
-  res.json({ ok: true, hours });
+  res.json({ ok: true, hours: 48, fixed: true });
 });
 
 app.post('/admin/consign-expire-update', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
-  const hours = Math.max(0, Math.floor(Number(req.body?.hours || 0) || 0));
-  if (!Number.isFinite(hours) || hours < 0) {
-    return res.status(400).json({ error: '请输入有效小时数' });
-  }
-  await setConsignExpireHours(hours);
-  consignExpireHoursCachedValue = hours;
-  consignExpireHoursLastUpdate = Date.now();
-  res.json({ ok: true, hours });
+  res.status(400).json({ error: '寄售到期时间已固定为48小时，无需设置。' });
 });
 
 app.get('/admin/room-variant-status', async (req, res) => {
@@ -2309,8 +2310,23 @@ app.get('/admin/activity-point-shop', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
   try {
-    const config = await getActivityPointShopConfigCached(true);
-    res.json({ ok: true, config });
+    let raw = {};
+    try {
+      raw = await getSetting(ACTIVITY_POINT_SHOP_SETTING_KEY, '{}');
+      if (typeof raw === 'string') raw = JSON.parse(raw || '{}');
+    } catch {
+      raw = {};
+    }
+    const config = normalizeActivityPointShopConfig(raw);
+    const itemOptions = Object.values(ITEM_TEMPLATES || {})
+      .filter((it) => it && it.id)
+      .map((it) => ({
+        id: String(it.id),
+        name: String(it.name || it.id),
+        type: String(it.type || 'unknown')
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN'));
+    res.json({ ok: true, config, itemOptions });
   } catch (err) {
     res.status(500).json({ error: err.message || '加载失败' });
   }
@@ -2323,7 +2339,7 @@ app.post('/admin/activity-point-shop/update', async (req, res) => {
     const payload = req.body?.config ?? req.body ?? {};
     const config = validateActivityPointShopConfig(payload);
     await setSetting(ACTIVITY_POINT_SHOP_SETTING_KEY, JSON.stringify(config));
-    activityPointShopConfigCache = config;
+    activityPointShopConfigCache = expandActivityPointShopConfigForRuntime(config);
     res.json({ ok: true, config });
   } catch (err) {
     res.status(400).json({ error: err.message || '保存失败' });
@@ -9001,8 +9017,6 @@ let stateThrottleIntervalCachedValue = null;
 let stateThrottleIntervalLastUpdate = 0;
 let stateThrottleOverrideAllowedCachedValue = null;
 let stateThrottleOverrideAllowedLastUpdate = 0;
-let consignExpireHoursCachedValue = null;
-let consignExpireHoursLastUpdate = 0;
 let lootLogEnabled = false;
 const dailyLuckyCache = new Map();
 const zhuxianTowerRankCache = new Map();
@@ -9062,13 +9076,7 @@ async function getSvipSettingsCached() {
 }
 
 async function getConsignExpireHoursCached() {
-  const now = Date.now();
-  if (now - consignExpireHoursLastUpdate > STATE_THROTTLE_CACHE_TTL) {
-    consignExpireHoursCachedValue = await getConsignExpireHours();
-    consignExpireHoursLastUpdate = now;
-  }
-  const parsed = parseInt(consignExpireHoursCachedValue, 10);
-  return Number.isFinite(parsed) ? Math.max(0, parsed) : 48;
+  return 48;
 }
 
 async function getDailyLuckyInfoCached(realmId) {

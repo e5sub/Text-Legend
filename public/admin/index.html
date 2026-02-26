@@ -429,7 +429,7 @@
           </div>
           <div class="block-body">
             <p class="muted" style="margin-bottom: 8px;">
-              后台维护活动积分商城商品（可视化配置）。奖励物品格式：`物品ID*数量,物品ID*数量`
+              简化配置：直接选择兑换物品并填写所需积分（保存后按“单物品x1”生成商城配置）。
             </p>
             <div class="row" style="margin-bottom: 8px; gap: 8px;">
               <button id="activity-point-shop-load-btn" class="btn-small">加载</button>
@@ -440,21 +440,13 @@
               <table style="font-size: 12px;">
                 <thead>
                   <tr>
-                    <th>启用</th>
-                    <th>ID</th>
-                    <th>名称</th>
+                    <th>兑换物品</th>
                     <th>积分</th>
-                    <th>限制</th>
-                    <th>等级</th>
-                    <th>VIP</th>
-                    <th>奖励金币</th>
-                    <th>奖励物品</th>
-                    <th>描述</th>
                     <th>操作</th>
                   </tr>
                 </thead>
                 <tbody id="activity-point-shop-list">
-                  <tr><td colspan="11" style="text-align:center;color:#999;">点击加载</td></tr>
+                  <tr><td colspan="3" style="text-align:center;color:#999;">点击加载</td></tr>
                 </tbody>
               </table>
             </div>
@@ -718,22 +710,6 @@
               <button id="state-throttle-save" class="btn-small">保存秒数</button>
             </div>
             <div id="state-throttle-msg" class="msg"></div>
-          </div>
-        </div>
-
-        <div class="block" data-collapsible>
-          <div class="block-title">
-            <h2>寄售到期设置</h2>
-            <button class="btn-small block-toggle">折叠</button>
-          </div>
-          <div class="block-body">
-            <p>当前状态: <span id="consign-expire-status">加载中...</span></p>
-            <div class="row" style="margin-top: 6px;">
-              <input id="consign-expire-hours" type="number" min="0" value="48" style="max-width: 120px;">
-              <button id="consign-expire-save" class="btn-small">保存小时</button>
-            </div>
-            <p class="muted" style="margin-top: 6px;">0 表示不自动下架</p>
-            <div id="consign-expire-msg" class="msg"></div>
           </div>
         </div>
 

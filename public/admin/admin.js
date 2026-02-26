@@ -77,10 +77,6 @@ const stateThrottleIntervalInput = document.getElementById('state-throttle-inter
 const stateThrottleSaveBtn = document.getElementById('state-throttle-save');
 const stateThrottleStatus = document.getElementById('state-throttle-status');
 const stateThrottleMsg = document.getElementById('state-throttle-msg');
-const consignExpireStatus = document.getElementById('consign-expire-status');
-const consignExpireMsg = document.getElementById('consign-expire-msg');
-const consignExpireInput = document.getElementById('consign-expire-hours');
-const consignExpireSaveBtn = document.getElementById('consign-expire-save');
 const roomVariantStatus = document.getElementById('room-variant-status');
 const roomVariantMsg = document.getElementById('room-variant-msg');
 const roomVariantInput = document.getElementById('room-variant-count');
@@ -452,6 +448,7 @@ const activityPointShopAddBtn = document.getElementById('activity-point-shop-add
 const activityPointShopSaveBtn = document.getElementById('activity-point-shop-save-btn');
 const activityPointShopList = document.getElementById('activity-point-shop-list');
 let activityPointShopRowsCache = [];
+let activityPointShopItemOptionsCache = [];
 
 // 每日幸运玩家相关
 const dailyLuckyMsg = document.getElementById('daily-lucky-msg');
@@ -535,8 +532,13 @@ async function loadActivityPointShopConfig() {
   activityPointShopMsg.textContent = '';
   try {
     const data = await api('/admin/activity-point-shop', 'GET');
-    const config = data?.config || { version: 1, items: [] };
-    activityPointShopRowsCache = Array.isArray(config.items) ? config.items : [];
+    const config = data?.config || { version: 2, items: [] };
+    activityPointShopItemOptionsCache = Array.isArray(data?.itemOptions) ? data.itemOptions : [];
+    activityPointShopRowsCache = (Array.isArray(config.items) ? config.items : []).map((item, index) => ({
+      _id: String(item?.id || `aps_${index + 1}`),
+      itemId: String(item?.itemId || '').trim(),
+      cost: Math.max(1, Math.floor(Number(item?.cost || 1)))
+    })).filter((row) => row.itemId);
     renderActivityPointShopRows();
     activityPointShopMsg.textContent = '加载成功';
     activityPointShopMsg.style.color = 'green';
@@ -547,49 +549,45 @@ async function loadActivityPointShopConfig() {
   }
 }
 
-function formatRewardItemsInput(items) {
-  if (!Array.isArray(items) || !items.length) return '';
-  return items
-    .map((it) => {
-      const id = String(it?.id || '').trim();
-      const qty = Math.max(1, Math.floor(Number(it?.qty || 1)));
-      return id ? `${id}*${qty}` : '';
-    })
-    .filter(Boolean)
-    .join(', ');
-}
-
-function parseRewardItemsInput(text) {
-  const raw = String(text || '').trim();
-  if (!raw) return [];
-  return raw.split(',')
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .map((part) => {
-      const [idRaw, qtyRaw] = part.split('*').map((s) => String(s || '').trim());
-      return {
-        id: idRaw,
-        qty: Math.max(1, Math.floor(Number(qtyRaw || 1)))
-      };
-    })
-    .filter((it) => it.id);
-}
-
 function activityPointShopEmptyItem() {
   return {
-    id: '',
-    name: '',
-    desc: '',
-    active: true,
+    _id: `aps_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+    itemId: '',
     cost: 1,
-    limitType: 'none',
-    limit: 0,
-    minLevel: 0,
-    maxLevel: 0,
-    needVip: false,
-    needSvip: false,
-    reward: { gold: 0, items: [] }
+    _search: ''
   };
+}
+
+function getActivityPointShopItemDisplayText(item) {
+  const id = String(item?.id || '');
+  const name = String(item?.name || item?.id || '');
+  const type = String(item?.type || '').trim();
+  return `${name}${type ? ` [${type}]` : ''} (${id})`;
+}
+
+function buildActivityPointShopItemSelectHtml(selectedId = '', keyword = '') {
+  const selected = String(selectedId || '').trim();
+  const kw = String(keyword || '').trim().toLowerCase();
+  const options = Array.isArray(activityPointShopItemOptionsCache) ? activityPointShopItemOptionsCache : [];
+  const filtered = kw
+    ? options.filter((it) => {
+        const id = String(it?.id || '').toLowerCase();
+        const name = String(it?.name || '').toLowerCase();
+        const type = String(it?.type || '').toLowerCase();
+        return id.includes(kw) || name.includes(kw) || type.includes(kw);
+      })
+    : options;
+  const selectedExists = filtered.some((it) => String(it?.id || '') === selected);
+  const selectedOption = !selectedExists && selected
+    ? options.find((it) => String(it?.id || '') === selected)
+    : null;
+  const finalList = selectedOption ? [selectedOption, ...filtered] : filtered;
+  const optionHtml = finalList.map((it) => {
+    const id = String(it?.id || '').replace(/"/g, '&quot;');
+    const text = getActivityPointShopItemDisplayText(it).replace(/"/g, '&quot;');
+    return `<option value="${id}"${id === selected ? ' selected' : ''}>${text}</option>`;
+  }).join('');
+  return `<select data-k="itemId" style="width: 360px;"><option value="">请选择物品</option>${optionHtml}</select>`;
 }
 
 function renderActivityPointShopRows() {
@@ -597,38 +595,20 @@ function renderActivityPointShopRows() {
   const rows = Array.isArray(activityPointShopRowsCache) ? activityPointShopRowsCache : [];
   activityPointShopList.innerHTML = '';
   if (!rows.length) {
-    activityPointShopList.innerHTML = '<tr><td colspan="11" style="text-align:center;color:#999;">暂无商品，点击“添加商品”</td></tr>';
+    activityPointShopList.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#999;">暂无商品，点击“添加商品”</td></tr>';
     return;
   }
   rows.forEach((item, index) => {
     const tr = document.createElement('tr');
     tr.dataset.index = String(index);
-    const reward = item.reward || {};
+    tr.dataset.shopId = String(item?._id || '');
+    const searchText = String(item?._search || '').replace(/"/g, '&quot;');
     tr.innerHTML = `
-      <td><input type="checkbox" data-k="active" ${item.active !== false ? 'checked' : ''}></td>
-      <td><input data-k="id" type="text" value="${String(item.id || '').replace(/"/g, '&quot;')}" style="width:120px;"></td>
-      <td><input data-k="name" type="text" value="${String(item.name || '').replace(/"/g, '&quot;')}" style="width:120px;"></td>
+      <td>
+        <input data-k="itemSearch" type="text" value="${searchText}" placeholder="搜索物品名/ID" style="width: 360px; margin-bottom:4px;">
+        ${buildActivityPointShopItemSelectHtml(item.itemId, item._search || '')}
+      </td>
       <td><input data-k="cost" type="number" min="1" value="${Math.max(1, Number(item.cost || 1))}" style="width:70px;"></td>
-      <td>
-        <select data-k="limitType" style="width:78px;">
-          <option value="none"${String(item.limitType||'none')==='none'?' selected':''}>不限</option>
-          <option value="daily"${String(item.limitType)==='daily'?' selected':''}>每日</option>
-          <option value="weekly"${String(item.limitType)==='weekly'?' selected':''}>每周</option>
-          <option value="lifetime"${String(item.limitType)==='lifetime'?' selected':''}>终身</option>
-        </select>
-        <input data-k="limit" type="number" min="0" value="${Math.max(0, Number(item.limit || 0))}" style="width:58px; margin-top:4px;">
-      </td>
-      <td>
-        <input data-k="minLevel" type="number" min="0" value="${Math.max(0, Number(item.minLevel || 0))}" style="width:58px;" placeholder="最低">
-        <input data-k="maxLevel" type="number" min="0" value="${Math.max(0, Number(item.maxLevel || 0))}" style="width:58px; margin-top:4px;" placeholder="最高">
-      </td>
-      <td>
-        <label style="display:block;"><input data-k="needVip" type="checkbox" ${item.needVip ? 'checked' : ''}>VIP</label>
-        <label style="display:block;"><input data-k="needSvip" type="checkbox" ${item.needSvip ? 'checked' : ''}>SVIP</label>
-      </td>
-      <td><input data-k="rewardGold" type="number" min="0" value="${Math.max(0, Number(reward.gold || 0))}" style="width:88px;"></td>
-      <td><input data-k="rewardItems" type="text" value="${formatRewardItemsInput(reward.items).replace(/"/g, '&quot;')}" style="width:220px;" placeholder="item_id*1,item_id*2"></td>
-      <td><input data-k="desc" type="text" value="${String(item.desc || '').replace(/"/g, '&quot;')}" style="width:160px;"></td>
       <td><button type="button" class="btn-small" data-act="del">删除</button></td>
     `;
     activityPointShopList.appendChild(tr);
@@ -637,29 +617,19 @@ function renderActivityPointShopRows() {
 
 function collectActivityPointShopConfigFromUi() {
   const rows = [];
-  if (!activityPointShopList) return { version: 1, items: rows };
+  if (!activityPointShopList) return { version: 2, items: rows };
   activityPointShopList.querySelectorAll('tr[data-index]').forEach((tr) => {
     const getVal = (k) => tr.querySelector(`[data-k="${k}"]`);
-    const item = {
-      active: !!getVal('active')?.checked,
-      id: String(getVal('id')?.value || '').trim(),
-      name: String(getVal('name')?.value || '').trim(),
-      cost: Math.max(1, Math.floor(Number(getVal('cost')?.value || 1))),
-      limitType: String(getVal('limitType')?.value || 'none'),
-      limit: Math.max(0, Math.floor(Number(getVal('limit')?.value || 0))),
-      minLevel: Math.max(0, Math.floor(Number(getVal('minLevel')?.value || 0))),
-      maxLevel: Math.max(0, Math.floor(Number(getVal('maxLevel')?.value || 0))),
-      needVip: !!getVal('needVip')?.checked,
-      needSvip: !!getVal('needSvip')?.checked,
-      desc: String(getVal('desc')?.value || '').trim(),
-      reward: {
-        gold: Math.max(0, Math.floor(Number(getVal('rewardGold')?.value || 0))),
-        items: parseRewardItemsInput(getVal('rewardItems')?.value || '')
-      }
-    };
-    if (item.id) rows.push(item);
+    const rewardItemId = String(getVal('itemId')?.value || '').trim();
+    if (!rewardItemId) return;
+    const shopId = String(tr.dataset.shopId || '').trim() || `aps_${rewardItemId}`;
+    rows.push({
+      id: shopId,
+      itemId: rewardItemId,
+      cost: Math.max(1, Math.floor(Number(getVal('cost')?.value || 1)))
+    });
   });
-  return { version: 1, items: rows };
+  return { version: 2, items: rows };
 }
 
 async function saveActivityPointShopConfig() {
@@ -668,7 +638,12 @@ async function saveActivityPointShopConfig() {
   try {
     const config = collectActivityPointShopConfigFromUi();
     const data = await api('/admin/activity-point-shop/update', 'POST', { config });
-    activityPointShopRowsCache = Array.isArray(data?.config?.items) ? data.config.items : config.items;
+    activityPointShopRowsCache = (Array.isArray(data?.config?.items) ? data.config.items : config.items).map((item, index) => ({
+      _id: String(item?.id || `aps_${index + 1}`),
+      itemId: String(item?.itemId || '').trim(),
+      cost: Math.max(1, Math.floor(Number(item?.cost || 1))),
+      _search: ''
+    })).filter((row) => row.itemId);
     renderActivityPointShopRows();
     activityPointShopMsg.textContent = '保存成功';
     activityPointShopMsg.style.color = 'green';
@@ -1960,7 +1935,6 @@ async function login() {
       await loadInviteRewardSettings();
       await refreshLootLogStatus();
       await refreshStateThrottleStatus();
-    await refreshConsignExpireStatus();
     await refreshRoomVariantStatus();
     await refreshRealms();
     await loadWorldBossSettings();
@@ -3558,24 +3532,6 @@ async function saveTrainingSettings() {
   }
 }
 
-async function refreshConsignExpireStatus() {
-  if (!consignExpireStatus) return;
-  try {
-    const data = await api('/admin/consign-expire-status', 'GET');
-    const hours = Number(data.hours ?? 48);
-    if (hours <= 0) {
-      consignExpireStatus.textContent = '已关闭';
-      consignExpireStatus.style.color = 'red';
-    } else {
-      consignExpireStatus.textContent = `已开启(${hours}小时)`;
-      consignExpireStatus.style.color = 'green';
-    }
-    if (consignExpireInput) consignExpireInput.value = String(hours);
-  } catch (err) {
-    consignExpireStatus.textContent = '加载失败';
-  }
-}
-
 // 修炼系统配置
 async function loadTrainingSettings() {
   if (!trainingMsg) return;
@@ -3631,22 +3587,6 @@ async function saveTrainingSettings() {
   } catch (err) {
     trainingMsg.textContent = `保存失败: ${err.message}`;
     trainingMsg.style.color = 'red';
-  }
-}
-
-async function saveConsignExpireHours() {
-  if (!consignExpireMsg) return;
-  consignExpireMsg.textContent = '';
-  try {
-    const hours = consignExpireInput ? Number(consignExpireInput.value || 48) : 48;
-    if (!Number.isFinite(hours) || hours < 0) {
-      throw new Error('请输入有效小时数');
-    }
-    await api('/admin/consign-expire-update', 'POST', { hours });
-    consignExpireMsg.textContent = '寄售到期已保存';
-    await refreshConsignExpireStatus();
-  } catch (err) {
-    consignExpireMsg.textContent = err.message;
   }
 }
 
@@ -6407,7 +6347,6 @@ async function initDashboard() {
       loadSvipSettings();
       refreshLootLogStatus();
       refreshStateThrottleStatus();
-    refreshConsignExpireStatus();
     refreshRoomVariantStatus();
     loadCmdRateSettings();
     await refreshRealms();
@@ -6470,6 +6409,30 @@ async function resetPetSkillEffectsToDefault() {
 }
 if (activityPointShopSaveBtn) activityPointShopSaveBtn.addEventListener('click', saveActivityPointShopConfig);
 if (activityPointShopList) {
+  activityPointShopList.addEventListener('input', (e) => {
+    const input = e.target?.closest?.('input[data-k="itemSearch"]');
+    if (!input) return;
+    const tr = input.closest('tr[data-index]');
+    const index = Number(tr?.dataset?.index);
+    if (!Number.isInteger(index) || index < 0) return;
+    if (!Array.isArray(activityPointShopRowsCache) || !activityPointShopRowsCache[index]) return;
+    activityPointShopRowsCache[index]._search = String(input.value || '');
+    const selectWrapCell = tr.querySelector('td');
+    const oldSelect = tr.querySelector('select[data-k="itemId"]');
+    const selectedId = String(oldSelect?.value || activityPointShopRowsCache[index].itemId || '').trim();
+    if (selectWrapCell && oldSelect) {
+      oldSelect.outerHTML = buildActivityPointShopItemSelectHtml(selectedId, activityPointShopRowsCache[index]._search || '');
+    }
+  });
+  activityPointShopList.addEventListener('change', (e) => {
+    const select = e.target?.closest?.('select[data-k="itemId"]');
+    if (!select) return;
+    const tr = select.closest('tr[data-index]');
+    const index = Number(tr?.dataset?.index);
+    if (!Number.isInteger(index) || index < 0) return;
+    if (!Array.isArray(activityPointShopRowsCache) || !activityPointShopRowsCache[index]) return;
+    activityPointShopRowsCache[index].itemId = String(select.value || '').trim();
+  });
   activityPointShopList.addEventListener('click', (e) => {
     const btn = e.target?.closest?.('button[data-act="del"]');
     if (!btn) return;
@@ -6690,9 +6653,6 @@ if (stateThrottleOverrideAllowedToggle) {
 }
 if (stateThrottleSaveBtn) {
   stateThrottleSaveBtn.addEventListener('click', saveStateThrottleInterval);
-}
-if (consignExpireSaveBtn) {
-  consignExpireSaveBtn.addEventListener('click', saveConsignExpireHours);
 }
 if (roomVariantSaveBtn) {
   roomVariantSaveBtn.addEventListener('click', saveRoomVariantCount);
