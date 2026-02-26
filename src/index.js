@@ -25,7 +25,8 @@ import {
   upsertMobRespawn,
   clearMobRespawn,
   saveMobState,
-  clearInvalidCrossWorldBossRespawns
+  clearInvalidCrossWorldBossRespawns,
+  cleanupExpiredMobRespawns
 } from './db/mobs.js';
 import {
   listConsignments,
@@ -17457,6 +17458,26 @@ async function start() {
       console.warn('Failed to save mob states:', err);
     }
   }, 30000);
+
+  // 定期清理 mob_respawns 中已过期且无血量快照的无效记录（每1小时）
+  setInterval(async () => {
+    try {
+      const deleted = await cleanupExpiredMobRespawns(Date.now());
+      if (Number(deleted || 0) > 0) {
+        console.log(`[mob_respawns] cleaned expired rows: ${deleted}`);
+      }
+    } catch (err) {
+      console.warn('Failed to cleanup expired mob respawns:', err);
+    }
+  }, 60 * 60 * 1000);
+  try {
+    const deleted = await cleanupExpiredMobRespawns(Date.now());
+    if (Number(deleted || 0) > 0) {
+      console.log(`[mob_respawns] startup cleaned expired rows: ${deleted}`);
+    }
+  } catch (err) {
+    console.warn('Failed to cleanup expired mob respawns on startup:', err);
+  }
 
   // 寄售到期自动下架（每10分钟）
   setInterval(async () => {

@@ -89,3 +89,13 @@ export async function clearInvalidCrossWorldBossRespawns() {
 export async function saveMobState(realmId, zoneId, roomId, slotIndex, templateId, currentHp, status) {
   return upsertMobRespawn(realmId, zoneId, roomId, slotIndex, templateId, 0, currentHp, status);
 }
+
+export async function cleanupExpiredMobRespawns(nowMs = Date.now()) {
+  const now = Math.max(0, Math.floor(Number(nowMs) || 0));
+  return withWriteRetry(() =>
+    knex('mob_respawns')
+      .where('respawn_at', '<=', now)
+      .andWhere((q) => q.whereNull('current_hp').orWhere('current_hp', '<=', 0))
+      .del()
+  );
+}
