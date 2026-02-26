@@ -530,6 +530,7 @@ export function computeDerived(player) {
   let poisonEffectCount = 0;
   let comboEffectCount = 0;
   let healblockEffectCount = 0;
+  const refineAttrBonus = { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 };
   // 宠物大部分属性加成对人物关闭；仅保留少数明确设计的专属护主技能。
   const petSkills = new Set();
   const activePetSkills = getActivePetSkillSet(player);
@@ -742,14 +743,14 @@ export function computeDerived(player) {
 
     // 锻造等级加成：每级锻造提升所有属性（可配置，默认1点）
     const refineBonus = (entry.refine_level || 0) * getRefineBonusPerLevel();
-    atk += refineBonus;
-    mag += refineBonus;
-    spirit += refineBonus;
-    def += refineBonus;
-    mdef += refineBonus;
-    stats.hp += refineBonus;
-    stats.mp += refineBonus;
-    stats.dex += refineBonus;
+    refineAttrBonus.atk += refineBonus;
+    refineAttrBonus.mag += refineBonus;
+    refineAttrBonus.spirit += refineBonus;
+    refineAttrBonus.def += refineBonus;
+    refineAttrBonus.mdef += refineBonus;
+    refineAttrBonus.hp += refineBonus;
+    refineAttrBonus.mp += refineBonus;
+    refineAttrBonus.dex += refineBonus;
     if (entry.effects?.fury) {
       atk = Math.floor(atk * 1.25);
       mag = Math.floor(mag * 1.25);
@@ -942,7 +943,15 @@ export function computeDerived(player) {
     }
   }
 
-  // 修炼/修炼果属性最后加入，不参与其他百分比加成
+  // 锻造/修炼/修炼果属性最后加入，不参与其他百分比加成
+  player.max_hp += refineAttrBonus.hp;
+  player.max_mp += refineAttrBonus.mp;
+  player.atk += refineAttrBonus.atk;
+  player.def += refineAttrBonus.def;
+  player.mag += refineAttrBonus.mag;
+  player.spirit += refineAttrBonus.spirit;
+  player.mdef += refineAttrBonus.mdef;
+  player.dex += refineAttrBonus.dex;
   player.max_hp += trainingBonus.hp + trainingFruitBonus.hp;
   player.max_mp += trainingBonus.mp + trainingFruitBonus.mp;
   player.atk += trainingBonus.atk + trainingFruitBonus.atk;
