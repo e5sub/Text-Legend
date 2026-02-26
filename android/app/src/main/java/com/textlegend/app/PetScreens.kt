@@ -349,8 +349,9 @@ private fun PetCard(
                             modifier = Modifier.clickable { /* TODO: 查看技能详情 */ }
                         ) {
                             Text(
-                                text = skill?.name ?: skillId,
+                                text = petSkillDisplayName(skillId, skill?.name),
                                 fontSize = 10.sp,
+                                color = Color(0xFF212121),
                                 modifier = Modifier.padding(4.dp)
                             )
                         }
@@ -531,56 +532,18 @@ private fun PetEquipDialog(
                 if (equippedItems.isEmpty()) {
                     Text("暂无已穿戴装备", color = Color.Gray, fontSize = 12.sp)
                 } else {
-                    equippedItems.forEach { item ->
-                        val slotKey = item.slot ?: ""
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable(enabled = slotKey.isNotBlank()) {
-                                    if (slotKey.isNotBlank()) onUnequip(slotKey)
-                                },
-                            shape = RoundedCornerShape(8.dp),
-                            tonalElevation = 1.dp
+                    equippedItems.chunked(2).forEach { rowItems ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(10.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = petEquipSlotLabel(item.slot),
-                                        fontSize = 11.sp,
-                                        color = Color.Gray
-                                    )
-                                    Text(
-                                        text = formatPetEquippedName(item),
-                                        color = petItemRarityColor(item.rarity),
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                    val statText = formatPetEquipStatsText(
-                                        atk = item.atk,
-                                        def = item.def,
-                                        mdef = item.mdef,
-                                        mag = item.mag,
-                                        hp = item.hp,
-                                        mp = item.mp,
-                                        spirit = item.spirit,
-                                        dex = item.dex
-                                    )
-                                    if (statText.isNotBlank()) {
-                                        Text(statText, fontSize = 11.sp, color = Color(0xFF616161))
-                                    }
-                                    val extraText = buildList {
-                                        if (item.refine_level > 0) add("锻造 +${item.refine_level}")
-                                        val effectText = formatPetEffectInline(item.effects)
-                                        if (effectText.isNotBlank()) add(effectText)
-                                    }.joinToString(" | ")
-                                    if (extraText.isNotBlank()) {
-                                        Text(extraText, fontSize = 11.sp, color = Color(0xFF757575))
-                                    }
+                            rowItems.forEach { item ->
+                                Box(modifier = Modifier.weight(1f)) {
+                                    PetEquippedItemCard(item = item, onUnequip = onUnequip)
                                 }
-                                Text("卸下", fontSize = 12.sp, color = Color(0xFFD32F2F))
+                            }
+                            if (rowItems.size < 2) {
+                                Spacer(modifier = Modifier.weight(1f))
                             }
                         }
                     }
@@ -591,49 +554,18 @@ private fun PetEquipDialog(
                 if (equipables.isEmpty()) {
                     Text("背包里没有可穿戴装备", color = Color.Gray, fontSize = 12.sp)
                 } else {
-                    equipables.forEach { item ->
-                        val itemKey = (item.key.ifBlank { item.id }).trim()
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable(enabled = itemKey.isNotBlank()) {
-                                    if (itemKey.isNotBlank()) onEquip(itemKey)
-                                },
-                            shape = RoundedCornerShape(8.dp),
-                            tonalElevation = 1.dp
+                    equipables.chunked(2).forEach { rowItems ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Column(modifier = Modifier.fillMaxWidth().padding(10.dp)) {
-                                Text(
-                                    text = "${formatBagEquipName(item)} x${item.qty}",
-                                    color = petItemRarityColor(item.rarity),
-                                    fontWeight = FontWeight.Medium
-                                )
-                                Text(
-                                    text = "部位：${petEquipSlotLabelFromItem(item.slot)}",
-                                    fontSize = 11.sp,
-                                    color = Color.Gray
-                                )
-                                val statText = formatPetEquipStatsText(
-                                    atk = item.atk,
-                                    def = item.def,
-                                    mdef = item.mdef,
-                                    mag = item.mag,
-                                    hp = item.hp,
-                                    mp = item.mp,
-                                    spirit = item.spirit,
-                                    dex = item.dex
-                                )
-                                if (statText.isNotBlank()) {
-                                    Text(statText, fontSize = 11.sp, color = Color(0xFF616161))
+                            rowItems.forEach { item ->
+                                Box(modifier = Modifier.weight(1f)) {
+                                    PetBagEquipItemCard(item = item, onEquip = onEquip)
                                 }
-                                val extraText = buildList {
-                                    if (item.refine_level > 0) add("锻造 +${item.refine_level}")
-                                    val effectText = formatPetEffectInline(item.effects)
-                                    if (effectText.isNotBlank()) add(effectText)
-                                }.joinToString(" | ")
-                                if (extraText.isNotBlank()) {
-                                    Text(extraText, fontSize = 11.sp, color = Color(0xFF757575))
-                                }
+                            }
+                            if (rowItems.size < 2) {
+                                Spacer(modifier = Modifier.weight(1f))
                             }
                         }
                     }
@@ -726,6 +658,109 @@ private fun PetBookCard(book: PetBookInfo, qty: Int) {
     }
 }
 
+@Composable
+private fun PetEquippedItemCard(
+    item: PetEquippedItem,
+    onUnequip: (slot: String) -> Unit
+) {
+    val slotKey = item.slot ?: ""
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = slotKey.isNotBlank()) {
+                if (slotKey.isNotBlank()) onUnequip(slotKey)
+            },
+        shape = RoundedCornerShape(8.dp),
+        tonalElevation = 1.dp
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(10.dp)) {
+            Text(
+                text = petEquipSlotLabel(item.slot),
+                fontSize = 11.sp,
+                color = Color.Gray
+            )
+            Text(
+                text = formatPetEquippedName(item),
+                color = petItemRarityColor(item.rarity),
+                fontWeight = FontWeight.Medium
+            )
+            val statText = formatPetEquipStatsText(
+                atk = item.atk,
+                def = item.def,
+                mdef = item.mdef,
+                mag = item.mag,
+                hp = item.hp,
+                mp = item.mp,
+                spirit = item.spirit,
+                dex = item.dex
+            )
+            if (statText.isNotBlank()) {
+                Text(statText, fontSize = 11.sp, color = Color(0xFF616161))
+            }
+            val extraText = buildList {
+                if (item.refine_level > 0) add("锻造 +${item.refine_level}")
+                val effectText = formatPetEffectInline(item.effects)
+                if (effectText.isNotBlank()) add(effectText)
+            }.joinToString(" | ")
+            if (extraText.isNotBlank()) {
+                Text(extraText, fontSize = 11.sp, color = Color(0xFF757575))
+            }
+            Text("点击卸下", fontSize = 11.sp, color = Color(0xFFD32F2F))
+        }
+    }
+}
+
+@Composable
+private fun PetBagEquipItemCard(
+    item: ItemInfo,
+    onEquip: (itemKey: String) -> Unit
+) {
+    val itemKey = (item.key.ifBlank { item.id }).trim()
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = itemKey.isNotBlank()) {
+                if (itemKey.isNotBlank()) onEquip(itemKey)
+            },
+        shape = RoundedCornerShape(8.dp),
+        tonalElevation = 1.dp
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(10.dp)) {
+            Text(
+                text = "${formatBagEquipName(item)} x${item.qty}",
+                color = petItemRarityColor(item.rarity),
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = "部位：${petEquipSlotLabelFromItem(item.slot)}",
+                fontSize = 11.sp,
+                color = Color.Gray
+            )
+            val statText = formatPetEquipStatsText(
+                atk = item.atk,
+                def = item.def,
+                mdef = item.mdef,
+                mag = item.mag,
+                hp = item.hp,
+                mp = item.mp,
+                spirit = item.spirit,
+                dex = item.dex
+            )
+            if (statText.isNotBlank()) {
+                Text(statText, fontSize = 11.sp, color = Color(0xFF616161))
+            }
+            val extraText = buildList {
+                if (item.refine_level > 0) add("锻造 +${item.refine_level}")
+                val effectText = formatPetEffectInline(item.effects)
+                if (effectText.isNotBlank()) add(effectText)
+            }.joinToString(" | ")
+            if (extraText.isNotBlank()) {
+                Text(extraText, fontSize = 11.sp, color = Color(0xFF757575))
+            }
+        }
+    }
+}
+
 private fun isPetEquipableItem(item: ItemInfo): Boolean {
     if ((item.qty) <= 0) return false
     val slot = item.slot?.trim().orEmpty()
@@ -799,6 +834,15 @@ private fun formatPetEquippedName(item: PetEquippedItem): String {
 private fun formatBagEquipName(item: ItemInfo): String {
     val refine = if (item.refine_level > 0) " +${item.refine_level}" else ""
     return item.name + refine
+}
+
+private fun petSkillDisplayName(skillId: String, rawName: String?): String {
+    val cleaned = rawName?.trim().orEmpty()
+    if (cleaned.isNotBlank()) return cleaned
+    return when (skillId) {
+        "pet_beast_aegis" -> "神兽护甲"
+        else -> skillId
+    }
 }
 
 private fun normalizePetBooksMap(raw: JsonElement?): Map<String, Int> {
