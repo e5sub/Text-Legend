@@ -9151,25 +9151,9 @@ if (ui.name) {
       clearTimeout(pendingRenameFallbackTimer);
       pendingRenameFallbackTimer = null;
     }
-    pendingRenameFallbackName = finalName;
-    socket.emit('character_action', {
-      action: 'rename',
-      newName: finalName
-    });
-    pendingRenameFallbackTimer = setTimeout(() => {
-      const current = String(lastState?.player?.name || ui.name.textContent || '').trim();
-      if (!socket || !pendingRenameFallbackName) return;
-      if (current && current === pendingRenameFallbackName) {
-        pendingRenameFallbackTimer = null;
-        pendingRenameFallbackName = '';
-        return;
-      }
-      const fallbackName = pendingRenameFallbackName;
-      pendingRenameFallbackTimer = null;
-      pendingRenameFallbackName = '';
-      showToast('改名请求超时，正在重试…', 1500);
-      socket.emit('cmd', { text: `rename ${fallbackName}`, source: 'ui' });
-    }, 1200);
+    pendingRenameFallbackName = '';
+    // 改名走成熟的命令链路（UI触发，不需要玩家手输命令）
+    socket.emit('cmd', { text: `rename ${finalName}`, source: 'ui' });
   });
 }
 
