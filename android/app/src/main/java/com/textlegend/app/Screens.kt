@@ -1,5 +1,7 @@
 ﻿package com.textlegend.app
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -1542,7 +1544,10 @@ private fun cultivationNameByLevel(levelValue: Int): String {
 }
 
 private fun partyMembersText(party: PartyInfo): String {
-    val names = party.members.map { "${it.name}${if (it.online) "(在线)" else "(离线)"}" }
+    val names = party.members.map {
+        val status = if (it.managed) "托管" else if (it.online) "在线" else "离线"
+        "${it.name}($status)"
+    }
     return if (names.size <= 4) {
         names.joinToString("，")
     } else {
@@ -2171,9 +2176,148 @@ private fun SettingsScreen(vm: GameViewModel, onDismiss: () -> Unit) {
 
   @Composable
   private fun StatsDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Unit) {
+      var showRenameDialog by remember { mutableStateOf(false) }
+      var renameInput by remember { mutableStateOf("") }
+      var showMigrateDialog by remember { mutableStateOf(false) }
+      var showInviteDialog by remember { mutableStateOf(false) }
+      var migrateTargetUser by remember { mutableStateOf("") }
+      var migrateTargetPwd by remember { mutableStateOf("") }
+      val inviteLink by vm.inviteLink.collectAsState()
+      val inviteStats by vm.inviteStats.collectAsState()
+      val context = LocalContext.current
       ScreenScaffold(title = "角色状态", onBack = onDismiss) {
           val stats = state?.stats
           val player = state?.player
+          LaunchedEffect(player?.name) {
+              renameInput = player?.name.orEmpty()
+          }
+          if (showRenameDialog) {
+              AlertDialog(
+                  onDismissRequest = { showRenameDialog = false },
+                  title = { Text("角色改名") },
+                  text = {
+                      Column {
+                          Text("消耗：改名卡 x1（全区服唯一）")
+                          Spacer(modifier = Modifier.height(8.dp))
+                          OutlinedTextField(
+                              value = renameInput,
+                              onValueChange = { renameInput = it },
+                              label = { Text("新角色名") },
+                              singleLine = true,
+                              modifier = Modifier.fillMaxWidth()
+                          )
+                      }
+                  },
+                  confirmButton = {
+                      Button(onClick = {
+                          val newName = renameInput.trim()
+                          if (newName.isNotBlank()) {
+                              vm.characterRename(newName)
+                              showRenameDialog = false
+                          }
+                      }) { Text("确认") }
+                  },
+                  dismissButton = {
+                      TextButton(onClick = { showRenameDialog = false }) { Text("取消") }
+                  }
+              )
+          }
+          if (showMigrateDialog) {
+              AlertDialog(
+                  onDismissRequest = { showMigrateDialog = false },
+                  title = { Text("角色迁移") },
+                  text = {
+                      Column {
+                          Text("迁移到其他账号（消耗10元宝，成功后自动下线）")
+                          Spacer(modifier = Modifier.height(8.dp))
+                          OutlinedTextField(
+                              value = migrateTargetUser,
+                              onValueChange = { migrateTargetUser = it },
+                              label = { Text("目标账号") },
+                              singleLine = true,
+                              modifier = Modifier.fillMaxWidth()
+                          )
+                          Spacer(modifier = Modifier.height(8.dp))
+                          OutlinedTextField(
+                              value = migrateTargetPwd,
+                              onValueChange = { migrateTargetPwd = it },
+                              label = { Text("目标密码") },
+                              singleLine = true,
+                              visualTransformation = PasswordVisualTransformation(),
+                              modifier = Modifier.fillMaxWidth()
+                          )
+                      }
+                  },
+                  confirmButton = {
+                      Button(onClick = {
+                          val u = migrateTargetUser.trim()
+                          val p = migrateTargetPwd
+                          if (u.isNotBlank() && p.isNotBlank()) {
+                              vm.characterMigrate(u, p)
+                              showMigrateDialog = false
+                          }
+                      }) { Text("确认迁移") }
+                  },
+                  dismissButton = {
+                      TextButton(onClick = { showMigrateDialog = false }) { Text("取消") }
+                  }
+              )
+          }
+          if (showInviteDialog) {
+              AlertDialog(
+                  onDismissRequest = { showInviteDialog = false },
+                  title = { Text("邀请系统") },
+                  text = {
+                      Column {
+                          val inviteCode = inviteLink?.code?.trim().orEmpty()
+                          val linkText = if (inviteCode.isNotBlank()) {
+                              vm.getServerUrl().trim().removeSuffix("/") + "/?invite=$inviteCode"
+                          } else {
+                              inviteLink?.link ?: "加载中..."
+                          }
+                          Text("邀请码：${inviteCode.ifBlank { "-" }}")
+                          Spacer(modifier = Modifier.height(6.dp))
+                          Text(
+                              text = "邀请链接：$linkText",
+                              style = MaterialTheme.typography.bodySmall
+                          )
+                          Spacer(modifier = Modifier.height(10.dp))
+                          Text("已邀请注册：${inviteStats?.invitedUsers ?: 0}")
+                          Text("已首充人数：${inviteStats?.firstRechargeUsers ?: 0}")
+                          Text("累计返利元宝：${inviteStats?.totalRebateYuanbao ?: 0}")
+                          val recent = inviteStats?.recentFirstRecharge.orEmpty()
+                          if (recent.isNotEmpty()) {
+                              Spacer(modifier = Modifier.height(8.dp))
+                              Text("最近返利", fontWeight = FontWeight.SemiBold)
+                              recent.take(5).forEach { row ->
+                                  Text(
+                                      "• ${row.inviteeCharName.ifBlank { "未知角色" }} +返利${row.rebateYuanbao}",
+                                      style = MaterialTheme.typography.bodySmall
+                                  )
+                              }
+                          }
+                      }
+                  },
+                  confirmButton = {
+                      Button(onClick = {
+                          val inviteCode = inviteLink?.code?.trim().orEmpty()
+                          val link = if (inviteCode.isNotBlank()) {
+                              vm.getServerUrl().trim().removeSuffix("/") + "/?invite=$inviteCode"
+                          } else {
+                              inviteLink?.link?.trim().orEmpty()
+                          }
+                          if (link.isNotBlank()) {
+                              val clipboard = context.getSystemService(ClipboardManager::class.java)
+                              clipboard?.setPrimaryClip(ClipData.newPlainText("invite_link", link))
+                              vm.showToast("邀请链接已复制")
+                          }
+                      }) { Text("复制邀请链接") }
+                  },
+                  dismissButton = {
+                      TextButton(onClick = { showInviteDialog = false }) { Text("关闭") }
+                  }
+              )
+          }
           Card(
               modifier = Modifier.fillMaxWidth(),
               shape = RectangleShape,
@@ -2268,6 +2412,30 @@ private fun SettingsScreen(vm: GameViewModel, onDismiss: () -> Unit) {
                               color = MaterialTheme.colorScheme.onSurfaceVariant
                           )
                       }
+
+                      Spacer(modifier = Modifier.height(12.dp))
+                      Row(
+                          modifier = Modifier.fillMaxWidth(),
+                          horizontalArrangement = Arrangement.spacedBy(8.dp)
+                      ) {
+                          OutlinedButton(
+                              onClick = { showRenameDialog = true },
+                              modifier = Modifier.weight(1f)
+                          ) { Text("角色改名") }
+                          OutlinedButton(
+                              onClick = { showMigrateDialog = true },
+                              modifier = Modifier.weight(1f)
+                          ) { Text("角色迁移") }
+                      }
+                      Spacer(modifier = Modifier.height(8.dp))
+                      OutlinedButton(
+                          onClick = {
+                              vm.loadInviteLink()
+                              vm.loadInviteStats()
+                              showInviteDialog = true
+                          },
+                          modifier = Modifier.fillMaxWidth()
+                      ) { Text("邀请系统") }
                   }
               }
           }
@@ -2343,8 +2511,8 @@ private fun SettingsScreen(vm: GameViewModel, onDismiss: () -> Unit) {
                   rows.forEach { row ->
                       Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                           row.forEach { member ->
-                              val onlineText = if (member.online) "在线" else "离线"
-                              val onlineColor = if (member.online) Color(0xFF7DDC90) else MaterialTheme.colorScheme.outline
+                              val onlineText = if (member.managed) "托管" else if (member.online) "在线" else "离线"
+                              val onlineColor = if (member.managed) Color(0xFF7DB7FF) else if (member.online) Color(0xFF7DDC90) else MaterialTheme.colorScheme.outline
                                 Surface(
                                     modifier = Modifier
                                         .weight(1f)

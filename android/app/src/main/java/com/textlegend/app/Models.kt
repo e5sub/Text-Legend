@@ -285,7 +285,8 @@ data class PartyInfo(
 @Serializable
 data class PartyMember(
     val name: String = "",
-    val online: Boolean = false
+    val online: Boolean = false,
+    val managed: Boolean = false
 )
 
 @Serializable
@@ -566,7 +567,31 @@ data class PetInfo(
     val growth: Double = 1.0,
     val aptitude: PetAptitude = PetAptitude(),
     @SerialName("skill_slots") val skillSlots: Int = 3,
-    val skills: List<String> = emptyList()
+    val skills: List<String> = emptyList(),
+    val equippedItems: List<PetEquippedItem> = emptyList()
+)
+
+@Serializable
+data class PetEquippedItem(
+    val id: String = "",
+    val key: String = "",
+    val name: String = "",
+    val slot: String? = null,
+    val rarity: String? = null,
+    val qty: Int = 1,
+    val hp: Int = 0,
+    val mp: Int = 0,
+    val atk: Int = 0,
+    val def: Int = 0,
+    val mdef: Int = 0,
+    val mag: Int = 0,
+    val spirit: Int = 0,
+    val dex: Int = 0,
+    val refine_level: Int = 0,
+    val effects: JsonObject? = null,
+    val durability: Int? = null,
+    val max_durability: Int? = null,
+    val base_roll_pct: Int? = null
 )
 
 @Serializable
@@ -605,4 +630,31 @@ data class PetCombatStats(
     val crit: Double = 0.0,
     val dodge: Double = 0.0,
     val lifesteal: Double = 0.0
+)
+
+@Serializable
+data class InviteLinkResponse(
+    val ok: Boolean = false,
+    val code: String? = null,
+    val link: String? = null,
+    val error: String? = null
+)
+
+@Serializable
+data class InviteStatsResponse(
+    val ok: Boolean = false,
+    val invitedUsers: Int = 0,
+    val firstRechargeUsers: Int = 0,
+    val totalRebateYuanbao: Int = 0,
+    val recentFirstRecharge: List<InviteRecentRecharge> = emptyList(),
+    val error: String? = null
+)
+
+@Serializable
+data class InviteRecentRecharge(
+    val inviteeCharName: String = "",
+    val sourceAmount: Int = 0,
+    val rebateYuanbao: Int = 0,
+    val bonusYuanbao: Int = 0,
+    val at: Long = 0
 )

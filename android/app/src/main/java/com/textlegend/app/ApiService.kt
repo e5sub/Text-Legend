@@ -118,6 +118,30 @@ class ApiService(private val json: Json) {
         }
     }
 
+    suspend fun getInviteLink(baseUrl: String, token: String): InviteLinkResponse = withContext(Dispatchers.IO) {
+        val req = Request.Builder()
+            .url(url(baseUrl, "/api/invite-link"))
+            .addHeader("Authorization", "Bearer $token")
+            .build()
+        client.newCall(req).execute().use { res ->
+            val body = res.body?.string().orEmpty()
+            if (!res.isSuccessful) throw RuntimeException(extractError(body))
+            json.decodeFromString(InviteLinkResponse.serializer(), body)
+        }
+    }
+
+    suspend fun getInviteStats(baseUrl: String, token: String): InviteStatsResponse = withContext(Dispatchers.IO) {
+        val req = Request.Builder()
+            .url(url(baseUrl, "/api/invite/stats"))
+            .addHeader("Authorization", "Bearer $token")
+            .build()
+        client.newCall(req).execute().use { res ->
+            val body = res.body?.string().orEmpty()
+            if (!res.isSuccessful) throw RuntimeException(extractError(body))
+            json.decodeFromString(InviteStatsResponse.serializer(), body)
+        }
+    }
+
     private suspend fun post(baseUrl: String, path: String, payload: Map<String, Any?>) {
         withContext(Dispatchers.IO) {
             val body = JSONObject(payload).toString().toRequestBody(JSON)

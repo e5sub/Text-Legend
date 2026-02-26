@@ -99,6 +99,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _themeMode = MutableStateFlow(prefs.getThemeMode())
     val themeMode: StateFlow<String> = _themeMode
+    private val _inviteLink = MutableStateFlow<InviteLinkResponse?>(null)
+    val inviteLink: StateFlow<InviteLinkResponse?> = _inviteLink
+    private val _inviteStats = MutableStateFlow<InviteStatsResponse?>(null)
+    val inviteStats: StateFlow<InviteStatsResponse?> = _inviteStats
 
     private var token: String? = prefs.getToken()
     private var username: String? = prefs.getUsername()
@@ -341,11 +345,42 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     fun guildReject(charName: String) = socket.guildReject(charName)
     fun sabakInfo() = socket.sabakInfo()
     fun sabakRegisterConfirm(guildId: Int) = socket.sabakRegisterConfirm(guildId)
+    fun characterRename(newName: String) = socket.characterRename(newName)
+    fun characterMigrate(targetUsername: String, targetPassword: String) = socket.characterMigrate(targetUsername, targetPassword)
+    fun petTrain(petId: String, attr: String, count: Int) = socket.petTrain(petId, attr, count)
+    fun petEquipItem(petId: String, itemKey: String) = socket.petEquipItem(petId, itemKey)
+    fun petUnequipItem(petId: String, slot: String) = socket.petUnequipItem(petId, slot)
 
     fun requestShop() = sendCmd("shop")
 
+    fun loadInviteLink() {
+        val tokenValue = token ?: return
+        viewModelScope.launch {
+            runCatching {
+                _inviteLink.value = api.getInviteLink(serverUrl.value, tokenValue)
+            }.onFailure { err ->
+                _toast.value = err.message ?: "邀请链接加载失败"
+            }
+        }
+    }
+
+    fun loadInviteStats() {
+        val tokenValue = token ?: return
+        viewModelScope.launch {
+            runCatching {
+                _inviteStats.value = api.getInviteStats(serverUrl.value, tokenValue)
+            }.onFailure { err ->
+                _toast.value = err.message ?: "邀请统计加载失败"
+            }
+        }
+    }
+
     fun clearToast() {
         _toast.value = null
+    }
+
+    fun showToast(message: String) {
+        _toast.value = message
     }
 
     fun logout() {

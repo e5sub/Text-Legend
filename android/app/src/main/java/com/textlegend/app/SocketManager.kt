@@ -15,6 +15,7 @@ class SocketManager(private val json: Json) {
     private var antiKey: String? = null
     private var antiSeq: Long = 0
     private val pendingCmds: ArrayDeque<String> = ArrayDeque()
+    private var lastStateJson: JSONObject? = null
 
     fun connect(
         baseUrl: String,
@@ -47,6 +48,7 @@ class SocketManager(private val json: Json) {
         antiKey = null
         antiSeq = 0
         pendingCmds.clear()
+        lastStateJson = null
         val socketBase = baseUrl.trim().removeSuffix("/")
         val options = IO.Options.builder()
             .setForceNew(true)
@@ -82,27 +84,13 @@ class SocketManager(private val json: Json) {
             }
             on("state") { args ->
                 val raw = args.firstOrNull() ?: return@on
-                val payloadText = when (raw) {
-                    is JSONObject -> raw.toString()
-                    is String -> raw
-                    is Map<*, *> -> JSONObject(raw).toString()
-                    else -> raw.toString()
-                }
+                val payloadObj = extractPayloadObject(raw) ?: return@on
                 onStatus("state_received")
-                onRawState(payloadText)
                 runCatching {
-                    val stateJson = runCatching {
-                        val obj = JSONObject(payloadText)
-                        if (obj.has("state")) {
-                            val inner = obj.opt("state")
-                            if (inner is JSONObject) inner.toString() else payloadText
-                        } else if (obj.has("data")) {
-                            val inner = obj.opt("data")
-                            if (inner is JSONObject) inner.toString() else payloadText
-                        } else {
-                            payloadText
-                        }
-                    }.getOrDefault(payloadText)
+                    val mergedObj = mergeStatePayload(lastStateJson, payloadObj)
+                    lastStateJson = mergedObj
+                    val stateJson = mergedObj.toString()
+                    onRawState(stateJson)
                     val state = json.decodeFromString(GameState.serializer(), stateJson)
                     state.anti?.let { anti ->
                         if (!anti.key.isNullOrBlank()) antiKey = anti.key
@@ -114,6 +102,24 @@ class SocketManager(private val json: Json) {
                     val msg = it.message?.take(120) ?: "unknown"
                     onStatus("state_parse_failed: $msg")
                     onAuthError("状态解析失败")
+                }
+            }
+            on("room_state") { args ->
+                val payloadObj = extractPayloadObject(args.firstOrNull() ?: return@on) ?: return@on
+                runCatching {
+                    val base = lastStateJson ?: return@runCatching
+                    val baseRoom = base.optJSONObject("room") ?: return@runCatching
+                    val patchRoom = payloadObj.optJSONObject("room") ?: return@runCatching
+                    val sameRoom =
+                        baseRoom.optString("zoneId", "") == patchRoom.optString("zoneId", "") &&
+                        baseRoom.optString("roomId", "") == patchRoom.optString("roomId", "")
+                    if (!sameRoom) return@runCatching
+                    val mergedObj = mergeRoomStatePayload(base, payloadObj)
+                    lastStateJson = mergedObj
+                    val stateJson = mergedObj.toString()
+                    onRawState(stateJson)
+                    val state = json.decodeFromString(GameState.serializer(), stateJson)
+                    onState(state)
                 }
             }
             on("output") { args ->
@@ -196,6 +202,14 @@ class SocketManager(private val json: Json) {
                 val payload = args.firstOrNull() as? JSONObject ?: return@on
                 runCatching { onSimpleResult(json.decodeFromString(SimpleResult.serializer(), payload.toString())) }
             }
+            on("pet_result") { args ->
+                val payload = args.firstOrNull() as? JSONObject ?: return@on
+                runCatching { onSimpleResult(json.decodeFromString(SimpleResult.serializer(), payload.toString())) }
+            }
+            on("character_action_result") { args ->
+                val payload = args.firstOrNull() as? JSONObject ?: return@on
+                runCatching { onSimpleResult(json.decodeFromString(SimpleResult.serializer(), payload.toString())) }
+            }
             on("consign_list") { args ->
                 val payload = args.firstOrNull() as? JSONObject ?: return@on
                 runCatching { onConsignList(json.decodeFromString(ConsignListPayload.serializer(), payload.toString())) }
@@ -215,6 +229,7 @@ class SocketManager(private val json: Json) {
         antiKey = null
         antiSeq = 0
         pendingCmds.clear()
+        lastStateJson = null
     }
 
     fun emitCmd(text: String) {
@@ -325,5 +340,114 @@ class SocketManager(private val json: Json) {
 
     fun sabakRegisterConfirm(guildId: Int) {
         socket?.emit("sabak_register_confirm", JSONObject().apply { put("guildId", guildId) })
+    }
+
+    fun characterRename(newName: String) {
+        socket?.emit("character_action", JSONObject().apply {
+            put("action", "rename")
+            put("newName", newName)
+        })
+    }
+
+    fun characterMigrate(targetUsername: String, targetPassword: String) {
+        socket?.emit("character_action", JSONObject().apply {
+            put("action", "migrate")
+            put("targetUsername", targetUsername)
+            put("targetPassword", targetPassword)
+        })
+    }
+
+    fun petTrain(petId: String, attr: String, count: Int) {
+        socket?.emit("pet_action", JSONObject().apply {
+            put("action", "train")
+            put("petId", petId)
+            put("attr", attr)
+            put("count", count)
+        })
+    }
+
+    fun petEquipItem(petId: String, itemKey: String) {
+        socket?.emit("pet_action", JSONObject().apply {
+            put("action", "equip_item")
+            put("petId", petId)
+            put("itemKey", itemKey)
+        })
+    }
+
+    fun petUnequipItem(petId: String, slot: String) {
+        socket?.emit("pet_action", JSONObject().apply {
+            put("action", "unequip_item")
+            put("petId", petId)
+            put("slot", slot)
+        })
+    }
+
+    private fun extractPayloadObject(raw: Any): JSONObject? {
+        return when (raw) {
+            is JSONObject -> {
+                when {
+                    raw.opt("state") is JSONObject -> raw.optJSONObject("state")
+                    raw.opt("data") is JSONObject -> raw.optJSONObject("data")
+                    else -> raw
+                }
+            }
+            is String -> runCatching {
+                val obj = JSONObject(raw)
+                when {
+                    obj.opt("state") is JSONObject -> obj.optJSONObject("state")
+                    obj.opt("data") is JSONObject -> obj.optJSONObject("data")
+                    else -> obj
+                }
+            }.getOrNull()
+            is Map<*, *> -> runCatching { JSONObject(raw) }.getOrNull()
+            else -> runCatching { JSONObject(raw.toString()) }.getOrNull()
+        }
+    }
+
+    private fun mergeStatePayload(base: JSONObject?, patch: JSONObject): JSONObject {
+        if (base == null) return JSONObject(patch.toString())
+        val merged = JSONObject(base.toString())
+        val patchKeys = patch.keys()
+        while (patchKeys.hasNext()) {
+            val key = patchKeys.next()
+            merged.put(key, patch.opt(key))
+        }
+        mergeNestedObject(merged, base, patch, "player")
+        mergeNestedObject(merged, base, patch, "room")
+        mergeNestedObject(merged, base, patch, "stats")
+        return merged
+    }
+
+    private fun mergeRoomStatePayload(base: JSONObject, patch: JSONObject): JSONObject {
+        val merged = JSONObject(base.toString())
+        val patchKeys = patch.keys()
+        while (patchKeys.hasNext()) {
+            val key = patchKeys.next()
+            merged.put(key, patch.opt(key))
+        }
+        mergeNestedObject(merged, base, patch, "room")
+        return merged
+    }
+
+    private fun mergeNestedObject(merged: JSONObject, base: JSONObject, patch: JSONObject, key: String) {
+        val baseObj = base.optJSONObject(key)
+        val patchObj = patch.optJSONObject(key)
+        if (baseObj == null && patchObj == null) return
+        if (patch.has(key) && patchObj == null) return
+        if (baseObj == null && patchObj != null) {
+            merged.put(key, JSONObject(patchObj.toString()))
+            return
+        }
+        if (baseObj != null && patchObj == null) {
+            merged.put(key, JSONObject(baseObj.toString()))
+            return
+        }
+        val next = JSONObject(baseObj!!.toString())
+        val keys = patchObj!!.keys()
+        while (keys.hasNext()) {
+            val field = keys.next()
+            next.put(field, patchObj.opt(field))
+        }
+        merged.put(key, next)
     }
 }
