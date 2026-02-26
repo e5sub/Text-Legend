@@ -452,6 +452,7 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                                         vm.sendCmd("autoskill off")
                                     }
                                     "trade" -> innerNav.navigate("trade")
+                                    "recharge" -> innerNav.navigate("recharge")
                                     "consign" -> innerNav.navigate("consign")
                                     "sabak" -> innerNav.navigate("sabak")
                                     "shop" -> innerNav.navigate("shop")
@@ -502,6 +503,10 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
             composable("train") { TrainingDialog(vm = vm, onDismiss = { innerNav.popBackStack() }) }
             composable("vip_activate") { PromptDialog(title = "VIP激活", label = "激活码", onConfirm = {
                 if (it.isNotBlank()) vm.sendCmd("vip activate ${it.trim()}")
+                innerNav.popBackStack()
+            }, onDismiss = { innerNav.popBackStack() }) }
+            composable("recharge") { PromptDialog(title = "元宝充值", label = "充值卡/卡密", onConfirm = {
+                if (it.isNotBlank()) vm.sendCmd("recharge ${it.trim()}")
                 innerNav.popBackStack()
             }, onDismiss = { innerNav.popBackStack() }) }
             composable("afk") { AfkDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
@@ -565,7 +570,7 @@ private fun TopStatus(state: GameState?) {
         Row(modifier = Modifier.padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = player?.name ?: "未连接", style = MaterialTheme.typography.titleMedium)
-            Text(text = "${classLabel(player?.classId ?: "")} Lv${player?.level ?: 0} | 金币 ${stats?.gold ?: 0} | 元宝 ${stats?.yuanbao ?: 0}")
+                Text(text = "${classLabel(player?.classId ?: "")} Lv${player?.level ?: 0} | 金币 ${stats?.gold ?: 0}")
                 Spacer(modifier = Modifier.height(6.dp))
                 val hpProgress by animateFloatAsState(
                     targetValue = if (stats != null && stats.maxHp > 0) stats.hp.toFloat() / stats.maxHp else 0f,
@@ -637,6 +642,7 @@ private fun TopStatus(state: GameState?) {
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(text = vipStatusText(stats), style = MaterialTheme.typography.bodyMedium)
                     Text(text = svipStatusText(stats), style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "元宝 ${stats?.yuanbao ?: 0}", style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }
@@ -1837,6 +1843,7 @@ private fun ActionsTab(
         ActionItem("交易", "trade", R.drawable.ic_trade)
     )
     val economy = mutableListOf(
+        ActionItem("元宝充值", "recharge", R.drawable.ic_trade),
         ActionItem("商店", "shop", R.drawable.ic_shop),
         ActionItem("修理装备", "repair", R.drawable.ic_repair),
         ActionItem("寄售", "consign", R.drawable.ic_consign)
@@ -2956,6 +2963,7 @@ private fun ConsignDialog(vm: GameViewModel, state: GameState?, onDismiss: () ->
     var sellName by remember { mutableStateOf("") }
     var sellQty by remember { mutableStateOf("1") }
     var sellPrice by remember { mutableStateOf("1") }
+    var sellCurrency by remember { mutableStateOf("gold") }
     var buyId by remember { mutableStateOf("") }
     var buyQty by remember { mutableStateOf("1") }
     var showSellDialog by remember { mutableStateOf(false) }
@@ -2988,13 +2996,21 @@ private fun ConsignDialog(vm: GameViewModel, state: GameState?, onDismiss: () ->
                             label = { Text("单价") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                         )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilterChip("金币", sellCurrency == "gold") { sellCurrency = "gold" }
+                            FilterChip("元宝", sellCurrency == "yuanbao") { sellCurrency = "yuanbao" }
+                        }
                     }
                 },
                 confirmButton = {
                     Button(onClick = {
                         val qty = sellQty.toIntOrNull() ?: 1
                         val price = sellPrice.toIntOrNull() ?: 1
-                        if (sellName.isNotBlank()) vm.sendCmd("consign sell ${sellName.trim()} $qty $price")
+                        if (sellName.isNotBlank()) {
+                            val suffix = if (sellCurrency == "yuanbao") " yuanbao" else ""
+                            vm.sendCmd("consign sell ${sellName.trim()} $qty $price$suffix")
+                        }
                         showSellDialog = false
                     }) { Text("上架") }
                 },
@@ -3079,14 +3095,15 @@ private fun ConsignDialog(vm: GameViewModel, state: GameState?, onDismiss: () ->
                             .clickable {
                                 buyId = item.id.toString()
                                 buyQty = "1"
-                                buyItemLabel = "${name} · 数量 ${item.qty} · 单价 ${item.price} 金"
+                                val currencyLabel = consignCurrencyLabel(item.currency)
+                                buyItemLabel = "${name} · 数量 ${item.qty} · 单价 ${item.price} $currencyLabel"
                                 showBuyDialog = true
                             }
                     ) {
                         Column(modifier = Modifier.padding(8.dp)) {
                             Text(name, fontWeight = FontWeight.SemiBold)
                             Text("数量 ${item.qty}")
-                            Text("价格 ${item.price} 金")
+                            Text("价格 ${item.price} ${consignCurrencyLabel(item.currency)}")
                         }
                     }
                 }
@@ -3107,14 +3124,15 @@ private fun ConsignDialog(vm: GameViewModel, state: GameState?, onDismiss: () ->
                             .clickable {
                                 buyId = item.id.toString()
                                 buyQty = "1"
-                                buyItemLabel = "${name} · 数量 ${item.qty} · 单价 ${item.price} 金"
+                                val currencyLabel = consignCurrencyLabel(item.currency)
+                                buyItemLabel = "${name} · 数量 ${item.qty} · 单价 ${item.price} $currencyLabel"
                                 showBuyDialog = true
                             }
                     ) {
                         Column(modifier = Modifier.padding(8.dp)) {
                             Text(name, fontWeight = FontWeight.SemiBold)
                             Text("数量 ${item.qty}")
-                            Text("价格 ${item.price} 金")
+                            Text("价格 ${item.price} ${consignCurrencyLabel(item.currency)}")
                         }
                     }
                 }
@@ -3132,7 +3150,7 @@ private fun ConsignDialog(vm: GameViewModel, state: GameState?, onDismiss: () ->
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(8.dp)) {
                             Text(name, fontWeight = FontWeight.SemiBold)
-                            Text("成交 ${item.qty} 价格 ${item.price} 金")
+                            Text("成交 ${item.qty} 价格 ${item.price} ${consignCurrencyLabel(item.currency)}")
                         }
                     }
                 }
@@ -3155,6 +3173,7 @@ private fun ConsignDialog(vm: GameViewModel, state: GameState?, onDismiss: () ->
                             .clickable {
                                 sellName = item.key.ifBlank { item.id }
                                 sellQty = item.qty.toString()
+                                sellCurrency = "gold"
                                 sellItemLabel = "${item.name} · 数量 ${item.qty}"
                                 showSellDialog = true
                             }
@@ -4611,6 +4630,13 @@ private fun filterConsign(items: List<ConsignItem>, filter: String): List<Consig
             "accessory" -> isAccessory(item)
             else -> item.type == filter
         }
+    }
+}
+
+private fun consignCurrencyLabel(currency: String?): String {
+    return when (currency?.trim()?.lowercase()) {
+        "yuanbao", "yb", "元宝" -> "元宝"
+        else -> "金"
     }
 }
 
