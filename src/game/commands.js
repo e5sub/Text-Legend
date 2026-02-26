@@ -78,6 +78,7 @@ const PET_RARITY_APTITUDE_RANGE = {
 };
 const PET_BASE_SKILL_SLOTS = 3;
 const ACTIVITY_POINT_SHOP_MAX_REDEEM_QTY = 99;
+const ACTIVITY_DIVINE_BEAST_EXCHANGE_MAX_QTY = 20;
 
 function normalizeActivityPointShopConfig(raw) {
   const source = raw && typeof raw === 'object' ? raw : {};
@@ -175,6 +176,23 @@ function describeActivityPointShopReward(reward = {}) {
     parts.push(`${tpl?.name || it.id} x${Math.max(1, Math.floor(Number(it.qty || 1)))}`);
   }
   return parts.join('，') || '无';
+}
+
+function normalizeDivineBeastFragmentExchangeConfig(raw) {
+  const source = raw && typeof raw === 'object' ? raw : {};
+  const list = Array.isArray(source.items) ? source.items : [];
+  return {
+    version: 1,
+    items: list
+      .map((entry, index) => ({
+        id: String(entry?.id || '').trim(),
+        species: String(entry?.species || '').trim(),
+        cost: Math.max(1, Math.floor(Number(entry?.cost || 0))),
+        sort: Number.isFinite(Number(entry?.sort)) ? Number(entry.sort) : index
+      }))
+      .filter((it) => it.id && it.species && it.cost > 0)
+      .sort((a, b) => (a.sort - b.sort) || a.id.localeCompare(b.id))
+  };
 }
 
 // 宠物状态标准化
@@ -3440,6 +3458,68 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         });
         send('输入 `活动 兑换 商品ID` 进行兑换。');
         return;
+      }
+      const isBeastExchangeList =
+        sub === 'beast' || sub === 'fragment' || sub === '神兽' || sub === '神兽兑换';
+      const beastRedeemMatch = rawSub.match(/^(?:beast(?:\s+redeem)?|fragment(?:\s+redeem)?|神兽(?:兑换)?|兑换神兽)\s*(.*)$/i);
+      if (isBeastExchangeList || (beastRedeemMatch && String(beastRedeemMatch[1] || '').trim())) {
+        const config = normalizeDivineBeastFragmentExchangeConfig(await activityApi?.getDivineBeastFragmentExchangeConfig?.());
+        const list = Array.isArray(config?.items) ? config.items : [];
+        const rawRest = beastRedeemMatch ? String(beastRedeemMatch[1] || '').trim() : '';
+        if (!rawRest) {
+          const fragQty = Math.max(0, Math.floor(Number((player.inventory || []).find((i) => i?.id === 'divine_beast_fragment')?.qty || 0)));
+          if (source === 'ui' && player?.socket) {
+            player.socket.emit('activity_divine_beast_exchange_data', {
+              fragmentItemId: 'divine_beast_fragment',
+              fragmentName: ITEM_TEMPLATES.divine_beast_fragment?.name || '神兽碎片',
+              fragmentQty: fragQty,
+              items: list.map((it) => ({
+                id: it.id,
+                species: it.species,
+                name: it.species,
+                cost: it.cost
+              }))
+            });
+            return;
+          }
+          send(`${ITEM_TEMPLATES.divine_beast_fragment?.name || '神兽碎片'}：${fragQty}`);
+          if (!list.length) {
+            send('神兽碎片兑换暂未配置。');
+            return;
+          }
+          list.forEach((it) => send(`[${it.id}] ${it.species} - ${it.cost}个神兽碎片`));
+          send('输入 `活动 神兽兑换 兑换ID [数量]` 进行兑换。');
+          return;
+        }
+        const [exchangeIdRaw, qtyRaw] = rawRest.split(/\s+/).filter(Boolean);
+        const exchangeId = String(exchangeIdRaw || '').trim();
+        const qty = Math.min(ACTIVITY_DIVINE_BEAST_EXCHANGE_MAX_QTY, Math.max(1, Math.floor(Number(qtyRaw || 1))));
+        if (!exchangeId) return send('请输入兑换ID，例如：活动 神兽兑换 dbf_1');
+        const item = list.find((it) => String(it.id) === exchangeId);
+        if (!item) return send('神兽碎片兑换没有这个选项。');
+        const totalCost = Math.max(1, Math.floor(Number(item.cost || 0))) * qty;
+        const owned = Math.max(0, Math.floor(Number((player.inventory || []).find((i) => i?.id === 'divine_beast_fragment')?.qty || 0)));
+        if (owned < totalCost) return send(`神兽碎片不足，需要 ${totalCost} 个。`);
+        const petState = normalizePetState(player);
+        if (Array.isArray(petState?.pets)) {
+          const maxOwned = 50;
+          if (petState.pets.length + qty > maxOwned) return send(`宠物栏空间不足，需要 ${qty} 格。`);
+        }
+        if (!removeItem(player, 'divine_beast_fragment', totalCost)) return send('扣除神兽碎片失败。');
+        const gained = [];
+        try {
+          for (let i = 0; i < qty; i += 1) {
+            const grantRes = await activityApi?.grantFixedPet?.(item.species);
+            if (!grantRes?.ok || !grantRes.pet) throw new Error(grantRes?.reason === 'pet_full' ? '宠物栏已满' : '发放神兽失败');
+            gained.push(grantRes.pet);
+          }
+          player.forceStateRefresh = true;
+          send(`兑换成功：${item.species} x${qty}，消耗神兽碎片 ${totalCost}。`);
+          return;
+        } catch (err) {
+          addItem(player, 'divine_beast_fragment', totalCost);
+          return send(`兑换失败：${err?.message || '发放失败'}`);
+        }
       }
       if (sub.startsWith('redeem') || sub.startsWith('兑换')) {
         const rest = rawSub.replace(/^(redeem|兑换)\s*/i, '').trim();

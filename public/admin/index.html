@@ -459,6 +459,38 @@
 
         <div class="block" data-collapsible>
           <div class="block-title">
+            <h2>神兽碎片兑换配置</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <p class="muted" style="margin-bottom: 8px;">
+              直接选择指定神兽并填写所需神兽碎片数量（网页/安卓活动中心都会读取这里的配置）。
+            </p>
+            <div class="row" style="margin-bottom: 8px; gap: 8px;">
+              <button id="divine-beast-fragment-load-btn" class="btn-small">加载</button>
+              <button id="divine-beast-fragment-add-btn" class="btn-small">+ 添加兑换项</button>
+              <button id="divine-beast-fragment-save-btn" class="btn-small">保存</button>
+            </div>
+            <div class="table-container">
+              <table style="font-size: 12px;">
+                <thead>
+                  <tr>
+                    <th>神兽</th>
+                    <th>所需神兽碎片</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="divine-beast-fragment-list">
+                  <tr><td colspan="3" style="text-align:center;color:#999;">点击加载</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div id="divine-beast-fragment-msg" class="msg"></div>
+          </div>
+        </div>
+
+        <div class="block" data-collapsible>
+          <div class="block-title">
             <h2>每日幸运玩家</h2>
             <button class="btn-small block-toggle">折叠</button>
           </div>

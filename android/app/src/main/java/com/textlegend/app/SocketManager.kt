@@ -42,7 +42,9 @@ class SocketManager(private val json: Json) {
         onSimpleResult: (SimpleResult) -> Unit,
         onSabakInfo: (SabakInfoResponse) -> Unit,
         onConsignList: (ConsignListPayload) -> Unit,
-        onConsignHistory: (ConsignHistoryPayload) -> Unit
+        onConsignHistory: (ConsignHistoryPayload) -> Unit,
+        onActivityPointShopData: (ActivityPointShopPayload) -> Unit,
+        onActivityDivineBeastExchangeData: (ActivityDivineBeastExchangePayload) -> Unit
     ) {
         disconnect()
         antiKey = null
@@ -217,6 +219,14 @@ class SocketManager(private val json: Json) {
             on("consign_history") { args ->
                 val payload = args.firstOrNull() as? JSONObject ?: return@on
                 runCatching { onConsignHistory(json.decodeFromString(ConsignHistoryPayload.serializer(), payload.toString())) }
+            }
+            on("activity_point_shop_data") { args ->
+                val payload = args.firstOrNull() as? JSONObject ?: return@on
+                runCatching { onActivityPointShopData(json.decodeFromString(ActivityPointShopPayload.serializer(), payload.toString())) }
+            }
+            on("activity_divine_beast_exchange_data") { args ->
+                val payload = args.firstOrNull() as? JSONObject ?: return@on
+                runCatching { onActivityDivineBeastExchangeData(json.decodeFromString(ActivityDivineBeastExchangePayload.serializer(), payload.toString())) }
             }
             connect()
         }

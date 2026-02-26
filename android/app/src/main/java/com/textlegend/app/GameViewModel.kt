@@ -84,6 +84,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _shopItems = MutableStateFlow<List<ShopItem>>(emptyList())
     val shopItems: StateFlow<List<ShopItem>> = _shopItems
+    private val _activityPointShop = MutableStateFlow<ActivityPointShopPayload?>(null)
+    val activityPointShop: StateFlow<ActivityPointShopPayload?> = _activityPointShop
+    private val _activityDivineBeastExchange = MutableStateFlow<ActivityDivineBeastExchangePayload?>(null)
+    val activityDivineBeastExchange: StateFlow<ActivityDivineBeastExchangePayload?> = _activityDivineBeastExchange
 
     private val _toast = MutableStateFlow<String?>(null)
     val toast: StateFlow<String?> = _toast
@@ -266,7 +270,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                     "mine" -> _consignMine.value = data.items
                 }
             },
-            onConsignHistory = { data -> _consignHistory.value = data }
+            onConsignHistory = { data -> _consignHistory.value = data },
+            onActivityPointShopData = { data -> _activityPointShop.value = data },
+            onActivityDivineBeastExchangeData = { data -> _activityDivineBeastExchange.value = data }
         )
     }
 
@@ -353,6 +359,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     fun petSynthesizeBelowEpic() = socket.petSynthesizeBelowEpic()
     fun petEquipItem(petId: String, itemKey: String) = socket.petEquipItem(petId, itemKey)
     fun petUnequipItem(petId: String, slot: String) = socket.petUnequipItem(petId, slot)
+    fun requestActivityPointShop() = sendCmd("活动 shop")
+    fun requestActivityDivineBeastExchange() = sendCmd("活动 神兽兑换")
+    fun redeemActivityPointShop(itemId: String, qty: Int) = sendCmd("活动 redeem $itemId ${qty.coerceAtLeast(1)}")
+    fun redeemActivityDivineBeast(exchangeId: String, qty: Int) = sendCmd("活动 神兽兑换 $exchangeId ${qty.coerceAtLeast(1)}")
 
     fun requestShop() = sendCmd("shop")
 

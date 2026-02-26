@@ -464,6 +464,7 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                                     "pet" -> innerNav.navigate("pet")
                                     "drops" -> innerNav.navigate("drops")
                                     "treasure" -> innerNav.navigate("treasure")
+                                    "activity" -> innerNav.navigate("activity")
                                     "rank" -> innerNav.navigate("rank")
                                     "train" -> innerNav.navigate("train")
                                     "settings" -> innerNav.navigate("settings")
@@ -499,6 +500,7 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
             composable("pet") { PetDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
             composable("drops") { DropsDialog(state = state, onDismiss = { innerNav.popBackStack() }) }
             composable("treasure") { TreasureDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
+            composable("activity") { ActivityCenterDialog(vm = vm, onDismiss = { innerNav.popBackStack() }) }
             composable("rank") { RankDialog(state = state, vm = vm, onDismiss = { innerNav.popBackStack() }) }
             composable("train") { TrainingDialog(vm = vm, onDismiss = { innerNav.popBackStack() }) }
             composable("vip_activate") { PromptDialog(title = "VIP激活", label = "激活码", onConfirm = {
@@ -1859,6 +1861,7 @@ private fun ActionsTab(
         ActionItem("修炼", "train", R.drawable.ic_train)
     )
     val events = mutableListOf(
+        ActionItem("活动中心", "activity", R.drawable.ic_rank),
         ActionItem("玩家排行", "rank", R.drawable.ic_rank),
         ActionItem("沙巴克", "sabak", R.drawable.ic_castle)
     )
@@ -3709,6 +3712,243 @@ private fun ChangeClassDialog(vm: GameViewModel, onDismiss: () -> Unit) {
             vm.sendCmd("changeclass $selected")
             onDismiss()
         }) { Text("确认转职") }
+    }
+}
+
+@Composable
+private fun ActivityCenterDialog(vm: GameViewModel, onDismiss: () -> Unit) {
+    val pointShop by vm.activityPointShop.collectAsState()
+    val beastExchange by vm.activityDivineBeastExchange.collectAsState()
+    var showPointShop by remember { mutableStateOf(false) }
+    var showBeastExchange by remember { mutableStateOf(false) }
+
+    if (showPointShop) {
+        ActivityPointShopDialog(
+            vm = vm,
+            payload = pointShop,
+            onRefresh = { vm.requestActivityPointShop() },
+            onDismiss = { showPointShop = false }
+        )
+    }
+    if (showBeastExchange) {
+        ActivityDivineBeastExchangeDialog(
+            vm = vm,
+            payload = beastExchange,
+            onRefresh = { vm.requestActivityDivineBeastExchange() },
+            onDismiss = { showBeastExchange = false }
+        )
+    }
+
+    ScreenScaffold(title = "活动中心", onBack = onDismiss) {
+        Text("常用活动功能", style = MaterialTheme.typography.titleMedium)
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(modifier = Modifier.weight(1f), onClick = { vm.requestState("activity_center") }) { Text("刷新状态") }
+            Button(modifier = Modifier.weight(1f), onClick = { vm.sendCmd("活动 claim") }) { Text("领取奖励") }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = {
+                    showPointShop = true
+                    vm.requestActivityPointShop()
+                }
+            ) { Text("积分商城") }
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = {
+                    showBeastExchange = true
+                    vm.requestActivityDivineBeastExchange()
+                }
+            ) { Text("神兽碎片兑换") }
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        Text("提示：积分商城与神兽碎片兑换配置由GM后台统一控制。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        pointShop?.let {
+            Spacer(modifier = Modifier.height(6.dp))
+            Text("当前活动积分：${it.points}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        beastExchange?.let {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text("${it.fragmentName}：${it.fragmentQty}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun ActivityPointShopDialog(
+    vm: GameViewModel,
+    payload: ActivityPointShopPayload?,
+    onRefresh: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    var selected by remember { mutableStateOf<ActivityPointShopItem?>(null) }
+    var qtyText by remember { mutableStateOf("1") }
+
+    if (selected != null) {
+        AlertDialog(
+            onDismissRequest = { selected = null },
+            title = { Text("兑换数量") },
+            text = {
+                Column {
+                    Text(selected?.name ?: "")
+                    Text("单价：${selected?.cost ?: 0} 积分", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (!selected?.rewardText.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(selected?.rewardText ?: "", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = qtyText,
+                        onValueChange = { qtyText = it.filter { ch -> ch.isDigit() } },
+                        label = { Text("数量") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    val item = selected ?: return@Button
+                    val qty = qtyText.toIntOrNull()?.coerceAtLeast(1) ?: 1
+                    vm.redeemActivityPointShop(item.id, qty)
+                    selected = null
+                }) { Text("确认兑换") }
+            },
+            dismissButton = {
+                TextButton(onClick = { selected = null }) { Text("取消") }
+            }
+        )
+    }
+
+    ScreenScaffold(title = "活动积分商城", onBack = onDismiss, scrollable = false) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text("活动积分：${payload?.points ?: 0}", fontWeight = FontWeight.SemiBold)
+            OutlinedButton(onClick = onRefresh) { Text("刷新") }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        if (payload == null) {
+            Text("正在加载积分商城数据…", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else if (payload.items.isEmpty()) {
+            Text("积分商城暂无商品", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth().weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(payload.items) { item ->
+                    Surface(
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            selected = item
+                            qtyText = "1"
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+                    ) {
+                        Column(modifier = Modifier.padding(10.dp)) {
+                            Text(item.name, fontWeight = FontWeight.SemiBold)
+                            Text("价格：${item.cost} 积分", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            if (item.rewardText.isNotBlank()) {
+                                Text(item.rewardText, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            if (item.limitText.isNotBlank()) {
+                                Text("限制：${item.limitText}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActivityDivineBeastExchangeDialog(
+    vm: GameViewModel,
+    payload: ActivityDivineBeastExchangePayload?,
+    onRefresh: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    var selected by remember { mutableStateOf<ActivityDivineBeastExchangeItem?>(null) }
+    var qtyText by remember { mutableStateOf("1") }
+
+    if (selected != null) {
+        AlertDialog(
+            onDismissRequest = { selected = null },
+            title = { Text("兑换数量") },
+            text = {
+                Column {
+                    val item = selected
+                    val fragmentName = payload?.fragmentName ?: "神兽碎片"
+                    val itemName = if (item == null) "" else item.name.ifBlank { item.species }
+                    Text(itemName)
+                    Text("单价：${item?.cost ?: 0} ${fragmentName}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = qtyText,
+                        onValueChange = { qtyText = it.filter { ch -> ch.isDigit() } },
+                        label = { Text("数量") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    val item = selected ?: return@Button
+                    val qty = qtyText.toIntOrNull()?.coerceAtLeast(1) ?: 1
+                    vm.redeemActivityDivineBeast(item.id, qty)
+                    selected = null
+                }) { Text("确认兑换") }
+            },
+            dismissButton = {
+                TextButton(onClick = { selected = null }) { Text("取消") }
+            }
+        )
+    }
+
+    ScreenScaffold(title = "神兽碎片兑换", onBack = onDismiss, scrollable = false) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text("${payload?.fragmentName ?: "神兽碎片"}：${payload?.fragmentQty ?: 0}", fontWeight = FontWeight.SemiBold)
+            OutlinedButton(onClick = onRefresh) { Text("刷新") }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        if (payload == null) {
+            Text("正在加载兑换配置…", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else if (payload.items.isEmpty()) {
+            Text("暂未配置神兽碎片兑换", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth().weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(payload.items) { item ->
+                    Surface(
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            selected = item
+                            qtyText = "1"
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(item.name.ifBlank { item.species }, fontWeight = FontWeight.SemiBold)
+                                Text("兑换指定神兽", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Text("${item.cost}${payload.fragmentName}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

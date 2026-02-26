@@ -4891,6 +4891,48 @@ function showAutoFullBossModal() {
     });
   }
 
+  async function showActivityDivineBeastExchangeModal(payload) {
+    const fragmentQty = Math.max(0, Math.floor(Number(payload?.fragmentQty || 0)));
+    const fragmentName = String(payload?.fragmentName || '神兽碎片');
+    const items = Array.isArray(payload?.items) ? payload.items : [];
+    const options = items.map((it) => ({
+      value: `beast:${it.id}`,
+      label: `${it.name || it.species || it.id}（${Number(it.cost || 0)}${fragmentName}）`,
+      description: `兑换指定神兽：${it.name || it.species || it.id}`
+    }));
+    await promptMultiSelectModal({
+      title: '神兽碎片兑换',
+      text: `当前${fragmentName}：${fragmentQty}\n点击神兽立即发起兑换（直接发放到宠物栏）`,
+      options,
+      selectedValues: [],
+      singleSelect: true,
+      submitOnSelect: true,
+      closeOnSelect: true,
+      hideOk: true,
+      cancelText: '关闭',
+      onSelect: async (value) => {
+        const raw = String(value || '');
+        if (!raw.startsWith('beast:')) return;
+        const exchangeId = raw.slice('beast:'.length);
+        const item = items.find((x) => String(x.id) === exchangeId);
+        if (!item) return;
+        const input = await promptModal({
+          title: '兑换数量',
+          text: `${item.name || item.species}\n单价：${Number(item.cost || 0)} ${fragmentName}`,
+          placeholder: '输入数量（默认1）',
+          value: '1',
+          allowEmpty: true
+        });
+        if (input === null) return;
+        const n = Number((input || '1').trim() || '1');
+        const qty = Number.isFinite(n) ? Math.max(1, Math.floor(n)) : 1;
+        if (!socket) return showToast('未连接服务器');
+        socket.emit('cmd', { text: `活动 神兽兑换 ${exchangeId} ${qty}`, source: 'ui' });
+        showToast(`已请求兑换：${item.name || item.species} x${qty}`);
+      }
+    });
+  }
+
   function runActivityCenterAction(action) {
     if (!socket) {
       showToast('未连接服务器');
@@ -4913,6 +4955,11 @@ function showAutoFullBossModal() {
     if (action === 'shop') {
       socket.emit('cmd', { text: '活动 shop', source: 'ui' });
       showToast('已请求活动积分商城');
+      return;
+    }
+    if (action === 'beast_exchange') {
+      socket.emit('cmd', { text: '活动 神兽兑换', source: 'ui' });
+      showToast('已请求神兽碎片兑换');
       return;
     }
     if (action === 'rank_all') {
@@ -5047,6 +5094,7 @@ function showAutoFullBossModal() {
         { value: 'refresh', label: '刷新活动状态', className: 'activity-action-primary' },
         { value: 'claim', label: '领取活动奖励', className: 'activity-action-primary' },
         { value: 'shop', label: '积分商城', className: 'activity-action-shop' },
+        { value: 'beast_exchange', label: '神兽碎片兑换', className: 'activity-action-shop' },
         { value: 'rank_all', label: '查看全部排行榜', className: 'activity-action-rank all-rank' },
         { value: 'rank_double', label: '查看双倍秘境榜' },
         { value: 'rank_bounty', label: '查看悬赏榜' },
@@ -8509,6 +8557,9 @@ function enterGame(name) {
   });
   socket.on('activity_point_shop_data', (payload) => {
     showActivityPointShopModal(payload || {});
+  });
+  socket.on('activity_divine_beast_exchange_data', (payload) => {
+    showActivityDivineBeastExchangeModal(payload || {});
   });
   socket.on('guild_members', (payload) => {
     if (!payload || !payload.ok) {

@@ -662,3 +662,42 @@ data class InviteRecentRecharge(
     val bonusYuanbao: Int = 0,
     val at: Long = 0
 )
+
+@Serializable
+data class ActivityPointShopPayload(
+    val points: Int = 0,
+    val items: List<ActivityPointShopItem> = emptyList()
+)
+
+@Serializable
+data class ActivityPointShopItem(
+    val id: String = "",
+    val name: String = "",
+    val desc: String = "",
+    val cost: Int = 0,
+    val rewardText: String = "",
+    val minLevel: Int = 0,
+    val maxLevel: Int = 0,
+    val needVip: Boolean = false,
+    val needSvip: Boolean = false,
+    val limitType: String = "none",
+    val limit: Int = 0,
+    val redeemed: Int = 0,
+    val limitText: String = ""
+)
+
+@Serializable
+data class ActivityDivineBeastExchangePayload(
+    val fragmentItemId: String = "divine_beast_fragment",
+    val fragmentName: String = "神兽碎片",
+    val fragmentQty: Int = 0,
+    val items: List<ActivityDivineBeastExchangeItem> = emptyList()
+)
+
+@Serializable
+data class ActivityDivineBeastExchangeItem(
+    val id: String = "",
+    val species: String = "",
+    val name: String = "",
+    val cost: Int = 0
+)

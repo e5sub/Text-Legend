@@ -451,6 +451,13 @@ const activityPointShopList = document.getElementById('activity-point-shop-list'
 let activityPointShopRowsCache = [];
 let activityPointShopItemOptionsCache = [];
 let activityPointShopItemSearchKeyword = '';
+const divineBeastFragmentMsg = document.getElementById('divine-beast-fragment-msg');
+const divineBeastFragmentLoadBtn = document.getElementById('divine-beast-fragment-load-btn');
+const divineBeastFragmentAddBtn = document.getElementById('divine-beast-fragment-add-btn');
+const divineBeastFragmentSaveBtn = document.getElementById('divine-beast-fragment-save-btn');
+const divineBeastFragmentList = document.getElementById('divine-beast-fragment-list');
+let divineBeastFragmentRowsCache = [];
+let divineBeastFragmentOptionsCache = [];
 
 // 每日幸运玩家相关
 const dailyLuckyMsg = document.getElementById('daily-lucky-msg');
@@ -650,6 +657,108 @@ async function saveActivityPointShopConfig() {
   } catch (err) {
     activityPointShopMsg.textContent = `保存失败: ${err.message}`;
     activityPointShopMsg.style.color = 'red';
+  }
+}
+
+async function loadDivineBeastFragmentExchangeConfig() {
+  if (!divineBeastFragmentList || !divineBeastFragmentMsg) return;
+  divineBeastFragmentMsg.textContent = '';
+  try {
+    const data = await api('/admin/divine-beast-fragment-exchange', 'GET');
+    const config = data?.config || { version: 1, items: [] };
+    divineBeastFragmentOptionsCache = Array.isArray(data?.beastOptions) ? data.beastOptions : [];
+    divineBeastFragmentRowsCache = (Array.isArray(config.items) ? config.items : []).map((item, index) => ({
+      _id: String(item?.id || `dbf_${index + 1}`),
+      species: String(item?.species || '').trim(),
+      cost: Math.max(1, Math.floor(Number(item?.cost || 1)))
+    })).filter((row) => row.species);
+    renderDivineBeastFragmentRows();
+    divineBeastFragmentMsg.textContent = '加载成功';
+    divineBeastFragmentMsg.style.color = 'green';
+    setTimeout(() => { divineBeastFragmentMsg.textContent = ''; }, 1500);
+  } catch (err) {
+    divineBeastFragmentMsg.textContent = `加载失败: ${err.message}`;
+    divineBeastFragmentMsg.style.color = 'red';
+  }
+}
+
+function divineBeastFragmentEmptyItem() {
+  return {
+    _id: `dbf_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+    species: '',
+    cost: 1
+  };
+}
+
+function buildDivineBeastSpeciesSelectHtml(selectedSpecies = '') {
+  const selected = String(selectedSpecies || '').trim();
+  const options = Array.isArray(divineBeastFragmentOptionsCache) ? divineBeastFragmentOptionsCache : [];
+  const selectedExists = options.some((it) => String(it?.name || '') === selected);
+  const selectedOption = !selectedExists && selected ? { id: selected, name: selected } : null;
+  const finalList = selectedOption ? [selectedOption, ...options] : options;
+  const optionHtml = finalList.map((it) => {
+    const name = String(it?.name || it?.id || '').replace(/"/g, '&quot;');
+    return `<option value="${name}"${name === selected ? ' selected' : ''}>${name}</option>`;
+  }).join('');
+  return `<select data-k="species" style="width: 280px;"><option value="">请选择神兽</option>${optionHtml}</select>`;
+}
+
+function renderDivineBeastFragmentRows() {
+  if (!divineBeastFragmentList) return;
+  const rows = Array.isArray(divineBeastFragmentRowsCache) ? divineBeastFragmentRowsCache : [];
+  divineBeastFragmentList.innerHTML = '';
+  if (!rows.length) {
+    divineBeastFragmentList.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#999;">暂无兑换项，点击“添加兑换项”</td></tr>';
+    return;
+  }
+  rows.forEach((item, index) => {
+    const tr = document.createElement('tr');
+    tr.dataset.index = String(index);
+    tr.dataset.exchangeId = String(item?._id || '');
+    tr.innerHTML = `
+      <td>${buildDivineBeastSpeciesSelectHtml(item.species)}</td>
+      <td><input data-k="cost" type="number" min="1" value="${Math.max(1, Number(item.cost || 1))}" style="width:110px;"></td>
+      <td><button type="button" class="btn-small" data-act="del">删除</button></td>
+    `;
+    divineBeastFragmentList.appendChild(tr);
+  });
+}
+
+function collectDivineBeastFragmentConfigFromUi() {
+  const rows = [];
+  if (!divineBeastFragmentList) return { version: 1, items: rows };
+  divineBeastFragmentList.querySelectorAll('tr[data-index]').forEach((tr) => {
+    const species = String(tr.querySelector('[data-k="species"]')?.value || '').trim();
+    if (!species) return;
+    const cost = Math.max(1, Math.floor(Number(tr.querySelector('[data-k="cost"]')?.value || 1)));
+    const exchangeId = String(tr.dataset.exchangeId || '').trim() || `dbf_${rows.length + 1}`;
+    rows.push({
+      id: exchangeId,
+      species,
+      cost
+    });
+  });
+  return { version: 1, items: rows };
+}
+
+async function saveDivineBeastFragmentExchangeConfig() {
+  if (!divineBeastFragmentList || !divineBeastFragmentMsg) return;
+  divineBeastFragmentMsg.textContent = '';
+  try {
+    const config = collectDivineBeastFragmentConfigFromUi();
+    const data = await api('/admin/divine-beast-fragment-exchange/update', 'POST', { config });
+    divineBeastFragmentRowsCache = (Array.isArray(data?.config?.items) ? data.config.items : config.items).map((item, index) => ({
+      _id: String(item?.id || `dbf_${index + 1}`),
+      species: String(item?.species || '').trim(),
+      cost: Math.max(1, Math.floor(Number(item?.cost || 1)))
+    })).filter((row) => row.species);
+    renderDivineBeastFragmentRows();
+    divineBeastFragmentMsg.textContent = '保存成功';
+    divineBeastFragmentMsg.style.color = 'green';
+    setTimeout(() => { divineBeastFragmentMsg.textContent = ''; }, 1500);
+  } catch (err) {
+    divineBeastFragmentMsg.textContent = `保存失败: ${err.message}`;
+    divineBeastFragmentMsg.style.color = 'red';
   }
 }
 
@@ -1942,6 +2051,7 @@ async function login() {
     await loadPersonalBossSettings();
     await loadEventTimeSettings();
     await loadActivityPointShopConfig();
+    await loadDivineBeastFragmentExchangeConfig();
   } catch (err) {
     loginMsg.textContent = err.message;
   }
@@ -6356,6 +6466,7 @@ async function initDashboard() {
     loadPersonalBossSettings();
     loadEventTimeSettings();
     loadActivityPointShopConfig();
+    loadDivineBeastFragmentExchangeConfig();
     loadFirstRechargeSettings();
     loadInviteRewardSettings();
     loadClassBonusConfig();
@@ -6432,6 +6543,41 @@ if (activityPointShopList) {
     if (!Array.isArray(activityPointShopRowsCache)) activityPointShopRowsCache = [];
     activityPointShopRowsCache.splice(index, 1);
     renderActivityPointShopRows();
+  });
+}
+if (divineBeastFragmentLoadBtn) divineBeastFragmentLoadBtn.addEventListener('click', loadDivineBeastFragmentExchangeConfig);
+if (divineBeastFragmentAddBtn) {
+  divineBeastFragmentAddBtn.addEventListener('click', () => {
+    if (!Array.isArray(divineBeastFragmentRowsCache)) divineBeastFragmentRowsCache = [];
+    divineBeastFragmentRowsCache.push(divineBeastFragmentEmptyItem());
+    renderDivineBeastFragmentRows();
+  });
+}
+if (divineBeastFragmentSaveBtn) divineBeastFragmentSaveBtn.addEventListener('click', saveDivineBeastFragmentExchangeConfig);
+if (divineBeastFragmentList) {
+  divineBeastFragmentList.addEventListener('change', (e) => {
+    const target = e.target;
+    const tr = target?.closest?.('tr[data-index]');
+    const index = Number(tr?.dataset?.index);
+    if (!Number.isInteger(index) || index < 0) return;
+    if (!Array.isArray(divineBeastFragmentRowsCache) || !divineBeastFragmentRowsCache[index]) return;
+    if (target?.matches?.('select[data-k="species"]')) {
+      divineBeastFragmentRowsCache[index].species = String(target.value || '').trim();
+      return;
+    }
+    if (target?.matches?.('input[data-k="cost"]')) {
+      divineBeastFragmentRowsCache[index].cost = Math.max(1, Math.floor(Number(target.value || 1)));
+    }
+  });
+  divineBeastFragmentList.addEventListener('click', (e) => {
+    const btn = e.target?.closest?.('button[data-act="del"]');
+    if (!btn) return;
+    const tr = btn.closest('tr[data-index]');
+    const index = Number(tr?.dataset?.index);
+    if (!Number.isInteger(index) || index < 0) return;
+    if (!Array.isArray(divineBeastFragmentRowsCache)) divineBeastFragmentRowsCache = [];
+    divineBeastFragmentRowsCache.splice(index, 1);
+    renderDivineBeastFragmentRows();
   });
 }
 if (usersSearchBtn) {

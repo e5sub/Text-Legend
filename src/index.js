@@ -176,6 +176,7 @@ import {
 } from './game/treasure.js';
 
 const ACTIVITY_POINT_SHOP_SETTING_KEY = 'activity_point_shop_config_v2';
+const DIVINE_BEAST_FRAGMENT_EXCHANGE_SETTING_KEY = 'divine_beast_fragment_exchange_config_v1';
 const FIRST_RECHARGE_WELFARE_SETTING_KEY = 'first_recharge_welfare_config_v1';
 const INVITE_REWARD_SETTING_KEY = 'invite_reward_config_v1';
 const INVITE_RECHARGE_BONUS_RATE = 0.2;
@@ -620,15 +621,20 @@ async function markDivineBeastReissueCharacterIssued(userId, charName, realmId =
 }
 
 function grantDivineBeastPetToPlayer(player) {
+  return grantFixedPetToPlayer(player, '马年神兽', 'ultimate');
+}
+
+function grantFixedPetToPlayer(player, species, rarity = 'ultimate') {
   if (!player) return { ok: false, reason: 'player_not_found' };
   const petState = normalizePetState(player);
   if (!petState) return { ok: false, reason: 'pet_state_invalid' };
-  const divineBeast = createRandomPet('ultimate', { fixedSpecies: '马年神兽' });
-  if (!divineBeast) return { ok: false, reason: 'create_failed' };
-  petState.pets.push(divineBeast);
-  if (!petState.activePetId) petState.activePetId = divineBeast.id;
+  if (Array.isArray(petState.pets) && petState.pets.length >= PET_MAX_OWNED) return { ok: false, reason: 'pet_full' };
+  const fixedPet = createRandomPet(rarity, { fixedSpecies: String(species || '').trim() });
+  if (!fixedPet) return { ok: false, reason: 'create_failed' };
+  petState.pets.push(fixedPet);
+  if (!petState.activePetId) petState.activePetId = fixedPet.id;
   player.forceStateRefresh = true;
-  return { ok: true, pet: divineBeast };
+  return { ok: true, pet: fixedPet };
 }
 
 function grantFirstRechargeWelfareToPlayer(player, config = null) {
@@ -1106,6 +1112,44 @@ function validateActivityPointShopConfig(config) {
   return normalized;
 }
 
+function getDivineBeastSpeciesOptions() {
+  const list = Array.isArray(PET_SPECIES_BY_RARITY?.ultimate) ? PET_SPECIES_BY_RARITY.ultimate : [];
+  return list
+    .map((name, index) => ({ id: String(name || '').trim(), name: String(name || '').trim(), sort: index }))
+    .filter((it) => it.id);
+}
+
+function normalizeDivineBeastFragmentExchangeConfig(raw) {
+  const src = raw && typeof raw === 'object' ? raw : {};
+  const list = Array.isArray(src.items) ? src.items : [];
+  const items = list
+    .map((entry, index) => {
+      const species = String(entry?.species || '').trim();
+      if (!species) return null;
+      return {
+        id: String(entry?.id || `dbf_${index + 1}`).trim(),
+        species,
+        cost: Math.max(1, Math.floor(Number(entry?.cost || 0))),
+        sort: Number.isFinite(Number(entry?.sort)) ? Number(entry.sort) : index
+      };
+    })
+    .filter((it) => it && it.id && it.species && it.cost > 0);
+  items.sort((a, b) => (a.sort - b.sort) || a.id.localeCompare(b.id));
+  return { version: 1, items };
+}
+
+function validateDivineBeastFragmentExchangeConfig(config) {
+  const normalized = normalizeDivineBeastFragmentExchangeConfig(config);
+  const validSpecies = new Set(getDivineBeastSpeciesOptions().map((it) => it.name));
+  const seen = new Set();
+  for (const item of normalized.items) {
+    if (seen.has(item.id)) throw new Error(`兑换ID重复: ${item.id}`);
+    seen.add(item.id);
+    if (!validSpecies.has(item.species)) throw new Error(`不存在神兽: ${item.species}`);
+  }
+  return normalized;
+}
+
 let activityPointShopConfigCache = null;
 async function getActivityPointShopConfigCached(forceRefresh = false) {
   if (!forceRefresh && activityPointShopConfigCache) return activityPointShopConfigCache;
@@ -1119,6 +1163,20 @@ async function getActivityPointShopConfigCached(forceRefresh = false) {
   const simpleConfig = normalizeActivityPointShopConfig(raw);
   activityPointShopConfigCache = expandActivityPointShopConfigForRuntime(simpleConfig);
   return activityPointShopConfigCache;
+}
+
+let divineBeastFragmentExchangeConfigCache = null;
+async function getDivineBeastFragmentExchangeConfigCached(forceRefresh = false) {
+  if (!forceRefresh && divineBeastFragmentExchangeConfigCache) return divineBeastFragmentExchangeConfigCache;
+  let raw = {};
+  try {
+    raw = await getSetting(DIVINE_BEAST_FRAGMENT_EXCHANGE_SETTING_KEY, '{}');
+    if (typeof raw === 'string') raw = JSON.parse(raw || '{}');
+  } catch {
+    raw = {};
+  }
+  divineBeastFragmentExchangeConfigCache = normalizeDivineBeastFragmentExchangeConfig(raw);
+  return divineBeastFragmentExchangeConfigCache;
 }
 
 const BACKUP_TABLES = [
@@ -2341,6 +2399,32 @@ app.post('/admin/activity-point-shop/update', async (req, res) => {
     const config = validateActivityPointShopConfig(payload);
     await setSetting(ACTIVITY_POINT_SHOP_SETTING_KEY, JSON.stringify(config));
     activityPointShopConfigCache = expandActivityPointShopConfigForRuntime(config);
+    res.json({ ok: true, config });
+  } catch (err) {
+    res.status(400).json({ error: err.message || '保存失败' });
+  }
+});
+
+app.get('/admin/divine-beast-fragment-exchange', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  try {
+    const config = await getDivineBeastFragmentExchangeConfigCached(true);
+    const beastOptions = getDivineBeastSpeciesOptions().map((it) => ({ id: it.id, name: it.name }));
+    res.json({ ok: true, config, beastOptions });
+  } catch (err) {
+    res.status(500).json({ error: err.message || '加载失败' });
+  }
+});
+
+app.post('/admin/divine-beast-fragment-exchange/update', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  try {
+    const payload = req.body?.config ?? req.body ?? {};
+    const config = validateDivineBeastFragmentExchangeConfig(payload);
+    await setSetting(DIVINE_BEAST_FRAGMENT_EXCHANGE_SETTING_KEY, JSON.stringify(config));
+    divineBeastFragmentExchangeConfigCache = config;
     res.json({ ok: true, config });
   } catch (err) {
     res.status(400).json({ error: err.message || '保存失败' });
@@ -13665,7 +13749,9 @@ io.on('connection', (socket) => {
       rechargeApi,
       tradeApi,
       activityApi: {
-        getPointShopConfig: () => getActivityPointShopConfigCached(false)
+        getPointShopConfig: () => getActivityPointShopConfigCached(false),
+        getDivineBeastFragmentExchangeConfig: () => getDivineBeastFragmentExchangeConfigCached(false),
+        grantFixedPet: (species) => grantFixedPetToPlayer(player, species, 'ultimate')
       },
       consignApi,
       characterApi: {
