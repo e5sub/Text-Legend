@@ -83,7 +83,8 @@ const ACTIVITY_POINT_SHOP_MAX_REDEEM_QTY = 99;
 const ACTIVITY_DIVINE_BEAST_EXCHANGE_MAX_QTY = 20;
 const HIGH_TIER_RECYCLE_ESSENCE_ITEM_IDS = Object.freeze({
   epic: 'epic_essence',
-  legendary: 'legend_essence'
+  legendary: 'legend_essence',
+  supreme: 'supreme_essence'
 });
 const DEFAULT_EQUIPMENT_RECYCLE_EXCHANGE_ITEMS = Object.freeze([
   { id: 'htr_epic_training', currency: 'epic', cost: 200, rewards: [{ id: 'training_fruit', qty: 10 }] },
@@ -91,7 +92,7 @@ const DEFAULT_EQUIPMENT_RECYCLE_EXCHANGE_ITEMS = Object.freeze([
   { id: 'htr_legend_pet_training', currency: 'legendary', cost: 200, rewards: [{ id: 'pet_training_fruit', qty: 10 }] },
   { id: 'htr_legend_growth', currency: 'legendary', cost: 300, rewards: [{ id: 'ultimate_growth_stone', qty: 10 }] },
   { id: 'htr_legend_break', currency: 'legendary', cost: 600, rewards: [{ id: 'ultimate_growth_break_stone', qty: 10 }] },
-  { id: 'htr_legend_fragment', currency: 'legendary', cost: 1000, limitType: 'weekly', limit: 1, rewards: [{ id: 'divine_beast_fragment', qty: 1 }] }
+  { id: 'htr_supreme_fragment', currency: 'supreme', cost: 1000, limitType: 'weekly', limit: 1, rewards: [{ id: 'divine_beast_fragment', qty: 1 }] }
 ]);
 let equipmentRecycleExchangeItems = DEFAULT_EQUIPMENT_RECYCLE_EXCHANGE_ITEMS.map((entry) => ({
   ...entry,
@@ -121,6 +122,7 @@ function getHighTierRecycleMaterialIdByCurrency(currency) {
   const key = String(currency || '').trim().toLowerCase();
   if (key === 'epic') return HIGH_TIER_RECYCLE_ESSENCE_ITEM_IDS.epic;
   if (key === 'legendary') return HIGH_TIER_RECYCLE_ESSENCE_ITEM_IDS.legendary;
+  if (key === 'supreme') return HIGH_TIER_RECYCLE_ESSENCE_ITEM_IDS.supreme;
   return '';
 }
 
@@ -139,7 +141,7 @@ export function normalizeEquipmentRecycleExchangeConfig(raw) {
       const rewardId = String(entry?.rewardId || entry?.itemId || '').trim();
       if (!rewardId || !ITEM_TEMPLATES[rewardId]) return null;
       const currency = String(entry?.currency || '').trim().toLowerCase();
-      if (currency !== 'epic' && currency !== 'legendary') return null;
+      if (currency !== 'epic' && currency !== 'legendary' && currency !== 'supreme') return null;
       const rewardQty = Math.max(1, Math.floor(Number(entry?.rewardQty || entry?.qty || 1)));
       const cost = Math.max(1, Math.floor(Number(entry?.cost || 0)));
       const limitType = ['none', 'daily', 'weekly', 'lifetime'].includes(String(entry?.limitType || 'none'))
@@ -202,7 +204,7 @@ function isHighTierRecycleRarity(rarity) {
 function getHighTierRecycleRarity(item) {
   if (!isEquipmentItem(item)) return '';
   const rarity = String(item?.rarity || rarityByPrice(item) || '').trim().toLowerCase();
-  return isHighTierRecycleRarity(rarity) ? rarity : '';
+  return rarity === 'epic' || rarity === 'legendary' || rarity === 'supreme' ? rarity : '';
 }
 
 function getHighTierRecycleYield(item) {
@@ -214,6 +216,12 @@ function getHighTierRecycleYield(item) {
     if (slot === 'chest') return { currency: 'epic', amount: 10 };
     if (slot === 'head' || slot === 'waist' || slot === 'feet') return { currency: 'epic', amount: 8 };
     return { currency: 'epic', amount: 6 };
+  }
+  if (rarity === 'supreme') {
+    if (slot === 'weapon') return { currency: 'supreme', amount: 30 };
+    if (slot === 'chest') return { currency: 'supreme', amount: 24 };
+    if (slot === 'head' || slot === 'waist' || slot === 'feet') return { currency: 'supreme', amount: 20 };
+    return { currency: 'supreme', amount: 16 };
   }
   if (slot === 'weapon') return { currency: 'legendary', amount: 18 };
   if (slot === 'chest') return { currency: 'legendary', amount: 15 };
@@ -252,6 +260,10 @@ export function getHighTierRecycleStatePayload() {
       legendary: {
         id: HIGH_TIER_RECYCLE_ESSENCE_ITEM_IDS.legendary,
         name: ITEM_TEMPLATES[HIGH_TIER_RECYCLE_ESSENCE_ITEM_IDS.legendary]?.name || HIGH_TIER_RECYCLE_ESSENCE_ITEM_IDS.legendary
+      },
+      supreme: {
+        id: HIGH_TIER_RECYCLE_ESSENCE_ITEM_IDS.supreme,
+        name: ITEM_TEMPLATES[HIGH_TIER_RECYCLE_ESSENCE_ITEM_IDS.supreme]?.name || HIGH_TIER_RECYCLE_ESSENCE_ITEM_IDS.supreme
       }
     },
     exchangeItems: equipmentRecycleExchangeItems.map((entry) => {
@@ -2522,7 +2534,8 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         const payload = getHighTierRecycleStatePayload();
         const epicQty = Math.max(0, Math.floor(Number((player.inventory || []).find((slot) => slot?.id === payload.materials.epic.id)?.qty || 0)));
         const legendQty = Math.max(0, Math.floor(Number((player.inventory || []).find((slot) => slot?.id === payload.materials.legendary.id)?.qty || 0)));
-        send(`装备回收：${payload.materials.epic.name}${epicQty}，${payload.materials.legendary.name}${legendQty}`);
+        const supremeQty = Math.max(0, Math.floor(Number((player.inventory || []).find((slot) => slot?.id === payload.materials.supreme.id)?.qty || 0)));
+        send(`装备回收：${payload.materials.epic.name}${epicQty}，${payload.materials.legendary.name}${legendQty}，${payload.materials.supreme.name}${supremeQty}`);
         payload.exchangeItems.forEach((entry) => {
           send(`[${entry.id}] ${entry.rewardText} - 消耗 ${entry.currencyName}x${entry.cost}`);
         });
@@ -2538,7 +2551,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         const resolved = resolveInventoryItem(player, itemRaw);
         if (!resolved.slot || !resolved.item) return send('背包里没有该装备。');
         const yieldInfo = getHighTierRecycleYield(resolved.item);
-        if (!yieldInfo) return send('仅史诗/传说装备可分解。');
+        if (!yieldInfo) return send('仅史诗/传说/至尊装备可分解。');
         const maxQty = Math.max(1, Math.floor(Number(resolved.slot.qty || 1)));
         const qty = qtyRaw == null ? 1 : Math.max(1, Math.min(maxQty, Math.floor(Number(qtyRaw) || 1)));
         if (!removeItem(

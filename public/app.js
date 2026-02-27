@@ -3730,8 +3730,9 @@ function renderHighTierRecycleSummary() {
   }
   const epicQty = getHighTierRecycleMaterialQty(cfg.materials.epic?.id);
   const legendQty = getHighTierRecycleMaterialQty(cfg.materials.legendary?.id);
+  const supremeQty = getHighTierRecycleMaterialQty(cfg.materials.supreme?.id);
   highTierRecycleUi.summary.textContent =
-    `${cfg.materials.epic?.name || '史诗精华'} ${epicQty} | ${cfg.materials.legendary?.name || '传说精华'} ${legendQty}`;
+    `${cfg.materials.epic?.name || '史诗精华'} ${epicQty} | ${cfg.materials.legendary?.name || '传说精华'} ${legendQty} | ${cfg.materials.supreme?.name || '至尊精华'} ${supremeQty}`;
 }
 
 function renderHighTierRecycleSalvage() {
@@ -3756,7 +3757,7 @@ function renderHighTierRecycleSalvage() {
     highTierRecycleUi.batchLegend.disabled = batchLegendCount <= 0;
   }
   const items = (lastState?.items || [])
-    .filter((item) => item?.slot && ['epic', 'legendary'].includes(normalizeRarityKey(item.rarity)))
+    .filter((item) => item?.slot && ['epic', 'legendary', 'supreme'].includes(normalizeRarityKey(item.rarity)))
     .slice()
     .sort(sortByRarityDesc);
   if (!items.length) {
@@ -3773,11 +3774,14 @@ function renderHighTierRecycleSalvage() {
       yieldQty = slot === 'weapon' ? 12 : slot === 'chest' ? 10 : ['head', 'waist', 'feet'].includes(slot) ? 8 : 6;
     } else {
       yieldQty = slot === 'weapon' ? 18 : slot === 'chest' ? 15 : ['head', 'waist', 'feet'].includes(slot) ? 12 : 10;
+    } else {
+      yieldQty = slot === 'weapon' ? 30 : slot === 'chest' ? 24 : ['head', 'waist', 'feet'].includes(slot) ? 20 : 16;
     }
     const btn = document.createElement('div');
     btn.className = 'forge-item';
     applyRarityClass(btn, item);
-    btn.innerHTML = `<div>${formatItemName(item)} x${item.qty}</div><div class="item-detail">分解获得 ${rarity === 'epic' ? '史诗精华' : '传说精华'} x${yieldQty}</div>`;
+    const yieldName = rarity === 'epic' ? '史诗精华' : (rarity === 'legendary' ? '传说精华' : '至尊精华');
+    btn.innerHTML = `<div>${formatItemName(item)} x${item.qty}</div><div class="item-detail">分解获得 ${yieldName} x${yieldQty}</div>`;
     const tooltip = formatItemTooltip(item);
     if (tooltip) {
       btn.addEventListener('mouseenter', (evt) => showItemTooltip(tooltip, evt));

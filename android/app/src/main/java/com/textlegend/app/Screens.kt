@@ -1337,12 +1337,19 @@ private fun calcHighTierSalvageYield(item: ItemInfo): Int {
             "head", "waist", "feet" -> 8
             else -> 6
         }
-    } else {
+    } else if (rarity == "legendary") {
         when (slot) {
             "weapon" -> 18
             "chest" -> 15
             "head", "waist", "feet" -> 12
             else -> 10
+        }
+    } else {
+        when (slot) {
+            "weapon" -> 30
+            "chest" -> 24
+            "head", "waist", "feet" -> 20
+            else -> 16
         }
     }
 }
@@ -3613,7 +3620,7 @@ private fun HighTierRecycleDialog(vm: GameViewModel, state: GameState?, onDismis
     val cfg = state?.high_tier_recycle_config
     val items = state?.items.orEmpty()
     val salvageItems = remember(items) {
-        items.filter { it.slot != null && (it.rarity == "epic" || it.rarity == "legendary") }
+        items.filter { it.slot != null && (it.rarity == "epic" || it.rarity == "legendary" || it.rarity == "supreme") }
             .sortedWith(compareByDescending<ItemInfo> { rarityRank(it.rarity) }.thenBy { it.name })
     }
     val batchEpicCount = remember(items) {
@@ -3628,8 +3635,10 @@ private fun HighTierRecycleDialog(vm: GameViewModel, state: GameState?, onDismis
     val exchangeCount = exchangeQty.toIntOrNull()?.coerceIn(1, 99) ?: 1
     val epicName = cfg?.materials?.epic?.name ?: "史诗精华"
     val legendName = cfg?.materials?.legendary?.name ?: "传说精华"
+    val supremeName = cfg?.materials?.supreme?.name ?: "至尊精华"
     val epicOwned = getBagItemQty(state, cfg?.materials?.epic?.id ?: "epic_essence")
     val legendOwned = getBagItemQty(state, cfg?.materials?.legendary?.id ?: "legend_essence")
+    val supremeOwned = getBagItemQty(state, cfg?.materials?.supreme?.id ?: "supreme_essence")
 
     ScreenScaffold(title = "装备回收", onBack = onDismiss) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -3637,7 +3646,7 @@ private fun HighTierRecycleDialog(vm: GameViewModel, state: GameState?, onDismis
             Button(onClick = { tab = "exchange" }, modifier = Modifier.weight(1f)) { Text("精华兑换") }
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Text("$epicName $epicOwned | $legendName $legendOwned")
+        Text("$epicName $epicOwned | $legendName $legendOwned | $supremeName $supremeOwned")
         Spacer(modifier = Modifier.height(8.dp))
 
         when (tab) {
@@ -3655,7 +3664,7 @@ private fun HighTierRecycleDialog(vm: GameViewModel, state: GameState?, onDismis
                     ) { Text("一键回收传说($batchLegendCount)") }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("一键回收仅处理无特效、无附加技能、无锻造的装备", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("一键回收仅处理无特效、无附加技能、无锻造的史诗/传说装备，不包含至尊", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = salvageQty,
@@ -3666,11 +3675,15 @@ private fun HighTierRecycleDialog(vm: GameViewModel, state: GameState?, onDismis
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 if (salvageItems.isEmpty()) {
-                    Text("背包中暂无可分解的史诗/传说装备")
+                    Text("背包中暂无可分解的史诗/传说/至尊装备")
                 } else {
                     salvageItems.forEach { item ->
                         val yieldQty = calcHighTierSalvageYield(item)
-                        val yieldName = if ((item.rarity ?: "") == "epic") epicName else legendName
+                        val yieldName = when (normalizeRarityKey(item.rarity)) {
+                            "epic" -> epicName
+                            "legendary" -> legendName
+                            else -> supremeName
+                        }
                         OutlinedButton(
                             onClick = {
                                 val qty = salvageCount.coerceAtMost(maxOf(1, item.qty))

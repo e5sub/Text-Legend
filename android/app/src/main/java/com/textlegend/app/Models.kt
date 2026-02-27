@@ -223,7 +223,7 @@ data class HighTierRecycleConfig(
 data class HighTierRecycleMaterials(
     val epic: HighTierRecycleMaterialInfo? = null,
     val legendary: HighTierRecycleMaterialInfo? = null,
-    val core: HighTierRecycleMaterialInfo? = null
+    val supreme: HighTierRecycleMaterialInfo? = null
 )
 
 @Serializable

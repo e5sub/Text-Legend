@@ -806,7 +806,9 @@ async function loadEquipmentRecycleConfig() {
       rewardId: String(item?.rewardId || item?.itemId || '').trim(),
       rewardQty: Math.max(1, Math.floor(Number(item?.rewardQty || item?.qty || 1))),
       cost: Math.max(1, Math.floor(Number(item?.cost || 1))),
-      currency: String(item?.currency || 'epic').trim().toLowerCase() === 'legendary' ? 'legendary' : 'epic',
+      currency: ['epic', 'legendary', 'supreme'].includes(String(item?.currency || 'epic').trim().toLowerCase())
+        ? String(item?.currency || 'epic').trim().toLowerCase()
+        : 'epic',
       limitType: ['none', 'daily', 'weekly', 'lifetime'].includes(String(item?.limitType || 'none')) ? String(item?.limitType || 'none') : 'none',
       limit: Math.max(1, Math.floor(Number(item?.limit || 1)))
     })).filter((row) => row.rewardId);
@@ -877,16 +879,19 @@ function renderEquipmentRecycleRows() {
         <select data-k="currency">
           <option value="epic"${item.currency === 'epic' ? ' selected' : ''}>史诗精华</option>
           <option value="legendary"${item.currency === 'legendary' ? ' selected' : ''}>传说精华</option>
+          <option value="supreme"${item.currency === 'supreme' ? ' selected' : ''}>至尊精华</option>
         </select>
       </td>
       <td>
-        <select data-k="limitType">
-          <option value="none"${item.limitType === 'none' ? ' selected' : ''}>不限</option>
-          <option value="daily"${item.limitType === 'daily' ? ' selected' : ''}>日限</option>
-          <option value="weekly"${item.limitType === 'weekly' ? ' selected' : ''}>周限</option>
-          <option value="lifetime"${item.limitType === 'lifetime' ? ' selected' : ''}>终身限</option>
-        </select>
-        <input data-k="limit" type="number" min="1" value="${Math.max(1, Number(item.limit || 1))}" style="width: 64px; margin-left: 6px;">
+        <div class="equipment-recycle-limit-row">
+          <select data-k="limitType">
+            <option value="none"${item.limitType === 'none' ? ' selected' : ''}>不限</option>
+            <option value="daily"${item.limitType === 'daily' ? ' selected' : ''}>日限</option>
+            <option value="weekly"${item.limitType === 'weekly' ? ' selected' : ''}>周限</option>
+            <option value="lifetime"${item.limitType === 'lifetime' ? ' selected' : ''}>终身限</option>
+          </select>
+          <input data-k="limit" type="number" min="1" value="${Math.max(1, Number(item.limit || 1))}">
+        </div>
       </td>
       <td><button type="button" class="btn-small" data-act="del">删除</button></td>
     `;
@@ -909,7 +914,9 @@ function collectEquipmentRecycleConfigFromUi() {
       rewardId,
       rewardQty: Math.max(1, Math.floor(Number(tr.querySelector('[data-k="rewardQty"]')?.value || 1))),
       cost: Math.max(1, Math.floor(Number(tr.querySelector('[data-k="cost"]')?.value || 1))),
-      currency: String(tr.querySelector('[data-k="currency"]')?.value || 'epic').trim().toLowerCase() === 'legendary' ? 'legendary' : 'epic',
+      currency: ['epic', 'legendary', 'supreme'].includes(String(tr.querySelector('[data-k="currency"]')?.value || 'epic').trim().toLowerCase())
+        ? String(tr.querySelector('[data-k="currency"]')?.value || 'epic').trim().toLowerCase()
+        : 'epic',
       limitType,
       limit: limitType === 'none' ? 0 : Math.max(1, Math.floor(Number(tr.querySelector('[data-k="limit"]')?.value || 1)))
     });
@@ -928,7 +935,9 @@ async function saveEquipmentRecycleConfig() {
       rewardId: String(item?.rewardId || item?.itemId || '').trim(),
       rewardQty: Math.max(1, Math.floor(Number(item?.rewardQty || item?.qty || 1))),
       cost: Math.max(1, Math.floor(Number(item?.cost || 1))),
-      currency: String(item?.currency || 'epic').trim().toLowerCase() === 'legendary' ? 'legendary' : 'epic',
+      currency: ['epic', 'legendary', 'supreme'].includes(String(item?.currency || 'epic').trim().toLowerCase())
+        ? String(item?.currency || 'epic').trim().toLowerCase()
+        : 'epic',
       limitType: ['none', 'daily', 'weekly', 'lifetime'].includes(String(item?.limitType || 'none')) ? String(item?.limitType || 'none') : 'none',
       limit: Math.max(1, Math.floor(Number(item?.limit || 1)))
     })).filter((row) => row.rewardId);
@@ -6866,7 +6875,9 @@ if (equipmentRecycleList) {
       return;
     }
     if (target?.matches?.('select[data-k="currency"]')) {
-      equipmentRecycleRowsCache[index].currency = String(target.value || 'epic').trim().toLowerCase() === 'legendary' ? 'legendary' : 'epic';
+      equipmentRecycleRowsCache[index].currency = ['epic', 'legendary', 'supreme'].includes(String(target.value || 'epic').trim().toLowerCase())
+        ? String(target.value || 'epic').trim().toLowerCase()
+        : 'epic';
       return;
     }
     if (target?.matches?.('select[data-k="limitType"]')) {
