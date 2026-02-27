@@ -11848,9 +11848,11 @@ function createRandomPet(rarity = 'normal', options = {}) {
   const role = fixedSpecies || (speciesPool.length ? speciesPool[randInt(0, speciesPool.length - 1)] : '');
   if (!role) return null;
   const growthRange = PET_RARITY_GROWTH_RANGE[safeRarity] || PET_RARITY_GROWTH_RANGE.normal;
-  const growth = Number((growthRange[0] + Math.random() * (growthRange[1] - growthRange[0])).toFixed(3));
   const divineCfg = getDivineBeastConfigBySpecies(role);
   const isDivineBeast = Boolean(divineCfg);
+  const growth = isDivineBeast
+    ? Number((growthRange[1] || 1.95).toFixed(3))
+    : Number((growthRange[0] + Math.random() * (growthRange[1] - growthRange[0])).toFixed(3));
   const availableGrades = new Set(PET_AVAILABLE_GRADES_BY_RARITY[safeRarity] || PET_AVAILABLE_GRADES_BY_RARITY.normal || ['normal']);
   const skillPool = PET_SKILL_LIBRARY.filter((skill) => availableGrades.has(skill.grade));
   const normalSkills = PET_SKILL_LIBRARY.filter((skill) => skill.grade === 'normal');
