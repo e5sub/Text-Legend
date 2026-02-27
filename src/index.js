@@ -1972,6 +1972,7 @@ app.post('/admin/first-recharge-settings/reissue-divine-beast', async (req, res)
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
   const charName = String(req.body?.charName || '').trim();
   const rawRealmId = req.body?.realmId;
+  const ignoreFirstRechargeMarker = req.body?.ignoreFirstRechargeMarker !== false;
   if (!charName) return res.status(400).json({ error: '请输入角色名。' });
   let realmInfo = await resolveRealmId(rawRealmId);
   if (realmInfo.error) {
@@ -2002,6 +2003,15 @@ app.post('/admin/first-recharge-settings/reissue-divine-beast', async (req, res)
   }
   if (!userId) return res.status(400).json({ error: '角色账号信息异常。' });
   const targetRealmId = Math.max(1, Math.floor(Number(player?.realmId || realmId) || realmId));
+  if (!ignoreFirstRechargeMarker) {
+    const hasAnyFirstRechargeMark =
+      await hasFirstRechargeRewardMarker(userId) ||
+      await hasFirstRechargeRewardMarkerByRealm(userId, targetRealmId) ||
+      await hasFirstRechargeReissueCharacterMarker(userId, targetName, targetRealmId);
+    if (hasAnyFirstRechargeMark) {
+      return res.status(400).json({ error: '该角色已存在首充标记，未开启忽略首充标记。' });
+    }
+  }
   if (await hasDivineBeastReissueCharacterMarker(userId, targetName, targetRealmId)) {
     return res.status(400).json({ error: '该角色已补发过马年神兽，不能重复补发。' });
   }
@@ -2025,6 +2035,7 @@ app.post('/admin/first-recharge-settings/reissue-divine-beast', async (req, res)
     ok: true,
     charName: targetName,
     realmId: targetRealmId,
+    ignoreFirstRechargeMarker,
     online: !saveOffline,
     pet: {
       id: petGrant.pet.id,

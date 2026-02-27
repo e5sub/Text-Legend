@@ -3135,7 +3135,11 @@ async function reissueDivineBeastForCharacter() {
   if (!window.confirm(`确认给角色【${charName}】补发马年神兽吗？`)) return;
   setFirstRechargeMsg('补发马年神兽中...');
   try {
-    const data = await api('/admin/first-recharge-settings/reissue-divine-beast', 'POST', { charName, realmId });
+    const data = await api('/admin/first-recharge-settings/reissue-divine-beast', 'POST', {
+      charName,
+      realmId,
+      ignoreFirstRechargeMarker: true
+    });
     const petName = String(data?.pet?.name || data?.pet?.role || '马年神兽');
     setFirstRechargeMsg(`马年神兽补发成功（${data?.online ? '在线' : '离线'}）：${petName}`, 'green');
     setTimeout(() => setFirstRechargeMsg(''), 2500);
