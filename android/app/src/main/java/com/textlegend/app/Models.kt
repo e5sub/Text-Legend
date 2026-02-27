@@ -463,7 +463,9 @@ data class SabakInfoResponse(
     val ok: Boolean = false,
     val current: SabakSummary? = null,
     val registrable: Boolean = false,
-    val registrations: List<SabakRegistration> = emptyList()
+    val registrations: List<SabakRegistration> = emptyList(),
+    val ownerGuildName: String? = null,
+    val canRegister: Boolean = false
 )
 
 @Serializable
@@ -477,8 +479,9 @@ data class SabakSummary(
 
 @Serializable
 data class SabakRegistration(
-    val guildId: Int? = null,
-    val guildName: String? = null
+    @SerialName("guild_id") val guildId: Int? = null,
+    @SerialName("guild_name") val guildName: String? = null,
+    val isDefender: Boolean = false
 )
 
 @Serializable

@@ -388,92 +388,94 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                         Spacer(modifier = Modifier.height(8.dp))
                     }
 
-                    when (tabIndex) {
-                        0 -> BattleTab(state = state, selectedMob = selectedMob, onSelectMob = { selectedMob = it }, onGo = { dir -> vm.sendCmd("go $dir") }, onAttack = { mobName -> vm.sendCmd("attack $mobName") }, onCast = { skill, target ->
-                            val cmd = if (skill.type == "heal" || skill.type == "summon") {
-                                "cast ${skill.id}"
-                            } else if (target != null) {
-                                "cast ${skill.id} ${target.name}"
-                            } else {
-                                "cast ${skill.id}"
-                            }
-                            vm.sendCmd(cmd)
-                        })
-                        1 -> InventoryTab(state = state, onUse = { item ->
-                            val key = if (item.key.isNotBlank()) item.key else item.id
-                            if (item.type == "consumable" || item.type == "book") {
-                                vm.sendCmd("use $key")
-                            } else if (!item.slot.isNullOrBlank()) {
-                                vm.sendCmd("equip $key")
-                            }
-                        }, onCommand = vm::sendCmd)
-                        2 -> ChatTab(
-                            state = state,
-                            outputs = outputs,
-                            onCommand = vm::sendCmd,
-                            onOpenModule = { module, name ->
-                                if (!name.isNullOrBlank()) {
-                                    quickTargetName = name
+                    Box(modifier = Modifier.weight(1f, fill = true)) {
+                        when (tabIndex) {
+                            0 -> BattleTab(state = state, selectedMob = selectedMob, onSelectMob = { selectedMob = it }, onGo = { dir -> vm.sendCmd("go $dir") }, onAttack = { mobName -> vm.sendCmd("attack $mobName") }, onCast = { skill, target ->
+                                val cmd = if (skill.type == "heal" || skill.type == "summon") {
+                                    "cast ${skill.id}"
+                                } else if (target != null) {
+                                    "cast ${skill.id} ${target.name}"
+                                } else {
+                                    "cast ${skill.id}"
                                 }
-                                when (module) {
-                                    "trade" -> innerNav.navigate("trade")
-                                    "party" -> innerNav.navigate("party")
-                                    "guild" -> innerNav.navigate("guild")
-                                    "mail" -> innerNav.navigate("mail")
+                                vm.sendCmd(cmd)
+                            })
+                            1 -> InventoryTab(state = state, onUse = { item ->
+                                val key = if (item.key.isNotBlank()) item.key else item.id
+                                if (item.type == "consumable" || item.type == "book") {
+                                    vm.sendCmd("use $key")
+                                } else if (!item.slot.isNullOrBlank()) {
+                                    vm.sendCmd("equip $key")
                                 }
-                            },
-                            onJumpToBattle = { tabIndex = 0 },
-                            input = chatInput,
-                            onInputChange = { chatInput = it },
-                            onSend = {
-                            val msg = chatInput.trim()
-                            if (msg.isNotEmpty()) {
-                                vm.sendCmd("say $msg")
-                                chatInput = ""
-                            }
-                        }
-                        )
-                        3 -> ActionsTab(
-                            state = state,
-                            onAction = { action ->
-                                when (action) {
-                                    "stats" -> innerNav.navigate("stats")
-                                    "bag" -> tabIndex = 1
-                                    "party" -> innerNav.navigate("party")
-                                    "guild" -> innerNav.navigate("guild")
-                                    "mail" -> innerNav.navigate("mail")
-                                    "vip activate" -> innerNav.navigate("vip_activate")
-                                    "vip claim" -> vm.sendCmd("vip claim")
-                                    "afk" -> innerNav.navigate("afk")
-                                    "autoskill off" -> vm.sendCmd("autoskill off")
-                                    "autoafk on" -> innerNav.navigate("afk")
-                                    "autoafk off" -> {
-                                        vm.sendCmd("autoafk off")
-                                        vm.sendCmd("autoskill off")
+                            }, onCommand = vm::sendCmd)
+                            2 -> ChatTab(
+                                state = state,
+                                outputs = outputs,
+                                onCommand = vm::sendCmd,
+                                onOpenModule = { module, name ->
+                                    if (!name.isNullOrBlank()) {
+                                        quickTargetName = name
                                     }
-                                    "trade" -> innerNav.navigate("trade")
-                                    "recharge" -> innerNav.navigate("recharge")
-                                    "consign" -> innerNav.navigate("consign")
-                                    "sabak" -> innerNav.navigate("sabak")
-                                    "shop" -> innerNav.navigate("shop")
-                                    "forge" -> innerNav.navigate("forge")
-                                    "refine" -> innerNav.navigate("refine")
-                                    "effect" -> innerNav.navigate("effect")
-                                    "repair" -> innerNav.navigate("repair")
-                                    "changeclass" -> innerNav.navigate("changeclass")
-                                    "pet" -> innerNav.navigate("pet")
-                                    "drops" -> innerNav.navigate("drops")
-                                    "treasure" -> innerNav.navigate("treasure")
-                                    "activity" -> innerNav.navigate("activity")
-                                    "rank" -> innerNav.navigate("rank")
-                                    "train" -> innerNav.navigate("train")
-                                    "settings" -> innerNav.navigate("settings")
-                                    "switch" -> onExit()
-                                    "logout" -> onExit()
-                                    else -> vm.sendCmd(action)
+                                    when (module) {
+                                        "trade" -> innerNav.navigate("trade")
+                                        "party" -> innerNav.navigate("party")
+                                        "guild" -> innerNav.navigate("guild")
+                                        "mail" -> innerNav.navigate("mail")
+                                    }
+                                },
+                                onJumpToBattle = { tabIndex = 0 },
+                                input = chatInput,
+                                onInputChange = { chatInput = it },
+                                onSend = {
+                                val msg = chatInput.trim()
+                                if (msg.isNotEmpty()) {
+                                    vm.sendCmd("say $msg")
+                                    chatInput = ""
                                 }
                             }
-                        )
+                            )
+                            3 -> ActionsTab(
+                                state = state,
+                                onAction = { action ->
+                                    when (action) {
+                                        "stats" -> innerNav.navigate("stats")
+                                        "bag" -> tabIndex = 1
+                                        "party" -> innerNav.navigate("party")
+                                        "guild" -> innerNav.navigate("guild")
+                                        "mail" -> innerNav.navigate("mail")
+                                        "vip activate" -> innerNav.navigate("vip_activate")
+                                        "vip claim" -> vm.sendCmd("vip claim")
+                                        "afk" -> innerNav.navigate("afk")
+                                        "autoskill off" -> vm.sendCmd("autoskill off")
+                                        "autoafk on" -> innerNav.navigate("afk")
+                                        "autoafk off" -> {
+                                            vm.sendCmd("autoafk off")
+                                            vm.sendCmd("autoskill off")
+                                        }
+                                        "trade" -> innerNav.navigate("trade")
+                                        "recharge" -> innerNav.navigate("recharge")
+                                        "consign" -> innerNav.navigate("consign")
+                                        "sabak" -> innerNav.navigate("sabak")
+                                        "shop" -> innerNav.navigate("shop")
+                                        "forge" -> innerNav.navigate("forge")
+                                        "refine" -> innerNav.navigate("refine")
+                                        "effect" -> innerNav.navigate("effect")
+                                        "repair" -> innerNav.navigate("repair")
+                                        "changeclass" -> innerNav.navigate("changeclass")
+                                        "pet" -> innerNav.navigate("pet")
+                                        "drops" -> innerNav.navigate("drops")
+                                        "treasure" -> innerNav.navigate("treasure")
+                                        "activity" -> innerNav.navigate("activity")
+                                        "rank" -> innerNav.navigate("rank")
+                                        "train" -> innerNav.navigate("train")
+                                        "settings" -> innerNav.navigate("settings")
+                                        "switch" -> onExit()
+                                        "logout" -> onExit()
+                                        else -> vm.sendCmd(action)
+                                    }
+                                }
+                            )
+                        }
                     }
 
                     if (!toast.isNullOrBlank()) {
@@ -3430,17 +3432,18 @@ private fun EffectDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> 
 @Composable
 private fun SabakDialog(vm: GameViewModel, onDismiss: () -> Unit) {
     val info by vm.sabakInfo.collectAsState()
-    var gid by remember { mutableStateOf("") }
     LaunchedEffect(Unit) { vm.sabakInfo() }
     ScreenScaffold(title = "沙巴克", onBack = onDismiss) {
         val current = info?.current
+        val ownerGuildName = info?.ownerGuildName ?: current?.ownerGuildName ?: "无"
+        val canRegister = (info?.registrable == true) || (info?.canRegister == true)
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
-                Text("当前城主：${current?.ownerGuildName ?: "无"}", fontWeight = FontWeight.Bold)
+                Text("当前城主：$ownerGuildName", fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text("状态：${if (current?.active == true) "攻城中" else "未开始"}")
                 if (current?.startsAt != null) {
@@ -3455,7 +3458,7 @@ private fun SabakDialog(vm: GameViewModel, onDismiss: () -> Unit) {
         Spacer(modifier = Modifier.height(10.dp))
         Text("守城方", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(6.dp))
-        val defender = current?.ownerGuildName ?: "无"
+        val defender = ownerGuildName
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(10.dp),
@@ -3472,7 +3475,7 @@ private fun SabakDialog(vm: GameViewModel, onDismiss: () -> Unit) {
         Text("攻城方", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(6.dp))
         val attackers = info?.registrations
-            ?.filter { it.guildName != null && it.guildName != current?.ownerGuildName }
+            ?.filter { it.guildName != null && it.guildName != defender }
             .orEmpty()
         if (attackers.isEmpty()) {
             Text("暂无报名行会", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -3499,22 +3502,13 @@ private fun SabakDialog(vm: GameViewModel, onDismiss: () -> Unit) {
             }
         }
 
-        if (info?.registrable == true) {
+        if (canRegister) {
             Spacer(modifier = Modifier.height(12.dp))
             Text("报名", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(6.dp))
-            OutlinedTextField(
-                value = gid,
-                onValueChange = { gid = it },
-                label = { Text("行会ID") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(6.dp))
             Button(
                 onClick = {
-                    val id = gid.toIntOrNull()
-                    if (id != null) vm.sabakRegisterConfirm(id)
+                    vm.sabakRegisterConfirm(0)
                 },
                 modifier = Modifier.fillMaxWidth()
             ) { Text("确认报名") }
@@ -3733,6 +3727,7 @@ private fun ActivityCenterDialog(vm: GameViewModel, onDismiss: () -> Unit) {
             onRefresh = { vm.requestActivityPointShop() },
             onDismiss = { showPointShop = false }
         )
+        return
     }
     if (showBeastExchange) {
         ActivityDivineBeastExchangeDialog(
@@ -3741,6 +3736,7 @@ private fun ActivityCenterDialog(vm: GameViewModel, onDismiss: () -> Unit) {
             onRefresh = { vm.requestActivityDivineBeastExchange() },
             onDismiss = { showBeastExchange = false }
         )
+        return
     }
 
     ScreenScaffold(title = "活动中心", onBack = onDismiss) {
