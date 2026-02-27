@@ -510,11 +510,11 @@
               <table class="compact-config-table equipment-recycle-table" style="font-size: 12px;">
                 <thead>
                   <tr>
-                    <th>兑换物品</th>
+                    <th>物品</th>
                     <th>数量</th>
-                    <th>消耗精华</th>
-                    <th>精华类型</th>
-                    <th>限制</th>
+                    <th>消耗</th>
+                    <th>类型</th>
+                    <th>限购</th>
                     <th>操作</th>
                   </tr>
                 </thead>
@@ -1286,9 +1286,24 @@
                     <td>最多可携带的宠物数量</td>
                   </tr>
                   <tr>
+                    <td>基础技能格</td>
+                    <td><input id="pet-base-skill-slots" type="number" min="1" step="1" style="width: 90px;"></td>
+                    <td>新宠物默认拥有的技能格数量</td>
+                  </tr>
+                  <tr>
+                    <td>最大技能格</td>
+                    <td><input id="pet-max-skill-slots" type="number" min="1" step="1" style="width: 90px;"></td>
+                    <td>宠物最多可拥有的技能格上限</td>
+                  </tr>
+                  <tr>
                     <td>合成费用(金)</td>
                     <td><input id="pet-synthesis-cost" type="number" min="0" step="1" style="width: 120px;"></td>
                     <td>宠物合成消耗金币</td>
+                  </tr>
+                  <tr>
+                    <td>领悟最大技能数</td>
+                    <td><input id="pet-comprehend-max-skills" type="number" min="0" step="1" style="width: 90px;"></td>
+                    <td>打书/领悟时允许扩展到的技能数上限</td>
                   </tr>
                   <tr>
                     <td>合成继承技能概率</td>

@@ -175,7 +175,10 @@ const petSettingsRefreshBtn = document.getElementById('pet-settings-refresh');
 const petSettingsSaveBtn = document.getElementById('pet-settings-save');
 const petSettingsResetSkillEffectsBtn = document.getElementById('pet-settings-reset-skill-effects');
 const petMaxOwnedInput = document.getElementById('pet-max-owned');
+const petBaseSkillSlotsInput = document.getElementById('pet-base-skill-slots');
+const petMaxSkillSlotsInput = document.getElementById('pet-max-skill-slots');
 const petSynthesisCostInput = document.getElementById('pet-synthesis-cost');
+const petComprehendMaxSkillsInput = document.getElementById('pet-comprehend-max-skills');
 const petBookUnlockSlot4ChanceInput = document.getElementById('pet-book-unlock-slot4-chance');
 const petSynthesisUnlockSlotChanceInput = document.getElementById('pet-synthesis-unlock-slot-chance');
 const petSynthesisInheritChanceInput = document.getElementById('pet-synthesis-inherit-chance');
@@ -1610,7 +1613,10 @@ function formatSkillEffects(effects, skillLibrary) {
 function applyPetSettingsToForm(settings) {
   if (!settings) return;
   setInputValue(petMaxOwnedInput, settings.maxOwned);
+  setInputValue(petBaseSkillSlotsInput, settings.baseSkillSlots);
+  setInputValue(petMaxSkillSlotsInput, settings.maxSkillSlots);
   setInputValue(petSynthesisCostInput, settings.synthesisCostGold);
+  setInputValue(petComprehendMaxSkillsInput, settings.comprehendMaxSkills);
   setInputValue(petBookUnlockSlot4ChanceInput, settings.bookUnlockSlot4Chance);
   setInputValue(petSynthesisUnlockSlotChanceInput, settings.synthesisUnlockSlotChance);
   setInputValue(petSynthesisInheritChanceInput, settings.synthesisInheritChance);
@@ -1692,7 +1698,10 @@ async function savePetSettings() {
   base.bookSecondEligibleRarities = base.bookSecondEligibleRarities || [];
 
   base.maxOwned = readNumberValue(petMaxOwnedInput, base.maxOwned, invalidFlag);
+  base.baseSkillSlots = readNumberValue(petBaseSkillSlotsInput, base.baseSkillSlots, invalidFlag);
+  base.maxSkillSlots = readNumberValue(petMaxSkillSlotsInput, base.maxSkillSlots, invalidFlag);
   base.synthesisCostGold = readNumberValue(petSynthesisCostInput, base.synthesisCostGold, invalidFlag);
+  base.comprehendMaxSkills = readNumberValue(petComprehendMaxSkillsInput, base.comprehendMaxSkills, invalidFlag);
   base.bookUnlockSlot4Chance = readNumberValue(petBookUnlockSlot4ChanceInput, base.bookUnlockSlot4Chance, invalidFlag);
   base.synthesisUnlockSlotChance = readNumberValue(petSynthesisUnlockSlotChanceInput, base.synthesisUnlockSlotChance, invalidFlag);
   base.synthesisInheritChance = readNumberValue(petSynthesisInheritChanceInput, base.synthesisInheritChance, invalidFlag);

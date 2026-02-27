@@ -377,30 +377,30 @@ body.theme-dark .admin-switch input:checked + .admin-switch-slider {
 }
 
 .equipment-recycle-config-container {
-  overflow-x: hidden;
+  overflow-x: auto;
 }
 
 .compact-config-table-container table.equipment-recycle-table {
-  min-width: 0;
+  min-width: 620px;
   table-layout: fixed;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .compact-config-table-container table.equipment-recycle-table th,
 .compact-config-table-container table.equipment-recycle-table td {
-  padding: 5px 4px;
+  padding: 6px 5px;
   white-space: normal;
-  line-height: 1.25;
+  line-height: 1.3;
 }
 
 .compact-config-table-container table.equipment-recycle-table th:nth-child(1),
 .compact-config-table-container table.equipment-recycle-table td:nth-child(1) {
-  width: 30%;
+  width: 33%;
 }
 
 .compact-config-table-container table.equipment-recycle-table th:nth-child(2),
 .compact-config-table-container table.equipment-recycle-table td:nth-child(2) {
-  width: 9%;
+  width: 10%;
 }
 
 .compact-config-table-container table.equipment-recycle-table th:nth-child(3),
@@ -415,7 +415,7 @@ body.theme-dark .admin-switch input:checked + .admin-switch-slider {
 
 .compact-config-table-container table.equipment-recycle-table th:nth-child(5),
 .compact-config-table-container table.equipment-recycle-table td:nth-child(5) {
-  width: 27%;
+  width: 23%;
 }
 
 .compact-config-table-container table.equipment-recycle-table th:nth-child(6),
@@ -425,27 +425,27 @@ body.theme-dark .admin-switch input:checked + .admin-switch-slider {
 
 .compact-config-table-container table.equipment-recycle-table td:nth-child(5) .equipment-recycle-limit-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 44px;
-  gap: 2px;
+  grid-template-columns: minmax(0, 1fr) 52px;
+  gap: 4px;
   align-items: center;
 }
 
 .compact-config-table-container table.equipment-recycle-table td:nth-child(1) select {
   font-size: 11px;
-  padding: 4px 6px;
+  padding: 5px 8px;
 }
 
 .compact-config-table-container table.equipment-recycle-table td:nth-child(2) input[type='number'],
 .compact-config-table-container table.equipment-recycle-table td:nth-child(3) input[type='number'],
 .compact-config-table-container table.equipment-recycle-table td:nth-child(5) input[type='number'] {
-  padding: 4px 4px;
+  padding: 5px 6px;
   min-width: 0;
 }
 
 .compact-config-table-container table.equipment-recycle-table td:nth-child(4) select,
 .compact-config-table-container table.equipment-recycle-table td:nth-child(5) select {
-  font-size: 10px;
-  padding: 4px 4px;
+  font-size: 11px;
+  padding: 5px 6px;
 }
 
 .char-migrate-pair-row {
