@@ -2466,6 +2466,18 @@ body.dark .chat-name-btn.sponsor-player-name:hover {
     linear-gradient(180deg, rgba(244, 180, 96, 0.18), rgba(244, 180, 96, 0.08));
 }
 
+.prompt-options.activity-center-options.activity-shop-options {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.prompt-options.activity-center-options.activity-shop-options .prompt-option.activity-action-shop {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
 #prompt-modal.activity-center-prompt .modal-actions {
   margin-top: 12px;
 }
@@ -2495,6 +2507,28 @@ body.dark .chat-name-btn.sponsor-player-name:hover {
 
 .modal-actions button {
   min-width: 90px;
+}
+
+#growth-modal .growth-count-row {
+  margin-top: 8px;
+  display: flex;
+  justify-content: center;
+}
+
+#growth-modal #growth-count {
+  width: 120px;
+  max-width: 120px;
+  text-align: center;
+}
+
+#growth-modal .modal-actions {
+  justify-content: center;
+  flex-wrap: nowrap;
+}
+
+#growth-modal .modal-actions button {
+  flex: 0 0 auto;
+  min-width: 108px;
 }
 
 #player-modal .modal-actions {

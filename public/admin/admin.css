@@ -283,6 +283,58 @@ body.theme-dark .admin-switch input:checked + .admin-switch-slider {
   min-width: 720px;
 }
 
+.compact-config-table-container {
+  overflow-x: hidden;
+}
+
+.compact-config-table-container table.compact-config-table {
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.compact-config-table-container table.compact-config-table th,
+.compact-config-table-container table.compact-config-table td {
+  vertical-align: middle;
+}
+
+.compact-config-table-container table.compact-config-table th:nth-child(1),
+.compact-config-table-container table.compact-config-table td:nth-child(1) {
+  width: 60%;
+}
+
+.compact-config-table-container table.compact-config-table th:nth-child(2),
+.compact-config-table-container table.compact-config-table td:nth-child(2) {
+  width: 24%;
+}
+
+.compact-config-table-container table.compact-config-table th:nth-child(3),
+.compact-config-table-container table.compact-config-table td:nth-child(3) {
+  width: 16%;
+  white-space: nowrap;
+}
+
+.compact-config-table-container table.compact-config-table select,
+.compact-config-table-container table.compact-config-table input[type='number'] {
+  width: 100%;
+  margin: 0;
+}
+
+.compact-config-table-container table.compact-config-table.compact-config-table-4col th,
+.compact-config-table-container table.compact-config-table.compact-config-table-4col td {
+  padding: 6px 6px;
+}
+
+.compact-config-table-container table.compact-config-table.compact-config-table-4col th:nth-child(1),
+.compact-config-table-container table.compact-config-table.compact-config-table-4col td:nth-child(1),
+.compact-config-table-container table.compact-config-table.compact-config-table-4col th:nth-child(2),
+.compact-config-table-container table.compact-config-table.compact-config-table-4col td:nth-child(2),
+.compact-config-table-container table.compact-config-table.compact-config-table-4col th:nth-child(3),
+.compact-config-table-container table.compact-config-table.compact-config-table-4col td:nth-child(3),
+.compact-config-table-container table.compact-config-table.compact-config-table-4col th:nth-child(4),
+.compact-config-table-container table.compact-config-table.compact-config-table-4col td:nth-child(4) {
+  width: 25%;
+}
+
 .treasure-config-table {
   min-width: 420px !important;
   table-layout: fixed;

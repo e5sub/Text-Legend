@@ -2816,6 +2816,7 @@ private fun SettingsScreen(vm: GameViewModel, onDismiss: () -> Unit) {
 private fun MailDialog(vm: GameViewModel, prefillName: String?, onDismiss: () -> Unit) {
     val mailList by vm.mailList.collectAsState()
     val state by vm.gameState.collectAsState()
+    var currentFolder by remember { mutableStateOf("inbox") }
     var toName by remember { mutableStateOf(prefillName ?: "") }
     var title by remember { mutableStateOf("") }
     var body by remember { mutableStateOf("") }
@@ -2835,15 +2836,36 @@ private fun MailDialog(vm: GameViewModel, prefillName: String?, onDismiss: () ->
     LaunchedEffect(Unit) {
         vm.mailListInbox()
     }
+    LaunchedEffect(mailList?.folder) {
+        val folder = mailList?.folder?.trim()?.lowercase()
+        if (folder == "sent" || folder == "inbox") currentFolder = folder
+    }
     LaunchedEffect(prefillName) {
         if (!prefillName.isNullOrBlank()) toName = prefillName
     }
 
     ScreenScaffold(title = "邮件", onBack = onDismiss) {
         Row {
-            Button(onClick = { vm.mailListInbox() }) { Text("收件箱") }
+            Button(onClick = {
+                currentFolder = "inbox"
+                vm.mailListInbox()
+            }) { Text("收件箱") }
             Spacer(modifier = Modifier.width(8.dp))
-            Button(onClick = { vm.mailListSent() }) { Text("发件箱") }
+            Button(onClick = {
+                currentFolder = "sent"
+                vm.mailListSent()
+            }) { Text("发件箱") }
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                onClick = {
+                    if (currentFolder == "inbox") vm.mailClaimAll() else vm.showToast("请先切换到收件箱")
+                }
+            ) { Text("一键领取附件") }
+            Button(
+                onClick = { vm.mailDeleteAll(currentFolder) }
+            ) { Text("一键删除全部") }
         }
         Spacer(modifier = Modifier.height(8.dp))
         mailList?.mails?.forEach { mail ->
@@ -2851,8 +2873,10 @@ private fun MailDialog(vm: GameViewModel, prefillName: String?, onDismiss: () ->
             Text(mail.body)
             Row {
                 TextButton(onClick = { vm.mailRead(mail.id) }) { Text("标记已读") }
-                TextButton(onClick = { vm.mailClaim(mail.id) }) { Text("领取") }
-                TextButton(onClick = { vm.mailDelete(mail.id) }) { Text("删除") }
+                if (currentFolder == "inbox") {
+                    TextButton(onClick = { vm.mailClaim(mail.id) }) { Text("领取") }
+                }
+                TextButton(onClick = { vm.mailDelete(mail.id, currentFolder) }) { Text("删除") }
             }
             Divider()
         }
@@ -3406,19 +3430,21 @@ private fun GrowthDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> 
         }
         if (growthConfig != null) {
             val materialId = growthConfig.materialId.ifBlank { "材料" }
+            val materialName = growthConfig.materialName.ifBlank { materialId }
             val materialCost = growthConfig.materialCost.coerceAtLeast(1)
             val breakthroughEvery = growthConfig.breakthroughEvery.coerceAtLeast(1)
             val breakthroughMaterialId = growthConfig.breakthroughMaterialId.ifBlank { "突破材料" }
+            val breakthroughMaterialName = growthConfig.breakthroughMaterialName.ifBlank { breakthroughMaterialId }
             val breakthroughMaterialCost = growthConfig.breakthroughMaterialCost.coerceAtLeast(1)
             val needBreakthrough = nextLevel % breakthroughEvery == 0
             val goldCost = growthConfig.goldCost.coerceAtLeast(0)
             val costLine = buildString {
-                append("单次消耗: ${materialId}x$materialCost")
+                append("单次消耗: ${materialName}x$materialCost")
                 if (goldCost > 0) append(" + 金币$goldCost")
-                if (needBreakthrough) append(" + ${breakthroughMaterialId}x$breakthroughMaterialCost")
+                if (needBreakthrough) append(" + ${breakthroughMaterialName}x$breakthroughMaterialCost")
             }
             Text(costLine)
-            Text("每${breakthroughEvery}级突破额外消耗：${breakthroughMaterialId}x$breakthroughMaterialCost", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("每${breakthroughEvery}级突破额外消耗：${breakthroughMaterialName}x$breakthroughMaterialCost", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
         Spacer(modifier = Modifier.height(10.dp))

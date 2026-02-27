@@ -596,7 +596,7 @@ function buildActivityPointShopItemSelectHtml(selectedId = '', keyword = '') {
     const text = getActivityPointShopItemDisplayText(it).replace(/"/g, '&quot;');
     return `<option value="${id}"${id === selected ? ' selected' : ''}>${text}</option>`;
   }).join('');
-  return `<select data-k="itemId" style="width: 360px;"><option value="">请选择物品</option>${optionHtml}</select>`;
+  return `<select data-k="itemId"><option value="">请选择物品</option>${optionHtml}</select>`;
 }
 
 function renderActivityPointShopRows() {
@@ -615,7 +615,7 @@ function renderActivityPointShopRows() {
       <td>
         ${buildActivityPointShopItemSelectHtml(item.itemId)}
       </td>
-      <td><input data-k="cost" type="number" min="1" value="${Math.max(1, Number(item.cost || 1))}" style="width:70px;"></td>
+      <td><input data-k="cost" type="number" min="1" value="${Math.max(1, Number(item.cost || 1))}"></td>
       <td><button type="button" class="btn-small" data-act="del">删除</button></td>
     `;
     activityPointShopList.appendChild(tr);
@@ -700,7 +700,7 @@ function buildDivineBeastSpeciesSelectHtml(selectedSpecies = '') {
     const name = String(it?.name || it?.id || '').replace(/"/g, '&quot;');
     return `<option value="${name}"${name === selected ? ' selected' : ''}>${name}</option>`;
   }).join('');
-  return `<select data-k="species" style="width: 280px;"><option value="">请选择神兽</option>${optionHtml}</select>`;
+  return `<select data-k="species"><option value="">请选择神兽</option>${optionHtml}</select>`;
 }
 
 function renderDivineBeastFragmentRows() {
@@ -717,7 +717,7 @@ function renderDivineBeastFragmentRows() {
     tr.dataset.exchangeId = String(item?._id || '');
     tr.innerHTML = `
       <td>${buildDivineBeastSpeciesSelectHtml(item.species)}</td>
-      <td><input data-k="cost" type="number" min="1" value="${Math.max(1, Number(item.cost || 1))}" style="width:110px;"></td>
+      <td><input data-k="cost" type="number" min="1" value="${Math.max(1, Number(item.cost || 1))}"></td>
       <td><button type="button" class="btn-small" data-act="del">删除</button></td>
     `;
     divineBeastFragmentList.appendChild(tr);

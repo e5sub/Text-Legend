@@ -562,6 +562,8 @@ const mailUi = {
   detailItems: document.getElementById('mail-detail-items'),
   claim: document.getElementById('mail-claim'),
   delete: document.getElementById('mail-delete'),
+  claimAll: document.getElementById('mail-claim-all'),
+  deleteAll: document.getElementById('mail-delete-all'),
   refresh: document.getElementById('mail-refresh'),
   close: document.getElementById('mail-close'),
   to: document.getElementById('mail-to'),
@@ -576,6 +578,15 @@ const mailUi = {
 };
 
 let currentMailFolder = 'inbox'; // 'inbox' 或 'sent'
+
+function requestCurrentMailList() {
+  if (!socket) return;
+  if (currentMailFolder === 'sent') {
+    socket.emit('mail_list_sent');
+  } else {
+    socket.emit('mail_list');
+  }
+}
 const repairUi = {
   modal: document.getElementById('repair-modal'),
   list: document.getElementById('repair-list'),
@@ -3411,11 +3422,13 @@ function renderGrowthModal() {
   const maxLevel = hasMaxLevel ? Math.floor(maxLevelRaw) : null;
   const materialCost = Math.max(1, Math.floor(Number(cfg.materialCost || 1)));
   const materialId = String(cfg.materialId || '').trim();
-  const materialLabel = materialId || '材料';
+  const materialName = String(cfg.materialName || '').trim();
+  const materialLabel = materialName || materialId || '材料';
   const breakthroughEvery = Math.max(1, Math.floor(Number(cfg.breakthroughEvery || 20)));
   const breakthroughMaterialCost = Math.max(1, Math.floor(Number(cfg.breakthroughMaterialCost || 1)));
   const breakthroughMaterialId = String(cfg.breakthroughMaterialId || '').trim();
-  const breakthroughMaterialLabel = breakthroughMaterialId || '突破材料';
+  const breakthroughMaterialName = String(cfg.breakthroughMaterialName || '').trim();
+  const breakthroughMaterialLabel = breakthroughMaterialName || breakthroughMaterialId || '突破材料';
   const goldCost = Math.max(0, Math.floor(Number(cfg.goldCost || 0)));
   const equippedUltimate = (lastState?.equipment || []).filter((entry) => {
     if (!entry?.item) return false;
@@ -4301,13 +4314,7 @@ function switchMailFolder(folder) {
   currentMailFolder = folder;
   updateMailTabs();
   selectedMailId = null;
-  if (socket) {
-    if (folder === 'inbox') {
-      socket.emit('mail_list');
-    } else {
-      socket.emit('mail_list_sent');
-    }
-  }
+  requestCurrentMailList();
   renderMailDetail(null);
 }
 
@@ -4325,7 +4332,7 @@ function openMailModal() {
   if (mailUi.gold) mailUi.gold.value = '';
   refreshMailItemOptions();
   mailUi.modal.classList.remove('hidden');
-  if (socket) socket.emit('mail_list');
+  requestCurrentMailList();
 }
 
 function renderMailAttachmentList() {
@@ -4963,13 +4970,16 @@ function showAutoFullBossModal() {
       return {
         value: `redeem:${it.id}`,
         label: `${it.name}（${Number(it.cost || 0)}积分）`,
-        description: `${it.rewardText || ''}${extra}${it.desc ? ` | ${it.desc}` : ''}`
+        description: `${it.rewardText || ''}${extra}${it.desc ? ` | ${it.desc}` : ''}`,
+        className: 'activity-action-shop'
       };
     });
     await promptMultiSelectModal({
       title: '活动积分商城',
       text: `当前活动积分：${points}\n点击商品立即发起兑换（奖励通过邮件发放）`,
       options,
+      optionsClassName: 'activity-center-options activity-shop-options',
+      modalClassName: 'activity-center-prompt',
       selectedValues: [],
       singleSelect: true,
       submitOnSelect: true,
@@ -5010,12 +5020,15 @@ function showAutoFullBossModal() {
     const options = items.map((it) => ({
       value: `beast:${it.id}`,
       label: `${it.name || it.species || it.id}（${Number(it.cost || 0)}${fragmentName}）`,
-      description: `兑换指定神兽：${it.name || it.species || it.id}`
+      description: `兑换指定神兽：${it.name || it.species || it.id}`,
+      className: 'activity-action-shop'
     }));
     await promptMultiSelectModal({
       title: '神兽碎片兑换',
       text: `当前${fragmentName}：${fragmentQty}\n点击神兽立即发起兑换（直接发放到宠物栏）`,
       options,
+      optionsClassName: 'activity-center-options activity-shop-options',
+      modalClassName: 'activity-center-prompt',
       selectedValues: [],
       singleSelect: true,
       submitOnSelect: true,
@@ -8795,14 +8808,14 @@ function enterGame(name) {
   socket.on('mail_claim_result', (payload) => {
     if (!payload) return;
     showToast(payload.msg || '领取完成');
-    if (payload.ok && socket) socket.emit('mail_list');
+    if (payload.ok) requestCurrentMailList();
   });
   socket.on('mail_delete_result', (payload) => {
     if (!payload) return;
     showToast(payload.msg || '删除完成');
     if (payload.ok) {
       selectedMailId = null;
-      if (socket) socket.emit('mail_list');
+      requestCurrentMailList();
     }
   });
   socket.on('state', (payload) => {
@@ -9349,7 +9362,7 @@ if (ui.svipPlan) {
 }
 if (mailUi.refresh) {
   mailUi.refresh.addEventListener('click', () => {
-    if (socket) socket.emit('mail_list');
+    requestCurrentMailList();
   });
 }
   if (mailUi.send) {
@@ -9377,6 +9390,16 @@ if (mailUi.refresh) {
       socket.emit('mail_claim', { mailId: selectedMailId });
     });
   }
+  if (mailUi.claimAll) {
+    mailUi.claimAll.addEventListener('click', async () => {
+      if (!socket) return;
+      if (currentMailFolder !== 'inbox') {
+        showToast('请在收件箱中操作一键领取。');
+        return;
+      }
+      socket.emit('mail_claim_all', {});
+    });
+  }
   if (mailUi.delete) {
     mailUi.delete.addEventListener('click', async () => {
       if (!socket || !selectedMailId) return;
@@ -9387,6 +9410,21 @@ if (mailUi.refresh) {
       if (confirmed) {
         socket.emit('mail_delete', { mailId: selectedMailId, folder: currentMailFolder });
       }
+    });
+  }
+  if (mailUi.deleteAll) {
+    mailUi.deleteAll.addEventListener('click', async () => {
+      if (!socket) return;
+      const folderText = currentMailFolder === 'sent' ? '发件箱' : '收件箱';
+      const tips = currentMailFolder === 'inbox'
+        ? '收件箱中未领取附件的邮件会跳过，不会删除。'
+        : '将删除当前发件箱全部邮件。';
+      const confirmed = await confirmModal({
+        title: `一键删除${folderText}`,
+        text: `${tips}\n确定继续吗？`
+      });
+      if (!confirmed) return;
+      socket.emit('mail_delete_all', { folder: currentMailFolder });
     });
   }
   if (mailUi.tabInbox) {
@@ -10269,7 +10307,7 @@ if (playerUi.mail) {
     refreshMailItemOptions();
     mailUi.modal.classList.remove('hidden');
     if (playerUi.modal) playerUi.modal.classList.add('hidden');
-    if (socket) socket.emit('mail_list');
+    requestCurrentMailList();
   });
 }
 if (ui.party) {

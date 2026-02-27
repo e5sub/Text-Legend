@@ -339,7 +339,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     fun mailListSent() = socket.mailListSent()
     fun mailRead(id: Int) = socket.mailRead(id)
     fun mailClaim(id: Int) = socket.mailClaim(id)
-    fun mailDelete(id: Int) = socket.mailDelete(id)
+    fun mailClaimAll() = socket.mailClaimAll()
+    fun mailDelete(id: Int, folder: String = "inbox") = socket.mailDelete(id, folder)
+    fun mailDeleteAll(folder: String = "inbox") = socket.mailDeleteAll(folder)
     fun mailSend(to: String, title: String, body: String, items: List<Pair<String, Int>>, gold: Int) =
         socket.mailSend(to, title, body, items, gold)
 

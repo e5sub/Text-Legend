@@ -298,8 +298,19 @@ class SocketManager(private val json: Json) {
         socket?.emit("mail_claim", JSONObject().apply { put("mailId", mailId) })
     }
 
-    fun mailDelete(mailId: Int) {
-        socket?.emit("mail_delete", JSONObject().apply { put("mailId", mailId) })
+    fun mailClaimAll() {
+        socket?.emit("mail_claim_all", JSONObject())
+    }
+
+    fun mailDelete(mailId: Int, folder: String = "inbox") {
+        socket?.emit("mail_delete", JSONObject().apply {
+            put("mailId", mailId)
+            put("folder", folder)
+        })
+    }
+
+    fun mailDeleteAll(folder: String = "inbox") {
+        socket?.emit("mail_delete_all", JSONObject().apply { put("folder", folder) })
     }
 
     fun mailSend(toName: String, title: String, body: String, items: List<Pair<String, Int>>, gold: Int) {

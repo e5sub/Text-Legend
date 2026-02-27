@@ -15,7 +15,7 @@ import { createUser, verifyUser, createSession, getSession, getUserByName, setAd
 import { listCharacters, loadCharacter, saveCharacter, findCharacterByName, findCharacterByNameInRealm, listAllCharacters, deleteCharacter } from './db/characters.js';
 import { addGuildMember, createGuild, getGuildByName, getGuildByNameInRealm, getGuildById, getGuildMember, getSabakOwner, isGuildLeader, isGuildLeaderOrVice, setGuildMemberRole, listGuildMembers, listSabakRegistrations, registerSabak, hasSabakRegistrationToday, hasAnySabakRegistrationToday, removeGuildMember, leaveGuild, setSabakOwner, clearSabakRegistrations, transferGuildLeader, ensureSabakState, applyToGuild, listGuildApplications, removeGuildApplication, approveGuildApplication, getApplicationByUser, listAllGuilds } from './db/guilds.js';
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
-import { sendMail, listMail, listSentMail, markMailRead, deleteMail } from './db/mail.js';
+import { sendMail, listMail, listSentMail, markMailRead, markMailClaimed, deleteMail } from './db/mail.js';
 import { createVipCodes, listVipCodes, countVipCodes, useVipCode } from './db/vip.js';
 import { createRechargeCards, listRechargeCards, countRechargeCards, useRechargeCard, listUsedRechargeCharacters } from './db/recharge.js';
 import { getSetting, setSetting, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getSvipPrices, setSvipPrices, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getPetTrainingFruitDropRate as getPetTrainingFruitDropRateDb, setPetTrainingFruitDropRate as setPetTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getPetSettings, setPetSettings, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb, getEquipSkillDropChance as getEquipSkillDropChanceDb, setEquipSkillDropChance as setEquipSkillDropChanceDb, getTreasureSlotCount as getTreasureSlotCountDb, setTreasureSlotCount as setTreasureSlotCountDb, getTreasureMaxLevel as getTreasureMaxLevelDb, setTreasureMaxLevel as setTreasureMaxLevelDb, getTreasureUpgradeConsume as getTreasureUpgradeConsumeDb, setTreasureUpgradeConsume as setTreasureUpgradeConsumeDb, getTreasureAdvanceConsume as getTreasureAdvanceConsumeDb, setTreasureAdvanceConsume as setTreasureAdvanceConsumeDb, getTreasureAdvancePerStage as getTreasureAdvancePerStageDb, setTreasureAdvancePerStage as setTreasureAdvancePerStageDb, getTreasureAdvanceEffectBonusPerStack as getTreasureAdvanceEffectBonusPerStackDb, setTreasureAdvanceEffectBonusPerStack as setTreasureAdvanceEffectBonusPerStackDb, getTreasureWorldBossDropMultiplier as getTreasureWorldBossDropMultiplierDb, setTreasureWorldBossDropMultiplier as setTreasureWorldBossDropMultiplierDb, getTreasureCrossWorldBossDropMultiplier as getTreasureCrossWorldBossDropMultiplierDb, setTreasureCrossWorldBossDropMultiplier as setTreasureCrossWorldBossDropMultiplierDb, getTreasureTowerXuanmingDropChance as getTreasureTowerXuanmingDropChanceDb, setTreasureTowerXuanmingDropChance as setTreasureTowerXuanmingDropChanceDb, getCmdRateLimits, setCmdRateLimits, getCmdCooldowns, setCmdCooldowns, getUltimateGrowthConfig as getUltimateGrowthConfigDb, setUltimateGrowthConfig as setUltimateGrowthConfigDb } from './db/settings.js';
@@ -1118,7 +1118,14 @@ function getDivineBeastSpeciesOptions() {
   const list = Array.isArray(PET_SPECIES_BY_RARITY?.ultimate) ? PET_SPECIES_BY_RARITY.ultimate : [];
   return list
     .map((name, index) => ({ id: String(name || '').trim(), name: String(name || '').trim(), sort: index }))
-    .filter((it) => it.id);
+    .filter((it) => it.id && isDivineBeastSpeciesName(it.name));
+}
+
+function isDivineBeastSpeciesName(name) {
+  const species = String(name || '').trim();
+  if (!species) return false;
+  if (species.includes('神兽')) return true;
+  return PET_NON_DROPPABLE_SPECIES.has(species);
 }
 
 function normalizeDivineBeastFragmentExchangeConfig(raw) {
@@ -1127,7 +1134,7 @@ function normalizeDivineBeastFragmentExchangeConfig(raw) {
   const items = list
     .map((entry, index) => {
       const species = String(entry?.species || '').trim();
-      if (!species) return null;
+      if (!species || !isDivineBeastSpeciesName(species)) return null;
       return {
         id: String(entry?.id || `dbf_${index + 1}`).trim(),
         species,
@@ -2700,6 +2707,17 @@ app.post('/admin/refine-settings/update', async (req, res) => {
 });
 
 // 终极装备成长配置
+function withUltimateGrowthMaterialNames(config = {}) {
+  const cfg = config && typeof config === 'object' ? config : {};
+  const materialId = String(cfg.materialId || '').trim();
+  const breakthroughMaterialId = String(cfg.breakthroughMaterialId || '').trim();
+  return {
+    ...cfg,
+    materialName: ITEM_TEMPLATES[materialId]?.name || materialId || '材料',
+    breakthroughMaterialName: ITEM_TEMPLATES[breakthroughMaterialId]?.name || breakthroughMaterialId || '突破材料'
+  };
+}
+
 app.get('/admin/ultimate-growth-settings', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
@@ -2722,7 +2740,7 @@ app.get('/admin/ultimate-growth-settings', async (req, res) => {
       await setUltimateGrowthConfigDb(normalized);
     }
   }
-  res.json({ ok: true, settings: getUltimateGrowthConfigMem() });
+  res.json({ ok: true, settings: withUltimateGrowthMaterialNames(getUltimateGrowthConfigMem()) });
 });
 
 app.post('/admin/ultimate-growth-settings/update', async (req, res) => {
@@ -2753,7 +2771,7 @@ app.post('/admin/ultimate-growth-settings/update', async (req, res) => {
     return res.status(400).json({ error: '突破材料必须是不可掉落(noDrop)道具。' });
   }
   await setUltimateGrowthConfigDb(normalized);
-  res.json({ ok: true, settings: normalized });
+  res.json({ ok: true, settings: withUltimateGrowthMaterialNames(normalized) });
 });
 
 // 法宝系统配置
@@ -5169,6 +5187,15 @@ function isCultivationRoom(zoneId) {
   return zoneId === 'cultivation';
 }
 
+const GROWTH_MATERIAL_LOCKED_ITEM_IDS = new Set([
+  'ultimate_growth_stone',
+  'ultimate_growth_break_stone'
+]);
+
+function isGrowthMaterialLockedItem(itemId) {
+  return GROWTH_MATERIAL_LOCKED_ITEM_IDS.has(String(itemId || '').trim());
+}
+
 function getWeekMondayKey(now = Date.now()) {
   const date = new Date(now);
   const day = date.getDay();
@@ -6755,7 +6782,7 @@ const tradeApi = {
 
     // 检查物品是否可交易
     const item = ITEM_TEMPLATES[itemId];
-    if (item?.untradable) return { ok: false, msg: '该物品不可交易。' };
+    if (item?.untradable || isGrowthMaterialLockedItem(itemId)) return { ok: false, msg: '该物品不可交易。' };
 
     const offer = ensureOffer(trade, player.name);
     const slotPayload = {
@@ -6956,7 +6983,7 @@ const consignApi = {
       if (!isConsignSellAllowed(itemId, item)) return { ok: false, msg: '仅可寄售装备或宠物技能书。' };
 
       // 检查物品是否可寄售
-      if (item?.unconsignable) return { ok: false, msg: '该物品不可寄售。' };
+      if (item?.unconsignable || isGrowthMaterialLockedItem(itemId)) return { ok: false, msg: '该物品不可寄售。' };
 
       // 验证数量和价格
       const qtyResult = validateItemQty(qty);
@@ -12235,7 +12262,7 @@ async function buildState(player) {
     svip_settings: {
       prices: svipSettings.prices
     },
-    ultimate_growth_config: getUltimateGrowthConfigMem(),
+    ultimate_growth_config: withUltimateGrowthMaterialNames(getUltimateGrowthConfigMem()),
     treasure_sets: TREASURE_SETS,
     auto_full_boss_list: AUTO_FULL_BOSS_LIST,
     state_throttle_enabled: stateThrottleEnabled,
@@ -14558,7 +14585,7 @@ io.on('connection', (socket) => {
           if (!slot) return socket.emit('mail_send_result', { ok: false, msg: '背包里没有该物品。' });
           const item = ITEM_TEMPLATES[slot.id];
           if (!item) return socket.emit('mail_send_result', { ok: false, msg: '物品不存在。' });
-          if (item.untradable || item.unconsignable || item.unmail) {
+          if (item.untradable || item.unconsignable || item.unmail || isGrowthMaterialLockedItem(slot.id)) {
             return socket.emit('mail_send_result', { ok: false, msg: '该物品无法通过邮件赠送。' });
           }
           if (item.type === 'currency') return socket.emit('mail_send_result', { ok: false, msg: '金币无法赠送。' });
@@ -14622,9 +14649,6 @@ io.on('connection', (socket) => {
   socket.on('mail_claim', async (payload) => {
     const player = players.get(socket.id);
     if (!player) return;
-    if (isCultivationRoom(player.position.zone)) {
-      return socket.emit('mail_claim_result', { ok: false, msg: '修真房间内无法使用邮件。' });
-    }
     const { clean } = sanitizePayload(payload, ['mailId'], 'mail_claim');
     const mailId = Number(clean?.mailId || 0);
     if (!mailId) return socket.emit('mail_claim_result', { ok: false, msg: '邮件ID无效。' });
@@ -14658,8 +14682,61 @@ io.on('connection', (socket) => {
     if (gold > 0) {
       player.gold += gold;
     }
-    await deleteMail(player.userId, mailId, player.realmId || 1, 'inbox');
-    socket.emit('mail_claim_result', { ok: true, msg: '附件已领取，邮件已自动删除。' });
+    await markMailClaimed(player.userId, mailId, player.realmId || 1);
+    await markMailRead(player.userId, mailId, player.realmId || 1);
+    socket.emit('mail_claim_result', { ok: true, msg: '领取成功：附件已到账。' });
+    const refreshedMails = await listMail(player.userId, player.realmId || 1);
+    socket.emit('mail_list', { ok: true, mails: refreshedMails.map(buildMailPayload) });
+    await sendState(player);
+    await savePlayer(player);
+  });
+
+  socket.on('mail_claim_all', async (payload) => {
+    const player = players.get(socket.id);
+    if (!player) return;
+    sanitizePayload(payload, [], 'mail_claim_all');
+    const mails = await listMail(player.userId, player.realmId || 1);
+    let claimedCount = 0;
+    let gainedGold = 0;
+    let gainedItems = 0;
+    for (const mail of mails) {
+      if (!mail || mail.claimed_at) continue;
+      const items = parseJson(mail.items_json, []);
+      const gold = Number(mail.gold || 0);
+      const hasItems = Array.isArray(items) && items.length > 0;
+      const hasGold = gold > 0;
+      if (!hasItems && !hasGold) continue;
+      if (hasItems) {
+        items.forEach((entry) => {
+          if (!entry || !entry.id) return;
+          const qty = Math.max(1, Math.floor(Number(entry.qty || 1)));
+          addItem(
+            player,
+            entry.id,
+            qty,
+            entry.effects || null,
+            entry.durability ?? null,
+            entry.max_durability ?? null,
+            entry.refine_level ?? null,
+            entry.base_roll_pct ?? null,
+            entry.growth_level ?? null,
+            entry.growth_fail_stack ?? null
+          );
+          gainedItems += qty;
+        });
+      }
+      if (hasGold) {
+        player.gold += gold;
+        gainedGold += gold;
+      }
+      await markMailClaimed(player.userId, mail.id, player.realmId || 1);
+      await markMailRead(player.userId, mail.id, player.realmId || 1);
+      claimedCount += 1;
+    }
+    if (claimedCount <= 0) {
+      return socket.emit('mail_claim_result', { ok: false, msg: '没有可领取的附件。' });
+    }
+    socket.emit('mail_claim_result', { ok: true, msg: `一键领取成功：已领取 ${claimedCount} 封邮件附件（金币+${gainedGold}，物品+${gainedItems}）。` });
     const refreshedMails = await listMail(player.userId, player.realmId || 1);
     socket.emit('mail_list', { ok: true, mails: refreshedMails.map(buildMailPayload) });
     await sendState(player);
@@ -14688,9 +14765,6 @@ io.on('connection', (socket) => {
   socket.on('mail_delete', async (payload) => {
     const player = players.get(socket.id);
     if (!player) return;
-    if (isCultivationRoom(player.position.zone)) {
-      return socket.emit('mail_delete_result', { ok: false, msg: '修真房间内无法使用邮件。' });
-    }
     const { clean } = sanitizePayload(payload, ['mailId', 'folder'], 'mail_delete');
     const mailId = Number(clean?.mailId || 0);
     const folder = clean?.folder || 'inbox';
@@ -15063,6 +15137,44 @@ io.on('connection', (socket) => {
         players.delete(socket.id);
       }
     }
+  });
+
+  socket.on('mail_delete_all', async (payload) => {
+    const player = players.get(socket.id);
+    if (!player) return;
+    const { clean } = sanitizePayload(payload, ['folder'], 'mail_delete_all');
+    const folder = String(clean?.folder || 'inbox').toLowerCase() === 'sent' ? 'sent' : 'inbox';
+    let deletedCount = 0;
+    let skippedCount = 0;
+    if (folder === 'inbox') {
+      const mails = await listMail(player.userId, player.realmId || 1);
+      for (const mail of mails) {
+        const items = parseJson(mail?.items_json, []);
+        const hasItems = Array.isArray(items) && items.length > 0;
+        const hasGold = Number(mail?.gold || 0) > 0;
+        if ((hasItems || hasGold) && !mail?.claimed_at) {
+          skippedCount += 1;
+          continue;
+        }
+        await deleteMail(player.userId, mail.id, player.realmId || 1, 'inbox');
+        deletedCount += 1;
+      }
+      const refreshedMails = await listMail(player.userId, player.realmId || 1);
+      socket.emit('mail_list', { ok: true, mails: refreshedMails.map(buildMailPayload) });
+    } else {
+      const sentMails = await listSentMail(player.userId, player.realmId || 1);
+      for (const mail of sentMails) {
+        await deleteMail(player.userId, mail.id, player.realmId || 1, 'sent');
+        deletedCount += 1;
+      }
+      const refreshedSent = await listSentMail(player.userId, player.realmId || 1);
+      socket.emit('mail_list', { ok: true, mails: refreshedSent.map(buildMailPayload), folder: 'sent' });
+    }
+    if (deletedCount <= 0 && skippedCount <= 0) {
+      return socket.emit('mail_delete_result', { ok: false, msg: '没有可删除的邮件。' });
+    }
+    const skippedText = skippedCount > 0 ? `，未领取附件邮件跳过 ${skippedCount} 封` : '';
+    socket.emit('mail_delete_result', { ok: true, msg: `一键删除完成：删除 ${deletedCount} 封${skippedText}。` });
   });
 });
 

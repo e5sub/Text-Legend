@@ -192,9 +192,13 @@ function normalizeDivineBeastFragmentExchangeConfig(raw) {
         cost: Math.max(1, Math.floor(Number(entry?.cost || 0))),
         sort: Number.isFinite(Number(entry?.sort)) ? Number(entry.sort) : index
       }))
-      .filter((it) => it.id && it.species && it.cost > 0)
+      .filter((it) => it.id && it.species && it.cost > 0 && isDivineBeastSpeciesName(it.species))
       .sort((a, b) => (a.sort - b.sort) || a.id.localeCompare(b.id))
   };
+}
+
+function isDivineBeastSpeciesName(name) {
+  return String(name || '').includes('神兽');
 }
 
 // 宠物状态标准化
@@ -3572,7 +3576,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           );
           addActivityPointShopRedeemCount(player, item, qty);
           player.forceStateRefresh = true;
-          send(`兑换成功：${item.name} x${qty}，消耗 ${totalCost} 活动积分（剩余 ${spendRes.balance}）。奖励已发送到邮件。`);
+          send(`兑换成功：${item.name} x${qty}，消耗 ${totalCost} 活动积分（剩余 ${spendRes.balance}）。奖励已发送到邮件，请前往邮件领取附件。`);
           return;
         } catch (err) {
           // 回滚积分
