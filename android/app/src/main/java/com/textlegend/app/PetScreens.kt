@@ -45,6 +45,7 @@ fun PetDialog(
     val books = normalizePetBooksMap(petState?.books)
 
     var selectedTab by remember { mutableStateOf(0) }
+    var backLocked by remember { mutableStateOf(false) }
     val tabs = listOf("我的宠物", "技能书库")
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -53,7 +54,11 @@ fun PetDialog(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onDismiss) {
+            IconButton(onClick = {
+                if (backLocked) return@IconButton
+                backLocked = true
+                onDismiss()
+            }) {
                 Text("←", fontSize = 24.sp)
             }
             Spacer(modifier = Modifier.width(8.dp))
