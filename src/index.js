@@ -96,6 +96,7 @@ import {
   summonStats,
   isBoundHighTierEquipment,
   getHighTierRecycleStatePayload,
+  getEquipmentRecycleExchangeConfig,
   setEquipmentRecycleExchangeConfig
 } from './game/commands.js';
 import {
@@ -2483,7 +2484,8 @@ app.get('/admin/equipment-recycle-settings', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
   try {
-    const config = await loadEquipmentRecycleConfigFromDb();
+    await loadEquipmentRecycleConfigFromDb();
+    const config = getEquipmentRecycleExchangeConfig();
     const itemOptions = Object.values(ITEM_TEMPLATES || {})
       .filter((it) => it && it.id)
       .map((it) => ({
@@ -2503,9 +2505,10 @@ app.post('/admin/equipment-recycle-settings/update', async (req, res) => {
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
   try {
     const payload = req.body?.config ?? req.body ?? {};
-    const config = setEquipmentRecycleExchangeConfig(payload);
-    await setSetting(EQUIPMENT_RECYCLE_SETTING_KEY, JSON.stringify(config));
-    res.json({ ok: true, config });
+    setEquipmentRecycleExchangeConfig(payload);
+    const runtimeConfig = getEquipmentRecycleExchangeConfig();
+    await setSetting(EQUIPMENT_RECYCLE_SETTING_KEY, JSON.stringify(runtimeConfig));
+    res.json({ ok: true, config: runtimeConfig });
   } catch (err) {
     res.status(400).json({ error: err.message || '保存失败' });
   }
