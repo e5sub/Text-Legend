@@ -6495,9 +6495,7 @@ body.dark .sponsor-markdown .sponsor-tip {
 }
 
 .pet-detail-section {
-  position: sticky;
-  top: 8px;
-  z-index: 1;
+  position: static;
 }
 
 .pet-section-title {
