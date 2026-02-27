@@ -3388,14 +3388,16 @@ private fun ShopDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Un
 @Composable
 private fun GrowthDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Unit) {
     var selection by remember { mutableStateOf("") }
-    var attempts by remember { mutableStateOf("1") }
+    var showBatchInput by remember { mutableStateOf(false) }
+    var showBatchConfirm by remember { mutableStateOf(false) }
+    var batchInput by remember { mutableStateOf("1") }
     val options = buildUltimateGrowthEquippedOptions(state)
     val growthConfig = state?.ultimate_growth_config
+    val runtime = remember(growthConfig) { toGrowthRuntimeConfig(growthConfig) }
     val currentLevel = resolveGrowthLevel(state, selection)
     val failStack = resolveGrowthFailStack(state, selection)
-    val maxLevelRaw = growthConfig?.maxLevel ?: 0
-    val hasMaxLevel = maxLevelRaw > 0
-    val maxLevel = if (hasMaxLevel) maxLevelRaw else null
+    val hasMaxLevel = runtime.hasMaxLevel
+    val maxLevel = runtime.maxLevel
     val nextLevel = if (hasMaxLevel) ((currentLevel ?: 0) + 1).coerceAtMost(maxLevel ?: Int.MAX_VALUE) else ((currentLevel ?: 0) + 1)
     val rate = if (growthConfig != null && currentLevel != null && failStack != null) {
         calcGrowthFinalRate(nextLevel, failStack, growthConfig)
@@ -3403,6 +3405,95 @@ private fun GrowthDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> 
     val baseRate = if (growthConfig != null && currentLevel != null) {
         calcGrowthBaseRate(nextLevel, growthConfig)
     } else null
+    val singlePreview = remember(state?.items, state?.stats?.gold, runtime, currentLevel, failStack) {
+        calcGrowthBatchPreview(
+            state = state,
+            runtime = runtime,
+            growthLevel = currentLevel ?: 0,
+            failStack = failStack ?: 0,
+            requestedCount = 1
+        )
+    }
+    val batchRequestedCount = batchInput.toIntOrNull()?.coerceIn(1, 200) ?: 1
+    val batchPreview = remember(state?.items, state?.stats?.gold, runtime, currentLevel, failStack, batchRequestedCount) {
+        calcGrowthBatchPreview(
+            state = state,
+            runtime = runtime,
+            growthLevel = currentLevel ?: 0,
+            failStack = failStack ?: 0,
+            requestedCount = batchRequestedCount
+        )
+    }
+
+    if (showBatchInput) {
+        AlertDialog(
+            onDismissRequest = { showBatchInput = false },
+            title = { Text("一键成长") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("请输入次数(1-200)")
+                    OutlinedTextField(
+                        value = batchInput,
+                        onValueChange = { batchInput = it.filter { ch -> ch.isDigit() } },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showBatchInput = false
+                        showBatchConfirm = true
+                    }
+                ) { Text("预估") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBatchInput = false }) { Text("取消") }
+            }
+        )
+    }
+
+    if (showBatchConfirm) {
+        val breakNeedText = if (batchPreview.breakNeed > 0) " + ${runtime.breakthroughMaterialLabel}x${batchPreview.breakNeed}" else ""
+        val ownBreakText = if (runtime.breakthroughMaterialId.isNotBlank()) " + ${runtime.breakthroughMaterialLabel}x${batchPreview.breakOwned}" else ""
+        val ownGoldText = if (runtime.goldCost > 0) " + 金币${batchPreview.goldOwned}" else ""
+        val stopText = if (batchPreview.triesAffordable < batchPreview.triesRequested) "，受限：${batchPreview.stopReason}" else ""
+        AlertDialog(
+            onDismissRequest = { showBatchConfirm = false },
+            title = { Text("一键成长预估") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("当前持有 ${runtime.materialLabel}x${batchPreview.materialOwned}$ownBreakText$ownGoldText")
+                    Text("可执行 ${batchPreview.triesAffordable}/${batchPreview.triesRequested} 次")
+                    Text("成功率均值约 ${"%.2f".format(batchPreview.avgRate)}%")
+                    Text("成功约 ${"%.1f".format(batchPreview.avgSuccess)} 次（区间 ${batchPreview.minSuccess}-${batchPreview.maxSuccess}）")
+                    Text(
+                        "预计消耗 ${runtime.materialLabel}x${batchPreview.materialNeed}" +
+                            "$breakNeedText" +
+                            (if (runtime.goldCost > 0) " + 金币${batchPreview.goldNeed}" else "") +
+                            stopText
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val tries = batchPreview.triesAffordable
+                        showBatchConfirm = false
+                        if (tries > 0 && selection.isNotBlank()) {
+                            vm.sendCmd("growth $selection $tries")
+                        }
+                    },
+                    enabled = selection.isNotBlank() && batchPreview.triesAffordable > 0
+                ) { Text("一键成长") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBatchConfirm = false }) { Text("取消") }
+            }
+        )
+    }
 
     ScreenScaffold(title = "装备成长", onBack = onDismiss) {
         Text("已穿戴终极装备")
@@ -3413,14 +3504,6 @@ private fun GrowthDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> 
         }
 
         Spacer(modifier = Modifier.height(8.dp))
-        Text("成长次数")
-        OutlinedTextField(
-            value = attempts,
-            onValueChange = { attempts = it.filter { ch -> ch.isDigit() } },
-            label = { Text("次数(1-200)") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth()
-        )
         if (currentLevel != null && failStack != null) {
             Text("当前等级: Lv$currentLevel/${maxLevel ?: "∞"}")
             Text("当前保底层数: $failStack")
@@ -3429,34 +3512,46 @@ private fun GrowthDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> 
             Text("下一级成功率: ${"%.2f".format(rate)}% (基础 ${"%.2f".format(baseRate)}%)")
         }
         if (growthConfig != null) {
-            val materialId = growthConfig.materialId.ifBlank { "材料" }
-            val materialName = growthConfig.materialName.ifBlank { materialId }
-            val materialCost = growthConfig.materialCost.coerceAtLeast(1)
-            val breakthroughEvery = growthConfig.breakthroughEvery.coerceAtLeast(1)
-            val breakthroughMaterialId = growthConfig.breakthroughMaterialId.ifBlank { "突破材料" }
-            val breakthroughMaterialName = growthConfig.breakthroughMaterialName.ifBlank { breakthroughMaterialId }
-            val breakthroughMaterialCost = growthConfig.breakthroughMaterialCost.coerceAtLeast(1)
-            val needBreakthrough = nextLevel % breakthroughEvery == 0
-            val goldCost = growthConfig.goldCost.coerceAtLeast(0)
+            val needBreakthrough = nextLevel % runtime.breakthroughEvery == 0
             val costLine = buildString {
-                append("单次消耗: ${materialName}x$materialCost")
-                if (goldCost > 0) append(" + 金币$goldCost")
-                if (needBreakthrough) append(" + ${breakthroughMaterialName}x$breakthroughMaterialCost")
+                append("单次消耗: ${runtime.materialLabel}x${runtime.materialCost}")
+                if (runtime.goldCost > 0) append(" + 金币${runtime.goldCost}")
+                if (needBreakthrough) append(" + ${runtime.breakthroughMaterialLabel}x${runtime.breakthroughMaterialCost}")
             }
             Text(costLine)
-            Text("每${breakthroughEvery}级突破额外消耗：${breakthroughMaterialName}x$breakthroughMaterialCost", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                "每${runtime.breakthroughEvery}级突破额外消耗：${runtime.breakthroughMaterialLabel}x${runtime.breakthroughMaterialCost}",
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            val singleBreakText = if (runtime.breakthroughMaterialId.isNotBlank()) " + ${runtime.breakthroughMaterialLabel}x${singlePreview.breakOwned}" else ""
+            val singleGoldText = if (runtime.goldCost > 0) " + 金币${singlePreview.goldOwned}" else ""
+            Text(
+                "一键成长预估: 当前持有 ${runtime.materialLabel}x${singlePreview.materialOwned}$singleBreakText$singleGoldText；" +
+                    "可执行${singlePreview.triesAffordable}/${singlePreview.triesRequested}次，成功率均值约${"%.2f".format(singlePreview.avgRate)}%，" +
+                    "成功约${"%.1f".format(singlePreview.avgSuccess)}次（区间${singlePreview.minSuccess}-${singlePreview.maxSuccess}）",
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
 
         Spacer(modifier = Modifier.height(10.dp))
-        Button(
-            onClick = {
-                val count = attempts.toIntOrNull()?.coerceIn(1, 200) ?: 1
-                if (selection.isBlank()) return@Button
-                vm.sendCmd("growth $selection $count")
-            },
-            enabled = selection.isNotBlank() && (!hasMaxLevel || (currentLevel ?: 0) < (maxLevel ?: Int.MAX_VALUE)),
-            modifier = Modifier.fillMaxWidth()
-        ) { Text("开始成长") }
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                onClick = {
+                    if (selection.isBlank()) return@Button
+                    vm.sendCmd("growth $selection 1")
+                },
+                enabled = selection.isNotBlank() && (!hasMaxLevel || (currentLevel ?: 0) < (maxLevel ?: Int.MAX_VALUE)),
+                modifier = Modifier.weight(1f)
+            ) { Text("成长") }
+            Button(
+                onClick = {
+                    if (selection.isBlank()) return@Button
+                    showBatchInput = true
+                },
+                enabled = selection.isNotBlank() && (!hasMaxLevel || (currentLevel ?: 0) < (maxLevel ?: Int.MAX_VALUE)),
+                modifier = Modifier.weight(1f)
+            ) { Text("一键成长") }
+        }
     }
 }
 
@@ -4978,6 +5073,186 @@ private fun calcGrowthFinalRate(nextLevel: Int, failStack: Int, config: Ultimate
         failStack.coerceAtLeast(0) * config.failStackBonusPct * 100.0
     )
     return (baseRate + extraRate).coerceIn(0.0, 100.0)
+}
+
+private data class GrowthRuntimeConfig(
+    val hasMaxLevel: Boolean = false,
+    val maxLevel: Int? = null,
+    val materialCost: Int = 1,
+    val materialId: String = "",
+    val materialLabel: String = "材料",
+    val breakthroughEvery: Int = 20,
+    val breakthroughMaterialCost: Int = 1,
+    val breakthroughMaterialId: String = "",
+    val breakthroughMaterialLabel: String = "突破材料",
+    val goldCost: Int = 0,
+    val failStackBonusPct: Double = 0.0,
+    val failStackCapPct: Double = 0.0,
+    val config: UltimateGrowthConfig? = null
+)
+
+private data class GrowthBatchPreview(
+    val triesRequested: Int = 1,
+    val triesAffordable: Int = 0,
+    val materialOwned: Int = 0,
+    val breakOwned: Int = 0,
+    val goldOwned: Int = 0,
+    val materialNeed: Int = 0,
+    val breakNeed: Int = 0,
+    val goldNeed: Int = 0,
+    val avgRate: Double = 0.0,
+    val avgSuccess: Double = 0.0,
+    val minSuccess: Int = 0,
+    val maxSuccess: Int = 0,
+    val stopReason: String = ""
+)
+
+private fun toGrowthRuntimeConfig(config: UltimateGrowthConfig?): GrowthRuntimeConfig {
+    if (config == null) return GrowthRuntimeConfig()
+    val maxLevelRaw = config.maxLevel
+    val hasMaxLevel = maxLevelRaw > 0
+    return GrowthRuntimeConfig(
+        hasMaxLevel = hasMaxLevel,
+        maxLevel = if (hasMaxLevel) maxLevelRaw else null,
+        materialCost = config.materialCost.coerceAtLeast(1),
+        materialId = config.materialId.trim(),
+        materialLabel = config.materialName.ifBlank { config.materialId }.ifBlank { "材料" },
+        breakthroughEvery = config.breakthroughEvery.coerceAtLeast(1),
+        breakthroughMaterialCost = config.breakthroughMaterialCost.coerceAtLeast(1),
+        breakthroughMaterialId = config.breakthroughMaterialId.trim(),
+        breakthroughMaterialLabel = config.breakthroughMaterialName.ifBlank { config.breakthroughMaterialId }.ifBlank { "突破材料" },
+        goldCost = config.goldCost.coerceAtLeast(0),
+        failStackBonusPct = config.failStackBonusPct.coerceAtLeast(0.0),
+        failStackCapPct = config.failStackCapPct.coerceAtLeast(0.0),
+        config = config
+    )
+}
+
+private fun getBagItemQty(state: GameState?, itemId: String): Int {
+    val id = itemId.trim()
+    if (id.isBlank()) return 0
+    val slot = state?.items.orEmpty().firstOrNull { it.id == id }
+    return (slot?.qty ?: 0).coerceAtLeast(0)
+}
+
+private fun resolveGrowthRatePctByLevel(nextLevel: Int, config: UltimateGrowthConfig?): Double {
+    val level = nextLevel.coerceAtLeast(1)
+    val cfg = config ?: return 0.0
+    return when {
+        level <= 60 -> cfg.successRateEarly
+        level <= 80 -> cfg.successRateMid
+        else -> cfg.successRateLate
+    }.coerceIn(0.0, 100.0)
+}
+
+private fun calcGrowthBatchPreview(
+    state: GameState?,
+    runtime: GrowthRuntimeConfig,
+    growthLevel: Int,
+    failStack: Int,
+    requestedCount: Int
+): GrowthBatchPreview {
+    val triesRequested = requestedCount.coerceIn(1, 200)
+    var level = growthLevel.coerceAtLeast(0)
+    var failExpected = failStack.coerceAtLeast(0).toDouble()
+    val materialOwned = getBagItemQty(state, runtime.materialId)
+    val breakOwned = getBagItemQty(state, runtime.breakthroughMaterialId)
+    val goldOwned = (state?.stats?.gold ?: 0).coerceAtLeast(0)
+    var materialNeed = 0
+    var breakNeed = 0
+    var goldNeed = 0
+    var triesAffordable = 0
+    var stopReason = ""
+    val perTryRate = mutableListOf<Double>()
+
+    while (triesAffordable < triesRequested) {
+        val nextLevel = level + 1
+        if (runtime.hasMaxLevel && nextLevel > (runtime.maxLevel ?: Int.MAX_VALUE)) {
+            stopReason = "达到上限Lv${runtime.maxLevel ?: 0}"
+            break
+        }
+        val needBreak = runtime.breakthroughMaterialId.isNotBlank() && nextLevel % runtime.breakthroughEvery == 0
+        if (materialNeed + runtime.materialCost > materialOwned) {
+            stopReason = "${runtime.materialLabel}不足"
+            break
+        }
+        if (needBreak && (breakNeed + runtime.breakthroughMaterialCost > breakOwned)) {
+            stopReason = "${runtime.breakthroughMaterialLabel}不足"
+            break
+        }
+        if (goldNeed + runtime.goldCost > goldOwned) {
+            stopReason = "金币不足"
+            break
+        }
+        materialNeed += runtime.materialCost
+        if (needBreak) breakNeed += runtime.breakthroughMaterialCost
+        goldNeed += runtime.goldCost
+        triesAffordable += 1
+
+        val baseRate = resolveGrowthRatePctByLevel(nextLevel, runtime.config)
+        val extraRate = kotlin.math.min(runtime.failStackCapPct * 100.0, failExpected * runtime.failStackBonusPct * 100.0)
+        val finalRate = (baseRate + extraRate).coerceIn(0.0, 100.0)
+        perTryRate.add(finalRate)
+        failExpected += (1.0 - finalRate / 100.0)
+        level = nextLevel
+    }
+
+    if (triesAffordable <= 0) {
+        return GrowthBatchPreview(
+            triesRequested = triesRequested,
+            triesAffordable = 0,
+            materialOwned = materialOwned,
+            breakOwned = breakOwned,
+            goldOwned = goldOwned,
+            materialNeed = materialNeed,
+            breakNeed = breakNeed,
+            goldNeed = goldNeed,
+            stopReason = if (stopReason.isBlank()) "无法执行" else stopReason
+        )
+    }
+
+    val simCount = 240
+    var totalSuccess = 0
+    var minSuccess = Int.MAX_VALUE
+    var maxSuccess = Int.MIN_VALUE
+    repeat(simCount) {
+        var simLevel = growthLevel.coerceAtLeast(0)
+        var simFail = failStack.coerceAtLeast(0)
+        var success = 0
+        repeat(triesAffordable) {
+            val nextLevel = simLevel + 1
+            val baseRate = resolveGrowthRatePctByLevel(nextLevel, runtime.config)
+            val extraRate = kotlin.math.min(runtime.failStackCapPct * 100.0, simFail * runtime.failStackBonusPct * 100.0)
+            val finalRate = (baseRate + extraRate).coerceIn(0.0, 100.0)
+            if (Math.random() * 100.0 < finalRate) {
+                success += 1
+                simFail = 0
+            } else {
+                simFail += 1
+            }
+            simLevel = nextLevel
+        }
+        totalSuccess += success
+        if (success < minSuccess) minSuccess = success
+        if (success > maxSuccess) maxSuccess = success
+    }
+    val avgSuccess = totalSuccess.toDouble() / simCount.toDouble()
+    val avgRate = if (perTryRate.isNotEmpty()) perTryRate.sum() / perTryRate.size.toDouble() else 0.0
+    return GrowthBatchPreview(
+        triesRequested = triesRequested,
+        triesAffordable = triesAffordable,
+        materialOwned = materialOwned,
+        breakOwned = breakOwned,
+        goldOwned = goldOwned,
+        materialNeed = materialNeed,
+        breakNeed = breakNeed,
+        goldNeed = goldNeed,
+        avgRate = avgRate,
+        avgSuccess = avgSuccess,
+        minSuccess = if (minSuccess == Int.MAX_VALUE) 0 else minSuccess,
+        maxSuccess = if (maxSuccess == Int.MIN_VALUE) 0 else maxSuccess,
+        stopReason = stopReason
+    )
 }
 
 private data class PageInfo<T>(val slice: List<T>, val page: Int, val totalPages: Int)

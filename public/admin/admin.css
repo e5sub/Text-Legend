@@ -346,14 +346,18 @@ body.theme-dark .admin-switch input:checked + .admin-switch-slider {
 
 .char-migrate-pair-row {
   display: grid;
-  grid-template-columns: 96px minmax(220px, 1fr);
+  grid-template-columns: 88px minmax(0, 1fr);
   gap: 8px;
   align-items: center;
   margin-top: 4px;
+  width: 100%;
 }
 
 .char-migrate-pair-row input {
   margin: 0;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 @media (max-width: 760px) {
