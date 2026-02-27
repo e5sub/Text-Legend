@@ -3296,10 +3296,10 @@ body.dark .mail-tab.active {
   position: sticky;
   bottom: 0;
   justify-content: center;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 8px;
-  overflow-x: auto;
-  padding: 8px 2px 2px;
+  overflow-x: visible;
+  padding: 8px 2px 6px;
   background: #fff7ea;
   border-top: 1px solid rgba(118, 70, 22, 0.18);
   z-index: 2;
@@ -3311,8 +3311,8 @@ body.dark #mail-modal .modal-actions {
 }
 
 #mail-modal .modal-actions button {
-  flex: 0 0 auto;
-  min-width: 92px;
+  flex: 0 1 auto;
+  min-width: 88px;
 }
 
 #mail-modal #mail-send {
