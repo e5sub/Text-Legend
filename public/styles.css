@@ -3181,6 +3181,8 @@ body.dark .mail-tab.active {
 
 .mail-card {
   width: min(92vw, 720px);
+  max-height: 88vh;
+  padding-bottom: 8px;
 }
 
 .mail-grid {
@@ -3291,11 +3293,16 @@ body.dark .mail-tab.active {
 }
 
 #mail-modal .modal-actions {
+  position: sticky;
+  bottom: 0;
   justify-content: center;
   flex-wrap: nowrap;
   gap: 8px;
   overflow-x: auto;
-  padding-bottom: 2px;
+  padding: 8px 2px 2px;
+  background: #fff7ea;
+  border-top: 1px solid rgba(118, 70, 22, 0.18);
+  z-index: 2;
 }
 
 #mail-modal .modal-actions button {
@@ -3312,6 +3319,7 @@ body.dark .mail-tab.active {
     width: 96vw;
     max-height: 92vh;
     overflow: auto;
+    padding-bottom: 6px;
   }
   .mail-grid {
     grid-template-columns: 1fr;

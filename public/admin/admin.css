@@ -319,6 +319,38 @@ body.theme-dark .admin-switch input:checked + .admin-switch-slider {
   margin: 0;
 }
 
+.compact-config-table-container table.compact-config-table.ug-config-table {
+  font-size: 12px;
+}
+
+.compact-config-table-container table.compact-config-table.ug-config-table th,
+.compact-config-table-container table.compact-config-table.ug-config-table td {
+  padding: 5px 6px;
+}
+
+.compact-config-table-container table.compact-config-table.ug-config-table th:nth-child(1),
+.compact-config-table-container table.compact-config-table.ug-config-table td:nth-child(1) {
+  width: 38%;
+}
+
+.compact-config-table-container table.compact-config-table.ug-config-table th:nth-child(2),
+.compact-config-table-container table.compact-config-table.ug-config-table td:nth-child(2) {
+  width: 22%;
+}
+
+.compact-config-table-container table.compact-config-table.ug-config-table th:nth-child(3),
+.compact-config-table-container table.compact-config-table.ug-config-table td:nth-child(3) {
+  width: 40%;
+  white-space: normal;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.compact-config-table-container table.compact-config-table.ug-config-table input[type='number'] {
+  min-height: 30px;
+  padding: 4px 8px;
+}
+
 /* 活动积分商城表格：物品列更紧凑、积分列更宽 */
 .compact-config-table-container table.activity-point-shop-table th:nth-child(1),
 .compact-config-table-container table.activity-point-shop-table td:nth-child(1) {
