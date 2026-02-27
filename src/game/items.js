@@ -17,6 +17,8 @@
 
   training_fruit: { id: 'training_fruit', name: '修炼果', type: 'consumable', price: 1800, rarity: 'epic', untradable: true, unconsignable: true, unmail: true },
   pet_training_fruit: { id: 'pet_training_fruit', name: '宠物修炼果', type: 'consumable', price: 1800, rarity: 'epic', untradable: true, unconsignable: true, unmail: true },
+  epic_essence: { id: 'epic_essence', name: '史诗精华', type: 'material', price: 0, rarity: 'epic', untradable: true, unconsignable: true, unmail: true, noDrop: true },
+  legend_essence: { id: 'legend_essence', name: '传说精华', type: 'material', price: 0, rarity: 'legendary', untradable: true, unconsignable: true, unmail: true, noDrop: true },
   ultimate_growth_stone: { id: 'ultimate_growth_stone', name: '装备成长石', type: 'material', price: 0, rarity: 'epic', untradable: true, unconsignable: true, unmail: true, noDrop: true },
   ultimate_growth_break_stone: { id: 'ultimate_growth_break_stone', name: '成长突破石', type: 'material', price: 0, rarity: 'supreme', untradable: true, unconsignable: true, unmail: true, noDrop: true },
   rename_card: { id: 'rename_card', name: '改名卡', type: 'material', price: 0, rarity: 'epic', untradable: true, unconsignable: true, unmail: true, noDrop: true },

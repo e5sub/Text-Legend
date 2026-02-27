@@ -83,6 +83,7 @@ data class GameState(
     val anti: AntiInfo? = null,
     val effect_reset_config: EffectResetConfig? = null,
     val ultimate_growth_config: UltimateGrowthConfig? = null,
+    val high_tier_recycle_config: HighTierRecycleConfig? = null,
     val treasure_sets: List<TreasureSetInfo> = emptyList(),
     val auto_full_boss_list: List<String> = emptyList(),
     val treasure: TreasureStateInfo? = null,
@@ -206,7 +207,47 @@ data class ItemInfo(
     val effects: JsonObject? = null,
     val is_shop_item: Boolean = false,
     val untradable: Boolean = false,
-    val unconsignable: Boolean = false
+    val unconsignable: Boolean = false,
+    val unmail: Boolean = false,
+    val bound: Boolean = false
+)
+
+@Serializable
+data class HighTierRecycleConfig(
+    val enabled: Boolean = false,
+    val materials: HighTierRecycleMaterials? = null,
+    val exchangeItems: List<HighTierRecycleExchangeItem> = emptyList()
+)
+
+@Serializable
+data class HighTierRecycleMaterials(
+    val epic: HighTierRecycleMaterialInfo? = null,
+    val legendary: HighTierRecycleMaterialInfo? = null,
+    val core: HighTierRecycleMaterialInfo? = null
+)
+
+@Serializable
+data class HighTierRecycleMaterialInfo(
+    val id: String = "",
+    val name: String = ""
+)
+
+@Serializable
+data class HighTierRecycleExchangeItem(
+    val id: String = "",
+    val currency: String = "",
+    val currencyItemId: String = "",
+    val currencyName: String = "",
+    val cost: Int = 0,
+    val rewards: List<HighTierRecycleRewardItem> = emptyList(),
+    val rewardText: String = ""
+)
+
+@Serializable
+data class HighTierRecycleRewardItem(
+    val id: String = "",
+    val qty: Int = 0,
+    val name: String = ""
 )
 
 @Serializable

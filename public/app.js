@@ -8,6 +8,7 @@ let mailCache = [];
 let selectedMailId = null;
 let mailAttachments = [];
 let lastState = null;
+let cachedHighTierRecycleConfig = null;
 let serverTimeBase = null;
 let serverTimeLocal = null;
 let serverTimeTimer = null;
@@ -676,6 +677,18 @@ const growthUi = {
   batch: document.getElementById('growth-batch'),
   close: document.getElementById('growth-close')
 };
+const highTierRecycleUi = {
+  modal: document.getElementById('high-tier-recycle-modal'),
+  summary: document.getElementById('high-tier-recycle-summary'),
+  tabs: Array.from(document.querySelectorAll('#high-tier-recycle-modal .consign-tab')),
+  panels: Array.from(document.querySelectorAll('#high-tier-recycle-modal .consign-panel')),
+  batchEpic: document.getElementById('high-tier-recycle-batch-epic'),
+  batchLegend: document.getElementById('high-tier-recycle-batch-legend'),
+  salvageList: document.getElementById('high-tier-recycle-salvage-list'),
+  exchangeList: document.getElementById('high-tier-recycle-exchange-list'),
+  close: document.getElementById('high-tier-recycle-close')
+};
+let highTierRecycleTab = 'salvage';
 let effectSelection = null;
 let growthSelection = null;
 let effectBatchTask = {
@@ -688,8 +701,8 @@ let effectBatchTask = {
 let changeClassSelection = null;
 const consignUi = {
   modal: document.getElementById('consign-modal'),
-  tabs: Array.from(document.querySelectorAll('.consign-tab')),
-  panels: Array.from(document.querySelectorAll('.consign-panel')),
+  tabs: Array.from(document.querySelectorAll('#consign-modal .consign-tab')),
+  panels: Array.from(document.querySelectorAll('#consign-modal .consign-panel')),
   filters: Array.from(document.querySelectorAll('.consign-filter')),
   marketList: document.getElementById('consign-market-list'),
   marketPrev: document.getElementById('consign-market-prev'),
@@ -1664,7 +1677,7 @@ function buildItemTotals(items) {
 
 function refreshTradeItemOptions(items) {
   if (!tradeUi.itemSelect) return;
-  const list = Array.isArray(items) ? items : [];
+  const list = (Array.isArray(items) ? items : []).filter((entry) => entry && !entry.untradable);
   const savedValue = tradeUi.itemSelect.value;
   tradeUi.itemSelect.innerHTML = '';
   if (!list.length) {
@@ -2462,7 +2475,7 @@ function renderConsignInventory(items) {
   if (!consignUi.inventoryList) return;
   consignUi.inventoryList.innerHTML = '';
   const sellableItems = (items || []).filter((item) =>
-    item && (
+    item && !item.unconsignable && (
       ['weapon', 'armor', 'accessory', 'book'].includes(item.type) ||
       String(item.id || '').startsWith('pet_book_') ||
       item.type === 'pet_book'
@@ -3658,6 +3671,186 @@ function showGrowthModal() {
   growthUi.modal.classList.remove('hidden');
 }
 
+function normalizeHighTierRecycleSlot(slotRaw) {
+  const slot = String(slotRaw || '').trim().toLowerCase();
+  if (slot === 'ring_left' || slot === 'ring_right') return 'ring';
+  if (slot === 'bracelet_left' || slot === 'bracelet_right') return 'bracelet';
+  return slot;
+}
+
+function highTierRecycleSlotDisplayName(slotRaw) {
+  const slot = normalizeHighTierRecycleSlot(slotRaw);
+  if (slot === 'weapon') return '武器';
+  if (slot === 'chest') return '衣服';
+  if (slot === 'head') return '头盔';
+  if (slot === 'waist') return '腰带';
+  if (slot === 'feet') return '鞋子';
+  if (slot === 'ring') return '戒指';
+  if (slot === 'bracelet') return '手镯';
+  if (slot === 'neck') return '项链';
+  return slot || '未知';
+}
+
+function getHighTierRecycleConfig() {
+  return lastState?.high_tier_recycle_config || cachedHighTierRecycleConfig || null;
+}
+
+function getHighTierRecycleMaterialQty(materialId) {
+  if (!materialId) return 0;
+  const slot = (lastState?.items || []).find((item) => String(item?.id || '') === String(materialId));
+  return Math.max(0, Math.floor(Number(slot?.qty || 0)));
+}
+
+function isBatchRecyclableEquipment(item) {
+  if (!item?.slot) return false;
+  const rarity = normalizeRarityKey(item.rarity);
+  if (rarity !== 'epic' && rarity !== 'legendary') return false;
+  if (Math.max(0, Math.floor(Number(item.refine_level || 0))) > 0) return false;
+  const effects = item?.effects && typeof item.effects === 'object' ? item.effects : null;
+  if (effects && Object.keys(effects).length > 0) return false;
+  return true;
+}
+
+function setHighTierRecycleTab(tab) {
+  highTierRecycleTab = tab;
+  highTierRecycleUi.tabs.forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  });
+  highTierRecycleUi.panels.forEach((panel) => {
+    panel.classList.toggle('hidden', panel.dataset.panel !== tab);
+  });
+}
+
+function renderHighTierRecycleSummary() {
+  const cfg = getHighTierRecycleConfig();
+  if (!highTierRecycleUi.summary) return;
+  if (!cfg?.materials) {
+    highTierRecycleUi.summary.textContent = '装备回收未开启';
+    return;
+  }
+  const epicQty = getHighTierRecycleMaterialQty(cfg.materials.epic?.id);
+  const legendQty = getHighTierRecycleMaterialQty(cfg.materials.legendary?.id);
+  highTierRecycleUi.summary.textContent =
+    `${cfg.materials.epic?.name || '史诗精华'} ${epicQty} | ${cfg.materials.legendary?.name || '传说精华'} ${legendQty}`;
+}
+
+function renderHighTierRecycleSalvage() {
+  if (!highTierRecycleUi.salvageList) return;
+  highTierRecycleUi.salvageList.innerHTML = '';
+  const batchEpicCount = (lastState?.items || []).reduce((sum, item) => (
+    sum + (isBatchRecyclableEquipment(item) && normalizeRarityKey(item.rarity) === 'epic'
+      ? Math.max(0, Math.floor(Number(item.qty || 0)))
+      : 0)
+  ), 0);
+  const batchLegendCount = (lastState?.items || []).reduce((sum, item) => (
+    sum + (isBatchRecyclableEquipment(item) && normalizeRarityKey(item.rarity) === 'legendary'
+      ? Math.max(0, Math.floor(Number(item.qty || 0)))
+      : 0)
+  ), 0);
+  if (highTierRecycleUi.batchEpic) {
+    highTierRecycleUi.batchEpic.textContent = `一键回收史诗（${batchEpicCount}）`;
+    highTierRecycleUi.batchEpic.disabled = batchEpicCount <= 0;
+  }
+  if (highTierRecycleUi.batchLegend) {
+    highTierRecycleUi.batchLegend.textContent = `一键回收传说（${batchLegendCount}）`;
+    highTierRecycleUi.batchLegend.disabled = batchLegendCount <= 0;
+  }
+  const items = (lastState?.items || [])
+    .filter((item) => item?.slot && ['epic', 'legendary'].includes(normalizeRarityKey(item.rarity)))
+    .slice()
+    .sort(sortByRarityDesc);
+  if (!items.length) {
+    const empty = document.createElement('div');
+    empty.textContent = '背包中暂无可分解装备';
+    highTierRecycleUi.salvageList.appendChild(empty);
+    return;
+  }
+  items.forEach((item) => {
+    const rarity = normalizeRarityKey(item.rarity);
+    const slot = normalizeHighTierRecycleSlot(item.slot);
+    let yieldQty = 0;
+    if (rarity === 'epic') {
+      yieldQty = slot === 'weapon' ? 12 : slot === 'chest' ? 10 : ['head', 'waist', 'feet'].includes(slot) ? 8 : 6;
+    } else {
+      yieldQty = slot === 'weapon' ? 18 : slot === 'chest' ? 15 : ['head', 'waist', 'feet'].includes(slot) ? 12 : 10;
+    }
+    const btn = document.createElement('div');
+    btn.className = 'forge-item';
+    applyRarityClass(btn, item);
+    btn.innerHTML = `<div>${formatItemName(item)} x${item.qty}</div><div class="item-detail">分解获得 ${rarity === 'epic' ? '史诗精华' : '传说精华'} x${yieldQty}</div>`;
+    const tooltip = formatItemTooltip(item);
+    if (tooltip) {
+      btn.addEventListener('mouseenter', (evt) => showItemTooltip(tooltip, evt));
+      btn.addEventListener('mousemove', (evt) => positionTooltip(evt.clientX, evt.clientY));
+      btn.addEventListener('mouseleave', hideItemTooltip);
+    }
+    btn.addEventListener('click', async () => {
+      if (!socket) return;
+      const qtyText = await promptModal({
+        title: '装备分解',
+        text: `分解数量：${formatItemName(item)}（最多 ${item.qty}）`,
+        placeholder: '1',
+        value: '1'
+      });
+      if (!qtyText) return;
+      const qty = Math.max(1, Math.min(Math.floor(Number(item.qty || 1)), Math.floor(Number(qtyText) || 1)));
+      const confirmed = await confirmModal({
+        title: '确认分解',
+        text: `确认分解 ${formatItemName(item)} x${qty}？`
+      });
+      if (!confirmed) return;
+      socket.emit('cmd', { text: `highrecycle decompose ${item.key || item.id} ${qty}`, source: 'ui' });
+    });
+    highTierRecycleUi.salvageList.appendChild(btn);
+  });
+}
+
+function renderHighTierRecycleExchange() {
+  if (!highTierRecycleUi.exchangeList) return;
+  highTierRecycleUi.exchangeList.innerHTML = '';
+  const cfg = getHighTierRecycleConfig();
+  const rows = Array.isArray(cfg?.exchangeItems) ? cfg.exchangeItems : [];
+  if (!rows.length) {
+    const empty = document.createElement('div');
+    empty.textContent = '暂无兑换项';
+    highTierRecycleUi.exchangeList.appendChild(empty);
+    return;
+  }
+  rows.forEach((entry) => {
+    const btn = document.createElement('div');
+    btn.className = 'forge-item';
+    const owned = getHighTierRecycleMaterialQty(entry.currencyItemId);
+    btn.innerHTML = `<div>${entry.rewardText}</div><div class="item-detail">消耗 ${entry.currencyName} x${entry.cost}（当前 ${owned}）</div>`;
+    btn.addEventListener('click', async () => {
+      if (!socket) return;
+      const qtyText = await promptModal({
+        title: '精华兑换',
+        text: `请输入兑换数量：${entry.rewardText}`,
+        placeholder: '1',
+        value: '1'
+      });
+      if (!qtyText) return;
+      const qty = Math.max(1, Math.min(99, Math.floor(Number(qtyText) || 1)));
+      socket.emit('cmd', { text: `highrecycle exchange ${entry.id} ${qty}`, source: 'ui' });
+    });
+    highTierRecycleUi.exchangeList.appendChild(btn);
+  });
+}
+
+function renderHighTierRecycleModal() {
+  renderHighTierRecycleSummary();
+  renderHighTierRecycleSalvage();
+  renderHighTierRecycleExchange();
+  setHighTierRecycleTab(highTierRecycleTab || 'salvage');
+}
+
+function showHighTierRecycleModal() {
+  if (!highTierRecycleUi.modal) return;
+  hideItemTooltip();
+  renderHighTierRecycleModal();
+  highTierRecycleUi.modal.classList.remove('hidden');
+}
+
 function renderEffectModal() {
   if (!effectUi.list) return;
 
@@ -4448,7 +4641,7 @@ function refreshMailItemOptions() {
   empty.textContent = '\u4E0D\u8D60\u9001\u9644\u4EF6';
   mailUi.item.appendChild(empty);
   const items = (lastState?.items || [])
-    .filter((item) => item.type !== 'currency')
+    .filter((item) => item.type !== 'currency' && !item.unmail)
     .slice()
     .sort(sortPetBagEquipByQualityDesc);
   items.forEach((item) => {
@@ -6947,6 +7140,9 @@ function isBossRoomState(state) {
 function renderState(state) {
   const prevState = lastState;
   lastState = state;
+  if (state?.high_tier_recycle_config) {
+    cachedHighTierRecycleConfig = state.high_tier_recycle_config;
+  }
   // 更新VIP自助领取开关状态
   if (state.vip_self_claim_enabled !== undefined) {
     vipSelfClaimEnabled = state.vip_self_claim_enabled;
@@ -7900,6 +8096,9 @@ function renderState(state) {
   if (treasureUi.modal && !treasureUi.modal.classList.contains('hidden')) {
     if (shouldRenderUiSection('modal.treasure', 220)) renderTreasureModal();
   }
+  if (highTierRecycleUi.modal && !highTierRecycleUi.modal.classList.contains('hidden')) {
+    if (shouldRenderUiSection('modal.high_tier_recycle', 220)) renderHighTierRecycleModal();
+  }
 
   if (ui.training) {
     const training = state.training || { hp: 0, mp: 0, atk: 0, mag: 0, spirit: 0, dex: 0 };
@@ -7941,6 +8140,7 @@ function renderState(state) {
     { id: 'forge', label: '\u88C5\u5907\u5408\u6210' },
     { id: 'refine', label: '\u88C5\u5907\u953B\u9020' },
     { id: 'growth', label: '\u88C5\u5907\u6210\u957F' },
+    { id: 'highrecycle', label: '\u88C5\u5907\u56DE\u6536' },
     { id: 'effect', label: '\u7279\u6548\u91CD\u7F6E' },
     { id: 'drops', label: '\u5957\u88c5\u6389\u843d' },
     { id: 'switch', label: '\u5207\u6362\u89d2\u8272' },
@@ -8053,6 +8253,10 @@ function renderState(state) {
     }
     if (a.id === 'growth') {
       showGrowthModal();
+      return;
+    }
+    if (a.id === 'highrecycle') {
+      showHighTierRecycleModal();
       return;
     }
     if (a.id === 'treasure') {
@@ -9817,6 +10021,49 @@ if (growthUi.batch) {
       text: `growth equip:${growthSelection.slot} ${p.triesAffordable}`,
       source: 'ui'
     });
+  });
+}
+if (highTierRecycleUi.tabs.length) {
+  highTierRecycleUi.tabs.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      setHighTierRecycleTab(btn.dataset.tab || 'salvage');
+    });
+  });
+}
+if (highTierRecycleUi.close) {
+  highTierRecycleUi.close.addEventListener('click', () => {
+    highTierRecycleUi.modal?.classList.add('hidden');
+    hideItemTooltip();
+  });
+}
+if (highTierRecycleUi.batchEpic) {
+  highTierRecycleUi.batchEpic.addEventListener('click', async () => {
+    if (!socket || highTierRecycleUi.batchEpic.disabled) return;
+    const confirmed = await confirmModal({
+      title: '一键回收史诗',
+      text: '仅会回收无特效、无附加技能、无锻造的史诗装备，是否继续？'
+    });
+    if (!confirmed) return;
+    socket.emit('cmd', { text: 'highrecycle decompose_all epic', source: 'ui' });
+  });
+}
+if (highTierRecycleUi.batchLegend) {
+  highTierRecycleUi.batchLegend.addEventListener('click', async () => {
+    if (!socket || highTierRecycleUi.batchLegend.disabled) return;
+    const confirmed = await confirmModal({
+      title: '一键回收传说',
+      text: '仅会回收无特效、无附加技能、无锻造的传说装备，是否继续？'
+    });
+    if (!confirmed) return;
+    socket.emit('cmd', { text: 'highrecycle decompose_all legendary', source: 'ui' });
+  });
+}
+if (highTierRecycleUi.modal) {
+  highTierRecycleUi.modal.addEventListener('click', (e) => {
+    if (e.target === highTierRecycleUi.modal) {
+      highTierRecycleUi.modal.classList.add('hidden');
+      hideItemTooltip();
+    }
   });
 }
 if (effectUi.close) {

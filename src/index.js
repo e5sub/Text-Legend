@@ -90,7 +90,14 @@ import {
 } from './db/items_admin.js';
 import { runMigrations } from './db/migrate.js';
 import { newCharacter, computeDerived, gainExp, addItem, removeItem, getItemKey, normalizeInventory, normalizeEquipment, getDurabilityMax, getRepairCost } from './game/player.js';
-import { handleCommand, awardKill, summonStats } from './game/commands.js';
+import {
+  handleCommand,
+  awardKill,
+  summonStats,
+  isBoundHighTierEquipment,
+  getHighTierRecycleStatePayload,
+  setEquipmentRecycleExchangeConfig
+} from './game/commands.js';
 import {
   getActivityStatePayload,
   getMobRewardActivityBonus,
@@ -179,6 +186,7 @@ import {
 
 const ACTIVITY_POINT_SHOP_SETTING_KEY = 'activity_point_shop_config_v2';
 const DIVINE_BEAST_FRAGMENT_EXCHANGE_SETTING_KEY = 'divine_beast_fragment_exchange_config_v1';
+const EQUIPMENT_RECYCLE_SETTING_KEY = 'equipment_recycle_config_v1';
 const FIRST_RECHARGE_WELFARE_SETTING_KEY = 'first_recharge_welfare_config_v1';
 const INVITE_REWARD_SETTING_KEY = 'invite_reward_config_v1';
 const INVITE_RECHARGE_BONUS_RATE = 0.2;
@@ -1195,6 +1203,17 @@ async function getDivineBeastFragmentExchangeConfigCached(forceRefresh = false) 
   }
   divineBeastFragmentExchangeConfigCache = normalizeDivineBeastFragmentExchangeConfig(raw);
   return divineBeastFragmentExchangeConfigCache;
+}
+
+async function loadEquipmentRecycleConfigFromDb() {
+  let raw = {};
+  try {
+    raw = await getSetting(EQUIPMENT_RECYCLE_SETTING_KEY, '{}');
+    if (typeof raw === 'string') raw = JSON.parse(raw || '{}');
+  } catch {
+    raw = {};
+  }
+  return setEquipmentRecycleExchangeConfig(raw);
 }
 
 const BACKUP_TABLES = [
@@ -2454,6 +2473,38 @@ app.post('/admin/divine-beast-fragment-exchange/update', async (req, res) => {
     const config = validateDivineBeastFragmentExchangeConfig(payload);
     await setSetting(DIVINE_BEAST_FRAGMENT_EXCHANGE_SETTING_KEY, JSON.stringify(config));
     divineBeastFragmentExchangeConfigCache = config;
+    res.json({ ok: true, config });
+  } catch (err) {
+    res.status(400).json({ error: err.message || '保存失败' });
+  }
+});
+
+app.get('/admin/equipment-recycle-settings', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  try {
+    const config = await loadEquipmentRecycleConfigFromDb();
+    const itemOptions = Object.values(ITEM_TEMPLATES || {})
+      .filter((it) => it && it.id)
+      .map((it) => ({
+        id: String(it.id),
+        name: String(it.name || it.id),
+        type: String(it.type || 'unknown')
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN'));
+    res.json({ ok: true, config, itemOptions });
+  } catch (err) {
+    res.status(500).json({ error: err.message || '加载失败' });
+  }
+});
+
+app.post('/admin/equipment-recycle-settings/update', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  try {
+    const payload = req.body?.config ?? req.body ?? {};
+    const config = setEquipmentRecycleExchangeConfig(payload);
+    await setSetting(EQUIPMENT_RECYCLE_SETTING_KEY, JSON.stringify(config));
     res.json({ ok: true, config });
   } catch (err) {
     res.status(400).json({ error: err.message || '保存失败' });
@@ -4982,6 +5033,7 @@ function buildItemView(itemId, effects = null, durability = null, max_durability
   };
   // 优先使用装备模板中手动设置的 rarity，如果没有才使用价格计算
   const rarity = item.rarity || rarityByPrice(item);
+  const boundHighTier = isBoundHighTierEquipment(item);
   const effectSkillName = effects?.skill ? getSkillNameById(effects.skill) : '';
   return {
     id: itemId,
@@ -5006,7 +5058,11 @@ function buildItemView(itemId, effects = null, durability = null, max_durability
     refine_level: refine_level || 0,
     base_roll_pct: baseRollPct,
     growth_level: Math.max(0, Math.floor(Number(growth_level || 0))),
-    growth_fail_stack: Math.max(0, Math.floor(Number(growth_fail_stack || 0)))
+    growth_fail_stack: Math.max(0, Math.floor(Number(growth_fail_stack || 0))),
+    untradable: Boolean(item.untradable || boundHighTier),
+    unconsignable: Boolean(item.unconsignable || boundHighTier),
+    unmail: Boolean(item.unmail || boundHighTier),
+    bound: boundHighTier
   };
 }
 
@@ -5025,6 +5081,7 @@ function buildInventoryItemPayload(slot) {
   const isShopItem = Object.values(SHOP_STOCKS).some(stockList => stockList.includes(slot.id));
   // 优先使用装备模板中手动设置的 rarity，如果没有才使用价格计算
   const rarity = item.rarity || rarityByPrice(item);
+  const boundHighTier = isBoundHighTierEquipment(item);
   return {
     id: slot.id,
     key: getItemKey(slot),
@@ -5052,8 +5109,10 @@ function buildInventoryItemPayload(slot) {
     effects,
     effectSkillName,
     is_shop_item: isShopItem,
-    untradable: Boolean(item.untradable),
-    unconsignable: Boolean(item.unconsignable)
+    untradable: Boolean(item.untradable || boundHighTier),
+    unconsignable: Boolean(item.unconsignable || boundHighTier),
+    unmail: Boolean(item.unmail || boundHighTier),
+    bound: boundHighTier
   };
 }
 
@@ -6802,7 +6861,7 @@ const tradeApi = {
 
     // 检查物品是否可交易
     const item = ITEM_TEMPLATES[itemId];
-    if (item?.untradable || isGrowthMaterialLockedItem(itemId)) return { ok: false, msg: '该物品不可交易。' };
+    if (item?.untradable || isBoundHighTierEquipment(item) || isGrowthMaterialLockedItem(itemId)) return { ok: false, msg: '该物品不可交易。' };
 
     const offer = ensureOffer(trade, player.name);
     const slotPayload = {
@@ -7003,7 +7062,7 @@ const consignApi = {
       if (!isConsignSellAllowed(itemId, item)) return { ok: false, msg: '仅可寄售装备或宠物技能书。' };
 
       // 检查物品是否可寄售
-      if (item?.unconsignable || isGrowthMaterialLockedItem(itemId)) return { ok: false, msg: '该物品不可寄售。' };
+      if (item?.unconsignable || isBoundHighTierEquipment(item) || isGrowthMaterialLockedItem(itemId)) return { ok: false, msg: '该物品不可寄售。' };
 
       // 验证数量和价格
       const qtyResult = validateItemQty(qty);
@@ -12444,6 +12503,7 @@ async function buildState(player) {
       material_count: refineMaterialCount,
       bonus_per_level: getRefineBonusPerLevel()
     },
+    high_tier_recycle_config: getHighTierRecycleStatePayload(),
     effect_reset_config: {
       success_rate: effectResetSuccessRate,
       double_rate: effectResetDoubleRate,
@@ -12521,6 +12581,7 @@ async function sendState(player) {
     delete state.svip_settings;
     delete state.refine_config;
     delete state.ultimate_growth_config;
+    delete state.high_tier_recycle_config;
     delete state.effect_reset_config;
   }
   if (!forceSend) {
@@ -14755,7 +14816,7 @@ io.on('connection', (socket) => {
           if (!slot) return socket.emit('mail_send_result', { ok: false, msg: '背包里没有该物品。' });
           const item = ITEM_TEMPLATES[slot.id];
           if (!item) return socket.emit('mail_send_result', { ok: false, msg: '物品不存在。' });
-          if (item.untradable || item.unconsignable || item.unmail || isGrowthMaterialLockedItem(slot.id)) {
+          if (item.untradable || item.unconsignable || item.unmail || isBoundHighTierEquipment(item) || isGrowthMaterialLockedItem(slot.id)) {
             return socket.emit('mail_send_result', { ok: false, msg: '该物品无法通过邮件赠送。' });
           }
           if (item.type === 'currency') return socket.emit('mail_send_result', { ok: false, msg: '金币无法赠送。' });
@@ -18143,6 +18204,7 @@ async function start() {
   // 加载修炼系统配置
   const trainingPerLevelConfig = await getTrainingPerLevelConfigDb();
   setTrainingPerLevelConfigMem(trainingPerLevelConfig);
+  await loadEquipmentRecycleConfigFromDb();
   const ultimateGrowthConfig = await getUltimateGrowthConfigDb();
   if (ultimateGrowthConfig && typeof ultimateGrowthConfig === 'object') {
     setUltimateGrowthConfigMem(ultimateGrowthConfig);

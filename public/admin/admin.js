@@ -478,6 +478,15 @@ const divineBeastFragmentSaveBtn = document.getElementById('divine-beast-fragmen
 const divineBeastFragmentList = document.getElementById('divine-beast-fragment-list');
 let divineBeastFragmentRowsCache = [];
 let divineBeastFragmentOptionsCache = [];
+const equipmentRecycleMsg = document.getElementById('equipment-recycle-msg');
+const equipmentRecycleLoadBtn = document.getElementById('equipment-recycle-load-btn');
+const equipmentRecycleAddBtn = document.getElementById('equipment-recycle-add-btn');
+const equipmentRecycleSaveBtn = document.getElementById('equipment-recycle-save-btn');
+const equipmentRecycleItemSearchInput = document.getElementById('equipment-recycle-item-search');
+const equipmentRecycleList = document.getElementById('equipment-recycle-list');
+let equipmentRecycleRowsCache = [];
+let equipmentRecycleItemOptionsCache = [];
+let equipmentRecycleItemSearchKeyword = '';
 
 // 每日幸运玩家相关
 const dailyLuckyMsg = document.getElementById('daily-lucky-msg');
@@ -779,6 +788,157 @@ async function saveDivineBeastFragmentExchangeConfig() {
   } catch (err) {
     divineBeastFragmentMsg.textContent = `保存失败: ${err.message}`;
     divineBeastFragmentMsg.style.color = 'red';
+  }
+}
+
+async function loadEquipmentRecycleConfig() {
+  if (!equipmentRecycleList || !equipmentRecycleMsg) return;
+  equipmentRecycleMsg.textContent = '';
+  try {
+    const data = await api('/admin/equipment-recycle-settings', 'GET');
+    const config = data?.config || { version: 1, items: [] };
+    if (equipmentRecycleItemSearchInput) {
+      equipmentRecycleItemSearchKeyword = String(equipmentRecycleItemSearchInput.value || '').trim();
+    }
+    equipmentRecycleItemOptionsCache = Array.isArray(data?.itemOptions) ? data.itemOptions : [];
+    equipmentRecycleRowsCache = (Array.isArray(config.items) ? config.items : []).map((item, index) => ({
+      _id: String(item?.id || `er_${index + 1}`),
+      rewardId: String(item?.rewardId || item?.itemId || '').trim(),
+      rewardQty: Math.max(1, Math.floor(Number(item?.rewardQty || item?.qty || 1))),
+      cost: Math.max(1, Math.floor(Number(item?.cost || 1))),
+      currency: String(item?.currency || 'epic').trim().toLowerCase() === 'legendary' ? 'legendary' : 'epic',
+      limitType: ['none', 'daily', 'weekly', 'lifetime'].includes(String(item?.limitType || 'none')) ? String(item?.limitType || 'none') : 'none',
+      limit: Math.max(1, Math.floor(Number(item?.limit || 1)))
+    })).filter((row) => row.rewardId);
+    renderEquipmentRecycleRows();
+    equipmentRecycleMsg.textContent = '加载成功';
+    equipmentRecycleMsg.style.color = 'green';
+    setTimeout(() => { equipmentRecycleMsg.textContent = ''; }, 1500);
+  } catch (err) {
+    equipmentRecycleMsg.textContent = `加载失败: ${err.message}`;
+    equipmentRecycleMsg.style.color = 'red';
+  }
+}
+
+function equipmentRecycleEmptyItem() {
+  return {
+    _id: `er_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+    rewardId: '',
+    rewardQty: 1,
+    cost: 1,
+    currency: 'epic',
+    limitType: 'none',
+    limit: 1
+  };
+}
+
+function buildEquipmentRecycleItemSelectHtml(selectedId = '', keyword = '') {
+  const selected = String(selectedId || '').trim();
+  const kw = String(keyword || equipmentRecycleItemSearchKeyword || '').trim().toLowerCase();
+  const options = Array.isArray(equipmentRecycleItemOptionsCache) ? equipmentRecycleItemOptionsCache : [];
+  const filtered = kw
+    ? options.filter((it) => {
+        const id = String(it?.id || '').toLowerCase();
+        const name = String(it?.name || '').toLowerCase();
+        const type = String(it?.type || '').toLowerCase();
+        return id.includes(kw) || name.includes(kw) || type.includes(kw);
+      })
+    : options;
+  const selectedExists = filtered.some((it) => String(it?.id || '') === selected);
+  const selectedOption = !selectedExists && selected
+    ? options.find((it) => String(it?.id || '') === selected)
+    : null;
+  const finalList = selectedOption ? [selectedOption, ...filtered] : filtered;
+  const optionHtml = finalList.map((it) => {
+    const id = String(it?.id || '').replace(/"/g, '&quot;');
+    const text = String(it?.name || it?.id || '').replace(/"/g, '&quot;');
+    return `<option value="${id}"${id === selected ? ' selected' : ''}>${text}</option>`;
+  }).join('');
+  return `<select data-k="rewardId"><option value="">请选择物品</option>${optionHtml}</select>`;
+}
+
+function renderEquipmentRecycleRows() {
+  if (!equipmentRecycleList) return;
+  const rows = Array.isArray(equipmentRecycleRowsCache) ? equipmentRecycleRowsCache : [];
+  equipmentRecycleList.innerHTML = '';
+  if (!rows.length) {
+    equipmentRecycleList.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;">暂无兑换项，点击“添加兑换项”</td></tr>';
+    return;
+  }
+  rows.forEach((item, index) => {
+    const tr = document.createElement('tr');
+    tr.dataset.index = String(index);
+    tr.dataset.exchangeId = String(item?._id || '');
+    tr.innerHTML = `
+      <td>${buildEquipmentRecycleItemSelectHtml(item.rewardId)}</td>
+      <td><input data-k="rewardQty" type="number" min="1" value="${Math.max(1, Number(item.rewardQty || 1))}" style="width: 72px;"></td>
+      <td><input data-k="cost" type="number" min="1" value="${Math.max(1, Number(item.cost || 1))}" style="width: 88px;"></td>
+      <td>
+        <select data-k="currency">
+          <option value="epic"${item.currency === 'epic' ? ' selected' : ''}>史诗精华</option>
+          <option value="legendary"${item.currency === 'legendary' ? ' selected' : ''}>传说精华</option>
+        </select>
+      </td>
+      <td>
+        <select data-k="limitType">
+          <option value="none"${item.limitType === 'none' ? ' selected' : ''}>不限</option>
+          <option value="daily"${item.limitType === 'daily' ? ' selected' : ''}>日限</option>
+          <option value="weekly"${item.limitType === 'weekly' ? ' selected' : ''}>周限</option>
+          <option value="lifetime"${item.limitType === 'lifetime' ? ' selected' : ''}>终身限</option>
+        </select>
+        <input data-k="limit" type="number" min="1" value="${Math.max(1, Number(item.limit || 1))}" style="width: 64px; margin-left: 6px;">
+      </td>
+      <td><button type="button" class="btn-small" data-act="del">删除</button></td>
+    `;
+    equipmentRecycleList.appendChild(tr);
+  });
+}
+
+function collectEquipmentRecycleConfigFromUi() {
+  const rows = [];
+  if (!equipmentRecycleList) return { version: 1, items: rows };
+  equipmentRecycleList.querySelectorAll('tr[data-index]').forEach((tr) => {
+    const rewardId = String(tr.querySelector('[data-k="rewardId"]')?.value || '').trim();
+    if (!rewardId) return;
+    const exchangeId = String(tr.dataset.exchangeId || '').trim() || `er_${rows.length + 1}`;
+    const limitType = ['none', 'daily', 'weekly', 'lifetime'].includes(String(tr.querySelector('[data-k="limitType"]')?.value || 'none'))
+      ? String(tr.querySelector('[data-k="limitType"]')?.value || 'none')
+      : 'none';
+    rows.push({
+      id: exchangeId,
+      rewardId,
+      rewardQty: Math.max(1, Math.floor(Number(tr.querySelector('[data-k="rewardQty"]')?.value || 1))),
+      cost: Math.max(1, Math.floor(Number(tr.querySelector('[data-k="cost"]')?.value || 1))),
+      currency: String(tr.querySelector('[data-k="currency"]')?.value || 'epic').trim().toLowerCase() === 'legendary' ? 'legendary' : 'epic',
+      limitType,
+      limit: limitType === 'none' ? 0 : Math.max(1, Math.floor(Number(tr.querySelector('[data-k="limit"]')?.value || 1)))
+    });
+  });
+  return { version: 1, items: rows };
+}
+
+async function saveEquipmentRecycleConfig() {
+  if (!equipmentRecycleList || !equipmentRecycleMsg) return;
+  equipmentRecycleMsg.textContent = '';
+  try {
+    const config = collectEquipmentRecycleConfigFromUi();
+    const data = await api('/admin/equipment-recycle-settings/update', 'POST', { config });
+    equipmentRecycleRowsCache = (Array.isArray(data?.config?.items) ? data.config.items : config.items).map((item, index) => ({
+      _id: String(item?.id || `er_${index + 1}`),
+      rewardId: String(item?.rewardId || item?.itemId || '').trim(),
+      rewardQty: Math.max(1, Math.floor(Number(item?.rewardQty || item?.qty || 1))),
+      cost: Math.max(1, Math.floor(Number(item?.cost || 1))),
+      currency: String(item?.currency || 'epic').trim().toLowerCase() === 'legendary' ? 'legendary' : 'epic',
+      limitType: ['none', 'daily', 'weekly', 'lifetime'].includes(String(item?.limitType || 'none')) ? String(item?.limitType || 'none') : 'none',
+      limit: Math.max(1, Math.floor(Number(item?.limit || 1)))
+    })).filter((row) => row.rewardId);
+    renderEquipmentRecycleRows();
+    equipmentRecycleMsg.textContent = '保存成功';
+    equipmentRecycleMsg.style.color = 'green';
+    setTimeout(() => { equipmentRecycleMsg.textContent = ''; }, 1500);
+  } catch (err) {
+    equipmentRecycleMsg.textContent = `保存失败: ${err.message}`;
+    equipmentRecycleMsg.style.color = 'red';
   }
 }
 
@@ -6564,6 +6724,7 @@ async function initDashboard() {
     loadEventTimeSettings();
     loadActivityPointShopConfig();
     loadDivineBeastFragmentExchangeConfig();
+    loadEquipmentRecycleConfig();
     loadFirstRechargeSettings();
     loadInviteRewardSettings();
     loadClassBonusConfig();
@@ -6589,6 +6750,14 @@ if (activityPointShopAddBtn) {
     if (!Array.isArray(activityPointShopRowsCache)) activityPointShopRowsCache = [];
     activityPointShopRowsCache.push(activityPointShopEmptyItem());
     renderActivityPointShopRows();
+  });
+}
+if (equipmentRecycleLoadBtn) equipmentRecycleLoadBtn.addEventListener('click', loadEquipmentRecycleConfig);
+if (equipmentRecycleAddBtn) {
+  equipmentRecycleAddBtn.addEventListener('click', () => {
+    if (!Array.isArray(equipmentRecycleRowsCache)) equipmentRecycleRowsCache = [];
+    equipmentRecycleRowsCache.push(equipmentRecycleEmptyItem());
+    renderEquipmentRecycleRows();
   });
 }
 
@@ -6676,6 +6845,57 @@ if (divineBeastFragmentList) {
     if (!Array.isArray(divineBeastFragmentRowsCache)) divineBeastFragmentRowsCache = [];
     divineBeastFragmentRowsCache.splice(index, 1);
     renderDivineBeastFragmentRows();
+  });
+}
+if (equipmentRecycleSaveBtn) equipmentRecycleSaveBtn.addEventListener('click', saveEquipmentRecycleConfig);
+if (equipmentRecycleItemSearchInput) {
+  equipmentRecycleItemSearchInput.addEventListener('input', () => {
+    equipmentRecycleItemSearchKeyword = String(equipmentRecycleItemSearchInput.value || '').trim();
+    renderEquipmentRecycleRows();
+  });
+}
+if (equipmentRecycleList) {
+  equipmentRecycleList.addEventListener('change', (e) => {
+    const target = e.target;
+    const tr = target?.closest?.('tr[data-index]');
+    const index = Number(tr?.dataset?.index);
+    if (!Number.isInteger(index) || index < 0) return;
+    if (!Array.isArray(equipmentRecycleRowsCache) || !equipmentRecycleRowsCache[index]) return;
+    if (target?.matches?.('select[data-k="rewardId"]')) {
+      equipmentRecycleRowsCache[index].rewardId = String(target.value || '').trim();
+      return;
+    }
+    if (target?.matches?.('select[data-k="currency"]')) {
+      equipmentRecycleRowsCache[index].currency = String(target.value || 'epic').trim().toLowerCase() === 'legendary' ? 'legendary' : 'epic';
+      return;
+    }
+    if (target?.matches?.('select[data-k="limitType"]')) {
+      equipmentRecycleRowsCache[index].limitType = ['none', 'daily', 'weekly', 'lifetime'].includes(String(target.value || 'none'))
+        ? String(target.value || 'none')
+        : 'none';
+      return;
+    }
+    if (target?.matches?.('input[data-k="rewardQty"]')) {
+      equipmentRecycleRowsCache[index].rewardQty = Math.max(1, Math.floor(Number(target.value || 1)));
+      return;
+    }
+    if (target?.matches?.('input[data-k="cost"]')) {
+      equipmentRecycleRowsCache[index].cost = Math.max(1, Math.floor(Number(target.value || 1)));
+      return;
+    }
+    if (target?.matches?.('input[data-k="limit"]')) {
+      equipmentRecycleRowsCache[index].limit = Math.max(1, Math.floor(Number(target.value || 1)));
+    }
+  });
+  equipmentRecycleList.addEventListener('click', (e) => {
+    const btn = e.target?.closest?.('button[data-act="del"]');
+    if (!btn) return;
+    const tr = btn.closest('tr[data-index]');
+    const index = Number(tr?.dataset?.index);
+    if (!Number.isInteger(index) || index < 0) return;
+    if (!Array.isArray(equipmentRecycleRowsCache)) equipmentRecycleRowsCache = [];
+    equipmentRecycleRowsCache.splice(index, 1);
+    renderEquipmentRecycleRows();
   });
 }
 if (usersSearchBtn) {

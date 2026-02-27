@@ -2404,6 +2404,12 @@ body.dark .chat-name-btn.sponsor-player-name:hover {
   border-color: rgba(255, 255, 255, 0.45);
   background: rgba(255, 255, 255, 0.18);
 }
+body.dark #high-tier-recycle-rarity,
+body.dark #high-tier-recycle-slot {
+  background: rgba(20, 12, 8, 0.92);
+  color: #f6e7cf;
+  border: 1px solid rgba(246, 180, 90, 0.25);
+}
 
 #prompt-modal.activity-center-prompt .modal-card {
   width: min(760px, 94vw);

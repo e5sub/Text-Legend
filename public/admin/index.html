@@ -491,6 +491,44 @@
 
         <div class="block" data-collapsible>
           <div class="block-title">
+            <h2>装备回收兑换配置</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <p class="muted" style="margin-bottom: 8px;">
+              配置装备回收的精华兑换项（网页/安卓装备回收界面都会读取这里的配置）。
+            </p>
+            <div class="row" style="margin-bottom: 8px; gap: 8px;">
+              <button id="equipment-recycle-load-btn" class="btn-small">加载</button>
+              <button id="equipment-recycle-add-btn" class="btn-small">+ 添加兑换项</button>
+              <button id="equipment-recycle-save-btn" class="btn-small">保存</button>
+            </div>
+            <div class="row" style="margin-bottom: 8px; gap: 8px;">
+              <input id="equipment-recycle-item-search" type="text" placeholder="搜索物品名/ID/类型（过滤下拉选项）" style="max-width: 320px;">
+            </div>
+            <div class="table-container compact-config-table-container">
+              <table class="compact-config-table" style="font-size: 12px;">
+                <thead>
+                  <tr>
+                    <th>兑换物品</th>
+                    <th>数量</th>
+                    <th>消耗精华</th>
+                    <th>精华类型</th>
+                    <th>限制</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="equipment-recycle-list">
+                  <tr><td colspan="6" style="text-align:center;color:#999;">点击加载</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div id="equipment-recycle-msg" class="msg"></div>
+          </div>
+        </div>
+
+        <div class="block" data-collapsible>
+          <div class="block-title">
             <h2>每日幸运玩家</h2>
             <button class="btn-small block-toggle">折叠</button>
           </div>

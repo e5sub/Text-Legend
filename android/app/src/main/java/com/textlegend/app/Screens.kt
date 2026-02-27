@@ -462,6 +462,7 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                                         "forge" -> innerNav.navigate("forge")
                                         "refine" -> innerNav.navigate("refine")
                                         "growth" -> innerNav.navigate("growth")
+                                        "highrecycle" -> innerNav.navigate("highrecycle")
                                         "effect" -> innerNav.navigate("effect")
                                         "repair" -> innerNav.navigate("repair")
                                         "changeclass" -> innerNav.navigate("changeclass")
@@ -500,6 +501,7 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
             composable("forge") { ForgeDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
             composable("refine") { RefineDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
             composable("growth") { GrowthDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
+            composable("highrecycle") { HighTierRecycleDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
             composable("effect") { EffectDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
             composable("repair") { RepairDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
             composable("changeclass") { ChangeClassDialog(vm = vm, onDismiss = { innerNav.popBackStack() }) }
@@ -1307,6 +1309,53 @@ private fun rarityRank(rarity: String?): Int = when (normalizeRarityKey(rarity))
     else -> 0
 }
 
+private fun normalizeHighTierRecycleSlot(slot: String?): String = when (slot?.trim()?.lowercase()) {
+    "ring_left", "ring_right" -> "ring"
+    "bracelet_left", "bracelet_right" -> "bracelet"
+    else -> slot?.trim()?.lowercase().orEmpty()
+}
+
+private fun highTierRecycleSlotLabel(slot: String?): String = when (normalizeHighTierRecycleSlot(slot)) {
+    "weapon" -> "武器"
+    "chest" -> "衣服"
+    "head" -> "头盔"
+    "waist" -> "腰带"
+    "feet" -> "鞋子"
+    "ring" -> "戒指"
+    "bracelet" -> "手镯"
+    "neck" -> "项链"
+    else -> normalizeHighTierRecycleSlot(slot)
+}
+
+private fun calcHighTierSalvageYield(item: ItemInfo): Int {
+    val rarity = normalizeRarityKey(item.rarity)
+    val slot = normalizeHighTierRecycleSlot(item.slot)
+    return if (rarity == "epic") {
+        when (slot) {
+            "weapon" -> 12
+            "chest" -> 10
+            "head", "waist", "feet" -> 8
+            else -> 6
+        }
+    } else {
+        when (slot) {
+            "weapon" -> 18
+            "chest" -> 15
+            "head", "waist", "feet" -> 12
+            else -> 10
+        }
+    }
+}
+
+private fun isBatchRecyclableEquipment(item: ItemInfo): Boolean {
+    val rarity = normalizeRarityKey(item.rarity)
+    if (item.slot == null || (rarity != "epic" && rarity != "legendary")) return false
+    if ((item.refine_level).coerceAtLeast(0) > 0) return false
+    val effects = item.effects
+    if (effects != null && effects.isNotEmpty()) return false
+    return true
+}
+
 private fun formatCountdown(seconds: Int?): String {
     val total = (seconds ?: 0).coerceAtLeast(0)
     val mins = total / 60
@@ -1865,6 +1914,7 @@ private fun ActionsTab(
         ActionItem("装备合成", "forge", R.drawable.ic_forge),
         ActionItem("装备锻造", "refine", R.drawable.ic_refine),
         ActionItem("装备成长", "growth", R.drawable.ic_refine),
+        ActionItem("装备回收", "highrecycle", R.drawable.ic_refine),
         ActionItem("法宝", "treasure", R.drawable.ic_magic),
         ActionItem("特效重置", "effect", R.drawable.ic_magic),
         ActionItem("宠物系统", "pet", R.drawable.ic_magic),
@@ -2827,7 +2877,7 @@ private fun MailDialog(vm: GameViewModel, prefillName: String?, onDismiss: () ->
     var page by remember { mutableStateOf(0) }
     val pageSize = 9
     val inventory = state?.items.orEmpty().filter {
-        it.type != "currency" && !it.untradable && !it.unconsignable
+        it.type != "currency" && !it.untradable && !it.unconsignable && !it.unmail
     }
     val filtered = inventory.filter { it.name.contains(search, ignoreCase = true) }
     val pageInfo = paginate(filtered, page, pageSize)
@@ -3551,6 +3601,114 @@ private fun GrowthDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> 
                 enabled = selection.isNotBlank() && (!hasMaxLevel || (currentLevel ?: 0) < (maxLevel ?: Int.MAX_VALUE)),
                 modifier = Modifier.weight(1f)
             ) { Text("一键成长") }
+        }
+    }
+}
+
+@Composable
+private fun HighTierRecycleDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Unit) {
+    var tab by rememberSaveable { mutableStateOf("salvage") }
+    var salvageQty by rememberSaveable { mutableStateOf("1") }
+    var exchangeQty by rememberSaveable { mutableStateOf("1") }
+    val cfg = state?.high_tier_recycle_config
+    val items = state?.items.orEmpty()
+    val salvageItems = remember(items) {
+        items.filter { it.slot != null && (it.rarity == "epic" || it.rarity == "legendary") }
+            .sortedWith(compareByDescending<ItemInfo> { rarityRank(it.rarity) }.thenBy { it.name })
+    }
+    val batchEpicCount = remember(items) {
+        items.filter { isBatchRecyclableEquipment(it) && normalizeRarityKey(it.rarity) == "epic" }
+            .sumOf { maxOf(0, it.qty) }
+    }
+    val batchLegendCount = remember(items) {
+        items.filter { isBatchRecyclableEquipment(it) && normalizeRarityKey(it.rarity) == "legendary" }
+            .sumOf { maxOf(0, it.qty) }
+    }
+    val salvageCount = salvageQty.toIntOrNull()?.coerceAtLeast(1) ?: 1
+    val exchangeCount = exchangeQty.toIntOrNull()?.coerceIn(1, 99) ?: 1
+    val epicName = cfg?.materials?.epic?.name ?: "史诗精华"
+    val legendName = cfg?.materials?.legendary?.name ?: "传说精华"
+    val epicOwned = getBagItemQty(state, cfg?.materials?.epic?.id ?: "epic_essence")
+    val legendOwned = getBagItemQty(state, cfg?.materials?.legendary?.id ?: "legend_essence")
+
+    ScreenScaffold(title = "装备回收", onBack = onDismiss) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = { tab = "salvage" }, modifier = Modifier.weight(1f)) { Text("装备分解") }
+            Button(onClick = { tab = "exchange" }, modifier = Modifier.weight(1f)) { Text("精华兑换") }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Text("$epicName $epicOwned | $legendName $legendOwned")
+        Spacer(modifier = Modifier.height(8.dp))
+
+        when (tab) {
+            "salvage" -> {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = { vm.sendCmd("highrecycle decompose_all epic") },
+                        enabled = batchEpicCount > 0,
+                        modifier = Modifier.weight(1f)
+                    ) { Text("一键回收史诗($batchEpicCount)") }
+                    Button(
+                        onClick = { vm.sendCmd("highrecycle decompose_all legendary") },
+                        enabled = batchLegendCount > 0,
+                        modifier = Modifier.weight(1f)
+                    ) { Text("一键回收传说($batchLegendCount)") }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("一键回收仅处理无特效、无附加技能、无锻造的装备", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = salvageQty,
+                    onValueChange = { salvageQty = it.filter { ch -> ch.isDigit() } },
+                    label = { Text("分解数量") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                if (salvageItems.isEmpty()) {
+                    Text("背包中暂无可分解的史诗/传说装备")
+                } else {
+                    salvageItems.forEach { item ->
+                        val yieldQty = calcHighTierSalvageYield(item)
+                        val yieldName = if ((item.rarity ?: "") == "epic") epicName else legendName
+                        OutlinedButton(
+                            onClick = {
+                                val qty = salvageCount.coerceAtMost(maxOf(1, item.qty))
+                                vm.sendCmd("highrecycle decompose ${item.key.ifBlank { item.id }} $qty")
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("${item.name} x${item.qty} -> $yieldName x${yieldQty * salvageCount.coerceAtMost(maxOf(1, item.qty))}")
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                    }
+                }
+            }
+            else -> {
+                OutlinedTextField(
+                    value = exchangeQty,
+                    onValueChange = { exchangeQty = it.filter { ch -> ch.isDigit() } },
+                    label = { Text("兑换数量") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                val exchangeItems = cfg?.exchangeItems.orEmpty()
+                if (exchangeItems.isEmpty()) {
+                    Text("暂无兑换项")
+                } else {
+                    exchangeItems.forEach { entry ->
+                        val owned = getBagItemQty(state, entry.currencyItemId)
+                        OutlinedButton(
+                            onClick = { vm.sendCmd("highrecycle exchange ${entry.id} $exchangeCount") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("${entry.rewardText} | ${entry.currencyName} x${entry.cost * exchangeCount}（当前 $owned）")
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                    }
+                }
+            }
         }
     }
 }

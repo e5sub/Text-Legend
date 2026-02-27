@@ -574,6 +574,35 @@
     </div>
   </div>
 
+  <div id="high-tier-recycle-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-title">装备回收</div>
+      <div class="modal-list-wrapper">
+        <div class="consign-tabs">
+          <button class="consign-tab active" data-tab="salvage">装备分解</button>
+          <button class="consign-tab" data-tab="exchange">精华兑换</button>
+        </div>
+        <div id="high-tier-recycle-summary" class="modal-text">加载中...</div>
+        <div class="consign-panel" data-panel="salvage">
+          <div class="modal-text">仅可分解背包中的史诗/传说装备</div>
+          <div class="trade-row" style="margin-bottom:8px;">
+            <button id="high-tier-recycle-batch-epic">一键回收史诗</button>
+            <button id="high-tier-recycle-batch-legend">一键回收传说</button>
+          </div>
+          <div class="modal-text">一键回收仅会处理无特效、无附加技能、无锻造的装备</div>
+          <div id="high-tier-recycle-salvage-list" class="forge-list"></div>
+        </div>
+        <div class="consign-panel hidden" data-panel="exchange">
+          <div class="modal-text">消耗精华兑换养成材料</div>
+          <div id="high-tier-recycle-exchange-list" class="forge-list"></div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="high-tier-recycle-close">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <div id="training-batch-modal" class="modal hidden">
     <div class="modal-card">
       <div class="modal-title">修炼次数</div>
