@@ -1,17 +1,16 @@
 # syntax=docker/dockerfile:1
-FROM node:20-bookworm-slim
+FROM node:20-alpine
 
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends tzdata \
+RUN apk add --no-cache --virtual .build-deps python3 make g++ \
+  && apk add --no-cache tzdata \
   && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
   && echo "Asia/Shanghai" > /etc/timezone
 ENV TZ=Asia/Shanghai
 RUN npm install --omit=dev --no-audit --no-fund \
-  && apt-get purge -y --auto-remove \
-  && rm -rf /var/lib/apt/lists/*
+  && apk del .build-deps
 
 COPY . .
 
