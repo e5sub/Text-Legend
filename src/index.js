@@ -108,6 +108,7 @@ import {
   claimActivityRewardsByMail,
   claimHarvestBlessing,
   claimHarvestSupplyByMail,
+  claimHarvestTimedChestByMail,
   normalizeHarvestSeasonRewardConfig,
   setHarvestSeasonRewardConfig,
   normalizeHarvestSeasonSignConfig,
@@ -219,6 +220,14 @@ async function autoClaimActivityRewardsForPlayer(player, now = Date.now()) {
       now
     });
     if (supplyResult?.ok) {
+      player.forceStateRefresh = true;
+    }
+    const chestResult = await claimHarvestTimedChestByMail(player, {
+      sendMail,
+      realmId: player.realmId || 1,
+      now
+    });
+    if (chestResult?.ok) {
       player.forceStateRefresh = true;
     }
     const result = await claimActivityRewardsByMail(player, {
