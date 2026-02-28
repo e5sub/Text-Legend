@@ -1,51 +1,121 @@
 ﻿<!doctype html>
-<html lang="en" class="dark">
+<html lang="zh" class="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>这是一个神奇的文字页面</title>
+  <title>挂机收菜文字服</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="training_batch.css">
 </head>
 <body class="dark">
   <div id="app">
     <header>
-      <div class="header-top">
-        <h1>这是一个神奇的文字页面</h1>
+        <div class="header-top">
+        <h1>挂机收菜文字服</h1>
       </div>
-      <p>致敬 1.76 时代。</p>
+      <p>上线收菜，下线摸鱼，轻量养成慢慢推。</p>
     </header>
 
     <section id="auth" class="panel">
       <div class="auth-hero">
         <div class="auth-copy">
-          <span class="badge">这是一个神奇的文字页面</span>
-          <h2>踏入玛法</h2>
-          <p>创建角色，进入比奇城，与你的同伴一起探索沙巴克与赤月。</p>
+          <span class="badge">挂机收菜服</span>
+          <h2>上线收菜，下线摸鱼</h2>
+          <p>登录后直接进入区服与角色选择。日常以挂机、托管、收菜活动为主，空闲时上线点一点，也能稳定推进养成。</p>
+          <div class="auth-feature-list">
+            <div class="auth-feature">
+              <span class="auth-feature-icon">挂</span>
+              <div>
+                <strong>轻松挂机</strong>
+                <span>在线挂机、离线托管都能持续拿收益</span>
+              </div>
+            </div>
+            <div class="auth-feature">
+              <span class="auth-feature-icon">收</span>
+              <div>
+                <strong>稳定收菜</strong>
+                <span>活动积分、邮件奖励、精华兑换统一回收</span>
+              </div>
+            </div>
+            <div class="auth-feature">
+              <span class="auth-feature-icon">鱼</span>
+              <div>
+                <strong>摸鱼养成</strong>
+                <span>宠物、法宝、成长系统慢慢堆，不用一直盯屏</span>
+              </div>
+            </div>
+          </div>
           <div class="auth-ornament"></div>
+          <div class="auth-stat-strip">
+            <div class="auth-stat">
+              <strong>挂机</strong>
+              <span>在线也能刷</span>
+            </div>
+            <div class="auth-stat">
+              <strong>托管</strong>
+              <span>下线继续打</span>
+            </div>
+            <div class="auth-stat">
+              <strong>收菜</strong>
+              <span>上线就能领</span>
+            </div>
+          </div>
         </div>
         <div class="auth-cards">
           <div class="auth-card">
-            <h3>登录</h3>
-            <input id="login-username" type="text" placeholder="账号">
-            <input id="login-password" type="password" placeholder="密码">
+            <div class="auth-card-head">
+              <span class="auth-kicker">继续收菜</span>
+              <h3>登录账号</h3>
+              <p class="auth-sub">已有账号直接登录，继续挂机、托管和日常收菜。</p>
+            </div>
+            <div class="auth-field">
+              <label for="login-username">账号</label>
+              <input id="login-username" type="text" placeholder="输入账号">
+            </div>
+            <div class="auth-field">
+              <label for="login-password">密码</label>
+              <input id="login-password" type="password" placeholder="输入密码">
+            </div>
             <div class="captcha-row">
-              <input id="login-captcha" type="text" placeholder="验证码">
+              <div class="auth-field auth-field-inline">
+                <label for="login-captcha">验证码</label>
+                <input id="login-captcha" type="text" placeholder="输入验证码">
+              </div>
               <img id="login-captcha-img" class="captcha-img" alt="验证码">
               <button id="login-captcha-refresh" class="captcha-refresh" type="button">换一张</button>
             </div>
             <button id="login-btn">进入世界</button>
+            <button id="open-register-btn" class="auth-secondary-btn" type="button">注册新账号</button>
           </div>
-          <div class="auth-card">
-            <h3>注册</h3>
-            <input id="register-username" type="text" placeholder="账号">
-            <input id="register-password" type="password" placeholder="密码">
-            <div class="captcha-row">
-              <input id="register-captcha" type="text" placeholder="验证码">
-              <img id="register-captcha-img" class="captcha-img" alt="验证码">
-              <button id="register-captcha-refresh" class="captcha-refresh" type="button">换一张</button>
+        </div>
+      </div>
+      <div id="register-overlay" class="auth-overlay hidden">
+        <div class="auth-overlay-backdrop" id="register-overlay-backdrop"></div>
+        <div class="auth-overlay-card auth-card">
+          <div class="auth-card-head">
+            <span class="auth-kicker">开新号摸鱼</span>
+            <h3>注册账号</h3>
+            <p class="auth-sub">注册后立即创建角色，从新区开始你的挂机养成节奏。</p>
+          </div>
+          <div class="auth-field">
+            <label for="register-username">账号</label>
+            <input id="register-username" type="text" placeholder="设置账号">
+          </div>
+          <div class="auth-field">
+            <label for="register-password">密码</label>
+            <input id="register-password" type="password" placeholder="设置密码">
+          </div>
+          <div class="captcha-row">
+            <div class="auth-field auth-field-inline">
+              <label for="register-captcha">验证码</label>
+              <input id="register-captcha" type="text" placeholder="输入验证码">
             </div>
+            <img id="register-captcha-img" class="captcha-img" alt="验证码">
+            <button id="register-captcha-refresh" class="captcha-refresh" type="button">换一张</button>
+          </div>
+          <div class="auth-overlay-actions">
             <button id="register-btn">创建账号</button>
+            <button id="close-register-btn" class="auth-secondary-btn" type="button">取消</button>
           </div>
         </div>
       </div>

@@ -958,6 +958,10 @@ const log = document.getElementById('log');
 
 const authMsg = document.getElementById('auth-msg');
 const authToast = document.getElementById('auth-toast');
+const registerOverlay = document.getElementById('register-overlay');
+const openRegisterBtn = document.getElementById('open-register-btn');
+const closeRegisterBtn = document.getElementById('close-register-btn');
+const registerOverlayBackdrop = document.getElementById('register-overlay-backdrop');
 const charMsg = document.getElementById('char-msg');
 const characterList = document.getElementById('character-list');
 const realmSelect = document.getElementById('realm-select');
@@ -1016,7 +1020,23 @@ function show(section) {
   characterSection.classList.add('hidden');
   gameSection.classList.add('hidden');
   section.classList.remove('hidden');
+  if (section !== authSection && registerOverlay) {
+    registerOverlay.classList.add('hidden');
+  }
   hideItemTooltip();
+}
+
+function openRegisterOverlay() {
+  if (!registerOverlay) return;
+  registerOverlay.classList.remove('hidden');
+  setTimeout(() => {
+    const input = document.getElementById('register-username');
+    input?.focus();
+  }, 0);
+}
+
+function closeRegisterOverlay() {
+  registerOverlay?.classList.add('hidden');
 }
 
 function exitGame() {
@@ -9069,6 +9089,7 @@ async function register() {
     authMsg.textContent = '注册成功，请登录。';
     if (registerInviteCode) authMsg.textContent += '（已绑定邀请码）';
     showToast('注册成功');
+    closeRegisterOverlay();
     refreshCaptcha('register');
   } catch (err) {
     authMsg.textContent = err.message;
@@ -9865,6 +9886,18 @@ function showObserveModal(data) {
 
 document.getElementById('login-btn').addEventListener('click', login);
 document.getElementById('register-btn').addEventListener('click', register);
+if (openRegisterBtn) {
+  openRegisterBtn.addEventListener('click', async () => {
+    openRegisterOverlay();
+    await refreshCaptcha('register');
+  });
+}
+if (closeRegisterBtn) {
+  closeRegisterBtn.addEventListener('click', closeRegisterOverlay);
+}
+if (registerOverlayBackdrop) {
+  registerOverlayBackdrop.addEventListener('click', closeRegisterOverlay);
+}
 document.getElementById('create-char-btn').addEventListener('click', createCharacter);
 const exitGameBtn = document.getElementById('exit-game-btn');
 if (exitGameBtn) {
