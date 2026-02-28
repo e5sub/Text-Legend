@@ -395,53 +395,53 @@
         <div class="pet-grid">
           <div class="pet-column pet-column-left">
             <div class="pet-section">
-              <div class="pet-section-title">我的宠物</div>
+              <div class="pet-section-title"><span class="pet-title-icon">宠</span><span>我的宠物</span></div>
               <div id="pet-list" class="pet-list"></div>
               <div class="pet-inline-actions pet-action-grid">
-                <button id="pet-set-active">设为出战</button>
-                <button id="pet-set-rest">休息</button>
-                <button id="pet-rename">改名</button>
-                <button id="pet-release">放生</button>
-                <button id="pet-divine-advance-btn">神兽进阶</button>
-                <button id="pet-synth-below-epic-btn">一键合成</button>
+                <button id="pet-set-active"><span class="pet-btn-icon">战</span><span>设为出战</span></button>
+                <button id="pet-set-rest"><span class="pet-btn-icon">休</span><span>休息</span></button>
+                <button id="pet-rename"><span class="pet-btn-icon">名</span><span>改名</span></button>
+                <button id="pet-release"><span class="pet-btn-icon">放</span><span>放生</span></button>
+                <button id="pet-divine-advance-btn"><span class="pet-btn-icon">阶</span><span>神兽进阶</span></button>
+                <button id="pet-synth-below-epic-btn" class="pet-danger-action"><span class="pet-btn-icon">合</span><span>一键合成</span></button>
               </div>
             </div>
           </div>
           <div class="pet-column pet-column-right">
             <div class="pet-section pet-detail-section">
-              <div class="pet-section-title">宠物详情</div>
+              <div class="pet-section-title"><span class="pet-title-icon">详</span><span>宠物详情</span></div>
               <div id="pet-detail" class="modal-text pet-detail-panel">请选择一只宠物</div>
             </div>
             <div class="pet-section">
-              <div class="pet-section-title">快捷操作</div>
+              <div class="pet-section-title"><span class="pet-title-icon">捷</span><span>快捷操作</span></div>
               <div class="pet-quick-grid">
-                <button id="pet-open-equip-modal-btn" class="pet-quick-action" type="button">
+                <button id="pet-open-equip-modal-btn" class="pet-quick-action" data-kind="equip" type="button">
                   <span class="pet-quick-icon">装</span>
                   <span class="pet-quick-label">宠物装备</span>
                 </button>
-                <button id="pet-open-book-modal-btn" class="pet-quick-action" type="button">
+                <button id="pet-open-book-modal-btn" class="pet-quick-action" data-kind="book" type="button">
                   <span class="pet-quick-icon">书</span>
                   <span class="pet-quick-label">打书</span>
                 </button>
-                <button id="pet-open-train-modal-btn" class="pet-quick-action" type="button">
+                <button id="pet-open-train-modal-btn" class="pet-quick-action" data-kind="train" type="button">
                   <span class="pet-quick-icon">修</span>
                   <span class="pet-quick-label">修炼</span>
                 </button>
-                <button id="pet-open-synth-modal-btn" class="pet-quick-action" type="button">
+                <button id="pet-open-synth-modal-btn" class="pet-quick-action" data-kind="synth" type="button">
                   <span class="pet-quick-icon">合</span>
                   <span class="pet-quick-label">合成</span>
                 </button>
               </div>
             </div>
             <div class="pet-section hidden">
-              <div class="pet-section-title">技能书仓库</div>
+              <div class="pet-section-title"><span class="pet-title-icon">书</span><span>技能书仓库</span></div>
               <div id="pet-book-list" class="pet-book-list"></div>
             </div>
             <div class="pet-section hidden">
-              <div class="pet-section-title">宠物修炼</div>
+              <div class="pet-section-title"><span class="pet-title-icon">修</span><span>宠物修炼</span></div>
               <div class="pet-inline-actions pet-inline-tight">
                 <select id="pet-use-book"></select>
-                <button id="pet-use-book-btn">打书</button>
+                <button id="pet-use-book-btn"><span class="pet-btn-icon">书</span><span>打书</span></button>
                 <select id="pet-train-attr">
                   <option value="hp">生命</option>
                   <option value="mp">魔法值</option>
@@ -452,13 +452,13 @@
                   <option value="dex">敏捷</option>
                 </select>
                 <input id="pet-train-count" class="pet-count-input" type="number" min="1" max="999" value="1" />
-                <button id="pet-train-btn">修炼</button>
+                <button id="pet-train-btn"><span class="pet-btn-icon">修</span><span>修炼</span></button>
               </div>
               <div id="pet-train-info" class="modal-text pet-tip-text">请选择宠物后进行修炼</div>
               <div class="pet-inline-actions pet-inline-tight">
                 <select id="pet-synth-main"></select>
                 <select id="pet-synth-sub"></select>
-                <button id="pet-synth-btn">合成</button>
+                <button id="pet-synth-btn"><span class="pet-btn-icon">合</span><span>合成</span></button>
               </div>
             </div>
           </div>
@@ -477,13 +477,13 @@
         <div class="pet-grid pet-equip-grid">
           <div class="pet-column">
             <div class="pet-section">
-              <div class="pet-section-title">已穿戴</div>
+              <div class="pet-section-title"><span class="pet-title-icon">戴</span><span>已穿戴</span></div>
               <div id="pet-equip-list" class="pet-book-list"></div>
             </div>
           </div>
           <div class="pet-column">
             <div class="pet-section">
-              <div class="pet-section-title">背包装备</div>
+              <div class="pet-section-title"><span class="pet-title-icon">包</span><span>背包装备</span></div>
               <div id="pet-bag-equip-list" class="pet-book-list"></div>
               <div class="pet-inline-actions hidden">
                 <select id="pet-equip-item"></select>

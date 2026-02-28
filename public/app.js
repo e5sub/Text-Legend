@@ -2792,18 +2792,24 @@ function renderPetModal() {
       head.appendChild(badgeWrap);
       const meta = document.createElement('div');
       meta.className = 'pet-entry-meta';
-      const leftMeta = document.createElement('span');
-      leftMeta.textContent = `等级 ${Number(pet.level || 1)}/${Number(pet.levelCap || 1)} | EXP ${Number(pet.exp || 0)}/${Number(pet.expNeed || 0)}`;
-      const rightMeta = document.createElement('span');
-      rightMeta.textContent = `成长 ${Number(pet.growth || 1).toFixed(3)}`;
-      meta.appendChild(leftMeta);
-      meta.appendChild(rightMeta);
+      const metaChips = [
+        ['等级', `${Number(pet.level || 1)}/${Number(pet.levelCap || 1)}`],
+        ['成长', Number(pet.growth || 1).toFixed(3)],
+        ['技能', `${Array.isArray(pet?.skills) ? pet.skills.length : 0}/${Number(pet?.skillSlots || 0)}`],
+        ['战力', Number(pet?.power || 0)]
+      ];
+      metaChips.forEach(([label, value]) => {
+        const chip = document.createElement('span');
+        chip.className = 'pet-entry-stat-chip';
+        chip.innerHTML = `<em>${label}</em><strong>${value}</strong>`;
+        meta.appendChild(chip);
+      });
       const foot = document.createElement('div');
       foot.className = 'pet-entry-foot';
       const footLeft = document.createElement('span');
       footLeft.textContent = `资质 攻${Number(pet?.aptitude?.atk || 0)} / 防${Number(pet?.aptitude?.def || 0)} / 法${Number(pet?.aptitude?.mag || 0)}`;
       const footRight = document.createElement('span');
-      footRight.innerHTML = `技能 <strong>${Array.isArray(pet?.skills) ? pet.skills.length : 0}</strong> / 战力 <strong>${Number(pet?.power || 0)}</strong>`;
+      footRight.textContent = `经验 ${Number(pet.exp || 0)}/${Number(pet.expNeed || 0)}`;
       row.appendChild(head);
       row.appendChild(meta);
       row.appendChild(foot);
@@ -2831,7 +2837,36 @@ function renderPetModal() {
     if (petUi.equipModalTitle) petUi.equipModalTitle.textContent = '宠物装备';
   } else {
     petUi.detail.innerHTML = '';
+    const createInfoBlock = (title, lines = []) => {
+      const block = document.createElement('div');
+      block.className = 'pet-detail-block';
+      const header = document.createElement('div');
+      header.className = 'pet-detail-block-title';
+      header.textContent = title;
+      block.appendChild(header);
+      lines.forEach((text) => {
+        const line = document.createElement('div');
+        line.className = 'pet-detail-line';
+        line.textContent = text;
+        block.appendChild(line);
+      });
+      return block;
+    };
+    const createMetricChip = (label, value) => {
+      const chip = document.createElement('div');
+      chip.className = 'pet-detail-metric';
+      const labelNode = document.createElement('span');
+      labelNode.textContent = label;
+      const valueNode = document.createElement('strong');
+      valueNode.textContent = value;
+      chip.appendChild(labelNode);
+      chip.appendChild(valueNode);
+      return chip;
+    };
+    const header = document.createElement('div');
+    header.className = 'pet-detail-hero';
     const nameLine = document.createElement('div');
+    nameLine.className = 'pet-detail-name';
     nameLine.textContent = '名称: ';
     const nameSpan = document.createElement('span');
     nameSpan.textContent = selected.name;
@@ -2841,44 +2876,66 @@ function renderPetModal() {
       if (selectedRarityKey === 'ultimate') nameSpan.classList.add('ultimate-text');
     }
     nameLine.appendChild(nameSpan);
-    petUi.detail.appendChild(nameLine);
-    const lines = [
+    header.appendChild(nameLine);
+    const metrics = document.createElement('div');
+    metrics.className = 'pet-detail-metrics';
+    metrics.appendChild(createMetricChip('等级', `${Number(selected.level || 1)}/${Number(selected.levelCap || 1)}`));
+    metrics.appendChild(createMetricChip('成长', Number(selected.growth || 1).toFixed(3)));
+    metrics.appendChild(createMetricChip('战力', Number(selected.power || 0)));
+    metrics.appendChild(createMetricChip('技能', `${Array.isArray(selected.skills) ? selected.skills.length : 0}/${Number(selected.skillSlots || 0)}`));
+    header.appendChild(metrics);
+    petUi.detail.appendChild(header);
+    const baseLines = [
       `稀有度: ${selected.rarityLabel || '-'}`,
-      `等级: ${Number(selected.level || 1)}/${Number(selected.levelCap || 1)}`,
       `经验: ${Number(selected.exp || 0)}/${Number(selected.expNeed || 0)}`,
       `种类: ${selected.role || '-'}`,
       `定位: ${getPetBattleTypeText(selected)}`,
-      `定位说明: ${getPetBattleTypeDesc(selected) || '-'}`,
-      `成长: ${Number(selected.growth || 1).toFixed(3)}`,
-      `资质: HP ${selected.aptitude?.hp || 0} / 攻 ${selected.aptitude?.atk || 0} / 防 ${selected.aptitude?.def || 0} / 法 ${selected.aptitude?.mag || 0} / 速 ${selected.aptitude?.agility || 0}`
+      `定位说明: ${getPetBattleTypeDesc(selected) || '-'}`
     ];
+    petUi.detail.appendChild(createInfoBlock('基础信息', baseLines));
+    const aptitudeLines = [
+      `生命: ${selected.aptitude?.hp || 0}`,
+      `攻击: ${selected.aptitude?.atk || 0}`,
+      `防御: ${selected.aptitude?.def || 0}`,
+      `魔法: ${selected.aptitude?.mag || 0}`,
+      `敏捷: ${selected.aptitude?.agility || 0}`
+    ];
+    petUi.detail.appendChild(createInfoBlock('资质面板', aptitudeLines));
     if (isDivineBeastPet(selected)) {
       const fragQty = Math.max(0, Math.floor(Number((Array.isArray(lastState?.items) ? lastState.items : []).find((item) => String(item?.id || '') === 'divine_beast_fragment')?.qty || 0)));
-      lines.push(`神兽进阶: ${Math.max(0, Math.floor(Number(selected.divineAdvanceCount || 0)))}次`);
-      lines.push(`进阶效果: 每次资质+10% / 成长+10% / 技能格+1`);
-      lines.push(`进阶消耗: 神兽碎片 x500（当前 ${fragQty}）`);
+      petUi.detail.appendChild(createInfoBlock('神兽进阶', [
+        `进阶次数: ${Math.max(0, Math.floor(Number(selected.divineAdvanceCount || 0)))}`,
+        '进阶效果: 每次资质+10% / 成长+10% / 技能格+1',
+        `进阶消耗: 神兽碎片 x500（当前 ${fragQty}）`
+      ]));
     }
     const t = selected.training || {};
-    lines.push(`修炼: 生${Number(t.hp || 0)} 魔${Number(t.mp || 0)} 攻${Number(t.atk || 0)} 防${Number(t.def || 0)} 法${Number(t.mag || 0)} 魔御${Number(t.mdef || 0)} 敏${Number(t.dex || 0)}`);
-    lines.forEach((text) => {
-      const line = document.createElement('div');
-      line.textContent = text;
-      petUi.detail.appendChild(line);
-    });
+    petUi.detail.appendChild(createInfoBlock('修炼等级', [
+      `生命: ${Number(t.hp || 0)}  魔法值: ${Number(t.mp || 0)}`,
+      `攻击: ${Number(t.atk || 0)}  防御: ${Number(t.def || 0)}`,
+      `魔法: ${Number(t.mag || 0)}  魔御: ${Number(t.mdef || 0)}  敏捷: ${Number(t.dex || 0)}`
+    ]));
+    const skillBlock = document.createElement('div');
+    skillBlock.className = 'pet-detail-block';
+    const skillLabel = document.createElement('div');
+    skillLabel.className = 'pet-detail-block-title';
+    skillLabel.textContent = '技能效果';
+    skillBlock.appendChild(skillLabel);
     const skillLine = document.createElement('div');
-    const skillLabel = document.createElement('span');
-    skillLabel.textContent = '技能: ';
-    skillLine.appendChild(skillLabel);
+    skillLine.className = 'pet-detail-skill-tags';
     const skillNames = Array.isArray(selected.skillNames) ? selected.skillNames : [];
     const skillEffects = Array.isArray(selected.skillEffects) ? selected.skillEffects : [];
     if (!skillNames.length) {
-      skillLine.appendChild(document.createTextNode('无'));
+      const empty = document.createElement('div');
+      empty.className = 'pet-detail-line';
+      empty.textContent = '无';
+      skillBlock.appendChild(empty);
     } else {
       skillNames.forEach((name, idx) => {
         const effect = skillEffects[idx] || '';
         const tag = document.createElement('span');
+        tag.className = 'pet-detail-skill-tag';
         tag.textContent = name;
-        tag.style.marginRight = '6px';
         if (effect) {
           tag.style.cursor = 'help';
           tag.addEventListener('mouseenter', (evt) => showItemTooltip(effect, evt));
@@ -2887,8 +2944,9 @@ function renderPetModal() {
         }
         skillLine.appendChild(tag);
       });
+      skillBlock.appendChild(skillLine);
     }
-    petUi.detail.appendChild(skillLine);
+    petUi.detail.appendChild(skillBlock);
     if (petUi.equipModalTitle) petUi.equipModalTitle.textContent = `宠物装备：${selected.name}`;
   }
 
@@ -2941,12 +2999,25 @@ function renderPetModal() {
     } else {
       equippedItems.forEach((item) => {
         const row = document.createElement('div');
-        row.className = 'pet-book-entry';
+        row.className = 'pet-book-entry pet-equip-entry';
         const slotLabel = petEquipSlotLabels[item.slot] || item.slot || '装备';
-        row.textContent = `${slotLabel}: `;
+        const head = document.createElement('div');
+        head.className = 'pet-equip-entry-head';
+        const slotChip = document.createElement('span');
+        slotChip.className = 'pet-equip-slot-chip';
+        slotChip.textContent = slotLabel;
+        head.appendChild(slotChip);
+        if (Number(item.refine_level || 0) > 0) {
+          const refineChip = document.createElement('span');
+          refineChip.className = 'pet-equip-refine-chip';
+          refineChip.textContent = `+${Number(item.refine_level || 0)}`;
+          head.appendChild(refineChip);
+        }
         const nameSpan = document.createElement('span');
         nameSpan.textContent = formatItemName(item);
+        nameSpan.className = 'pet-equip-name';
         applyRarityClass(nameSpan, item);
+        row.appendChild(head);
         row.appendChild(nameSpan);
         const tooltip = formatItemTooltip(item);
         if (tooltip) {
@@ -2983,10 +3054,24 @@ function renderPetModal() {
     } else {
       equipables.forEach((item) => {
         const row = document.createElement('div');
-        row.className = 'pet-book-entry';
+        row.className = 'pet-book-entry pet-equip-entry';
+        const head = document.createElement('div');
+        head.className = 'pet-equip-entry-head';
+        const typeChip = document.createElement('span');
+        typeChip.className = 'pet-equip-slot-chip';
+        typeChip.textContent = item.slotLabel || item.slot || '装备';
+        head.appendChild(typeChip);
+        if (Number(item.refine_level || 0) > 0) {
+          const refineChip = document.createElement('span');
+          refineChip.className = 'pet-equip-refine-chip';
+          refineChip.textContent = `+${Number(item.refine_level || 0)}`;
+          head.appendChild(refineChip);
+        }
         const nameSpan = document.createElement('span');
         nameSpan.textContent = `${formatItemName(item)} x${Number(item.qty || 1)}`;
+        nameSpan.className = 'pet-equip-name';
         applyRarityClass(nameSpan, item);
+        row.appendChild(head);
         row.appendChild(nameSpan);
         const tooltip = formatItemTooltip(item);
         if (tooltip) {
