@@ -112,9 +112,11 @@ const HIGH_TIER_RECYCLE_ESSENCE_ITEM_IDS = Object.freeze({
 const DEFAULT_EQUIPMENT_RECYCLE_EXCHANGE_ITEMS = Object.freeze([
   { id: 'htr_epic_training', currency: 'epic', cost: 200, rewards: [{ id: 'training_fruit', qty: 10 }] },
   { id: 'htr_epic_treasure', currency: 'epic', cost: 200, rewards: [{ id: TREASURE_EXP_ITEM_ID, qty: 10 }] },
+  { id: 'htr_legend_to_epic', currency: 'legendary', cost: 1, rewards: [{ id: 'epic_essence', qty: 3 }] },
   { id: 'htr_legend_pet_training', currency: 'legendary', cost: 200, rewards: [{ id: 'pet_training_fruit', qty: 10 }] },
   { id: 'htr_legend_growth', currency: 'legendary', cost: 300, rewards: [{ id: 'ultimate_growth_stone', qty: 10 }] },
   { id: 'htr_legend_break', currency: 'legendary', cost: 600, rewards: [{ id: 'ultimate_growth_break_stone', qty: 10 }] },
+  { id: 'htr_supreme_to_legend', currency: 'supreme', cost: 1, rewards: [{ id: 'legend_essence', qty: 4 }] },
   { id: 'htr_supreme_fragment', currency: 'supreme', cost: 1000, limitType: 'weekly', limit: 1, rewards: [{ id: 'divine_beast_fragment', qty: 1 }] }
 ]);
 let equipmentRecycleExchangeItems = DEFAULT_EQUIPMENT_RECYCLE_EXCHANGE_ITEMS.map((entry) => ({
@@ -311,12 +313,16 @@ export function getHighTierRecycleStatePayload() {
         currency: entry.currency,
         currencyItemId,
         currencyName: ITEM_TEMPLATES[currencyItemId]?.name || currencyItemId,
+        currencyRarity: ITEM_TEMPLATES[currencyItemId]?.rarity || null,
         cost: entry.cost,
         rewards: entry.rewards.map((reward) => ({
           id: reward.id,
           qty: reward.qty,
-          name: ITEM_TEMPLATES[reward.id]?.name || reward.id
+          name: ITEM_TEMPLATES[reward.id]?.name || reward.id,
+          rarity: ITEM_TEMPLATES[reward.id]?.rarity || null
         })),
+        limitType: String(entry.limitType || 'none'),
+        limit: Math.max(0, Math.floor(Number(entry.limit || 0))),
         rewardText: `${describeHighTierRecycleRewards(entry.rewards)}${String(entry.limitType || 'none') !== 'none' && Number(entry.limit || 0) > 0
           ? `（${entry.limitType === 'daily' ? '日限' : entry.limitType === 'weekly' ? '周限' : '终身限'}${Math.max(1, Math.floor(Number(entry.limit || 1)))}）`
           : ''}`

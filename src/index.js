@@ -5183,7 +5183,7 @@ function totalRewardMultiplier({ vipActive, svipActive = false, guildActive, cul
 function buildItemView(itemId, effects = null, durability = null, max_durability = null, refine_level = 0, base_roll_pct = null, growth_level = 0, growth_fail_stack = 0) {
   const item = ITEM_TEMPLATES[itemId] || { id: itemId, name: itemId, type: 'unknown' };
   const isEquipment = Boolean(item?.slot);
-  const baseRollPct = isEquipment ? Math.max(50, Math.min(150, Math.floor(Number(base_roll_pct ?? 100) || 100))) : null;
+  const baseRollPct = isEquipment ? Math.max(100, Math.min(200, Math.floor(Number(base_roll_pct ?? 100) || 100))) : null;
   const rollStat = (value) => {
     const base = Number(value || 0);
     if (!isEquipment || base <= 0) return base;
@@ -5227,7 +5227,7 @@ function buildItemView(itemId, effects = null, durability = null, max_durability
 function buildInventoryItemPayload(slot) {
   const item = ITEM_TEMPLATES[slot.id] || { id: slot.id, name: slot.id, type: 'unknown' };
   const isEquipment = Boolean(item?.slot);
-  const baseRollPct = isEquipment ? Math.max(50, Math.min(150, Math.floor(Number(slot.base_roll_pct ?? 100) || 100))) : null;
+  const baseRollPct = isEquipment ? Math.max(100, Math.min(200, Math.floor(Number(slot.base_roll_pct ?? 100) || 100))) : null;
   const rollStat = (value) => {
     const base = Number(value || 0);
     if (!isEquipment || base <= 0) return base;
@@ -6864,7 +6864,7 @@ function normalizeTradeItemInstanceAttrs(attrs = {}) {
     durability: attrs.durability == null ? null : Number(attrs.durability),
     max_durability: attrs.max_durability == null ? null : Number(attrs.max_durability),
     refine_level: attrs.refine_level == null ? 0 : Math.max(0, Math.floor(Number(attrs.refine_level || 0))),
-    base_roll_pct: attrs.base_roll_pct == null ? null : Math.max(50, Math.min(150, Math.floor(Number(attrs.base_roll_pct || 100) || 100))),
+    base_roll_pct: attrs.base_roll_pct == null ? null : Math.max(100, Math.min(200, Math.floor(Number(attrs.base_roll_pct || 100) || 100))),
     growth_level: attrs.growth_level == null ? 0 : Math.max(0, Math.floor(Number(attrs.growth_level || 0))),
     growth_fail_stack: attrs.growth_fail_stack == null ? 0 : Math.max(0, Math.floor(Number(attrs.growth_fail_stack || 0)))
   };
@@ -7239,7 +7239,7 @@ const consignApi = {
       const durability = validateDurability(invSlot.durability).value ?? null;
       const maxDurability = validateMaxDurability(invSlot.max_durability).value ?? null;
       const refineLevel = Number.isFinite(invSlot.refine_level) ? invSlot.refine_level : 0;
-      const baseRollPct = invSlot.base_roll_pct == null ? null : Math.max(50, Math.min(150, Math.floor(Number(invSlot.base_roll_pct || 100) || 100)));
+      const baseRollPct = invSlot.base_roll_pct == null ? null : Math.max(100, Math.min(200, Math.floor(Number(invSlot.base_roll_pct || 100) || 100)));
       const growthLevel = Math.max(0, Math.floor(Number(invSlot.growth_level || 0)));
       const growthFailStack = Math.max(0, Math.floor(Number(invSlot.growth_fail_stack || 0)));
 
@@ -11119,7 +11119,7 @@ function biasSynthesizedPetAptitudeByBattleType(pet, aptRange, battleType) {
 function scalePetEquipBaseStat(value, baseRollPct) {
   const base = Number(value || 0);
   if (base <= 0) return 0;
-  const rollPct = Math.max(50, Math.min(150, Math.floor(Number(baseRollPct ?? 100) || 100)));
+  const rollPct = Math.max(100, Math.min(200, Math.floor(Number(baseRollPct ?? 100) || 100)));
   return Math.max(1, Math.floor(base * rollPct / 100));
 }
 
@@ -11796,7 +11796,7 @@ function normalizePetEquipmentState(equipment) {
       durability: raw.durability == null ? null : Math.max(0, Math.floor(Number(raw.durability || 0))),
       max_durability: raw.max_durability == null ? null : Math.max(1, Math.floor(Number(raw.max_durability || 1))),
       refine_level: Math.max(0, Math.floor(Number(raw.refine_level || 0))),
-      base_roll_pct: raw.base_roll_pct == null ? null : Math.max(50, Math.min(150, Math.floor(Number(raw.base_roll_pct || 100)))),
+      base_roll_pct: raw.base_roll_pct == null ? null : Math.max(100, Math.min(200, Math.floor(Number(raw.base_roll_pct || 100)))),
       growth_level: Math.max(0, Math.floor(Number(raw.growth_level || 0))),
       growth_fail_stack: Math.max(0, Math.floor(Number(raw.growth_fail_stack || 0)))
     };
@@ -14531,7 +14531,7 @@ io.on('connection', (socket) => {
         durability: inv.durability == null ? null : Math.floor(Number(inv.durability || 0)),
         max_durability: inv.max_durability == null ? null : Math.floor(Number(inv.max_durability || 0)),
         refine_level: Math.max(0, Math.floor(Number(inv.refine_level || 0))),
-        base_roll_pct: inv.base_roll_pct == null ? null : Math.max(50, Math.min(150, Math.floor(Number(inv.base_roll_pct || 100)))),
+        base_roll_pct: inv.base_roll_pct == null ? null : Math.max(100, Math.min(200, Math.floor(Number(inv.base_roll_pct || 100)))),
         growth_level: Math.max(0, Math.floor(Number(inv.growth_level || 0))),
         growth_fail_stack: Math.max(0, Math.floor(Number(inv.growth_fail_stack || 0)))
       };

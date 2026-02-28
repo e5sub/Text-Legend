@@ -9,8 +9,8 @@ import {
 } from './settings.js';
 import { getTreasureBonus, getTreasureRandomAttrBonus, normalizeTreasureState } from './treasure.js';
 
-const EQUIP_BASE_ROLL_MIN_PCT = 50;
-const EQUIP_BASE_ROLL_MAX_PCT = 150;
+const EQUIP_BASE_ROLL_MIN_PCT = 100;
+const EQUIP_BASE_ROLL_MAX_PCT = 200;
 
 function randomEquipBaseRollPct() {
   return Math.floor(Math.random() * (EQUIP_BASE_ROLL_MAX_PCT - EQUIP_BASE_ROLL_MIN_PCT + 1)) + EQUIP_BASE_ROLL_MIN_PCT;
@@ -19,7 +19,7 @@ function randomEquipBaseRollPct() {
 function normalizeEquipBaseRollPct(item, value, fallback = 100) {
   if (!item?.slot) return null;
   const raw = Number(value);
-  // Treat 0/negative persisted values as invalid legacy data instead of forcing min roll (50%).
+  // Treat 0/negative persisted values as invalid legacy data instead of forcing min roll (100%).
   const next = (Number.isFinite(raw) && raw > 0)
     ? Math.floor(raw)
     : Math.floor(Number(fallback) || 100);

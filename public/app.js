@@ -4159,8 +4159,10 @@ function renderHighTierRecycleSummary() {
   const epicQty = getHighTierRecycleMaterialQty(cfg.materials.epic?.id);
   const legendQty = getHighTierRecycleMaterialQty(cfg.materials.legendary?.id);
   const supremeQty = getHighTierRecycleMaterialQty(cfg.materials.supreme?.id);
-  highTierRecycleUi.summary.textContent =
-    `${cfg.materials.epic?.name || '史诗精华'} ${epicQty} | ${cfg.materials.legendary?.name || '传说精华'} ${legendQty} | ${cfg.materials.supreme?.name || '至尊精华'} ${supremeQty}`;
+  highTierRecycleUi.summary.innerHTML =
+    `<span class="rarity-epic">${cfg.materials.epic?.name || '史诗精华'} ${epicQty}</span> | ` +
+    `<span class="rarity-legendary">${cfg.materials.legendary?.name || '传说精华'} ${legendQty}</span> | ` +
+    `<span class="rarity-supreme">${cfg.materials.supreme?.name || '至尊精华'} ${supremeQty}</span>`;
 }
 
 function renderHighTierRecycleSalvage() {
@@ -4257,7 +4259,19 @@ function renderHighTierRecycleExchange() {
     const btn = document.createElement('div');
     btn.className = 'forge-item';
     const owned = getHighTierRecycleMaterialQty(entry.currencyItemId);
-    btn.innerHTML = `<div>${entry.rewardText}</div><div class="item-detail">消耗 ${entry.currencyName} x${entry.cost}（当前 ${owned}）</div>`;
+    const rewardHtml = (Array.isArray(entry.rewards) ? entry.rewards : [])
+      .map((reward) => {
+        const rarityKey = normalizeRarityKey(reward?.rarity);
+        const cls = rarityKey ? ` class="rarity-${rarityKey}"` : '';
+        return `<span${cls}>${reward?.name || reward?.id || ''}x${Math.max(1, Math.floor(Number(reward?.qty || 1)))}</span>`;
+      })
+      .join('、');
+    const limitText = String(entry.limitType || 'none') !== 'none' && Number(entry.limit || 0) > 0
+      ? `（${entry.limitType === 'daily' ? '日限' : entry.limitType === 'weekly' ? '周限' : '终身限'}${Math.max(1, Math.floor(Number(entry.limit || 1)))}）`
+      : '';
+    const currencyRarityKey = normalizeRarityKey(entry.currencyRarity);
+    const currencyCls = currencyRarityKey ? ` class="rarity-${currencyRarityKey}"` : '';
+    btn.innerHTML = `<div>${rewardHtml || entry.rewardText}${limitText}</div><div class="item-detail">消耗 <span${currencyCls}>${entry.currencyName}</span> x${entry.cost}（当前 ${owned}）</div>`;
     btn.addEventListener('click', async () => {
       if (!socket) return;
       const qtyText = await promptModal({
