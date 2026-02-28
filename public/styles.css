@@ -1257,12 +1257,14 @@ body.log-collapsed .game-layout {
 }
 
 .status-row.cultivation-row,
+.status-row.activity-points-row,
 .status-row.yuanbao-row {
   margin: 4px 0;
   gap: 10px;
 }
 
 .status-row.cultivation-row strong,
+.status-row.activity-points-row strong,
 .status-row.yuanbao-row strong {
   flex: 1;
   text-align: right;
@@ -1272,6 +1274,7 @@ body.log-collapsed .game-layout {
 }
 
 .status-row.cultivation-row .mini-btn,
+.status-row.activity-points-row .mini-btn,
 .status-row.yuanbao-row .mini-btn {
   margin-left: 8px;
   padding: 2px 8px;
@@ -1302,6 +1305,7 @@ body.log-collapsed .game-layout {
 }
 
 .status-row.cultivation-row .mini-btn:hover,
+.status-row.activity-points-row .mini-btn:hover,
 .status-row.yuanbao-row .mini-btn:hover {
   filter: brightness(1.1);
 }
@@ -6762,11 +6766,32 @@ body.dark .pet-book-entry {
   line-height: 1.45;
 }
 
+.pet-equip-name.rarity-uncommon { color: #2f6b3b; }
+.pet-equip-name.rarity-rare { color: #2f6aa6; }
+.pet-equip-name.rarity-epic { color: #8a2c7a; }
+.pet-equip-name.rarity-legendary { color: #8f5a12; }
+.pet-equip-name.rarity-supreme { color: #ff8c8c; }
+.pet-equip-name.rarity-ultimate { color: #d64545; }
+
 .pet-equip-entry .line-rarity-ultimate,
-.pet-equip-entry .line-rarity-ultimate * {
+.pet-equip-entry .line-rarity-ultimate *,
+.pet-equip-entry .ultimate-text,
+.pet-equip-entry .highlight-marquee {
   animation: none !important;
   background-image: none !important;
   text-shadow: none !important;
+  box-shadow: none !important;
+}
+
+.pet-equip-entry .ultimate-text {
+  -webkit-text-fill-color: currentColor !important;
+  background-clip: initial !important;
+  -webkit-background-clip: initial !important;
+}
+
+.pet-equip-entry .highlight-marquee::before {
+  display: none !important;
+  content: none !important;
 }
 
 .pet-entry.active {

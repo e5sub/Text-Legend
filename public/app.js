@@ -354,6 +354,8 @@ const ui = {
   online: document.getElementById('ui-online'),
   serverTime: document.getElementById('ui-server-time'),
   party: document.getElementById('ui-party'),
+  activityPoints: document.getElementById('ui-activity-points'),
+  activityShop: document.getElementById('ui-activity-shop'),
   gold: document.getElementById('ui-gold'),
   yuanbao: document.getElementById('ui-yuanbao'),
   recharge: document.getElementById('ui-recharge'),
@@ -6775,17 +6777,49 @@ function rarityRank(item) {
   return RARITY_ORDER[key] ?? 0;
 }
 
-function sortByRarityDesc(a, b) {
-  const diff = rarityRank(b) - rarityRank(a);
-  if (diff !== 0) return diff;
-  const nameA = a?.name || '';
-  const nameB = b?.name || '';
-  return nameA.localeCompare(nameB, 'zh-Hans-CN');
+const EQUIP_SORT_SLOT_ORDER = {
+  weapon: 1,
+  head: 2,
+  armor: 3,
+  neck: 4,
+  bracelet: 5,
+  bracelet_left: 5,
+  bracelet_right: 5,
+  ring: 6,
+  ring_left: 6,
+  ring_right: 6,
+  waist: 7,
+  boots: 8,
+  accessory: 9
+};
+
+function isEquipItem(item) {
+  return Boolean(item?.slot);
 }
 
-function sortPetBagEquipByQualityDesc(a, b) {
-  const rarityDiff = rarityRank(b) - rarityRank(a);
-  if (rarityDiff !== 0) return rarityDiff;
+function equipSlotRank(item) {
+  return EQUIP_SORT_SLOT_ORDER[String(item?.slot || '')] ?? 999;
+}
+
+function equipAttrScore(item) {
+  if (!item) return 0;
+  return (
+    Number(item.atk || 0) +
+    Number(item.def || 0) +
+    Number(item.mdef || 0) +
+    Number(item.mag || 0) +
+    Number(item.spirit || 0) +
+    Number(item.dex || 0) +
+    (Number(item.hp || 0) / 10) +
+    (Number(item.mp || 0) / 10)
+  );
+}
+
+function compareEquipmentOrder(a, b) {
+  const slotDiff = equipSlotRank(a) - equipSlotRank(b);
+  if (slotDiff !== 0) return slotDiff;
+  const attrDiff = equipAttrScore(b) - equipAttrScore(a);
+  if (attrDiff !== 0) return attrDiff;
   const qualityA = Math.floor(Number(a?.base_roll_pct ?? 100) || 100);
   const qualityB = Math.floor(Number(b?.base_roll_pct ?? 100) || 100);
   const qualityDiff = qualityB - qualityA;
@@ -6798,6 +6832,22 @@ function sortPetBagEquipByQualityDesc(a, b) {
   const qtyB = Math.floor(Number(b?.qty ?? 0) || 0);
   const qtyDiff = qtyB - qtyA;
   if (qtyDiff !== 0) return qtyDiff;
+  return 0;
+}
+
+function sortByRarityDesc(a, b) {
+  const diff = rarityRank(b) - rarityRank(a);
+  if (diff !== 0) return diff;
+  if (isEquipItem(a) && isEquipItem(b)) {
+    const equipDiff = compareEquipmentOrder(a, b);
+    if (equipDiff !== 0) return equipDiff;
+  }
+  const nameA = a?.name || '';
+  const nameB = b?.name || '';
+  return nameA.localeCompare(nameB, 'zh-Hans-CN');
+}
+
+function sortPetBagEquipByQualityDesc(a, b) {
   return sortByRarityDesc(a, b);
 }
 
@@ -6845,7 +6895,11 @@ const ITEM_SLOT_LABELS = {
   waist: '\u8170\u5e26',
   feet: '\u9774\u5b50',
   ring: '\u6212\u6307',
-  bracelet: '\u624b\u9556',
+  ring_left: '\u5de6\u6212\u6307',
+  ring_right: '\u53f3\u6212\u6307',
+  bracelet: '\u624b\u956f',
+  bracelet_left: '\u5de6\u624b\u956f',
+  bracelet_right: '\u53f3\u624b\u956f',
   neck: '\u9879\u94fe'
 };
 const TRAINING_OPTIONS = [
@@ -7692,6 +7746,9 @@ function renderState(state) {
     }
     if (ui.online) {
       ui.online.textContent = state.online ? String(state.online.count || 0) : '0';
+    }
+    if (ui.activityPoints) {
+      ui.activityPoints.textContent = Number(state.activities?.currency?.activity_points || 0);
     }
     if (state.server_time) {
       serverTimeBase = state.server_time;
@@ -9278,6 +9335,7 @@ function enterGame(name) {
   ui.vip.textContent = '-';
   ui.gold.textContent = '0';
   if (ui.yuanbao) ui.yuanbao.textContent = '0';
+  if (ui.activityPoints) ui.activityPoints.textContent = '0';
   if (ui.cultivation) ui.cultivation.textContent = '-';
   if (ui.cultivationUpgrade) ui.cultivationUpgrade.classList.add('hidden');
   setBar(ui.hp, 0, 1);
@@ -10046,6 +10104,13 @@ if (ui.invite) {
     } catch (err) {
       showToast(err?.message || '加载邀请信息失败');
     }
+  });
+}
+if (ui.activityShop) {
+  ui.activityShop.addEventListener('click', () => {
+    if (!socket) return;
+    socket.emit('cmd', { text: '活动 shop', source: 'ui' });
+    showToast('已打开活动积分商城');
   });
 }
 if (ui.name) {
