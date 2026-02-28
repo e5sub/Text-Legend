@@ -5139,9 +5139,48 @@ body.dark #mail-modal .modal-actions {
 
 .treasure-card-subtitle {
   margin-top: 4px;
-  font-size: 0.74rem;
-  color: #b98c58;
+}
+
+.treasure-role-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(118, 70, 22, 0.18);
+  font-size: 0.72rem;
+  font-weight: 700;
   letter-spacing: 0.2px;
+}
+
+.treasure-role-growth {
+  background: rgba(112, 201, 142, 0.12);
+  border-color: rgba(112, 201, 142, 0.22);
+  color: #4fa96f;
+}
+
+.treasure-role-guard {
+  background: rgba(106, 171, 227, 0.12);
+  border-color: rgba(106, 171, 227, 0.22);
+  color: #4e83bf;
+}
+
+.treasure-role-offense {
+  background: rgba(230, 133, 112, 0.12);
+  border-color: rgba(230, 133, 112, 0.22);
+  color: #c46149;
+}
+
+.treasure-role-allround {
+  background: rgba(200, 145, 231, 0.12);
+  border-color: rgba(200, 145, 231, 0.22);
+  color: #9964be;
+}
+
+.treasure-role-general {
+  background: rgba(185, 140, 88, 0.12);
+  border-color: rgba(185, 140, 88, 0.2);
+  color: #b98c58;
 }
 
 .treasure-stat-row {
@@ -5321,7 +5360,37 @@ body.dark .treasure-empty-chip {
 }
 
 body.dark .treasure-card-subtitle {
-  color: #b89a72;
+  color: inherit;
+}
+
+body.dark .treasure-role-growth {
+  background: rgba(112, 201, 142, 0.1);
+  border-color: rgba(112, 201, 142, 0.2);
+  color: #82d59c;
+}
+
+body.dark .treasure-role-guard {
+  background: rgba(106, 171, 227, 0.1);
+  border-color: rgba(106, 171, 227, 0.2);
+  color: #8abcf1;
+}
+
+body.dark .treasure-role-offense {
+  background: rgba(230, 133, 112, 0.1);
+  border-color: rgba(230, 133, 112, 0.2);
+  color: #f0a086;
+}
+
+body.dark .treasure-role-allround {
+  background: rgba(200, 145, 231, 0.1);
+  border-color: rgba(200, 145, 231, 0.2);
+  color: #caa1ec;
+}
+
+body.dark .treasure-role-general {
+  background: rgba(185, 140, 88, 0.1);
+  border-color: rgba(185, 140, 88, 0.2);
+  color: #d1ac7d;
 }
 
 body.dark #treasure-modal .treasure-actions button {

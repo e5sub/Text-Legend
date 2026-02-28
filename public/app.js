@@ -1059,10 +1059,12 @@ function exitGame() {
   if (username) {
     localStorage.removeItem(getUserStorageKey('savedToken', username));
   }
+  closeRegisterOverlay();
   show(authSection);
 }
 
 async function switchCharacter() {
+  closeRegisterOverlay();
   if (serverTimeTimer) {
     clearInterval(serverTimeTimer);
     serverTimeTimer = null;
@@ -4521,14 +4523,14 @@ function renderTreasureModal() {
     if (raw.length <= 28) return raw;
     return `${raw.slice(0, 28)}...`;
   };
-  const getTreasureRoleText = (text) => {
+  const getTreasureRoleInfo = (text) => {
     const raw = String(text || '');
-    if (!raw) return '通用法宝';
-    if (/打怪经验|法力上限/.test(raw)) return '成长型';
-    if (/生命|防御|魔御|减伤/.test(raw)) return '防护型';
-    if (/攻击|魔法|道术|伤害|破防|破魔/.test(raw)) return '输出型';
-    if (/综合属性|攻\/魔\/道|气血\/法力/.test(raw)) return '全能型';
-    return '通用法宝';
+    if (!raw) return { label: '通用法宝', type: 'general' };
+    if (/综合属性|攻\/魔\/道|气血\/法力/.test(raw)) return { label: '全能型', type: 'allround' };
+    if (/打怪经验|法力上限/.test(raw)) return { label: '成长型', type: 'growth' };
+    if (/生命|防御|魔御|减伤/.test(raw)) return { label: '防护型', type: 'guard' };
+    if (/攻击|魔法|道术|伤害|破防|破魔/.test(raw)) return { label: '输出型', type: 'offense' };
+    return { label: '通用法宝', type: 'general' };
   };
   const bindTreasurePassiveTooltip = (node, text) => {
     const raw = String(text || '').trim();
@@ -4606,7 +4608,7 @@ function renderTreasureModal() {
     }
     applyRarityClass(card, entry);
     const passiveText = treasurePassiveById.get(entry.id) || '被动：暂无说明';
-    const roleText = getTreasureRoleText(passiveText);
+    const roleInfo = getTreasureRoleInfo(passiveText);
     const nameRarityKey = normalizeRarityKey(entry.rarity);
     const stage = Math.floor(Number(entry.stage || 0));
     const segment = Math.floor(Number(entry.advanceCount || 0));
@@ -4617,7 +4619,7 @@ function renderTreasureModal() {
         <span class="treasure-level-chip">Lv${entry.level}/${maxLevel}</span>
       </div>
       <div class="treasure-card-name${nameRarityKey ? ` rarity-${nameRarityKey}` : ''}${nameRarityKey === 'ultimate' ? ' ultimate-text' : ''}">${entry.name || entry.id}</div>
-      <div class="treasure-card-subtitle">${roleText}</div>
+      <div class="treasure-card-subtitle"><span class="treasure-role-tag treasure-role-${roleInfo.type}">${roleInfo.label}</span></div>
       <div class="forge-item-meta treasure-passive-meta">${compactTreasurePassiveText(passiveText)}</div>
       <div class="treasure-stat-row">
         <span class="treasure-stat-pill">阶 ${stage}</span>
@@ -4647,7 +4649,7 @@ function renderTreasureModal() {
       applyRarityClass(card, item);
       const equippedAlready = occupiedIds.has(item.id);
       const passiveText = treasurePassiveById.get(item.id) || '被动：暂无说明';
-      const roleText = getTreasureRoleText(passiveText);
+      const roleInfo = getTreasureRoleInfo(passiveText);
       const nameRarityKey = normalizeRarityKey(item.rarity);
       const qty = Math.floor(Number(item.qty || 0));
       card.innerHTML = `
@@ -4656,7 +4658,7 @@ function renderTreasureModal() {
           <span class="treasure-level-chip">库存 x${qty}</span>
         </div>
         <div class="treasure-card-name${nameRarityKey ? ` rarity-${nameRarityKey}` : ''}${nameRarityKey === 'ultimate' ? ' ultimate-text' : ''}">${formatItemName(item)}</div>
-        <div class="treasure-card-subtitle">${roleText}</div>
+        <div class="treasure-card-subtitle"><span class="treasure-role-tag treasure-role-${roleInfo.type}">${roleInfo.label}</span></div>
         <div class="forge-item-meta treasure-passive-meta">${compactTreasurePassiveText(passiveText)}</div>
         <div class="forge-item-meta">${equippedAlready ? '已装备在槽位中' : hasEmptySlot ? '点击查看详情并装备' : '槽位已满，需先卸下'}</div>
       `;
@@ -9690,12 +9692,17 @@ function enterGame(name) {
     } else {
       if (errText.includes('设备已在线')) {
         showToast('该设备已在线，无法重复登录。');
+        switchCharacter();
       } else if (errText.includes('设备指纹缺失')) {
         showToast('设备指纹缺失，无法登录。');
+        exitGame();
+      } else if (errText.includes('登录已过期')) {
+        showToast('登录已过期，请重新登录。');
+        exitGame();
       } else {
         showToast(errText);
+        switchCharacter();
       }
-      exitGame();
     }
   });
   socket.on('disconnect', () => {
