@@ -3951,6 +3951,21 @@ app.post('/admin/realms/merge', async (req, res) => {
     const sabakRegistrationsResult = await trx('sabak_registrations').where({ realm_id: sourceId }).update({ realm_id: targetId });
     stats.sabakRegistrations = sabakRegistrationsResult;
 
+    // 合区后清空目标区所有角色的队伍状态，避免遗留旧队伍成员/旧队伍ID
+    const mergedCharacters = await trx('characters')
+      .where({ realm_id: targetId })
+      .select('id', 'flags_json');
+    for (const row of mergedCharacters) {
+      const flags = parseJson(row.flags_json, {}) || {};
+      if (!flags || typeof flags !== 'object') continue;
+      delete flags.partyId;
+      delete flags.partyMembers;
+      delete flags.partyLeader;
+      await trx('characters')
+        .where({ id: row.id })
+        .update({ flags_json: JSON.stringify(flags), updated_at: trx.fn.now() });
+    }
+
     // 删除源区怪物刷新缓存，避免与目标区冲突
     await trx('mob_respawns').where({ realm_id: sourceId }).del();
 
