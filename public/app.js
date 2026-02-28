@@ -4185,12 +4185,15 @@ function renderHighTierRecycleSalvage() {
     highTierRecycleUi.batchLegend.disabled = batchLegendCount <= 0;
   }
   const items = (lastState?.items || [])
-    .filter((item) => item?.slot && ['epic', 'legendary', 'supreme'].includes(normalizeRarityKey(item.rarity)))
+    .filter((item) => (
+      (item?.slot && ['epic', 'legendary', 'supreme'].includes(normalizeRarityKey(item.rarity))) ||
+      (item?.type === 'book' && ['legendary', 'supreme'].includes(normalizeRarityKey(item.rarity)))
+    ))
     .slice()
     .sort(sortByRarityDesc);
   if (!items.length) {
     const empty = document.createElement('div');
-    empty.textContent = '背包中暂无可分解装备';
+    empty.textContent = '背包中暂无可分解物品';
     highTierRecycleUi.salvageList.appendChild(empty);
     return;
   }
@@ -4198,7 +4201,9 @@ function renderHighTierRecycleSalvage() {
     const rarity = normalizeRarityKey(item.rarity);
     const slot = normalizeHighTierRecycleSlot(item.slot);
     let yieldQty = 0;
-    if (rarity === 'epic') {
+    if (item?.type === 'book' && (rarity === 'legendary' || rarity === 'supreme')) {
+      yieldQty = 10;
+    } else if (rarity === 'epic') {
       yieldQty = slot === 'weapon' ? 12 : slot === 'chest' ? 10 : ['head', 'waist', 'feet'].includes(slot) ? 8 : 6;
     } else if (rarity === 'legendary') {
       yieldQty = slot === 'weapon' ? 18 : slot === 'chest' ? 15 : ['head', 'waist', 'feet'].includes(slot) ? 12 : 10;
@@ -4219,7 +4224,7 @@ function renderHighTierRecycleSalvage() {
     btn.addEventListener('click', async () => {
       if (!socket) return;
       const qtyText = await promptModal({
-        title: '装备分解',
+        title: '物品分解',
         text: `分解数量：${formatItemName(item)}（最多 ${item.qty}）`,
         placeholder: '1',
         value: '1'

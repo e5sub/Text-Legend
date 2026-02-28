@@ -224,16 +224,31 @@ function isHighTierRecycleRarity(rarity) {
   return rarity === 'epic' || rarity === 'legendary';
 }
 
+function isHighTierRecycleSalvageable(item) {
+  if (!item) return false;
+  const rarity = String(item?.rarity || rarityByPrice(item) || '').trim().toLowerCase();
+  if (item.type === 'book') {
+    return rarity === 'legendary' || rarity === 'supreme';
+  }
+  return isEquipmentItem(item) && (rarity === 'epic' || rarity === 'legendary' || rarity === 'supreme');
+}
+
 function getHighTierRecycleRarity(item) {
-  if (!isEquipmentItem(item)) return '';
+  if (!isHighTierRecycleSalvageable(item)) return '';
   const rarity = String(item?.rarity || rarityByPrice(item) || '').trim().toLowerCase();
   return rarity === 'epic' || rarity === 'legendary' || rarity === 'supreme' ? rarity : '';
 }
 
 function getHighTierRecycleYield(item) {
   const rarity = getHighTierRecycleRarity(item);
+  if (!rarity) return null;
+  if (item?.type === 'book') {
+    if (rarity === 'legendary') return { currency: 'legendary', amount: 10 };
+    if (rarity === 'supreme') return { currency: 'supreme', amount: 10 };
+    return null;
+  }
   const slot = normalizeHighTierRecycleSlot(item?.slot);
-  if (!rarity || !slot) return null;
+  if (!slot) return null;
   if (rarity === 'epic') {
     if (slot === 'weapon') return { currency: 'epic', amount: 12 };
     if (slot === 'chest') return { currency: 'epic', amount: 10 };
@@ -2569,12 +2584,12 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       }
       if (sub === 'decompose' || sub === 'salvage' || sub === '分解') {
         const itemRaw = String(parts[0] || '').trim();
-        if (!itemRaw) return send('请选择要分解的装备。');
+        if (!itemRaw) return send('请选择要分解的物品。');
         const qtyRaw = parts[1];
         const resolved = resolveInventoryItem(player, itemRaw);
-        if (!resolved.slot || !resolved.item) return send('背包里没有该装备。');
+        if (!resolved.slot || !resolved.item) return send('背包里没有该物品。');
         const yieldInfo = getHighTierRecycleYield(resolved.item);
-        if (!yieldInfo) return send('仅史诗/传说/至尊装备可分解。');
+        if (!yieldInfo) return send('仅史诗/传说/至尊装备，以及传说/至尊技能书可分解。');
         const maxQty = Math.max(1, Math.floor(Number(resolved.slot.qty || 1)));
         const qty = qtyRaw == null ? 1 : Math.max(1, Math.min(maxQty, Math.floor(Number(qtyRaw) || 1)));
         if (!removeItem(

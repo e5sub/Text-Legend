@@ -1369,6 +1369,9 @@ private fun highTierRecycleSlotLabel(slot: String?): String = when (normalizeHig
 
 private fun calcHighTierSalvageYield(item: ItemInfo): Int {
     val rarity = normalizeRarityKey(item.rarity)
+    if (item.type == "book") {
+        return if (rarity == "legendary" || rarity == "supreme") 10 else 0
+    }
     val slot = normalizeHighTierRecycleSlot(item.slot)
     return if (rarity == "epic") {
         when (slot) {
@@ -3660,7 +3663,10 @@ private fun HighTierRecycleDialog(vm: GameViewModel, state: GameState?, onDismis
     val cfg = state?.high_tier_recycle_config
     val items = state?.items.orEmpty()
     val salvageItems = remember(items) {
-        items.filter { it.slot != null && (it.rarity == "epic" || it.rarity == "legendary" || it.rarity == "supreme") }
+        items.filter {
+            (it.slot != null && (it.rarity == "epic" || it.rarity == "legendary" || it.rarity == "supreme")) ||
+                (it.type == "book" && (it.rarity == "legendary" || it.rarity == "supreme"))
+        }
             .sortedWith(::compareInventoryItems)
     }
     val batchEpicCount = remember(items) {
@@ -3682,7 +3688,7 @@ private fun HighTierRecycleDialog(vm: GameViewModel, state: GameState?, onDismis
 
     ScreenScaffold(title = "装备回收", onBack = onDismiss) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { tab = "salvage" }, modifier = Modifier.weight(1f)) { Text("装备分解") }
+            Button(onClick = { tab = "salvage" }, modifier = Modifier.weight(1f)) { Text("物品分解") }
             Button(onClick = { tab = "exchange" }, modifier = Modifier.weight(1f)) { Text("精华兑换") }
         }
         Spacer(modifier = Modifier.height(8.dp))
@@ -3715,7 +3721,7 @@ private fun HighTierRecycleDialog(vm: GameViewModel, state: GameState?, onDismis
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 if (salvageItems.isEmpty()) {
-                    Text("背包中暂无可分解的史诗/传说/至尊装备")
+                    Text("背包中暂无可分解的史诗/传说/至尊装备或传说/至尊技能书")
                 } else {
                     salvageItems.forEach { item ->
                         val yieldQty = calcHighTierSalvageYield(item)
