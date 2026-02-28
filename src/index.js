@@ -14043,8 +14043,7 @@ io.on('connection', (socket) => {
     const hasOtherCharacterOnline = Array.from(players.values()).some((onlinePlayer) => {
       if (!onlinePlayer) return false;
       if ((onlinePlayer.userId || 0) !== session.user_id) return false;
-      const onlineRealmId = onlinePlayer.realmId || 1;
-      return onlinePlayer.name !== loaded.name || onlineRealmId !== (loaded.realmId || realmInfo.realmId);
+      return onlinePlayer.name !== loaded.name;
     });
     if (hasOtherCharacterOnline) {
       socket.emit('auth_error', { error: '同一账号不能同时登录多个角色。' });
@@ -14053,7 +14052,11 @@ io.on('connection', (socket) => {
     }
 
     // 检查是否已有同名角色在线，如果有则踢掉之前的连接
-    const existingSocketId = Array.from(players.keys()).find(key => players.get(key)?.name === name);
+    const existingSocketId = Array.from(players.keys()).find((key) => {
+      const existing = players.get(key);
+      if (!existing) return false;
+      return (existing.userId || 0) === session.user_id && existing.name === loaded.name;
+    });
     let replacedExistingSession = false;
     let replacedManagedSession = false;
     let managedSummonsSnapshot = [];
