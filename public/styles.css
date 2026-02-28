@@ -95,7 +95,7 @@ body.dark .auth-card {
 
 body.dark .auth-sub,
 body.dark .auth-field label,
-body.dark .auth-feature span,
+body.dark .auth-feature > div > span,
 body.dark .auth-stat span {
   color: #b9a693;
 }
@@ -954,7 +954,7 @@ header p {
   font-size: 0.98rem;
 }
 
-.auth-feature span {
+.auth-feature > div > span {
   display: block;
   color: #72523a;
   font-size: 0.9rem;

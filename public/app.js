@@ -9806,10 +9806,12 @@ function enterGame(name) {
       msg.includes('修炼') ||
       msg.includes('进阶') ||
       msg.includes('赠送') ||
+      msg.includes('目标玩家') ||
+      msg.includes('未找到目标玩家') ||
       msg.includes('放生') ||
       msg.includes('打书')
     ) {
-      noticeModal({ title: '宠物操作', text: msg });
+      noticeModal({ title: msg.includes('赠送') || msg.includes('目标玩家') ? '宠物赠送' : '宠物操作', text: msg });
       return;
     }
     showToast(msg, ok ? 1400 : 1800);
@@ -10996,11 +10998,11 @@ if (petUi.gift) {
       placeholder: '目标玩家名'
     });
     const finalName = String(targetName || '').trim();
-    if (!finalName) return;
-    showToast('已提交宠物赠送请求');
-    sendPetAction('gift', { petId, targetName: finalName });
-  });
-}
+      if (!finalName) return;
+      noticeModal({ title: '宠物赠送', text: '已提交宠物赠送请求，请等待结果。' });
+      sendPetAction('gift', { petId, targetName: finalName });
+    });
+  }
 if (petUi.reset) {
   petUi.reset.addEventListener('click', async () => {
     if (!socket) return;
