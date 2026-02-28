@@ -942,7 +942,9 @@ header p {
   font-family: var(--font-display);
   font-size: 1.15rem;
   font-weight: 700;
+  line-height: 1;
   color: #7a4c24;
+  transform: translateY(-1px);
 }
 
 .auth-feature strong {
