@@ -3820,6 +3820,68 @@ app.post('/admin/realms/merge', async (req, res) => {
   };
 
   await knex.transaction(async (trx) => {
+    // 先处理“同账号同角色名”在目标区的冲突，避免更新 realm_id 时撞唯一索引
+    const sourceCharacters = await trx('characters')
+      .where({ realm_id: sourceId })
+      .select('id', 'user_id', 'name');
+    const targetCharacters = await trx('characters')
+      .where({ realm_id: targetId })
+      .select('user_id', 'name');
+    const targetNameSet = new Set(
+      targetCharacters.map((row) => `${Number(row.user_id || 0)}::${String(row.name || '')}`)
+    );
+    const sourceNameSet = new Set(
+      sourceCharacters.map((row) => `${Number(row.user_id || 0)}::${String(row.name || '')}`)
+    );
+    const sourceRenameMap = new Map();
+    const pendingRenamedKeys = new Set();
+    const buildMergedCharacterName = (originalName, userId) => {
+      const rawBase = String(originalName || '').trim() || '角色';
+      const suffixBase = `-${sourceId}`;
+      let candidate = `${rawBase}${suffixBase}`;
+      let seq = 1;
+      const makeKey = (name) => `${Number(userId || 0)}::${name}`;
+      while (
+        targetNameSet.has(makeKey(candidate)) ||
+        sourceNameSet.has(makeKey(candidate)) ||
+        pendingRenamedKeys.has(makeKey(candidate))
+      ) {
+        const seqSuffix = `-${sourceId}-${seq}`;
+        const maxBaseLen = Math.max(1, 64 - seqSuffix.length);
+        candidate = `${rawBase.slice(0, maxBaseLen)}${seqSuffix}`;
+        seq += 1;
+      }
+      return candidate.slice(0, 64);
+    };
+
+    for (const row of sourceCharacters) {
+      const key = `${Number(row.user_id || 0)}::${String(row.name || '')}`;
+      if (!targetNameSet.has(key)) continue;
+      const nextName = buildMergedCharacterName(row.name, row.user_id);
+      sourceRenameMap.set(`${Number(row.user_id || 0)}::${String(row.name || '')}`, nextName);
+      targetNameSet.add(`${Number(row.user_id || 0)}::${nextName}`);
+      sourceNameSet.add(`${Number(row.user_id || 0)}::${nextName}`);
+      pendingRenamedKeys.add(`${Number(row.user_id || 0)}::${nextName}`);
+    }
+
+    for (const row of sourceCharacters) {
+      const mapKey = `${Number(row.user_id || 0)}::${String(row.name || '')}`;
+      const nextName = sourceRenameMap.get(mapKey);
+      if (!nextName || nextName === row.name) continue;
+      await trx('characters').where({ id: row.id }).update({ name: nextName });
+      await trx('guild_members')
+        .where({ user_id: row.user_id, realm_id: sourceId, char_name: row.name })
+        .update({ char_name: nextName });
+      await trx('guilds')
+        .where({ leader_user_id: row.user_id, realm_id: sourceId, leader_char_name: row.name })
+        .update({ leader_char_name: nextName });
+      if (await trx.schema.hasTable('guild_applications')) {
+        await trx('guild_applications')
+          .where({ user_id: row.user_id, realm_id: sourceId, char_name: row.name })
+          .update({ char_name: nextName, applied_at: trx.fn.now() });
+      }
+    }
+
     // 更新角色
     const charactersResult = await trx('characters').where({ realm_id: sourceId }).update({ realm_id: targetId });
     stats.characters = charactersResult;
@@ -3830,6 +3892,11 @@ app.post('/admin/realms/merge', async (req, res) => {
 
     // 更新行会成员
     await trx('guild_members').where({ realm_id: sourceId }).update({ realm_id: targetId });
+
+    // 更新行会申请
+    if (await trx.schema.hasTable('guild_applications')) {
+      await trx('guild_applications').where({ realm_id: sourceId }).update({ realm_id: targetId });
+    }
 
     // 更新邮件（合并到目标区）
     const mailsResult = await trx('mails').where({ realm_id: sourceId }).update({ realm_id: targetId });
@@ -3876,7 +3943,7 @@ app.post('/admin/realms/merge', async (req, res) => {
     // 更新所有引用realm_id的表
     const tablesWithRealmId = [
       'characters', 'guilds', 'guild_members', 'sabak_state', 'sabak_registrations',
-      'mails', 'mob_respawns', 'consignments', 'consignment_history'
+      'mails', 'mob_respawns', 'consignments', 'consignment_history', 'guild_applications'
     ];
 
     for (const tableName of tablesWithRealmId) {
