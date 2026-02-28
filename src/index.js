@@ -18121,7 +18121,6 @@ async function combatTick() {
     await sendState(player);
 
     // 每30秒保存一次玩家数据,避免频繁写入数据库
-    const now = Date.now();
     const lastSave = getRealmState(player.realmId || 1).lastSaveTime.get(player.name) || 0;
     if (now - lastSave >= 30000) {
       savePlayer(player);
