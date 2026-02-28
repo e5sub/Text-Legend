@@ -28,6 +28,7 @@ import {
   claimHarvestBlessing,
   claimHarvestSupplyByMail,
   claimHarvestTimedChestByMail,
+  getHarvestSeasonSignConfig,
   getRefineMaterialCountForActivity,
   recordRefineActivity,
   recordTreasurePetFestivalActivity
@@ -70,6 +71,24 @@ import {
 // 特效重置：生成随机特效（不包含elementAtk，因为元素攻击只能通过装备合成获得）
 const ALLOWED_EFFECTS = ['combo', 'fury', 'unbreakable', 'defense', 'dodge', 'poison', 'healblock'];
 const AUTO_FULL_TRIAL_MS = 10 * 60 * 1000;
+
+function describeHarvestSignRewardText() {
+  const cfg = getHarvestSeasonSignConfig();
+  const parts = [];
+  const gold = Math.max(0, Math.floor(Number(cfg?.gold || 0)));
+  const points = Math.max(0, Math.floor(Number(cfg?.points || 0)));
+  if (gold > 0) parts.push(`${gold}金币`);
+  if (points > 0) parts.push(`活动积分${points}`);
+  const items = Array.isArray(cfg?.items) ? cfg.items : [];
+  items.forEach((entry) => {
+    const itemId = String(entry?.id || '').trim();
+    const qty = Math.max(1, Math.floor(Number(entry?.qty || 1)));
+    if (!itemId) return;
+    const tpl = ITEM_TEMPLATES?.[itemId];
+    parts.push(`${tpl?.name || itemId}x${qty}`);
+  });
+  return parts.join('、') || '无';
+}
 
 // 宠物系统常量（与index.js保持同步）
 const PET_RARITY_ORDER = ['normal', 'excellent', 'rare', 'epic', 'legendary', 'supreme', 'ultimate'];
@@ -3761,12 +3780,16 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           sendMail: mailApi?.sendMail,
           realmId: realmId || player.realmId || 1
         });
+        const rewardText = describeHarvestSignRewardText();
         if (result?.ok) {
           player.forceStateRefresh = true;
-          const pointText = Number(result?.points || 0) > 0 ? `，并获得活动积分 ${Number(result.points || 0)}` : '';
-          send(`丰收签到成功，奖励已发送到邮件${pointText}。`);
+          send(`丰收签到成功，已获得：${rewardText}。奖励已发送到邮件。`);
         } else {
-          send(result?.error || '丰收签到失败。');
+          if (String(result?.error || '').includes('已领取')) {
+            send(`今日已经签到，已领取：${rewardText}。`);
+          } else {
+            send(result?.error || '丰收签到失败。');
+          }
         }
         return;
       }

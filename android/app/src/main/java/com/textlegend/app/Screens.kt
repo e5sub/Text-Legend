@@ -4133,17 +4133,6 @@ private fun ActivityCenterDialog(vm: GameViewModel, onDismiss: () -> Unit) {
             Button(modifier = Modifier.weight(1f), onClick = { vm.claimHarvestSign() }) { Text("丰收签到") }
             Button(
                 modifier = Modifier.weight(1f),
-                onClick = { vm.sendCmd("活动 丰收赐福") }
-            ) { Text("丰收赐福") }
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(
-                modifier = Modifier.weight(1f),
-                onClick = { vm.sendCmd("活动 丰收补给") }
-            ) { Text("收菜补给") }
-            Button(
-                modifier = Modifier.weight(1f),
                 onClick = { vm.sendCmd("活动 丰收宝箱") }
             ) { Text("丰收宝箱") }
         }

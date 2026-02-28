@@ -915,11 +915,11 @@ function renderHarvestRewardRows() {
     tr.dataset.index = String(index);
     tr.dataset.rewardId = String(item?._id || '');
     tr.innerHTML = `
-      <td><input data-k="threshold" type="number" min="1" value="${Math.max(1, Number(item.threshold || 1))}"></td>
-      <td><input data-k="title" type="text" value="${String(item.title || '丰收挂机奖励')}"></td>
-      <td><input data-k="gold" type="number" min="0" value="${Math.max(0, Number(item.gold || 0))}"></td>
+      <td><input class="harvest-threshold-input" data-k="threshold" type="number" min="1" value="${Math.max(1, Number(item.threshold || 1))}"></td>
+      <td><input class="harvest-title-input" data-k="title" type="text" value="${String(item.title || '丰收挂机奖励')}"></td>
+      <td><input class="harvest-gold-input" data-k="gold" type="number" min="0" value="${Math.max(0, Number(item.gold || 0))}"></td>
       <td>${buildHarvestRewardItemSelectHtml(item.itemId)}</td>
-      <td><input data-k="itemQty" type="number" min="1" value="${Math.max(1, Number(item.itemQty || 1))}"></td>
+      <td><input class="harvest-qty-input" data-k="itemQty" type="number" min="1" value="${Math.max(1, Number(item.itemQty || 1))}"></td>
       <td><button type="button" class="btn-small" data-act="del">删除</button></td>
     `;
     harvestRewardList.appendChild(tr);

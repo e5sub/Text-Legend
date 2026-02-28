@@ -106,6 +106,8 @@ import {
   recordTreasurePetFestivalActivity,
   recordHarvestOnlineMinute,
   claimActivityRewardsByMail,
+  claimHarvestBlessing,
+  claimHarvestSupplyByMail,
   normalizeHarvestSeasonRewardConfig,
   setHarvestSeasonRewardConfig,
   normalizeHarvestSeasonSignConfig,
@@ -207,6 +209,18 @@ async function autoClaimActivityRewardsForPlayer(player, now = Date.now()) {
   if ((now - lastAt) < 10000) return;
   player.flags.activityAutoClaimAt = now;
   try {
+    const blessResult = claimHarvestBlessing(player, { now });
+    if (blessResult?.ok) {
+      player.forceStateRefresh = true;
+    }
+    const supplyResult = await claimHarvestSupplyByMail(player, {
+      sendMail,
+      realmId: player.realmId || 1,
+      now
+    });
+    if (supplyResult?.ok) {
+      player.forceStateRefresh = true;
+    }
     const result = await claimActivityRewardsByMail(player, {
       sendMail,
       realmId: player.realmId || 1,
@@ -16884,8 +16898,8 @@ async function combatTick() {
   updateSpecialBossStatsBasedOnPlayers();
 
   for (const player of online) {
+    const now = Date.now();
     if (!player?.socket && player?.flags?.offlineManagedPending) {
-      const now = Date.now();
       const startAt = Number(player.flags.offlineManagedStartAt || 0);
       if (!isSvipActive(player)) {
         delete player.flags.offlineManagedPending;

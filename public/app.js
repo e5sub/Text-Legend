@@ -5890,8 +5890,6 @@ function showAutoFullBossModal() {
       text: summaryLines.join('\n'),
       options: [
         { value: 'harvest_sign', label: '丰收签到', className: 'activity-action-primary' },
-        { value: 'harvest_bless', label: '丰收赐福', className: 'activity-action-primary' },
-        { value: 'harvest_supply', label: '收菜补给', className: 'activity-action-primary' },
         { value: 'harvest_chest', label: '丰收宝箱', className: 'activity-action-primary' },
         { value: 'shop', label: '积分商城', className: 'activity-action-shop' },
         { value: 'beast_exchange', label: '神兽碎片兑换', className: 'activity-action-shop' },
@@ -10531,11 +10529,15 @@ if (petUi.trainBtn) {
   });
 }
 if (petUi.divineAdvanceBtn) {
-  petUi.divineAdvanceBtn.addEventListener('click', () => {
+  petUi.divineAdvanceBtn.addEventListener('click', async () => {
     const petId = String(selectedPetId || '').trim();
     const pet = getPetByStateId(petId);
     if (!petId || !pet?.isDivineBeast) return;
-    if (!window.confirm(`${pet.name} 进阶一次将提升资质10%、成长10%、技能格+1，消耗神兽碎片x500。是否继续？`)) return;
+    const confirmed = await confirmModal({
+      title: '神兽进阶',
+      text: `${pet.name} 进阶一次将提升资质10%、成长10%、技能格+1，消耗神兽碎片x500。是否继续？`
+    });
+    if (!confirmed) return;
     sendPetAction('divine_advance', { petId });
   });
 }
