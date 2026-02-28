@@ -271,11 +271,21 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             onSimpleResult = { res ->
                 val msg = res.msg
                 if (
+                    msg.contains("宠物") ||
+                    msg.contains("打书") ||
+                    msg.contains("合成") ||
+                    msg.contains("修炼") ||
+                    msg.contains("进阶") ||
+                    msg.contains("洗练") ||
+                    msg.contains("放生") ||
                     msg.contains("宠物赠送") ||
                     msg.contains("不能赠送") ||
                     msg.contains("赠送卡")
                 ) {
-                    _noticeDialog.value = DialogNotice("宠物赠送", msg)
+                    _noticeDialog.value = DialogNotice(
+                        if (msg.contains("赠送")) "宠物赠送" else "宠物操作",
+                        msg
+                    )
                 } else {
                     _toast.value = msg
                 }
