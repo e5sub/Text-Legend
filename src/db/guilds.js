@@ -133,7 +133,14 @@ export async function setSabakOwner(realmId, guildId, guildName) {
 export async function ensureSabakState(realmId = 1) {
   const existing = await knex('sabak_state').where({ realm_id: realmId }).first();
   if (existing) return existing;
-  await knex('sabak_state').insert({ realm_id: realmId, owner_guild_id: null, owner_guild_name: null });
+  const maxRow = await knex('sabak_state').max({ maxId: 'id' }).first();
+  const nextId = Math.max(1, Math.floor(Number(maxRow?.maxId || 0) || 0) + 1);
+  await knex('sabak_state').insert({
+    id: nextId,
+    realm_id: realmId,
+    owner_guild_id: null,
+    owner_guild_name: null
+  });
   return knex('sabak_state').where({ realm_id: realmId }).first();
 }
 

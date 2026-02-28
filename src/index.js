@@ -3721,7 +3721,10 @@ app.post('/admin/fix-realm-id', async (req, res) => {
     // 确保沙巴克状态
     const existingSabak = await trx('sabak_state').where('realm_id', 1).first();
     if (!existingSabak) {
+      const maxSabakRow = await trx('sabak_state').max({ maxId: 'id' }).first();
+      const nextSabakId = Math.max(1, Math.floor(Number(maxSabakRow?.maxId || 0) || 0) + 1);
       await trx('sabak_state').insert({
+        id: nextSabakId,
         realm_id: 1,
         owner_guild_id: null,
         owner_guild_name: null,
