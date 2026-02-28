@@ -364,6 +364,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     fun petDivineAdvance(petId: String) = socket.petDivineAdvance(petId)
     fun requestActivityPointShop() = sendCmd("活动 shop")
     fun requestActivityDivineBeastExchange() = sendCmd("活动 神兽兑换")
+    fun claimHarvestSign() = sendCmd("活动 丰收签到")
     fun redeemActivityPointShop(itemId: String, qty: Int) = sendCmd("活动 redeem $itemId ${qty.coerceAtLeast(1)}")
     fun redeemActivityDivineBeast(exchangeId: String, qty: Int) = sendCmd("活动 神兽兑换 $exchangeId ${qty.coerceAtLeast(1)}")
 

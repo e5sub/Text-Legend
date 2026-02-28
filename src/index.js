@@ -104,6 +104,11 @@ import {
   getMobRewardActivityBonus,
   recordBossKillActivities,
   recordTreasurePetFestivalActivity,
+  recordHarvestOnlineMinute,
+  normalizeHarvestSeasonRewardConfig,
+  setHarvestSeasonRewardConfig,
+  normalizeHarvestSeasonSignConfig,
+  setHarvestSeasonSignConfig,
   getChinaDateParts,
   formatPrevDateKey,
   formatPrevWeekKey,
@@ -188,6 +193,8 @@ import {
 const ACTIVITY_POINT_SHOP_SETTING_KEY = 'activity_point_shop_config_v2';
 const DIVINE_BEAST_FRAGMENT_EXCHANGE_SETTING_KEY = 'divine_beast_fragment_exchange_config_v1';
 const EQUIPMENT_RECYCLE_SETTING_KEY = 'equipment_recycle_config_v1';
+const HARVEST_SEASON_REWARD_SETTING_KEY = 'harvest_season_reward_config_v1';
+const HARVEST_SEASON_SIGN_SETTING_KEY = 'harvest_season_sign_config_v1';
 const FIRST_RECHARGE_WELFARE_SETTING_KEY = 'first_recharge_welfare_config_v1';
 const INVITE_REWARD_SETTING_KEY = 'invite_reward_config_v1';
 const INVITE_RECHARGE_BONUS_RATE = 0.2;
@@ -1206,6 +1213,50 @@ async function getDivineBeastFragmentExchangeConfigCached(forceRefresh = false) 
   return divineBeastFragmentExchangeConfigCache;
 }
 
+async function loadHarvestSeasonRewardConfigFromDb() {
+  let raw = {};
+  try {
+    raw = await getSetting(HARVEST_SEASON_REWARD_SETTING_KEY, '{}');
+    if (typeof raw === 'string') raw = JSON.parse(raw || '{}');
+  } catch {
+    raw = {};
+  }
+  return setHarvestSeasonRewardConfig(raw);
+}
+
+async function loadHarvestSeasonSignConfigFromDb() {
+  let raw = {};
+  try {
+    raw = await getSetting(HARVEST_SEASON_SIGN_SETTING_KEY, '{}');
+    if (typeof raw === 'string') raw = JSON.parse(raw || '{}');
+  } catch {
+    raw = {};
+  }
+  return setHarvestSeasonSignConfig(raw);
+}
+
+function validateHarvestSeasonRewardConfig(config) {
+  const normalized = normalizeHarvestSeasonRewardConfig(config);
+  const seen = new Set();
+  for (const item of normalized.items) {
+    if (seen.has(item.id)) throw new Error(`奖励ID重复: ${item.id}`);
+    seen.add(item.id);
+    if (item.itemId && !ITEM_TEMPLATES[item.itemId]) {
+      throw new Error(`奖励 ${item.id} 包含不存在的物品: ${item.itemId}`);
+    }
+  }
+  return normalized;
+}
+
+function validateHarvestSeasonSignConfig(config) {
+  const normalized = normalizeHarvestSeasonSignConfig(config);
+  for (const item of normalized.items) {
+    if (item.id && !ITEM_TEMPLATES[item.id]) {
+      throw new Error(`签到奖励包含不存在的物品: ${item.id}`);
+    }
+  }
+  return normalized;
+}
 async function loadEquipmentRecycleConfigFromDb() {
   let raw = {};
   try {
@@ -2454,6 +2505,71 @@ app.post('/admin/activity-point-shop/update', async (req, res) => {
   }
 });
 
+app.get('/admin/harvest-season-rewards', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  try {
+    const config = await loadHarvestSeasonRewardConfigFromDb();
+    const itemOptions = Object.values(ITEM_TEMPLATES || {})
+      .filter((it) => it && it.id)
+      .map((it) => ({
+        id: String(it.id),
+        name: String(it.name || it.id),
+        type: String(it.type || 'unknown')
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN'));
+    res.json({ ok: true, config, itemOptions });
+  } catch (err) {
+    res.status(500).json({ error: err.message || '加载失败' });
+  }
+});
+
+app.get('/admin/harvest-season-sign', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  try {
+    const config = await loadHarvestSeasonSignConfigFromDb();
+    const itemOptions = Object.values(ITEM_TEMPLATES || {})
+      .filter((it) => it && it.id)
+      .map((it) => ({
+        id: String(it.id),
+        name: String(it.name || it.id),
+        type: String(it.type || 'unknown')
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN'));
+    res.json({ ok: true, config, itemOptions });
+  } catch (err) {
+    res.status(500).json({ error: err.message || '加载失败' });
+  }
+});
+
+app.post('/admin/harvest-season-rewards/update', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  try {
+    const payload = req.body?.config ?? req.body ?? {};
+    const config = validateHarvestSeasonRewardConfig(payload);
+    await setSetting(HARVEST_SEASON_REWARD_SETTING_KEY, JSON.stringify(config));
+    setHarvestSeasonRewardConfig(config);
+    res.json({ ok: true, config });
+  } catch (err) {
+    res.status(400).json({ error: err.message || '保存失败' });
+  }
+});
+
+app.post('/admin/harvest-season-sign/update', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  try {
+    const payload = req.body?.config ?? req.body ?? {};
+    const config = validateHarvestSeasonSignConfig(payload);
+    await setSetting(HARVEST_SEASON_SIGN_SETTING_KEY, JSON.stringify(config));
+    setHarvestSeasonSignConfig(config);
+    res.json({ ok: true, config });
+  } catch (err) {
+    res.status(400).json({ error: err.message || '保存失败' });
+  }
+});
 app.get('/admin/divine-beast-fragment-exchange', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
@@ -16779,6 +16895,7 @@ async function combatTick() {
     processPotionRegen(player);
     updateRedNameAutoClear(player);
     updateAutoDailyUsage(player);
+    recordHarvestOnlineMinute(player);
     tryRestoreAutoFullAfterManualDowngrade(player);
     downgradeAutoFullInZhuxianTower(player);
     normalizeZhuxianTowerProgress(player);
@@ -18261,6 +18378,8 @@ async function start() {
   const trainingPerLevelConfig = await getTrainingPerLevelConfigDb();
   setTrainingPerLevelConfigMem(trainingPerLevelConfig);
   await loadEquipmentRecycleConfigFromDb();
+  await loadHarvestSeasonRewardConfigFromDb();
+  await loadHarvestSeasonSignConfigFromDb();
   const ultimateGrowthConfig = await getUltimateGrowthConfigDb();
   if (ultimateGrowthConfig && typeof ultimateGrowthConfig === 'object') {
     setUltimateGrowthConfigMem(ultimateGrowthConfig);
@@ -18386,4 +18505,8 @@ start().catch((err) => {
   console.error(err);
   process.exit(1);
 });
+
+
+
+
 

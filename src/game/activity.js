@@ -1,5 +1,6 @@
-import { WORLD } from './world.js';
+﻿import { WORLD } from './world.js';
 import { MOB_TEMPLATES } from './mobs.js';
+import { ITEM_TEMPLATES } from './items.js';
 
 const CN_TZ_OFFSET_MS = 8 * 60 * 60 * 1000;
 
@@ -14,14 +15,125 @@ const ACTIVITY_DEFS = [
   { id: 'refine_carnival', name: '锻造狂欢', type: 'weekly', desc: '锻造材料减免与里程碑统计' },
   { id: 'guild_boss_assault', name: '行会攻坚赛', type: 'weekly', desc: '击杀BOSS累计行会战功（个人贡献）' },
   { id: 'cross_hunter', name: '跨服猎王', type: 'weekly', desc: '跨服玩法时段加成活动' },
-  { id: 'treasure_pet_festival', name: '宝藏奇缘', type: 'weekly', desc: '法宝/宠物养成节日（主活动）' },
+  { id: 'treasure_pet_festival', name: '宝藏奇缘', type: 'weekly', desc: '法宝与宠物养成节日（主活动）' },
   { id: 'double_dungeon', name: '双倍秘境', type: 'daily', desc: '每日轮换地图，经验金币双倍' },
-  { id: 'pet_carnival_day', name: '宠物狂欢日', type: 'weekly', desc: '宠物打书/合宠活跃加成' },
-  { id: 'treasure_sprint_day', name: '法宝冲刺日', type: 'weekly', desc: '法宝升级/升段活跃加成' },
-  { id: 'world_boss_bounty', name: '世界BOSS悬赏', type: 'daily', desc: '每日指定悬赏BOSS，击杀得悬赏积分' },
-  { id: 'newbie_catchup', name: '新手追赶计划', type: 'always', desc: '未修真玩家打怪经验加成' },
-  { id: 'lucky_drop_day', name: '幸运掉落日', type: 'weekly', desc: '指定时段BOSS活动积分额外加成' }
+  { id: 'pet_carnival_day', name: '宠物狂欢日', type: 'weekly', desc: '宠物打书与合成活跃加成' },
+  { id: 'treasure_sprint_day', name: '法宝冲刺日', type: 'weekly', desc: '法宝升级与升段活跃加成' },
+  { id: 'world_boss_bounty', name: '世界BOSS悬赏', type: 'daily', desc: '每日指定悬赏BOSS，击杀获得悬赏积分' },
+  { id: 'newbie_catchup', name: '新人追赶计划', type: 'always', desc: '未修真玩家打怪经验加成' },
+  { id: 'lucky_drop_day', name: '幸运掉落日', type: 'weekly', desc: '指定时段BOSS活动积分额外加成' },
+  { id: 'harvest_season', name: '丰收季', type: 'daily', desc: '每日签到、挂机进度、丰收赐福、收菜补给与整点巡礼活动' }
 ];
+
+const DEFAULT_HARVEST_SEASON_REWARD_CONFIG = {
+  version: 1,
+  items: [
+    { id: 'harvest_30', threshold: 30, title: '丰收挂机奖励', gold: 100000, itemId: 'training_fruit', itemQty: 5, sort: 0 },
+    { id: 'harvest_60', threshold: 60, title: '丰收挂机奖励', gold: 160000, itemId: 'pet_training_fruit', itemQty: 5, sort: 1 },
+    { id: 'harvest_120', threshold: 120, title: '丰收挂机奖励', gold: 220000, itemId: 'treasure_exp_material', itemQty: 10, sort: 2 },
+    { id: 'harvest_180', threshold: 180, title: '丰收挂机奖励', gold: 300000, itemId: 'ultimate_growth_stone', itemQty: 5, sort: 3 }
+  ]
+};
+
+const DEFAULT_HARVEST_SEASON_SIGN_CONFIG = {
+  version: 1,
+  title: '丰收签到奖励',
+  points: 20,
+  gold: 200000,
+  items: [
+    { id: 'training_fruit', qty: 5 },
+    { id: 'pet_training_fruit', qty: 5 },
+    { id: 'treasure_exp_material', qty: 5 }
+  ]
+};
+
+let harvestSeasonRewardConfigCache = JSON.parse(JSON.stringify(DEFAULT_HARVEST_SEASON_REWARD_CONFIG));
+let harvestSeasonSignConfigCache = JSON.parse(JSON.stringify(DEFAULT_HARVEST_SEASON_SIGN_CONFIG));
+
+function isHarvestPatrolWindow(now = Date.now()) {
+  const t = getChinaDate(now);
+  return t.minute >= 0 && t.minute < 10;
+}
+
+function describeRewardBundle(reward = {}) {
+  const parts = [];
+  const gold = Math.max(0, Math.floor(Number(reward?.gold || 0)));
+  if (gold > 0) parts.push(`${gold} 金币`);
+  const items = Array.isArray(reward?.items) ? reward.items : [];
+  items.forEach((entry) => {
+    const itemId = String(entry?.id || '').trim();
+    const qty = Math.max(1, Math.floor(Number(entry?.qty || 1)));
+    const tpl = ITEM_TEMPLATES?.[itemId];
+    parts.push(`${tpl?.name || itemId} x${qty}`);
+  });
+  return parts.join('、');
+}
+
+export function normalizeHarvestSeasonRewardConfig(raw) {
+  const src = raw && typeof raw === 'object' ? raw : {};
+  const list = Array.isArray(src.items) ? src.items : [];
+  const items = list.map((entry, index) => {
+    const threshold = Math.max(1, Math.floor(Number(entry?.threshold || 0)));
+    if (threshold <= 0) return null;
+    const itemId = String(entry?.itemId || '').trim();
+    if (itemId && !ITEM_TEMPLATES[itemId]) return null;
+    const gold = Math.max(0, Math.floor(Number(entry?.gold || 0)));
+    const itemQty = Math.max(1, Math.floor(Number(entry?.itemQty || 1)));
+    if (!gold && !itemId) return null;
+    return {
+      id: String(entry?.id || `harvest_${threshold}_${index + 1}`).trim(),
+      threshold,
+      title: String(entry?.title || '丰收挂机奖励').trim() || '丰收挂机奖励',
+      gold,
+      itemId,
+      itemQty,
+      sort: Number.isFinite(Number(entry?.sort)) ? Number(entry.sort) : index
+    };
+  }).filter(Boolean);
+  items.sort((a, b) => (a.threshold - b.threshold) || (a.sort - b.sort) || a.id.localeCompare(b.id));
+  if (!items.length) {
+    return JSON.parse(JSON.stringify(DEFAULT_HARVEST_SEASON_REWARD_CONFIG));
+  }
+  return { version: 1, items };
+}
+
+export function getHarvestSeasonRewardConfig() {
+  return normalizeHarvestSeasonRewardConfig(harvestSeasonRewardConfigCache);
+}
+
+export function setHarvestSeasonRewardConfig(raw) {
+  harvestSeasonRewardConfigCache = normalizeHarvestSeasonRewardConfig(raw);
+  return getHarvestSeasonRewardConfig();
+}
+
+export function normalizeHarvestSeasonSignConfig(raw) {
+  const src = raw && typeof raw === 'object' ? raw : {};
+  const hasItems = Array.isArray(src.items);
+  const sourceItems = hasItems ? src.items : DEFAULT_HARVEST_SEASON_SIGN_CONFIG.items;
+  const items = sourceItems
+    .map((entry) => ({
+      id: String(entry?.id || '').trim(),
+      qty: Math.max(1, Math.floor(Number(entry?.qty || 1)))
+    }))
+    .filter((entry) => entry.id && ITEM_TEMPLATES?.[entry.id]);
+  return {
+    version: 1,
+    title: String(src.title || DEFAULT_HARVEST_SEASON_SIGN_CONFIG.title).trim() || DEFAULT_HARVEST_SEASON_SIGN_CONFIG.title,
+    points: Math.max(0, Math.floor(Number(src.points ?? DEFAULT_HARVEST_SEASON_SIGN_CONFIG.points) || 0)),
+    gold: Math.max(0, Math.floor(Number(src.gold ?? DEFAULT_HARVEST_SEASON_SIGN_CONFIG.gold) || 0)),
+    items: hasItems ? items : DEFAULT_HARVEST_SEASON_SIGN_CONFIG.items.map((entry) => ({ ...entry }))
+  };
+}
+
+export function getHarvestSeasonSignConfig() {
+  return normalizeHarvestSeasonSignConfig(harvestSeasonSignConfigCache);
+}
+
+export function setHarvestSeasonSignConfig(raw) {
+  harvestSeasonSignConfigCache = normalizeHarvestSeasonSignConfig(raw);
+  return getHarvestSeasonSignConfig();
+}
+
 function getChinaDate(now = Date.now()) {
   const d = new Date(now + CN_TZ_OFFSET_MS);
   const year = d.getUTCFullYear();
@@ -118,6 +230,8 @@ export function isActivityActive(id, now = Date.now()) {
       return true;
     case 'lucky_drop_day':
       return t.weekday === 3 && inWindow(t.minuteOfDay, 19 * 60, 24 * 60); // Wed evening
+    case 'harvest_season':
+      return true;
     default:
       return false;
   }
@@ -151,6 +265,15 @@ export function normalizeActivityProgress(player, now = Date.now()) {
     ap.worldBossBounty = { mobId: getWorldBossBountyTarget(now).mobId, points: 0, kills: 0, lastHitBonus: 0 };
     ap.petCarnival = { petBookUses: 0, petSyntheses: 0, score: 0 };
     ap.treasureSprint = { treasureUpgrades: 0, treasureAdvances: 0, score: 0 };
+    ap.harvestSeason = {
+      loginClaimed: false,
+      onlineMinutes: 0,
+      patrolPoints: 0,
+      minuteStamp: 0,
+      blessingClaimed: false,
+      supplyClaimed: false,
+      blessing: null
+    };
     ap.refineCarnival = ap.refineCarnival && ap.refineCarnival._weekKey === t.weekKey
       ? ap.refineCarnival
       : { _weekKey: t.weekKey, attempts: 0, milestones: {} };
@@ -187,6 +310,26 @@ export function normalizeActivityProgress(player, now = Date.now()) {
   if (!ap.pointShopRedeems.lifetime || typeof ap.pointShopRedeems.lifetime !== 'object') {
     ap.pointShopRedeems.lifetime = {};
   }
+  if (!ap.harvestSeason || typeof ap.harvestSeason !== 'object') {
+    ap.harvestSeason = {
+      loginClaimed: false,
+      onlineMinutes: 0,
+      patrolPoints: 0,
+      minuteStamp: 0,
+      blessingClaimed: false,
+      supplyClaimed: false,
+      blessing: null
+    };
+  }
+  ap.harvestSeason.loginClaimed = Boolean(ap.harvestSeason.loginClaimed);
+  ap.harvestSeason.onlineMinutes = Math.max(0, Math.floor(Number(ap.harvestSeason.onlineMinutes || 0)));
+  ap.harvestSeason.patrolPoints = Math.max(0, Math.floor(Number(ap.harvestSeason.patrolPoints || 0)));
+  ap.harvestSeason.minuteStamp = Math.max(0, Math.floor(Number(ap.harvestSeason.minuteStamp || 0)));
+  ap.harvestSeason.blessingClaimed = Boolean(ap.harvestSeason.blessingClaimed);
+  ap.harvestSeason.supplyClaimed = Boolean(ap.harvestSeason.supplyClaimed);
+  if (!ap.harvestSeason.blessing || typeof ap.harvestSeason.blessing !== 'object') {
+    ap.harvestSeason.blessing = null;
+  }
   return ap;
 }
 
@@ -213,6 +356,126 @@ export function spendActivityPoints(player, amount, now = Date.now()) {
   ap.activityPoints = balance - cost;
   ap.activityPointsSpent = Math.max(0, Math.floor(Number(ap.activityPointsSpent || 0))) + cost;
   return { ok: true, amount: cost, balance: ap.activityPoints };
+}
+
+export async function claimHarvestLoginRewardByMail(player, {
+  sendMail,
+  realmId = 1,
+  now = Date.now()
+} = {}) {
+  const ap = normalizeActivityProgress(player, now);
+  if (ap.harvestSeason?.loginClaimed) {
+    return { ok: false, error: '今日丰收签到已领取。' };
+  }
+  if (typeof sendMail !== 'function') {
+    return { ok: false, error: '邮件系统不可用。' };
+  }
+  const signConfig = getHarvestSeasonSignConfig();
+  const reward = {
+    gold: Math.max(0, Math.floor(Number(signConfig.gold || 0))),
+    items: Array.isArray(signConfig.items)
+      ? signConfig.items
+          .map((entry) => ({
+            id: String(entry?.id || '').trim(),
+            qty: Math.max(1, Math.floor(Number(entry?.qty || 1)))
+          }))
+          .filter((entry) => entry.id)
+      : []
+  };
+  const pointReward = Math.max(0, Math.floor(Number(signConfig.points || 0)));
+  try {
+    await sendMail(
+      player.userId,
+      player.name,
+      '系统',
+      null,
+      signConfig.title || '丰收签到奖励',
+      `今日签到完成。\n奖励：${describeRewardBundle(reward)}${pointReward > 0 ? `\n另赠送活动积分 ${pointReward}。` : ''}`,
+      reward.items,
+      reward.gold,
+      realmId
+    );
+    ap.harvestSeason.loginClaimed = true;
+    if (pointReward > 0) addActivityPoints(player, pointReward, now);
+    return { ok: true, reward, points: pointReward };
+  } catch (err) {
+    return { ok: false, error: err?.message || '邮件发送失败。' };
+  }
+}
+
+export function claimHarvestBlessing(player, { now = Date.now() } = {}) {
+  const ap = normalizeActivityProgress(player, now);
+  if (ap.harvestSeason?.blessingClaimed) {
+    return { ok: false, error: '今日已领取丰收赐福。' };
+  }
+  const blessDefs = [
+    { id: 'exp', name: '经验丰收', expMult: 1.2, goldMult: 1, patrolBonus: 0, points: 8 },
+    { id: 'gold', name: '金币丰收', expMult: 1, goldMult: 1.2, patrolBonus: 0, points: 8 },
+    { id: 'double', name: '双收赐福', expMult: 1.1, goldMult: 1.1, patrolBonus: 0, points: 10 },
+    { id: 'patrol', name: '巡礼加持', expMult: 1, goldMult: 1, patrolBonus: 1, points: 12 }
+  ];
+  const t = getChinaDate(now);
+  const seed = `${player?.userId || 0}:${player?.id || player?.name || ''}:${t.dateKey}`;
+  const blessing = blessDefs[dailyIndex(seed) % blessDefs.length];
+  ap.harvestSeason.blessingClaimed = true;
+  ap.harvestSeason.blessing = { ...blessing };
+  if (blessing.points > 0) addActivityPoints(player, blessing.points, now);
+  return { ok: true, blessing: { ...blessing } };
+}
+
+export async function claimHarvestSupplyByMail(player, {
+  sendMail,
+  realmId = 1,
+  now = Date.now()
+} = {}) {
+  const ap = normalizeActivityProgress(player, now);
+  if (ap.harvestSeason?.supplyClaimed) {
+    return { ok: false, error: '今日收菜补给已领取。' };
+  }
+  if (Number(ap.harvestSeason?.onlineMinutes || 0) < 60) {
+    return { ok: false, error: '挂机满60分钟后才能领取收菜补给。' };
+  }
+  if (typeof sendMail !== 'function') {
+    return { ok: false, error: '邮件系统不可用。' };
+  }
+  const reward = {
+    gold: 150000,
+    items: [
+      { id: 'training_fruit', qty: 3 },
+      { id: 'pet_training_fruit', qty: 3 }
+    ]
+  };
+  const pointReward = 10;
+  try {
+    await sendMail(
+      player.userId,
+      player.name,
+      '系统',
+      null,
+      '收菜补给奖励',
+      `挂机已达 ${Math.max(0, Math.floor(Number(ap.harvestSeason?.onlineMinutes || 0)))} 分钟。\n奖励：${describeRewardBundle(reward)}\n另赠送活动积分 ${pointReward}。`,
+      reward.items,
+      reward.gold,
+      realmId
+    );
+    ap.harvestSeason.supplyClaimed = true;
+    addActivityPoints(player, pointReward, now);
+    return { ok: true, reward, points: pointReward };
+  } catch (err) {
+    return { ok: false, error: err?.message || '邮件发送失败。' };
+  }
+}
+
+export function recordHarvestOnlineMinute(player, now = Date.now()) {
+  if (!player) return false;
+  const autoEnabled = Boolean(player?.flags?.autoFullEnabled || player?.flags?.autoSkillId || player?.flags?.offlineManagedAuto);
+  if (!autoEnabled) return false;
+  const ap = normalizeActivityProgress(player, now);
+  const minuteStamp = Math.floor(Number(now || Date.now()) / 60000);
+  if (Number(ap.harvestSeason?.minuteStamp || 0) === minuteStamp) return false;
+  ap.harvestSeason.minuteStamp = minuteStamp;
+  ap.harvestSeason.onlineMinutes = Math.max(0, Math.floor(Number(ap.harvestSeason.onlineMinutes || 0))) + 1;
+  return true;
 }
 
 export function getActivityStatePayload(player, now = Date.now()) {
@@ -242,6 +505,7 @@ export function getActivityStatePayload(player, now = Date.now()) {
       treasure_sprint_day: ap.treasureSprint || { treasureUpgrades: 0, treasureAdvances: 0, score: 0 },
       world_boss_bounty: ap.worldBossBounty || { mobId: bountyTarget.mobId, points: 0, kills: 0, lastHitBonus: 0 },
       lucky_drop_day: ap.luckyDropDay || { points: 0, bossKills: 0, lastHitBonus: 0 },
+      harvest_season: ap.harvestSeason || { loginClaimed: false, onlineMinutes: 0, patrolPoints: 0, blessingClaimed: false, supplyClaimed: false, blessing: null },
       refine_carnival: {
         attempts: Number(ap.refineCarnival?.attempts || 0),
         milestones: ap.refineCarnival?.milestones || {}
@@ -260,10 +524,10 @@ export function getMobRewardActivityBonus(member, mobTemplate, now = Date.now(),
     const neverCultivated = cultivationLevel < 0;
     if (neverCultivated && lv < 100) {
       expMult *= 5;
-      notes.push('新手追赶');
+      notes.push('新人追赶');
     } else if (neverCultivated && lv >= 100 && lv <= 200) {
       expMult *= 2.5;
-      notes.push('新手追赶');
+      notes.push('新人追赶');
     }
   }
   const isCultivationBoss = Boolean(mobTemplate?.id && String(mobTemplate.id).startsWith('cultivation_boss_'));
@@ -284,8 +548,22 @@ export function getMobRewardActivityBonus(member, mobTemplate, now = Date.now(),
       ap.doubleDungeon.kills = Math.max(0, Number(ap.doubleDungeon.kills || 0)) + 1;
       ap.doubleDungeon.score = Math.max(0, Number(ap.doubleDungeon.score || 0)) + 1;
       addActivityPoints(member, 1, now);
-      notes.push(`双倍秘境:${target.zoneName}`);
+      notes.push(`双倍秘境：${target.zoneName}`);
     }
+  }
+  if (isActivityActive('harvest_season', now) && isHarvestPatrolWindow(now)) {
+    const ap = normalizeActivityProgress(member, now);
+    ap.harvestSeason.patrolPoints = Math.max(0, Math.floor(Number(ap.harvestSeason?.patrolPoints || 0))) + 1;
+    addActivityPoints(member, 1, now);
+    const patrolBonus = Math.max(0, Math.floor(Number(ap.harvestSeason?.blessing?.patrolBonus || 0)));
+    if (patrolBonus > 0) addActivityPoints(member, patrolBonus, now);
+    notes.push('整点巡礼');
+  }
+  const blessing = normalizeActivityProgress(member, now)?.harvestSeason?.blessing;
+  if (blessing) {
+    expMult *= Math.max(1, Number(blessing.expMult || 1));
+    goldMult *= Math.max(1, Number(blessing.goldMult || 1));
+    if (blessing.name) notes.push(blessing.name);
   }
   return { expMult, goldMult, notes };
 }
@@ -310,7 +588,7 @@ export function recordRefineActivity(player, { success = false, newLevel = 0 } =
     carnival.milestones[String(newLevel)] = true;
     const goldReward = newLevel * 10000;
     player.gold = Math.max(0, Number(player.gold || 0)) + goldReward;
-    msgs.push(`锻造狂欢里程碑：达成 +${newLevel}，获得 ${goldReward} 金币。`);
+    msgs.push(`锻造狂欢迎里程碑：达到 +${newLevel}，获得 ${goldReward} 金币。`);
   }
   return msgs;
 }
@@ -390,7 +668,6 @@ export function recordBossKillActivities({
   if (!isEligibleBoss) return messages;
 
   const pointBonus = isActivityActive('lucky_drop_day', now) ? 1.5 : 1;
-  const awarded = new Set();
 
   if (isActivityActive('demon_slayer_order', now)) {
     damageEntries.forEach(([name], idx) => {
@@ -402,9 +679,8 @@ export function recordBossKillActivities({
       ap.demonSlayer.points = Math.max(0, Number(ap.demonSlayer?.points || 0)) + gain;
       ap.demonSlayer.bossKills = Math.max(0, Number(ap.demonSlayer?.bossKills || 0)) + 1;
       addActivityPoints(p, idx === 0 ? 2 : 1, now);
-      awarded.add(name);
       if (idx === 0) {
-        messages.push({ player: p, text: `限时屠魔令：伤害第1，积分 +${gain}` });
+        messages.push({ player: p, text: `限时屠魔令：伤害第一，积分 +${gain}` });
       }
     });
     if (lastHitName) {
@@ -454,7 +730,7 @@ export function recordBossKillActivities({
       ap.luckyDropDay.points = Math.max(0, Number(ap.luckyDropDay?.points || 0)) + gain;
       ap.luckyDropDay.bossKills = Math.max(0, Number(ap.luckyDropDay?.bossKills || 0)) + 1;
       addActivityPoints(p, 1, now);
-      if (idx === 0) messages.push({ player: p, text: `幸运掉落日：BOSS伤害第一，幸运积分+${gain}` });
+      if (idx === 0) messages.push({ player: p, text: `幸运掉落日：BOSS伤害第一，幸运积分 +${gain}` });
     });
     if (lastHitName) {
       const p = playerResolver(lastHitName);
@@ -465,7 +741,7 @@ export function recordBossKillActivities({
         ap.luckyDropDay.points = Math.max(0, Number(ap.luckyDropDay?.points || 0)) + gain;
         ap.luckyDropDay.lastHitBonus = Math.max(0, Number(ap.luckyDropDay?.lastHitBonus || 0)) + gain;
         addActivityPoints(p, 1, now);
-        messages.push({ player: p, text: `幸运掉落日：尾刀奖励，幸运积分+${gain}` });
+        messages.push({ player: p, text: `幸运掉落日：尾刀奖励，幸运积分 +${gain}` });
       }
     }
   }
@@ -485,7 +761,7 @@ export function recordBossKillActivities({
         ap.worldBossBounty.points = Math.max(0, Number(ap.worldBossBounty?.points || 0)) + gain;
         ap.worldBossBounty.kills = Math.max(0, Number(ap.worldBossBounty?.kills || 0)) + 1;
         addActivityPoints(p, idx === 0 ? 2 : 1, now);
-        if (idx === 0) messages.push({ player: p, text: `世界BOSS悬赏：伤害第一，悬赏积分+${gain}` });
+        if (idx === 0) messages.push({ player: p, text: `世界BOSS悬赏：伤害第一，悬赏积分 +${gain}` });
       });
       if (lastHitName) {
         const p = playerResolver(lastHitName);
@@ -499,7 +775,7 @@ export function recordBossKillActivities({
           ap.worldBossBounty.points = Math.max(0, Number(ap.worldBossBounty?.points || 0)) + gain;
           ap.worldBossBounty.lastHitBonus = Math.max(0, Number(ap.worldBossBounty?.lastHitBonus || 0)) + gain;
           addActivityPoints(p, 1, now);
-          messages.push({ player: p, text: `世界BOSS悬赏：尾刀奖励，悬赏积分+${gain}` });
+          messages.push({ player: p, text: `世界BOSS悬赏：尾刀奖励，悬赏积分 +${gain}` });
         }
       }
     }
@@ -516,13 +792,12 @@ export function recordBossKillActivities({
       ap.crossHunter.points = Math.max(0, Number(ap.crossHunter?.points || 0)) + gain;
       ap.crossHunter.kills = Math.max(0, Number(ap.crossHunter?.kills || 0)) + 1;
       addActivityPoints(p, idx === 0 ? 3 : 1, now);
-      if (idx === 0) messages.push({ player: p, text: `跨服猎王：跨服BOSS伤害第一，猎王积分+${gain}` });
+      if (idx === 0) messages.push({ player: p, text: `跨服猎王：跨服BOSS伤害第一，猎王积分 +${gain}` });
     });
   }
 
   return messages;
 }
-
 export function getActivityChatLines(player, now = Date.now()) {
   const active = listActiveActivities(now);
   const ap = normalizeActivityProgress(player, now);
@@ -544,7 +819,8 @@ export function getActivityChatLines(player, now = Date.now()) {
   lines.push(`跨服猎王：积分 ${Number(ap.crossHunter?.points || 0)}（击杀 ${Number(ap.crossHunter?.kills || 0)}）`);
   lines.push(`宝藏奇缘：活跃 ${Number(ap.treasurePetFestival?.score || 0)}（法宝升级 ${Number(ap.treasurePetFestival?.treasureUpgrades || 0)} / 升段 ${Number(ap.treasurePetFestival?.treasureAdvances || 0)} / 打书 ${Number(ap.treasurePetFestival?.petBookUses || 0)} / 合宠 ${Number(ap.treasurePetFestival?.petSyntheses || 0)}）`);
   lines.push(`幸运掉落日：积分 ${Number(ap.luckyDropDay?.points || 0)}（BOSS击杀 ${Number(ap.luckyDropDay?.bossKills || 0)}）`);
-  lines.push(`锻造狂欢次数：${Number(ap.refineCarnival?.attempts || 0)}（+10 ${ap.refineCarnival?.milestones?.['10'] ? '已达成' : '未达成'} / +20 ${ap.refineCarnival?.milestones?.['20'] ? '已达成' : '未达成'} / +30 ${ap.refineCarnival?.milestones?.['30'] ? '已达成' : '未达成'}）`);
+  lines.push(`锻造狂欢：${Number(ap.refineCarnival?.attempts || 0)} 次（+10 ${ap.refineCarnival?.milestones?.['10'] ? '已达成' : '未达成'} / +20 ${ap.refineCarnival?.milestones?.['20'] ? '已达成' : '未达成'} / +30 ${ap.refineCarnival?.milestones?.['30'] ? '已达成' : '未达成'}）`);
+  lines.push(`丰收季：签到${ap.harvestSeason?.loginClaimed ? '已领' : '未领'} / 挂机 ${Number(ap.harvestSeason?.onlineMinutes || 0)} 分钟 / 巡礼 ${Number(ap.harvestSeason?.patrolPoints || 0)} / 补给 ${ap.harvestSeason?.supplyClaimed ? '已领' : '未领'} / 赐福 ${ap.harvestSeason?.blessing?.name || (ap.harvestSeason?.blessingClaimed ? '已领' : '未领')}`);
   return lines;
 }
 function ensureClaimStore(player, now = Date.now()) {
@@ -573,10 +849,22 @@ function getProgressSnapshot(player, now = Date.now()) {
     doubleDungeonScore: Number(ap.doubleDungeon?.score || 0),
     worldBossBountyPoints: Number(ap.worldBossBounty?.points || 0),
     petCarnivalScore: Number(ap.petCarnival?.score || 0),
-    treasureSprintScore: Number(ap.treasureSprint?.score || 0)
+    treasureSprintScore: Number(ap.treasureSprint?.score || 0),
+    harvestOnlineMinutes: Number(ap.harvestSeason?.onlineMinutes || 0),
+    harvestPatrolPoints: Number(ap.harvestSeason?.patrolPoints || 0)
   };
 }
 function rewardDefsForClaims() {
+  const harvestRewardDefs = (getHarvestSeasonRewardConfig().items || []).map((item, index) => ({
+    key: String(item?.id || `harvest_cfg_${index + 1}`),
+    period: 'daily',
+    title: String(item?.title || '丰收挂机奖励'),
+    threshold: Math.max(1, Math.floor(Number(item?.threshold || 1))),
+    metric: 'harvestOnlineMinutes',
+    gold: Math.max(0, Math.floor(Number(item?.gold || 0))),
+    items: item?.itemId ? [{ id: String(item.itemId), qty: Math.max(1, Math.floor(Number(item.itemQty || 1))) }] : [],
+    body: `挂机时长达到 ${Math.max(1, Math.floor(Number(item?.threshold || 1)))} 分钟。`
+  }));
   return [
     { key: 'double_dungeon_30', period: 'daily', title: '双倍秘境奖励', threshold: 30, metric: 'doubleDungeonScore', gold: 80000, body: '达成双倍秘境击杀 30。' },
     { key: 'double_dungeon_100', period: 'daily', title: '双倍秘境奖励', threshold: 100, metric: 'doubleDungeonScore', gold: 220000, body: '达成双倍秘境击杀 100。' },
@@ -599,8 +887,9 @@ function rewardDefsForClaims() {
     { key: 'refine_60', period: 'weekly', title: '锻造狂欢奖励', threshold: 60, metric: 'refineAttempts', gold: 300000, body: '达成锻造狂欢次数 60。' },
     { key: 'cross_30', period: 'weekly', title: '跨服猎王奖励', threshold: 30, metric: 'crossHunterPoints', gold: 150000, body: '达成跨服猎王积分 30。' },
     { key: 'cross_90', period: 'weekly', title: '跨服猎王奖励', threshold: 90, metric: 'crossHunterPoints', gold: 420000, body: '达成跨服猎王积分 90。' },
-    { key: 'tpf_20', period: 'weekly', title: '宝藏奇缘奖励', threshold: 20, metric: 'treasurePetScore', gold: 120000, body: '达成宝藏奇缘活跃度 20。' },
-    { key: 'tpf_80', period: 'weekly', title: '宝藏奇缘奖励', threshold: 80, metric: 'treasurePetScore', gold: 360000, body: '达成宝藏奇缘活跃度 80。' }
+    { key: 'tpf_20', period: 'weekly', title: '宝藏奇缘奖励', threshold: 20, metric: 'treasurePetScore', gold: 120000, body: '达成宝藏奇缘活跃 20。' },
+    { key: 'tpf_80', period: 'weekly', title: '宝藏奇缘奖励', threshold: 80, metric: 'treasurePetScore', gold: 360000, body: '达成宝藏奇缘活跃 80。' },
+    ...harvestRewardDefs
   ];
 }
 export async function claimActivityRewardsByMail(player, {
@@ -622,20 +911,29 @@ export async function claimActivityRewardsByMail(player, {
     if (bucket.keys[def.key]) continue;
     const value = Number(progress[def.metric] || 0);
     if (value < def.threshold) continue;
+    const rewardItems = Array.isArray(def.items)
+      ? def.items
+          .map((entry) => ({
+            id: String(entry?.id || '').trim(),
+            qty: Math.max(1, Math.floor(Number(entry?.qty || 1)))
+          }))
+          .filter((entry) => entry.id)
+      : [];
+    const rewardDesc = describeRewardBundle({ gold: def.gold, items: rewardItems });
     await sendMail(
       player.userId,
       player.name,
       '系统',
       null,
       def.title,
-      `${def.body}\n奖励：${def.gold} 金币（邮件领取）`,
-      null,
+      `${def.body}\n奖励：${rewardDesc}（邮件领取）`,
+      rewardItems.length ? rewardItems : null,
       def.gold,
       realmId
     );
     bucket.keys[def.key] = true;
     sent += 1;
-    messages.push(`${def.title} 已发放（条件 ${def.threshold}，当前 ${value}）`);
+    messages.push(`${def.title} 已发放（条件 ${def.threshold}，当前 ${value}）。`);
   }
   if (!sent) {
     messages.push('暂无可领取的活动奖励。');
@@ -742,7 +1040,7 @@ export function buildActivitySettlementRewards(boards, { dailyKey = null, weekKe
         charName: row.name,
         realmId: row.realmId || 1,
         title: `${label}排行奖励`,
-        body: `${label}${period === 'daily' ? '（日榜）' : '（周榜）'}第${rank}名，成绩 ${entry.score}，奖励${gold} 金币。`,
+        body: `${label}${period === 'daily' ? '（日榜）' : '（周榜）'}第 ${rank} 名，成绩 ${entry.score}，奖励 ${gold} 金币。`,
         gold
       });
     });
@@ -764,3 +1062,6 @@ export function buildActivitySettlementRewards(boards, { dailyKey = null, weekKe
   }
   return rewards;
 }
+
+
+

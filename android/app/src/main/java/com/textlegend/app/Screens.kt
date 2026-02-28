@@ -58,6 +58,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
 import java.text.SimpleDateFormat
@@ -4085,10 +4086,20 @@ private fun ChangeClassDialog(vm: GameViewModel, onDismiss: () -> Unit) {
 
 @Composable
 private fun ActivityCenterDialog(vm: GameViewModel, onDismiss: () -> Unit) {
+    val state by vm.gameState.collectAsState()
     val pointShop by vm.activityPointShop.collectAsState()
     val beastExchange by vm.activityDivineBeastExchange.collectAsState()
     var showPointShop by remember { mutableStateOf(false) }
     var showBeastExchange by remember { mutableStateOf(false) }
+    val activityRoot = state?.activities as? JsonObject
+    val progress = activityRoot?.get("progress") as? JsonObject
+    val harvest = progress?.get("harvest_season") as? JsonObject
+    val harvestMinutes = harvest?.get("onlineMinutes")?.jsonPrimitive?.intOrNull ?: 0
+    val harvestPatrol = harvest?.get("patrolPoints")?.jsonPrimitive?.intOrNull ?: 0
+    val harvestLoginClaimed = harvest?.get("loginClaimed")?.jsonPrimitive?.contentOrNull == "true"
+    val harvestBlessingClaimed = harvest?.get("blessingClaimed")?.jsonPrimitive?.contentOrNull == "true"
+    val harvestSupplyClaimed = harvest?.get("supplyClaimed")?.jsonPrimitive?.contentOrNull == "true"
+    val harvestBlessingName = (harvest?.get("blessing") as? JsonObject)?.get("name")?.jsonPrimitive?.contentOrNull.orEmpty()
 
     if (showPointShop) {
         ActivityPointShopDialog(
@@ -4118,6 +4129,18 @@ private fun ActivityCenterDialog(vm: GameViewModel, onDismiss: () -> Unit) {
         }
         Spacer(modifier = Modifier.height(8.dp))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(modifier = Modifier.weight(1f), onClick = { vm.claimHarvestSign() }) { Text("丰收签到") }
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = { vm.sendCmd("活动 丰收赐福") }
+            ) { Text("丰收赐福") }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = { vm.sendCmd("活动 丰收补给") }
+            ) { Text("收菜补给") }
             Button(
                 modifier = Modifier.weight(1f),
                 onClick = {
@@ -4125,16 +4148,20 @@ private fun ActivityCenterDialog(vm: GameViewModel, onDismiss: () -> Unit) {
                     vm.requestActivityPointShop()
                 }
             ) { Text("积分商城") }
-            Button(
-                modifier = Modifier.weight(1f),
-                onClick = {
-                    showBeastExchange = true
-                    vm.requestActivityDivineBeastExchange()
-                }
-            ) { Text("神兽碎片兑换") }
         }
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = {
+                showBeastExchange = true
+                vm.requestActivityDivineBeastExchange()
+            }
+        ) { Text("神兽碎片兑换") }
         Spacer(modifier = Modifier.height(12.dp))
-        Text("提示：积分商城与神兽碎片兑换配置由GM后台统一控制。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            "丰收季：签到${if (harvestLoginClaimed) "已领取" else "未领取"} / 赐福${if (harvestBlessingName.isNotBlank()) harvestBlessingName else if (harvestBlessingClaimed) "已领取" else "未领取"} / 补给${if (harvestSupplyClaimed) "已领取" else "未领取"} / 挂机 ${harvestMinutes} 分钟 / 巡礼 ${harvestPatrol}（奖励统一计入活动积分）",
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
         pointShop?.let {
             Spacer(modifier = Modifier.height(6.dp))
             Text("当前活动积分：${it.points}", color = MaterialTheme.colorScheme.onSurfaceVariant)

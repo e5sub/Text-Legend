@@ -491,6 +491,84 @@
 
         <div class="block" data-collapsible>
           <div class="block-title">
+            <h2>丰收季签到配置</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <p class="muted" style="margin-bottom: 8px;">
+              配置丰收签到通过邮件发放的奖励和赠送的活动积分（保存后立即生效）。
+            </p>
+            <div class="row" style="margin-bottom: 8px; gap: 8px;">
+              <button id="harvest-sign-load-btn" class="btn-small">加载</button>
+              <button id="harvest-sign-add-btn" class="btn-small">+ 添加物品</button>
+              <button id="harvest-sign-save-btn" class="btn-small">保存</button>
+            </div>
+            <div class="row" style="margin-bottom: 8px; gap: 8px; flex-wrap: wrap;">
+              <input id="harvest-sign-title" type="text" placeholder="邮件标题" style="max-width: 240px;">
+              <input id="harvest-sign-points" type="number" min="0" placeholder="活动积分" style="max-width: 120px;">
+              <input id="harvest-sign-gold" type="number" min="0" placeholder="金币" style="max-width: 140px;">
+            </div>
+            <div class="row" style="margin-bottom: 8px; gap: 8px;">
+              <input id="harvest-sign-item-search" type="text" placeholder="搜索签到奖励物品名/ID/类型" style="max-width: 320px;">
+            </div>
+            <div class="table-container compact-config-table-container">
+              <table class="compact-config-table activity-point-shop-table" style="font-size: 12px;">
+                <thead>
+                  <tr>
+                    <th>物品</th>
+                    <th>数量</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="harvest-sign-list">
+                  <tr><td colspan="3" style="text-align:center;color:#999;">点击加载</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div id="harvest-sign-msg" class="msg"></div>
+          </div>
+        </div>
+
+        <div class="block" data-collapsible>
+          <div class="block-title">
+            <h2>丰收季挂机奖励配置</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <p class="muted" style="margin-bottom: 8px;">
+              配置丰收季挂机分钟档位奖励（保存后立即生效，活动领取会按这里的档位发邮件）。
+            </p>
+            <div class="row" style="margin-bottom: 8px; gap: 8px;">
+              <button id="harvest-reward-load-btn" class="btn-small">加载</button>
+              <button id="harvest-reward-add-btn" class="btn-small">+ 添加档位</button>
+              <button id="harvest-reward-save-btn" class="btn-small">保存</button>
+            </div>
+            <div class="row" style="margin-bottom: 8px; gap: 8px;">
+              <input id="harvest-reward-item-search" type="text" placeholder="搜索附加物品名/ID/类型（过滤下拉选项）" style="max-width: 320px;">
+            </div>
+            <div class="table-container compact-config-table-container">
+              <table class="compact-config-table" style="font-size: 12px;">
+                <thead>
+                  <tr>
+                    <th>挂机分钟</th>
+                    <th>标题</th>
+                    <th>金币</th>
+                    <th>附加物品</th>
+                    <th>数量</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="harvest-reward-list">
+                  <tr><td colspan="6" style="text-align:center;color:#999;">点击加载</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div id="harvest-reward-msg" class="msg"></div>
+          </div>
+        </div>
+
+        <div class="block" data-collapsible>
+          <div class="block-title">
             <h2>装备回收兑换配置</h2>
             <button class="btn-small block-toggle">折叠</button>
           </div>

@@ -474,6 +474,27 @@ const activityPointShopList = document.getElementById('activity-point-shop-list'
 let activityPointShopRowsCache = [];
 let activityPointShopItemOptionsCache = [];
 let activityPointShopItemSearchKeyword = '';
+const harvestSignMsg = document.getElementById('harvest-sign-msg');
+const harvestSignLoadBtn = document.getElementById('harvest-sign-load-btn');
+const harvestSignAddBtn = document.getElementById('harvest-sign-add-btn');
+const harvestSignSaveBtn = document.getElementById('harvest-sign-save-btn');
+const harvestSignTitleInput = document.getElementById('harvest-sign-title');
+const harvestSignPointsInput = document.getElementById('harvest-sign-points');
+const harvestSignGoldInput = document.getElementById('harvest-sign-gold');
+const harvestSignItemSearchInput = document.getElementById('harvest-sign-item-search');
+const harvestSignList = document.getElementById('harvest-sign-list');
+let harvestSignRowsCache = [];
+let harvestSignItemOptionsCache = [];
+let harvestSignItemSearchKeyword = '';
+const harvestRewardMsg = document.getElementById('harvest-reward-msg');
+const harvestRewardLoadBtn = document.getElementById('harvest-reward-load-btn');
+const harvestRewardAddBtn = document.getElementById('harvest-reward-add-btn');
+const harvestRewardSaveBtn = document.getElementById('harvest-reward-save-btn');
+const harvestRewardItemSearchInput = document.getElementById('harvest-reward-item-search');
+const harvestRewardList = document.getElementById('harvest-reward-list');
+let harvestRewardRowsCache = [];
+let harvestRewardItemOptionsCache = [];
+let harvestRewardItemSearchKeyword = '';
 const divineBeastFragmentMsg = document.getElementById('divine-beast-fragment-msg');
 const divineBeastFragmentLoadBtn = document.getElementById('divine-beast-fragment-load-btn');
 const divineBeastFragmentAddBtn = document.getElementById('divine-beast-fragment-add-btn');
@@ -689,6 +710,268 @@ async function saveActivityPointShopConfig() {
   } catch (err) {
     activityPointShopMsg.textContent = `保存失败: ${err.message}`;
     activityPointShopMsg.style.color = 'red';
+  }
+}
+
+async function loadHarvestSignConfig() {
+  if (!harvestSignList || !harvestSignMsg) return;
+  harvestSignMsg.textContent = '';
+  try {
+    const data = await api('/admin/harvest-season-sign', 'GET');
+    const config = data?.config || { version: 1, title: '丰收签到奖励', points: 20, gold: 200000, items: [] };
+    if (harvestSignItemSearchInput) {
+      harvestSignItemSearchKeyword = String(harvestSignItemSearchInput.value || '').trim();
+    }
+    harvestSignItemOptionsCache = Array.isArray(data?.itemOptions) ? data.itemOptions : [];
+    if (harvestSignTitleInput) harvestSignTitleInput.value = String(config.title || '丰收签到奖励');
+    if (harvestSignPointsInput) harvestSignPointsInput.value = Math.max(0, Math.floor(Number(config.points || 0)));
+    if (harvestSignGoldInput) harvestSignGoldInput.value = Math.max(0, Math.floor(Number(config.gold || 0)));
+    harvestSignRowsCache = (Array.isArray(config.items) ? config.items : []).map((item, index) => ({
+      _id: String(item?.id || `harvest_sign_${index + 1}`),
+      itemId: String(item?.id || '').trim(),
+      qty: Math.max(1, Math.floor(Number(item?.qty || 1)))
+    })).filter((row) => row.itemId);
+    renderHarvestSignRows();
+    harvestSignMsg.textContent = '加载成功';
+    harvestSignMsg.style.color = 'green';
+    setTimeout(() => { harvestSignMsg.textContent = ''; }, 1500);
+  } catch (err) {
+    harvestSignMsg.textContent = `加载失败: ${err.message}`;
+    harvestSignMsg.style.color = 'red';
+  }
+}
+
+function harvestSignEmptyItem() {
+  return {
+    _id: `harvest_sign_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+    itemId: '',
+    qty: 1
+  };
+}
+
+function buildHarvestSignItemSelectHtml(selectedId = '', keyword = '') {
+  const selected = String(selectedId || '').trim();
+  const kw = String(keyword || harvestSignItemSearchKeyword || '').trim().toLowerCase();
+  const options = Array.isArray(harvestSignItemOptionsCache) ? harvestSignItemOptionsCache : [];
+  const filtered = kw
+    ? options.filter((it) => {
+        const id = String(it?.id || '').toLowerCase();
+        const name = String(it?.name || '').toLowerCase();
+        const type = String(it?.type || '').toLowerCase();
+        return id.includes(kw) || name.includes(kw) || type.includes(kw);
+      })
+    : options;
+  const selectedExists = filtered.some((it) => String(it?.id || '') === selected);
+  const selectedOption = !selectedExists && selected
+    ? options.find((it) => String(it?.id || '') === selected)
+    : null;
+  const finalList = selectedOption ? [selectedOption, ...filtered] : filtered;
+  const optionHtml = finalList.map((it) => {
+    const id = String(it?.id || '').replace(/"/g, '&quot;');
+    const text = getActivityPointShopItemDisplayText(it).replace(/"/g, '&quot;');
+    return `<option value="${id}"${id === selected ? ' selected' : ''}>${text}</option>`;
+  }).join('');
+  return `<select data-k="itemId"><option value="">请选择物品</option>${optionHtml}</select>`;
+}
+
+function renderHarvestSignRows() {
+  if (!harvestSignList) return;
+  const rows = Array.isArray(harvestSignRowsCache) ? harvestSignRowsCache : [];
+  harvestSignList.innerHTML = '';
+  if (!rows.length) {
+    harvestSignList.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#999;">暂无附加物品，可直接保存纯金币/积分签到奖励</td></tr>';
+    return;
+  }
+  rows.forEach((item, index) => {
+    const tr = document.createElement('tr');
+    tr.dataset.index = String(index);
+    tr.innerHTML = `
+      <td>${buildHarvestSignItemSelectHtml(item.itemId)}</td>
+      <td><input data-k="qty" type="number" min="1" value="${Math.max(1, Number(item.qty || 1))}"></td>
+      <td><button type="button" class="btn-small" data-act="del">删除</button></td>
+    `;
+    harvestSignList.appendChild(tr);
+  });
+}
+
+function collectHarvestSignConfigFromUi() {
+  const items = [];
+  if (harvestSignList) {
+    harvestSignList.querySelectorAll('tr[data-index]').forEach((tr) => {
+      const itemId = String(tr.querySelector('select[data-k="itemId"]')?.value || '').trim();
+      const qty = Math.max(1, Math.floor(Number(tr.querySelector('input[data-k="qty"]')?.value || 1)));
+      if (!itemId) return;
+      items.push({ id: itemId, qty });
+    });
+  }
+  return {
+    version: 1,
+    title: String(harvestSignTitleInput?.value || '丰收签到奖励').trim() || '丰收签到奖励',
+    points: Math.max(0, Math.floor(Number(harvestSignPointsInput?.value || 0))),
+    gold: Math.max(0, Math.floor(Number(harvestSignGoldInput?.value || 0))),
+    items
+  };
+}
+
+async function saveHarvestSignConfig() {
+  if (!harvestSignMsg) return;
+  harvestSignMsg.textContent = '';
+  try {
+    const config = collectHarvestSignConfigFromUi();
+    const data = await api('/admin/harvest-season-sign/update', 'POST', { config });
+    const normalized = data?.config || config;
+    if (harvestSignTitleInput) harvestSignTitleInput.value = String(normalized.title || '丰收签到奖励');
+    if (harvestSignPointsInput) harvestSignPointsInput.value = Math.max(0, Math.floor(Number(normalized.points || 0)));
+    if (harvestSignGoldInput) harvestSignGoldInput.value = Math.max(0, Math.floor(Number(normalized.gold || 0)));
+    harvestSignRowsCache = (Array.isArray(normalized.items) ? normalized.items : []).map((item, index) => ({
+      _id: String(item?.id || `harvest_sign_${index + 1}`),
+      itemId: String(item?.id || '').trim(),
+      qty: Math.max(1, Math.floor(Number(item?.qty || 1)))
+    })).filter((row) => row.itemId);
+    renderHarvestSignRows();
+    harvestSignMsg.textContent = '保存成功';
+    harvestSignMsg.style.color = 'green';
+    setTimeout(() => { harvestSignMsg.textContent = ''; }, 1500);
+  } catch (err) {
+    harvestSignMsg.textContent = `保存失败: ${err.message}`;
+    harvestSignMsg.style.color = 'red';
+  }
+}
+
+async function loadHarvestRewardConfig() {
+  if (!harvestRewardList || !harvestRewardMsg) return;
+  harvestRewardMsg.textContent = '';
+  try {
+    const data = await api('/admin/harvest-season-rewards', 'GET');
+    const config = data?.config || { version: 1, items: [] };
+    if (harvestRewardItemSearchInput) {
+      harvestRewardItemSearchKeyword = String(harvestRewardItemSearchInput.value || '').trim();
+    }
+    harvestRewardItemOptionsCache = Array.isArray(data?.itemOptions) ? data.itemOptions : [];
+    harvestRewardRowsCache = (Array.isArray(config.items) ? config.items : []).map((item, index) => ({
+      _id: String(item?.id || `harvest_cfg_${index + 1}`),
+      threshold: Math.max(1, Math.floor(Number(item?.threshold || 1))),
+      title: String(item?.title || '丰收挂机奖励').trim() || '丰收挂机奖励',
+      gold: Math.max(0, Math.floor(Number(item?.gold || 0))),
+      itemId: String(item?.itemId || '').trim(),
+      itemQty: Math.max(1, Math.floor(Number(item?.itemQty || 1)))
+    }));
+    renderHarvestRewardRows();
+    harvestRewardMsg.textContent = '加载成功';
+    harvestRewardMsg.style.color = 'green';
+    setTimeout(() => { harvestRewardMsg.textContent = ''; }, 1500);
+  } catch (err) {
+    harvestRewardMsg.textContent = `加载失败: ${err.message}`;
+    harvestRewardMsg.style.color = 'red';
+  }
+}
+
+function harvestRewardEmptyItem() {
+  return {
+    _id: `harvest_cfg_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+    threshold: 30,
+    title: '丰收挂机奖励',
+    gold: 0,
+    itemId: '',
+    itemQty: 1
+  };
+}
+
+function buildHarvestRewardItemSelectHtml(selectedId = '', keyword = '') {
+  const selected = String(selectedId || '').trim();
+  const kw = String(keyword || harvestRewardItemSearchKeyword || '').trim().toLowerCase();
+  const options = Array.isArray(harvestRewardItemOptionsCache) ? harvestRewardItemOptionsCache : [];
+  const filtered = kw
+    ? options.filter((it) => {
+        const id = String(it?.id || '').toLowerCase();
+        const name = String(it?.name || '').toLowerCase();
+        const type = String(it?.type || '').toLowerCase();
+        return id.includes(kw) || name.includes(kw) || type.includes(kw);
+      })
+    : options;
+  const selectedExists = filtered.some((it) => String(it?.id || '') === selected);
+  const selectedOption = !selectedExists && selected
+    ? options.find((it) => String(it?.id || '') === selected)
+    : null;
+  const finalList = selectedOption ? [selectedOption, ...filtered] : filtered;
+  const optionHtml = finalList.map((it) => {
+    const id = String(it?.id || '').replace(/"/g, '&quot;');
+    const text = getActivityPointShopItemDisplayText(it).replace(/"/g, '&quot;');
+    return `<option value="${id}"${id === selected ? ' selected' : ''}>${text}</option>`;
+  }).join('');
+  return `<select data-k="itemId"><option value="">无附加物品</option>${optionHtml}</select>`;
+}
+
+function renderHarvestRewardRows() {
+  if (!harvestRewardList) return;
+  const rows = Array.isArray(harvestRewardRowsCache) ? harvestRewardRowsCache : [];
+  harvestRewardList.innerHTML = '';
+  if (!rows.length) {
+    harvestRewardList.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;">暂无档位，点击“添加档位”</td></tr>';
+    return;
+  }
+  rows.forEach((item, index) => {
+    const tr = document.createElement('tr');
+    tr.dataset.index = String(index);
+    tr.dataset.rewardId = String(item?._id || '');
+    tr.innerHTML = `
+      <td><input data-k="threshold" type="number" min="1" value="${Math.max(1, Number(item.threshold || 1))}"></td>
+      <td><input data-k="title" type="text" value="${String(item.title || '丰收挂机奖励')}"></td>
+      <td><input data-k="gold" type="number" min="0" value="${Math.max(0, Number(item.gold || 0))}"></td>
+      <td>${buildHarvestRewardItemSelectHtml(item.itemId)}</td>
+      <td><input data-k="itemQty" type="number" min="1" value="${Math.max(1, Number(item.itemQty || 1))}"></td>
+      <td><button type="button" class="btn-small" data-act="del">删除</button></td>
+    `;
+    harvestRewardList.appendChild(tr);
+  });
+}
+
+function collectHarvestRewardConfigFromUi() {
+  const rows = [];
+  if (!harvestRewardList) return { version: 1, items: rows };
+  harvestRewardList.querySelectorAll('tr[data-index]').forEach((tr) => {
+    const getVal = (k) => tr.querySelector(`[data-k="${k}"]`);
+    const threshold = Math.max(1, Math.floor(Number(getVal('threshold')?.value || 1)));
+    const title = String(getVal('title')?.value || '丰收挂机奖励').trim() || '丰收挂机奖励';
+    const gold = Math.max(0, Math.floor(Number(getVal('gold')?.value || 0)));
+    const itemId = String(getVal('itemId')?.value || '').trim();
+    const itemQty = Math.max(1, Math.floor(Number(getVal('itemQty')?.value || 1)));
+    if (!gold && !itemId) return;
+    const rewardId = String(tr.dataset.rewardId || '').trim() || `harvest_${threshold}`;
+    rows.push({
+      id: rewardId,
+      threshold,
+      title,
+      gold,
+      itemId,
+      itemQty
+    });
+  });
+  return { version: 1, items: rows };
+}
+
+async function saveHarvestRewardConfig() {
+  if (!harvestRewardList || !harvestRewardMsg) return;
+  harvestRewardMsg.textContent = '';
+  try {
+    const config = collectHarvestRewardConfigFromUi();
+    const data = await api('/admin/harvest-season-rewards/update', 'POST', { config });
+    const normalized = data?.config || config;
+    harvestRewardRowsCache = (Array.isArray(normalized.items) ? normalized.items : []).map((item, index) => ({
+      _id: String(item?.id || `harvest_cfg_${index + 1}`),
+      threshold: Math.max(1, Math.floor(Number(item?.threshold || 1))),
+      title: String(item?.title || '丰收挂机奖励').trim() || '丰收挂机奖励',
+      gold: Math.max(0, Math.floor(Number(item?.gold || 0))),
+      itemId: String(item?.itemId || '').trim(),
+      itemQty: Math.max(1, Math.floor(Number(item?.itemQty || 1)))
+    }));
+    renderHarvestRewardRows();
+    harvestRewardMsg.textContent = '保存成功';
+    harvestRewardMsg.style.color = 'green';
+    setTimeout(() => { harvestRewardMsg.textContent = ''; }, 1500);
+  } catch (err) {
+    harvestRewardMsg.textContent = `保存失败: ${err.message}`;
+    harvestRewardMsg.style.color = 'red';
   }
 }
 
@@ -6741,6 +7024,8 @@ async function initDashboard() {
     loadPersonalBossSettings();
     loadEventTimeSettings();
     loadActivityPointShopConfig();
+    loadHarvestSignConfig();
+    loadHarvestRewardConfig();
     loadDivineBeastFragmentExchangeConfig();
     loadEquipmentRecycleConfig();
     loadFirstRechargeSettings();
@@ -6768,6 +7053,22 @@ if (activityPointShopAddBtn) {
     if (!Array.isArray(activityPointShopRowsCache)) activityPointShopRowsCache = [];
     activityPointShopRowsCache.push(activityPointShopEmptyItem());
     renderActivityPointShopRows();
+  });
+}
+if (harvestSignLoadBtn) harvestSignLoadBtn.addEventListener('click', loadHarvestSignConfig);
+if (harvestSignAddBtn) {
+  harvestSignAddBtn.addEventListener('click', () => {
+    if (!Array.isArray(harvestSignRowsCache)) harvestSignRowsCache = [];
+    harvestSignRowsCache.push(harvestSignEmptyItem());
+    renderHarvestSignRows();
+  });
+}
+if (harvestRewardLoadBtn) harvestRewardLoadBtn.addEventListener('click', loadHarvestRewardConfig);
+if (harvestRewardAddBtn) {
+  harvestRewardAddBtn.addEventListener('click', () => {
+    if (!Array.isArray(harvestRewardRowsCache)) harvestRewardRowsCache = [];
+    harvestRewardRowsCache.push(harvestRewardEmptyItem());
+    renderHarvestRewardRows();
   });
 }
 if (equipmentRecycleLoadBtn) equipmentRecycleLoadBtn.addEventListener('click', loadEquipmentRecycleConfig);
@@ -6828,6 +7129,86 @@ if (activityPointShopList) {
     if (!Array.isArray(activityPointShopRowsCache)) activityPointShopRowsCache = [];
     activityPointShopRowsCache.splice(index, 1);
     renderActivityPointShopRows();
+  });
+}
+if (harvestSignSaveBtn) harvestSignSaveBtn.addEventListener('click', saveHarvestSignConfig);
+if (harvestSignItemSearchInput) {
+  harvestSignItemSearchInput.addEventListener('input', () => {
+    harvestSignItemSearchKeyword = String(harvestSignItemSearchInput.value || '').trim();
+    renderHarvestSignRows();
+  });
+}
+if (harvestSignList) {
+  harvestSignList.addEventListener('change', (e) => {
+    const target = e.target;
+    const tr = target?.closest?.('tr[data-index]');
+    const index = Number(tr?.dataset?.index);
+    if (!Number.isInteger(index) || index < 0) return;
+    if (!Array.isArray(harvestSignRowsCache) || !harvestSignRowsCache[index]) return;
+    const row = harvestSignRowsCache[index];
+    if (target?.matches?.('select[data-k="itemId"]')) {
+      row.itemId = String(target.value || '').trim();
+      return;
+    }
+    if (target?.matches?.('input[data-k="qty"]')) {
+      row.qty = Math.max(1, Math.floor(Number(target.value || 1)));
+    }
+  });
+  harvestSignList.addEventListener('click', (e) => {
+    const btn = e.target?.closest?.('button[data-act="del"]');
+    if (!btn) return;
+    const tr = btn.closest('tr[data-index]');
+    const index = Number(tr?.dataset?.index);
+    if (!Number.isInteger(index) || index < 0) return;
+    if (!Array.isArray(harvestSignRowsCache)) harvestSignRowsCache = [];
+    harvestSignRowsCache.splice(index, 1);
+    renderHarvestSignRows();
+  });
+}
+if (harvestRewardSaveBtn) harvestRewardSaveBtn.addEventListener('click', saveHarvestRewardConfig);
+if (harvestRewardItemSearchInput) {
+  harvestRewardItemSearchInput.addEventListener('input', () => {
+    harvestRewardItemSearchKeyword = String(harvestRewardItemSearchInput.value || '').trim();
+    renderHarvestRewardRows();
+  });
+}
+if (harvestRewardList) {
+  harvestRewardList.addEventListener('change', (e) => {
+    const target = e.target;
+    const tr = target?.closest?.('tr[data-index]');
+    const index = Number(tr?.dataset?.index);
+    if (!Number.isInteger(index) || index < 0) return;
+    if (!Array.isArray(harvestRewardRowsCache) || !harvestRewardRowsCache[index]) return;
+    const row = harvestRewardRowsCache[index];
+    if (target?.matches?.('select[data-k="itemId"]')) {
+      row.itemId = String(target.value || '').trim();
+      return;
+    }
+    if (target?.matches?.('input[data-k="threshold"]')) {
+      row.threshold = Math.max(1, Math.floor(Number(target.value || 1)));
+      return;
+    }
+    if (target?.matches?.('input[data-k="title"]')) {
+      row.title = String(target.value || '').trim() || '丰收挂机奖励';
+      return;
+    }
+    if (target?.matches?.('input[data-k="gold"]')) {
+      row.gold = Math.max(0, Math.floor(Number(target.value || 0)));
+      return;
+    }
+    if (target?.matches?.('input[data-k="itemQty"]')) {
+      row.itemQty = Math.max(1, Math.floor(Number(target.value || 1)));
+    }
+  });
+  harvestRewardList.addEventListener('click', (e) => {
+    const btn = e.target?.closest?.('button[data-act="del"]');
+    if (!btn) return;
+    const tr = btn.closest('tr[data-index]');
+    const index = Number(tr?.dataset?.index);
+    if (!Number.isInteger(index) || index < 0) return;
+    if (!Array.isArray(harvestRewardRowsCache)) harvestRewardRowsCache = [];
+    harvestRewardRowsCache.splice(index, 1);
+    renderHarvestRewardRows();
   });
 }
 if (divineBeastFragmentLoadBtn) divineBeastFragmentLoadBtn.addEventListener('click', loadDivineBeastFragmentExchangeConfig);

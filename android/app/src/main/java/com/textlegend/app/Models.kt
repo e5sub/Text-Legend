@@ -87,7 +87,8 @@ data class GameState(
     val treasure_sets: List<TreasureSetInfo> = emptyList(),
     val auto_full_boss_list: List<String> = emptyList(),
     val treasure: TreasureStateInfo? = null,
-    val pet: PetState? = null
+    val pet: PetState? = null,
+    val activities: JsonElement? = null
 )
 
 @Serializable

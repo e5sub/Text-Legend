@@ -24,6 +24,9 @@ import {
   normalizeActivityProgress,
   getActivityPointBalance,
   spendActivityPoints,
+  claimHarvestLoginRewardByMail,
+  claimHarvestBlessing,
+  claimHarvestSupplyByMail,
   getRefineMaterialCountForActivity,
   recordRefineActivity,
   recordTreasurePetFestivalActivity
@@ -3748,6 +3751,46 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         rankLines.forEach((line) => send(line));
         return;
       }
+      if (sub === 'harvestsign' || sub === '丰收签到' || sub === '签到') {
+        const result = await claimHarvestLoginRewardByMail(player, {
+          sendMail: mailApi?.sendMail,
+          realmId: realmId || player.realmId || 1
+        });
+        if (result?.ok) {
+          player.forceStateRefresh = true;
+          const pointText = Number(result?.points || 0) > 0 ? `，并获得活动积分 ${Number(result.points || 0)}` : '';
+          send(`丰收签到成功，奖励已发送到邮件${pointText}。`);
+        } else {
+          send(result?.error || '丰收签到失败。');
+        }
+        return;
+      }
+      if (sub === 'harvestbless' || sub === '丰收赐福' || sub === '赐福') {
+        const result = claimHarvestBlessing(player);
+        if (result?.ok) {
+          player.forceStateRefresh = true;
+          const blessing = result?.blessing || {};
+          const pointText = Number(blessing?.points || 0) > 0 ? `，并获得活动积分 ${Number(blessing.points || 0)}` : '';
+          send(`已领取丰收赐福：${blessing?.name || '今日赐福'}${pointText}。`);
+        } else {
+          send(result?.error || '领取丰收赐福失败。');
+        }
+        return;
+      }
+      if (sub === 'harvestsupply' || sub === '丰收补给' || sub === '补给') {
+        const result = await claimHarvestSupplyByMail(player, {
+          sendMail: mailApi?.sendMail,
+          realmId: realmId || player.realmId || 1
+        });
+        if (result?.ok) {
+          player.forceStateRefresh = true;
+          const pointText = Number(result?.points || 0) > 0 ? `，并获得活动积分 ${Number(result.points || 0)}` : '';
+          send(`收菜补给领取成功，奖励已发送到邮件${pointText}。`);
+        } else {
+          send(result?.error || '领取收菜补给失败。');
+        }
+        return;
+      }
       if (sub === 'shop' || sub === '商城' || sub === 'pointshop' || sub === '积分商城') {
         const config = normalizeActivityPointShopConfig(await activityApi?.getPointShopConfig?.());
         const now = Date.now();
@@ -3920,7 +3963,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       }
       const lines = getActivityChatLines(player);
       lines.forEach((line) => send(line));
-      send('输入 `活动 rank` 查看排行榜，`活动 claim` 领取奖励，`活动 shop` 查看积分商城。');
+      send('请通过活动中心界面查看排行榜、领取奖励和兑换活动积分商品。');
       return;
     }
     case 'forge': {
