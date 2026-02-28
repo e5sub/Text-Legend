@@ -1039,35 +1039,46 @@ app.post('/api/character/delete', async (req, res) => {
       return res.status(400).json({ error: realmInfo.error });
     }
   }
-  if (!name) return res.status(400).json({ error: '角色名不能为空。' });
-  const nameResult = validatePlayerName(name);
-  if (!nameResult.ok) {
-    return res.status(400).json({ error: nameResult.error });
+  const exactName = String(name || '').trim();
+  if (!exactName) return res.status(400).json({ error: '角色名不能为空。' });
+  let targetRealmId = realmInfo.realmId;
+  let ownedCharacter = await knex('characters')
+    .where({ user_id: session.user_id, name: exactName, realm_id: targetRealmId })
+    .first();
+  if (!ownedCharacter) {
+    ownedCharacter = await knex('characters')
+      .where({ user_id: session.user_id, name: exactName })
+      .orderBy('updated_at', 'desc')
+      .first();
+    if (!ownedCharacter) {
+      return res.status(404).json({ error: '角色不存在。' });
+    }
+    targetRealmId = Number(ownedCharacter.realm_id || targetRealmId || 1);
   }
   const isOnline = Array.from(players.values()).some(
-    (p) => p && p.name === nameResult.value && p.userId === session.user_id && (p.realmId || 1) === realmInfo.realmId
+    (p) => p && p.name === exactName && p.userId === session.user_id && (p.realmId || 1) === targetRealmId
   );
   if (isOnline) {
     return res.status(400).json({ error: '角色在线中，无法删除。' });
   }
-  const member = await getGuildMember(session.user_id, nameResult.value, realmInfo.realmId);
+  const member = await getGuildMember(session.user_id, exactName, targetRealmId);
   if (member && member.role === 'leader') {
     return res.status(400).json({ error: '会长不能删除角色，请先转让会长。' });
   }
   if (member) {
-    await leaveGuild(session.user_id, nameResult.value, realmInfo.realmId);
+    await leaveGuild(session.user_id, exactName, targetRealmId);
   }
-  const application = await getApplicationByUser(session.user_id, realmInfo.realmId);
-  if (application && application.guild_id && application.char_name === nameResult.value) {
-    await removeGuildApplication(application.guild_id, session.user_id, realmInfo.realmId);
+  const application = await getApplicationByUser(session.user_id, targetRealmId);
+  if (application && application.guild_id && application.char_name === exactName) {
+    await removeGuildApplication(application.guild_id, session.user_id, targetRealmId);
   }
-  await knex('consignments').where({ seller_name: nameResult.value, realm_id: realmInfo.realmId }).del();
-  await knex('consignment_history').where({ seller_name: nameResult.value, realm_id: realmInfo.realmId }).del();
+  await knex('consignments').where({ seller_name: exactName, realm_id: targetRealmId }).del();
+  await knex('consignment_history').where({ seller_name: exactName, realm_id: targetRealmId }).del();
   await knex('mails')
-    .where({ to_name: nameResult.value, realm_id: realmInfo.realmId })
-    .orWhere({ from_name: nameResult.value, realm_id: realmInfo.realmId })
+    .where({ to_name: exactName, realm_id: targetRealmId })
+    .orWhere({ from_name: exactName, realm_id: targetRealmId })
     .del();
-  await deleteCharacter(session.user_id, nameResult.value, realmInfo.realmId);
+  await deleteCharacter(session.user_id, exactName, targetRealmId);
   res.json({ ok: true });
 });
 
