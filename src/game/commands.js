@@ -3865,12 +3865,19 @@ export async function handleCommand({ player, players, allCharacters, playersByN
             const limitText = (it.limitType && it.limitType !== 'none' && limit > 0)
               ? `${it.limitType}:${redeemed}/${limit}`
               : '不限';
+            const rewardItems = Array.isArray(it.reward?.items) ? it.reward.items.map((reward) => ({
+              id: reward.id,
+              qty: reward.qty,
+              name: ITEM_TEMPLATES[reward.id]?.name || reward.id,
+              rarity: ITEM_TEMPLATES[reward.id]?.rarity || null
+            })) : [];
             return {
               id: it.id,
               name: it.name,
               desc: it.desc || '',
               cost: it.cost,
               rewardText: describeActivityPointShopReward(it.reward),
+              rewardItems,
               minLevel: it.minLevel || 0,
               maxLevel: it.maxLevel || 0,
               needVip: !!it.needVip,

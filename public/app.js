@@ -2223,10 +2223,12 @@ function promptMultiSelectModal({
         btn.classList.add('prompt-option-rich');
         const titleSpan = document.createElement('span');
         titleSpan.className = 'prompt-option-title';
-        titleSpan.textContent = opt.label;
+        if (opt.labelHtml) titleSpan.innerHTML = String(opt.labelHtml);
+        else titleSpan.textContent = opt.label;
         const descSpan = document.createElement('span');
         descSpan.className = 'prompt-option-desc';
-        descSpan.textContent = String(opt.description || '');
+        if (opt.descriptionHtml) descSpan.innerHTML = String(opt.descriptionHtml);
+        else descSpan.textContent = String(opt.description || '');
         btn.appendChild(titleSpan);
         btn.appendChild(descSpan);
       } else {
@@ -4248,7 +4250,7 @@ function renderHighTierRecycleExchange() {
   if (!highTierRecycleUi.exchangeList) return;
   highTierRecycleUi.exchangeList.innerHTML = '';
   const cfg = getHighTierRecycleConfig();
-  const rows = Array.isArray(cfg?.exchangeItems) ? cfg.exchangeItems : [];
+  const rows = Array.isArray(cfg?.exchangeItems) ? cfg.exchangeItems.slice().sort(compareRewardRarityDesc) : [];
   if (!rows.length) {
     const empty = document.createElement('div');
     empty.textContent = '暂无兑换项';
@@ -4259,7 +4261,7 @@ function renderHighTierRecycleExchange() {
     const btn = document.createElement('div');
     btn.className = 'forge-item';
     const owned = getHighTierRecycleMaterialQty(entry.currencyItemId);
-    const rewardHtml = (Array.isArray(entry.rewards) ? entry.rewards : [])
+    const rewardHtml = (Array.isArray(entry.rewards) ? entry.rewards.slice().sort((a, b) => rarityRank(b) - rarityRank(a)) : [])
       .map((reward) => {
         const rarityKey = normalizeRarityKey(reward?.rarity);
         const cls = rarityKey ? ` class="rarity-${rarityKey}"` : '';
@@ -5765,7 +5767,7 @@ function showAutoFullBossModal() {
 
   async function showActivityPointShopModal(payload) {
     const points = Math.max(0, Math.floor(Number(payload?.points || 0)));
-    const items = Array.isArray(payload?.items) ? payload.items : [];
+    const items = Array.isArray(payload?.items) ? payload.items.slice().sort(compareRewardRarityDesc) : [];
     const options = items.map((it) => {
       const tags = [];
       if (it.minLevel > 0) tags.push(`Lv>=${it.minLevel}`);
@@ -5774,10 +5776,23 @@ function showAutoFullBossModal() {
       if (it.needSvip) tags.push('SVIP');
       if (it.limitText && it.limitText !== '不限') tags.push(it.limitText);
       const extra = tags.length ? ` | ${tags.join(' / ')}` : '';
+      const rewardItems = Array.isArray(it.rewardItems) ? it.rewardItems : [];
+      const primaryReward = rewardItems[0] || null;
+      const titleRarityKey = normalizeRarityKey(primaryReward?.rarity);
+      const titleLabel = `${it.name}（${Number(it.cost || 0)}积分）`;
+      const rewardHtml = rewardItems.length
+        ? rewardItems.slice().sort((a, b) => rarityRank(b) - rarityRank(a)).map((reward) => {
+          const rarityKey = normalizeRarityKey(reward?.rarity);
+          const cls = rarityKey ? ` class="rarity-${rarityKey}"` : '';
+          return `<span${cls}>${reward?.name || reward?.id || ''} x${Math.max(1, Math.floor(Number(reward?.qty || 1)))}</span>`;
+        }).join('、')
+        : (it.rewardText || '');
       return {
         value: `redeem:${it.id}`,
         label: `${it.name}（${Number(it.cost || 0)}积分）`,
+        labelHtml: titleRarityKey ? `<span class="rarity-${titleRarityKey}">${titleLabel}</span>` : titleLabel,
         description: `${it.rewardText || ''}${extra}${it.desc ? ` | ${it.desc}` : ''}`,
+        descriptionHtml: `${rewardHtml}${extra ? ` <span>${extra}</span>` : ''}${it.desc ? ` <span> | ${it.desc}</span>` : ''}`,
         className: 'activity-action-shop'
       };
     });
@@ -6847,6 +6862,19 @@ function rarityRank(item) {
   if (!item || !item.rarity) return 0;
   const key = normalizeRarityKey(item.rarity);
   return RARITY_ORDER[key] ?? 0;
+}
+
+function rewardListRarityRank(rewards) {
+  if (!Array.isArray(rewards) || !rewards.length) return 0;
+  return rewards.reduce((max, reward) => Math.max(max, rarityRank(reward)), 0);
+}
+
+function compareRewardRarityDesc(a = {}, b = {}) {
+  const rankDiff = rewardListRarityRank(b?.rewards || b?.rewardItems) - rewardListRarityRank(a?.rewards || a?.rewardItems);
+  if (rankDiff !== 0) return rankDiff;
+  const costDiff = Math.floor(Number(b?.cost || 0)) - Math.floor(Number(a?.cost || 0));
+  if (costDiff !== 0) return costDiff;
+  return String(a?.name || a?.id || '').localeCompare(String(b?.name || b?.id || ''));
 }
 
 const EQUIP_SORT_SLOT_ORDER = {
