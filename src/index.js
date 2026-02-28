@@ -1485,6 +1485,43 @@ app.post('/admin/users/password', async (req, res) => {
   res.json({ ok: true });
 });
 
+app.post('/admin/users/force-offline', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const username = String(req.body?.username || '').trim();
+  if (!username) return res.status(400).json({ error: '缺少用户名。' });
+  const user = await getUserByName(username);
+  if (!user) return res.status(404).json({ error: '用户不存在。' });
+
+  let kicked = 0;
+  for (const [socketId, onlinePlayer] of Array.from(players.entries())) {
+    if (!onlinePlayer) continue;
+    if ((onlinePlayer.userId || 0) !== user.id) continue;
+    try {
+      onlinePlayer.send?.('管理员已执行强制下线。');
+    } catch {}
+    try {
+      onlinePlayer.socket?.disconnect?.(true);
+    } catch {}
+    if (!onlinePlayer.flags) onlinePlayer.flags = {};
+    onlinePlayer.flags.offlineAt = Date.now();
+    delete onlinePlayer.flags.offlineManagedAuto;
+    delete onlinePlayer.flags.offlineManagedAt;
+    delete onlinePlayer.flags.offlineManagedPending;
+    delete onlinePlayer.flags.offlineManagedStartAt;
+    onlinePlayer.deviceKey = null;
+    onlinePlayer.send = () => {};
+    await savePlayer(onlinePlayer);
+    getRealmState(onlinePlayer.realmId || 1).lastSaveTime.delete(onlinePlayer.name);
+    onlinePlayerRankTitles.delete(onlinePlayer.name);
+    players.delete(socketId);
+    kicked += 1;
+  }
+
+  await clearUserSessions(user.id);
+  res.json({ ok: true, kicked });
+});
+
 app.post('/admin/characters/cleanup', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });

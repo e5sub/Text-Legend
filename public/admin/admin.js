@@ -2764,6 +2764,14 @@ async function refreshUsers(page = 1) {
       btnPassword.textContent = '改密码';
       btnPassword.addEventListener('click', () => resetUserPassword(u.username));
       tdAction.appendChild(btnPassword);
+
+      const btnForceOffline = document.createElement('button');
+      btnForceOffline.className = 'btn-small';
+      btnForceOffline.textContent = '强制下线';
+      btnForceOffline.style.background = '#d46f00';
+      btnForceOffline.style.boxShadow = '0 4px 10px rgba(212, 111, 0, 0.3)';
+      btnForceOffline.addEventListener('click', () => forceOfflineUser(u.username));
+      tdAction.appendChild(btnForceOffline);
       
       // 删除按钮
       const btnDelete = document.createElement('button');
@@ -2847,6 +2855,18 @@ async function quickToggleGM(username, isAdmin) {
     await refreshUsers(currentUsersPage);
   } catch (err) {
     await customAlert('操作失败', `操作失败: ${err.message}`);
+  }
+}
+
+async function forceOfflineUser(username) {
+  const confirmed = await customConfirm('强制下线', `确认强制下线用户 "${username}" 的所有在线角色，并清除登录状态吗？`);
+  if (!confirmed) return;
+  try {
+    const data = await api('/admin/users/force-offline', 'POST', { username });
+    await customAlert('操作成功', `已强制下线用户 "${username}"。处理角色数：${Number(data?.kicked || 0)}。`);
+    await refreshUsers(currentUsersPage);
+  } catch (err) {
+    await customAlert('操作失败', `强制下线失败: ${err.message}`);
   }
 }
 
