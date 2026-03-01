@@ -12956,6 +12956,10 @@ async function sendState(player) {
     }
     fieldHashes[field] = nextHash;
   });
+  if (!player?.socket) {
+    player.forceStateRefresh = false;
+    return;
+  }
   player.socket.emit('state', state);
   player.forceStateRefresh = false;
   if (exitsHash && key) {
