@@ -7,6 +7,7 @@ let selectedSummonId = null;
 let mailCache = [];
 let selectedMailId = null;
 let mailAttachments = [];
+let mailItemsLoaded = false;
 let lastState = null;
 let cachedHighTierRecycleConfig = null;
 let serverTimeBase = null;
@@ -576,6 +577,7 @@ const mailUi = {
   to: document.getElementById('mail-to'),
   subject: document.getElementById('mail-subject'),
   body: document.getElementById('mail-body'),
+  loadItems: document.getElementById('mail-load-items'),
   item: document.getElementById('mail-item'),
   qty: document.getElementById('mail-qty'),
   addItem: document.getElementById('mail-add-item'),
@@ -5349,6 +5351,32 @@ function renderMailList(mails) {
   if (active) setSelectedMail(active, false);
 }
 
+function resetMailItemOptions() {
+  mailItemsLoaded = false;
+  mailItemOptionsSignature = '';
+  if (mailUi.item) {
+    mailUi.item.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = '点击“加载可邮寄物品”后选择附件';
+    mailUi.item.appendChild(placeholder);
+    mailUi.item.value = '';
+    mailUi.item.disabled = true;
+  }
+  if (mailUi.addItem) {
+    mailUi.addItem.disabled = true;
+  }
+  if (mailUi.qty) {
+    mailUi.qty.value = '';
+    mailUi.qty.removeAttribute('max');
+  }
+}
+
+function ensureMailItemOptionsLoaded(force = false) {
+  if (mailItemsLoaded && !force) return;
+  refreshMailItemOptions(force);
+}
+
 function refreshMailItemOptions(force = false) {
   if (!mailUi.item) return;
   const items = (lastState?.items || [])
@@ -5359,9 +5387,13 @@ function refreshMailItemOptions(force = false) {
     .map((item) => `${String(item.key || item.id || '')}:${Number(item.qty || 0)}:${String(item.rarity || '')}`)
     .join('|');
   if (!force && nextSignature === mailItemOptionsSignature) {
+    mailItemsLoaded = true;
+    mailUi.item.disabled = false;
+    if (mailUi.addItem) mailUi.addItem.disabled = false;
     updateMailQtyLimit();
     return;
   }
+  mailItemsLoaded = true;
   mailItemOptionsSignature = nextSignature;
   const currentValue = mailUi.item.value;
   mailUi.item.innerHTML = '';
@@ -5379,6 +5411,8 @@ function refreshMailItemOptions(force = false) {
   if (currentValue && Array.from(mailUi.item.options).some(opt => opt.value === currentValue)) {
     mailUi.item.value = currentValue;
   }
+  mailUi.item.disabled = false;
+  if (mailUi.addItem) mailUi.addItem.disabled = false;
   updateMailQtyLimit();
 }
 
@@ -5411,8 +5445,7 @@ function openMailModal() {
   if (mailUi.item) mailUi.item.value = '';
   if (mailUi.qty) mailUi.qty.value = '';
   if (mailUi.gold) mailUi.gold.value = '';
-  mailItemOptionsSignature = '';
-  refreshMailItemOptions(true);
+  resetMailItemOptions();
   mailUi.modal.classList.remove('hidden');
   requestCurrentMailList();
 }
@@ -8891,7 +8924,7 @@ function renderState(state) {
   if (shopUi.modal && !shopUi.modal.classList.contains('hidden')) {
     renderShopSellList(state.items || []);
   }
-  if (mailUi.modal && !mailUi.modal.classList.contains('hidden')) {
+  if (mailUi.modal && !mailUi.modal.classList.contains('hidden') && mailItemsLoaded) {
     refreshMailItemOptions();
   }
   if (consignUi.modal && !consignUi.modal.classList.contains('hidden')) {
@@ -10606,6 +10639,14 @@ if (mailUi.refresh) {
     requestCurrentMailList();
   });
 }
+if (mailUi.loadItems) {
+  mailUi.loadItems.addEventListener('click', () => {
+    ensureMailItemOptionsLoaded(true);
+    if (mailUi.item && !mailUi.item.disabled) {
+      mailUi.item.focus();
+    }
+  });
+}
   if (mailUi.send) {
     mailUi.send.addEventListener('click', () => {
     if (!socket) return;
@@ -10685,6 +10726,11 @@ if (mailUi.refresh) {
   if (mailUi.addItem) {
     mailUi.addItem.addEventListener('click', () => {
       if (!mailUi.item) return;
+      if (!mailItemsLoaded) {
+        ensureMailItemOptionsLoaded(true);
+        showToast('请先选择要附带的物品。');
+        return;
+      }
       const key = mailUi.item.value;
       if (!key) return;
       const qtyRaw = mailUi.qty ? Number(mailUi.qty.value || 1) : 1;
@@ -11715,7 +11761,7 @@ if (playerUi.mail) {
     if (mailUi.item) mailUi.item.value = '';
     if (mailUi.qty) mailUi.qty.value = '';
     if (mailUi.gold) mailUi.gold.value = '';
-    refreshMailItemOptions();
+    resetMailItemOptions();
     mailUi.modal.classList.remove('hidden');
     if (playerUi.modal) playerUi.modal.classList.add('hidden');
     requestCurrentMailList();
