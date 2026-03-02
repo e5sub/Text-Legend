@@ -16156,11 +16156,13 @@ function tryAutoBuff(player) {
             p.position.room === player.position.room
         )
       : [player];
-    const targets = members.slice();
+    const playerTargets = members.slice();
+    const summonTargets = [];
     members.forEach((p) => {
       const summons = getAliveSummons(p);
-      summons.forEach((summon) => targets.push(summon));
+      summons.forEach((summon) => summonTargets.push(summon));
     });
+    const targets = playerTargets.concat(summonTargets);
 
     if (buffSkill.type === 'stealth_group') {
       const duration = 5;
@@ -16213,7 +16215,7 @@ function tryAutoBuff(player) {
 
     const buffKey = buffSkill.type === 'buff_mdef' ? 'mdefBuff' : 'defBuff';
     const multiplierKey = buffSkill.type === 'buff_mdef' ? 'mdefMultiplier' : 'defMultiplier';
-    const buffActive = targets.every((p) => {
+    const buffActive = playerTargets.every((p) => {
       const buff = p.status?.buffs?.[buffKey];
       if (!buff) return false;
       if (buff.expiresAt && buff.expiresAt < now + 5000) return false;
@@ -16225,7 +16227,7 @@ function tryAutoBuff(player) {
     const duration = 60;
     const buffPayload = { key: buffKey, expiresAt: now + duration * 1000, [multiplierKey]: 1.1 };
 
-    targets.forEach((p) => {
+    playerTargets.forEach((p) => {
       applyBuff(p, buffPayload);
       if (p.send && p.name !== player.name) {
         p.send(`${player.name} 自动为你施放 ${buffSkill.name}。`);
