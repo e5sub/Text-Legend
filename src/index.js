@@ -5124,8 +5124,17 @@ const realmStates = new Map();
 const mobStatePersistCache = new Map();
 let realmCache = [];
 const RUNTIME_HEALTH_INTERVAL_MS = 60 * 1000;
+const RUNTIME_CACHE_CLEANUP_COOLDOWN_MS = 30 * 1000;
+const RUNTIME_HEAP_WARN_RATIO = 0.92;
+const RUNTIME_HEAP_CRITICAL_RATIO = 0.96;
+const RUNTIME_LAG_WARN_MS = 180;
+const RUNTIME_LAG_CRITICAL_MS = 320;
+const RUNTIME_MOB_ROWS_SAMPLE_INTERVAL_MS = 5 * 60 * 1000;
 let runtimeHealthTimer = null;
 let runtimeHealthExpectedAt = 0;
+let runtimeCacheCleanupLastAt = 0;
+let runtimeMobRowsCacheAt = 0;
+let runtimeMobRowsCachedValue = 'n/a';
 const STARTUP_MOB_CLEANUP_BATCH_SIZE = 1000;
 const STARTUP_MOB_CLEANUP_DELAY_MS = 250;
 
@@ -5498,6 +5507,80 @@ function cleanupStaleCommandState(now = Date.now()) {
   }
 }
 
+function cleanupMapByAge(map, now, maxAgeMs, getTimestamp) {
+  if (!map || map.size <= 0) return 0;
+  const maxAge = Math.max(0, Math.floor(Number(maxAgeMs || 0)));
+  if (maxAge <= 0) return 0;
+  let removed = 0;
+  for (const [key, value] of map.entries()) {
+    const ts = Number(getTimestamp(value, key) || 0);
+    if (!ts || now - ts > maxAge) {
+      map.delete(key);
+      removed += 1;
+    }
+  }
+  return removed;
+}
+
+function cleanupRuntimeCaches(options = {}) {
+  const now = Date.now();
+  const aggressive = Boolean(options?.aggressive);
+  const result = {
+    aggressive,
+    removed: {
+      roomStateData: 0,
+      roomStateMeta: 0,
+      roomStateTick: 0,
+      autoFullRoom: 0,
+      allCharacters: 0,
+      dailyLucky: 0,
+      towerRank: 0,
+      playerLastPersistAt: 0,
+      stateThrottle: 0
+    }
+  };
+
+  const roomDataMaxAge = aggressive ? 2000 : 10000;
+  const roomMetaMaxAge = aggressive ? 5000 : 20000;
+  const roomTickMaxAge = aggressive ? 5000 : 30000;
+  const autoFullMaxAge = aggressive ? AUTO_FULL_ROOM_CACHE_TTL : (AUTO_FULL_ROOM_CACHE_TTL * 4);
+  const allCharsMaxAge = aggressive ? ALL_CHAR_CACHE_TTL_MS : (ALL_CHAR_CACHE_TTL_MS * 8);
+  const dailyLuckyMaxAge = aggressive ? DAILY_LUCKY_CACHE_TTL : (DAILY_LUCKY_CACHE_TTL * 4);
+  const towerRankMaxAge = aggressive ? ZHUXIAN_TOWER_RANK_CACHE_TTL : (ZHUXIAN_TOWER_RANK_CACHE_TTL * 4);
+  const persistAtMaxAge = aggressive ? (2 * 60 * 60 * 1000) : (8 * 60 * 60 * 1000);
+  const stateThrottleMaxAge = aggressive ? (10 * 60 * 1000) : (30 * 60 * 1000);
+
+  result.removed.roomStateData = cleanupMapByAge(roomStateDataCache, now, roomDataMaxAge, (entry) => entry?.at);
+  result.removed.roomStateMeta = cleanupMapByAge(
+    roomStatePatchMetaCache,
+    now,
+    roomMetaMaxAge,
+    (entry) => Math.max(Number(entry?.lastPlayersAt || 0), Number(entry?.lastMobsAt || 0), Number(entry?.lastRankAt || 0), Number(entry?.lastServerTimeAt || 0))
+  );
+  result.removed.roomStateTick = cleanupMapByAge(roomStateCache, now, roomTickMaxAge, (ts) => ts);
+  result.removed.autoFullRoom = cleanupMapByAge(autoFullRoomCache, now, autoFullMaxAge, (entry) => entry?.at);
+  result.removed.allCharacters = cleanupMapByAge(allCharactersCache, now, allCharsMaxAge, (entry) => entry?.at);
+  result.removed.dailyLucky = cleanupMapByAge(dailyLuckyCache, now, dailyLuckyMaxAge, (entry) => entry?.at);
+  result.removed.towerRank = cleanupMapByAge(zhuxianTowerRankCache, now, towerRankMaxAge, (entry) => entry?.at);
+  result.removed.playerLastPersistAt = cleanupMapByAge(playerLastPersistAt, now, persistAtMaxAge, (ts) => ts);
+
+  let throttleRemoved = 0;
+  for (const [key, ts] of stateThrottleLastSent.entries()) {
+    const at = Number(ts || 0);
+    if (!at || now - at > stateThrottleMaxAge) {
+      stateThrottleLastSent.delete(key);
+      stateThrottleLastExits.delete(key);
+      stateThrottleLastRoom.delete(key);
+      stateThrottleLastInBoss.delete(key);
+      throttleRemoved += 1;
+    }
+  }
+  result.removed.stateThrottle = throttleRemoved;
+
+  runtimeCacheCleanupLastAt = now;
+  return result;
+}
+
 function getMobPersistCacheKey(mob) {
   return `${mob.realmId || 1}:${mob.zoneId}:${mob.roomId}:${mob.slotIndex}`;
 }
@@ -5558,12 +5641,33 @@ async function logRuntimeHealth(expectedAt = Date.now()) {
   const now = Date.now();
   const loopLagMs = Math.max(0, now - expectedAt);
   const memory = process.memoryUsage();
-  let mobRespawnRows = 'err';
-  try {
-    const countRow = await knex('mob_respawns').count({ total: '*' }).first();
-    mobRespawnRows = Math.max(0, Math.floor(Number(countRow?.total ?? countRow?.['count(*)'] ?? 0)));
-  } catch (err) {
-    console.warn('[health] mob_respawns count failed:', err?.message || err);
+  const heapRatio = memory.heapTotal > 0 ? (memory.heapUsed / memory.heapTotal) : 0;
+  let mobRespawnRows = runtimeMobRowsCachedValue;
+  const canSampleMobRows =
+    (now - runtimeMobRowsCacheAt >= RUNTIME_MOB_ROWS_SAMPLE_INTERVAL_MS)
+    && loopLagMs < RUNTIME_LAG_WARN_MS
+    && heapRatio < RUNTIME_HEAP_WARN_RATIO;
+  if (canSampleMobRows) {
+    try {
+      const countRow = await knex('mob_respawns').count({ total: '*' }).first();
+      mobRespawnRows = Math.max(0, Math.floor(Number(countRow?.total ?? countRow?.['count(*)'] ?? 0)));
+      runtimeMobRowsCachedValue = mobRespawnRows;
+      runtimeMobRowsCacheAt = now;
+    } catch (err) {
+      console.warn('[health] mob_respawns count failed:', err?.message || err);
+      mobRespawnRows = runtimeMobRowsCachedValue;
+    }
+  }
+  let cleanupInfo = null;
+  const shouldRunCleanup = now - runtimeCacheCleanupLastAt >= RUNTIME_CACHE_CLEANUP_COOLDOWN_MS;
+  if (shouldRunCleanup) {
+    const aggressive = heapRatio >= RUNTIME_HEAP_CRITICAL_RATIO || loopLagMs >= RUNTIME_LAG_CRITICAL_MS;
+    const normal = heapRatio >= RUNTIME_HEAP_WARN_RATIO || loopLagMs >= RUNTIME_LAG_WARN_MS;
+    if (aggressive || normal) {
+      cleanupInfo = cleanupRuntimeCaches({ aggressive });
+    } else {
+      cleanupRuntimeCaches({ aggressive: false });
+    }
   }
   const rssMb = (memory.rss / (1024 * 1024)).toFixed(1);
   const heapUsedMb = (memory.heapUsed / (1024 * 1024)).toFixed(1);
@@ -5573,12 +5677,27 @@ async function logRuntimeHealth(expectedAt = Date.now()) {
   const onlineCount = Number(io?.engine?.clientsCount || 0);
   const playerHealth = getPlayerHealthBreakdown();
   const realmStateCount = realmStates.size;
+  const guardTag = cleanupInfo
+    ? ` guard=${cleanupInfo.aggressive ? 'aggr' : 'normal'}`
+    : '';
   console.log(
     `[health] lag=${loopLagMs}ms rss=${rssMb}MB heap=${heapUsedMb}/${heapTotalMb}MB ext=${externalMb}MB ab=${arrayBuffersMb}MB `
     + `online=${onlineCount} players=${playerHealth.total} conn=${playerHealth.connected} managed=${playerHealth.managedAuto} pending=${playerHealth.managedPending} detached=${playerHealth.detached} `
     + `realms=${realmStateCount} pendingSaves=${pendingPlayerSaves.size} `
-    + `mobCache=${mobStatePersistCache.size} mobRows=${mobRespawnRows}`
+    + `mobCache=${mobStatePersistCache.size} mobRows=${mobRespawnRows}${guardTag}`
   );
+  if (cleanupInfo) {
+    const removed = cleanupInfo.removed;
+    const totalRemoved = Object.values(removed).reduce((sum, value) => sum + Number(value || 0), 0);
+    if (totalRemoved > 0) {
+      console.log(
+        `[guard] mode=${cleanupInfo.aggressive ? 'aggressive' : 'normal'} `
+        + `roomData=${removed.roomStateData} roomMeta=${removed.roomStateMeta} roomTick=${removed.roomStateTick} `
+        + `autoFull=${removed.autoFullRoom} chars=${removed.allCharacters} lucky=${removed.dailyLucky} tower=${removed.towerRank} `
+        + `persistAt=${removed.playerLastPersistAt} throttle=${removed.stateThrottle}`
+      );
+    }
+  }
 }
 
 function startRuntimeHealthLogging() {
