@@ -2431,7 +2431,8 @@ function promptMultiSelectModal({
         btn.appendChild(titleSpan);
         btn.appendChild(descSpan);
       } else {
-        btn.textContent = opt.label;
+        if (opt.labelHtml) btn.innerHTML = String(opt.labelHtml);
+        else btn.textContent = opt.label;
       }
       if (selected.has(opt.value)) {
         btn.classList.add('active');
