@@ -427,7 +427,7 @@
             <h2>活动积分商城配置</h2>
             <button class="btn-small block-toggle">折叠</button>
           </div>
-          <div class="block-body">
+          <div class="block-body guild-system-compact">
             <p class="muted" style="margin-bottom: 8px;">
               简化配置：直接选择兑换物品并填写所需积分（保存后按“单物品x1”生成商城配置）。
             </p>
@@ -611,15 +611,15 @@
             <button class="btn-small block-toggle">折叠</button>
           </div>
           <div class="block-body">
-            <p class="muted" style="margin-bottom: 8px;">
+            <p class="muted" style="margin-bottom: 6px;">
               配置行会捐献上限、捐献成本、贡献产出和行会商城商品（网页端立即读取）。
             </p>
-            <div class="row" style="margin-bottom: 8px; gap: 8px;">
+            <div class="row" style="margin-bottom: 6px; gap: 6px; justify-content: flex-start; flex-wrap: wrap;">
               <button id="guild-system-load-btn" class="btn-small">加载</button>
               <button id="guild-system-shop-add-btn" class="btn-small">+ 添加商城商品</button>
               <button id="guild-system-save-btn" class="btn-small">保存</button>
             </div>
-            <div class="table-container compact-config-table-container" style="margin-bottom: 12px;">
+            <div class="table-container compact-config-table-container" style="margin-bottom: 8px;">
               <table class="compact-config-table" style="font-size: 12px;">
                 <thead>
                   <tr>
@@ -631,24 +631,24 @@
                 <tbody>
                   <tr>
                     <td>每日上限</td>
-                    <td><input id="guild-system-limit-gold" type="number" min="0" style="width: 90px;"></td>
-                    <td><input id="guild-system-limit-points" type="number" min="0" style="width: 90px;"></td>
+                    <td><input id="guild-system-limit-gold" type="number" min="0"></td>
+                    <td><input id="guild-system-limit-points" type="number" min="0"></td>
                   </tr>
                   <tr>
                     <td>单次消耗</td>
-                    <td><input id="guild-system-cost-gold" type="number" min="0" style="width: 90px;"></td>
-                    <td><input id="guild-system-cost-points" type="number" min="0" style="width: 90px;"></td>
+                    <td><input id="guild-system-cost-gold" type="number" min="0"></td>
+                    <td><input id="guild-system-cost-points" type="number" min="0"></td>
                   </tr>
                   <tr>
                     <td>贡献产出</td>
-                    <td><input id="guild-system-gain-gold" type="number" min="0" style="width: 90px;"></td>
-                    <td><input id="guild-system-gain-points" type="number" min="0" style="width: 90px;"></td>
+                    <td><input id="guild-system-gain-gold" type="number" min="0"></td>
+                    <td><input id="guild-system-gain-points" type="number" min="0"></td>
                   </tr>
                 </tbody>
               </table>
             </div>
-            <div class="row" style="margin-bottom: 8px; gap: 8px;">
-              <input id="guild-system-item-search" type="text" placeholder="搜索商城物品名/ID/类型" style="max-width: 240px;">
+            <div class="row" style="margin-bottom: 6px; gap: 6px; justify-content: flex-start;">
+              <input id="guild-system-item-search" type="text" placeholder="搜索商城物品名/ID/类型">
             </div>
             <div class="table-container compact-config-table-container equipment-recycle-config-container">
               <table class="compact-config-table equipment-recycle-table" style="font-size: 12px;">
