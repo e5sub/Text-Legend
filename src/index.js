@@ -9426,10 +9426,9 @@ function isAutoFullOnlySelectedCultivationBosses(player) {
 }
 
 function isAutoFullCultivationBossFocused(player) {
-  // 当前统一策略：勾选任意BOSS（包括具体修真BOSS名称）时，
-  // 只在“有BOSS可打”时前往BOSS房；没有BOSS时回普通经验房挂机。
-  // 因此关闭修真BOSS蹲守模式，避免在修真秘境空房间来回切换。
-  return false;
+  // 仅当筛选项全部是修真BOSS时启用专用逻辑：
+  // 有修真BOSS就打，没有就回练级房。
+  return isAutoFullOnlySelectedCultivationBosses(player);
 }
 
 function isAutoFullBossAllowed(player, mobTemplate) {
@@ -9674,6 +9673,8 @@ function findAliveBossTarget(player) {
       if (!zoneId || !roomId) continue;
       if (zoneId === ZHUXIAN_TOWER_ZONE_ID) continue;
       if (isCultivationBoss(tpl)) {
+        // 修真BOSS仅在本服realm内追踪，避免因为跨服realm的同名目标导致反复空跑切房
+        if (realmId !== (player.realmId || 1)) continue;
         const roomMinLevel = Number(WORLD[zoneId]?.rooms?.[roomId]?.minCultivationLevel);
         if (!Number.isFinite(roomMinLevel) || roomMinLevel !== playerCultivationLevel) continue;
       }
