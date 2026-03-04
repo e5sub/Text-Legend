@@ -2,12 +2,15 @@
 import { getSetting, setSetting } from './settings.js';
 
 const GUILD_BUILDING_CONFIG_KEY = 'guild_building_config_v1';
+const GUILD_MEMBER_TIME_REDUCTION_PCT_PER_LEVEL_DEFAULT = 5;
+const GUILD_MEMBER_TIME_REDUCTION_PCT_CAP = 50;
 const DEFAULT_GUILD_BUILDING_CONFIG = {
   thresholds: [0, 100000, 300000, 600000, 1000000, 1600000, 2400000, 3600000, 5200000, 7200000],
   durationsSec: [0, 300, 900, 1800, 3600, 7200, 10800, 14400, 21600, 28800],
   gains: {
     memberBaseLimit: 20,
     memberPerLevel: 5,
+    memberBuildTimeReductionPctPerLevel: GUILD_MEMBER_TIME_REDUCTION_PCT_PER_LEVEL_DEFAULT,
     expPctPerLevel: 0.2,
     goldPctPerLevel: 0.2,
     hpPctPerLevel: 0.2,
@@ -66,6 +69,16 @@ function normalizeGuildBuildingConfig(raw) {
   const gains = {
     memberBaseLimit: Math.max(1, Math.floor(Number(gainsInput.memberBaseLimit ?? defaults.gains.memberBaseLimit) || defaults.gains.memberBaseLimit)),
     memberPerLevel: Math.max(1, Math.floor(Number(gainsInput.memberPerLevel ?? defaults.gains.memberPerLevel) || defaults.gains.memberPerLevel)),
+    memberBuildTimeReductionPctPerLevel: Math.max(
+      0,
+      Math.min(
+        GUILD_MEMBER_TIME_REDUCTION_PCT_CAP,
+        normalizePctValue(
+          gainsInput.memberBuildTimeReductionPctPerLevel,
+          defaults.gains.memberBuildTimeReductionPctPerLevel
+        )
+      )
+    ),
     expPctPerLevel: normalizePctValue(gainsInput.expPctPerLevel, defaults.gains.expPctPerLevel),
     goldPctPerLevel: normalizePctValue(gainsInput.goldPctPerLevel, defaults.gains.goldPctPerLevel),
     hpPctPerLevel: normalizePctValue(gainsInput.hpPctPerLevel, defaults.gains.hpPctPerLevel),
@@ -195,7 +208,26 @@ function getBranchBonus(branchId, level) {
   switch (branchId) {
     case 'member': {
       const value = Math.max(1, Math.floor(Number(gains.memberBaseLimit || 20))) + safeLevel * Math.max(1, Math.floor(Number(gains.memberPerLevel || 5)));
-      return { kind: 'member', value, text: `成员上限 ${value}` };
+      const timeReductionPerLevel = Math.max(
+        0,
+        Math.min(
+          GUILD_MEMBER_TIME_REDUCTION_PCT_CAP,
+          normalizePctValue(
+            gains.memberBuildTimeReductionPctPerLevel,
+            DEFAULT_GUILD_BUILDING_CONFIG.gains.memberBuildTimeReductionPctPerLevel
+          )
+        )
+      );
+      const buildTimeReductionPct = Math.min(
+        GUILD_MEMBER_TIME_REDUCTION_PCT_CAP,
+        normalizePctValue(safeLevel * timeReductionPerLevel)
+      );
+      return {
+        kind: 'member',
+        value,
+        buildTimeReductionPct,
+        text: `成员上限 ${value} / 建造耗时 -${formatPctText(buildTimeReductionPct)}%`
+      };
     }
     case 'exp': {
       const value = normalizePctValue(safeLevel * Number(gains.expPctPerLevel || 0));
@@ -308,6 +340,7 @@ export function buildGuildBuildingPayload(guild) {
   const maxLevel = Math.max(0, ...Object.values(branchLevels).map((v) => Math.floor(Number(v || 0))));
   const bonuses = {
     memberLimit: Math.max(1, Math.floor(Number(config.gains?.memberBaseLimit || DEFAULT_GUILD_BUILDING_CONFIG.gains.memberBaseLimit))),
+    buildTimeReductionPct: 0,
     expPct: 0,
     goldPct: 0,
     hpPct: 0,
@@ -317,15 +350,37 @@ export function buildGuildBuildingPayload(guild) {
     defPct: 0,
     mdefPct: 0
   };
+  const memberLevel = Math.max(0, Math.floor(Number(branchLevels.member || 0)));
+  const memberTimeReductionPerLevel = Math.max(
+    0,
+    Math.min(
+      GUILD_MEMBER_TIME_REDUCTION_PCT_CAP,
+      normalizePctValue(
+        config.gains?.memberBuildTimeReductionPctPerLevel,
+        DEFAULT_GUILD_BUILDING_CONFIG.gains.memberBuildTimeReductionPctPerLevel
+      )
+    )
+  );
+  const buildTimeReductionPct = Math.min(
+    GUILD_MEMBER_TIME_REDUCTION_PCT_CAP,
+    normalizePctValue(memberLevel * memberTimeReductionPerLevel)
+  );
+  const buildTimeMultiplier = Math.max(0, 1 - buildTimeReductionPct / 100);
 
   const branches = GUILD_BUILD_BRANCH_DEFS.map((def) => {
     const level = Math.max(0, Math.floor(Number(branchLevels[def.id] || 0)));
     const currentThreshold = getBuildThreshold(level);
     const nextThreshold = getBuildThreshold(level + 1);
     const nextNeed = Math.max(0, nextThreshold - buildExp);
-    const nextDurationSec = getBuildDurationSec(level + 1);
+    const baseNextDurationSec = getBuildDurationSec(level + 1);
+    const nextDurationSec = baseNextDurationSec > 0
+      ? Math.max(1, Math.floor(baseNextDurationSec * buildTimeMultiplier))
+      : 0;
     const bonus = getBranchBonus(def.id, level);
-    if (def.id === 'member') bonuses.memberLimit = bonus.value;
+    if (def.id === 'member') {
+      bonuses.memberLimit = bonus.value;
+      bonuses.buildTimeReductionPct = Math.max(0, normalizePctValue(bonus.buildTimeReductionPct || 0));
+    }
     if (def.id === 'exp') bonuses.expPct = bonus.value;
     if (def.id === 'gold') bonuses.goldPct = bonus.value;
     if (def.id === 'hp') bonuses.hpPct = bonus.value;
@@ -342,6 +397,7 @@ export function buildGuildBuildingPayload(guild) {
       currentThreshold,
       nextThreshold,
       nextNeed,
+      baseNextDurationSec,
       nextDurationSec,
       readyToUpgrade: !upgrading && buildExp >= nextThreshold,
       upgrading: branchUpgrading,
@@ -374,6 +430,7 @@ export function buildGuildBuildingPayload(guild) {
     rewardBonusPct: bonuses.expPct,
     battleBonusPct: Math.max(bonuses.hpPct, bonuses.atkPct, bonuses.magPct, bonuses.spiritPct, bonuses.defPct, bonuses.mdefPct),
     memberLimit: bonuses.memberLimit,
+    buildTimeReductionPct: bonuses.buildTimeReductionPct,
     expBonusPct: bonuses.expPct,
     goldBonusPct: bonuses.goldPct,
     hpBonusPct: bonuses.hpPct,
