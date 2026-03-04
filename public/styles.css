@@ -1271,9 +1271,25 @@ button:hover {
 }
 
 .line-auto-status {
-  font-size: 12px;
-  color: #8a6d4b;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(214, 140, 60, 0.38);
+  background: rgba(51, 31, 16, 0.18);
+  font-size: 15px;
+  font-weight: 600;
+  color: #b2793f;
+  line-height: 1.25;
   white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .line-auto-status {
+    font-size: 14px;
+    padding: 4px 8px;
+  }
 }
 
 .char-card {

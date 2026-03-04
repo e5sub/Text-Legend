@@ -5259,9 +5259,27 @@ const RUNTIME_HEAP_CRITICAL_RATIO = 0.96;
 const RUNTIME_LAG_WARN_MS = 180;
 const RUNTIME_LAG_CRITICAL_MS = 320;
 const RUNTIME_MOB_ROWS_SAMPLE_INTERVAL_MS = 5 * 60 * 1000;
+const RUNTIME_GUARD_HOLD_NORMAL_MS = 2 * 60 * 1000;
+const RUNTIME_GUARD_HOLD_AGGRESSIVE_MS = 4 * 60 * 1000;
 let runtimeHealthTimer = null;
 let runtimeHealthExpectedAt = 0;
 let runtimeCacheCleanupLastAt = 0;
+let runtimeGuardMode = 'off';
+let runtimeGuardUntilAt = 0;
+
+function activateRuntimeGuard(mode, holdMs, now = Date.now()) {
+  const normalizedMode = mode === 'aggressive' ? 'aggressive' : 'normal';
+  const ttl = Math.max(1000, Math.floor(Number(holdMs || 0)));
+  runtimeGuardMode = normalizedMode;
+  runtimeGuardUntilAt = Math.max(runtimeGuardUntilAt, now + ttl);
+}
+
+function getRuntimeGuardMode(now = Date.now()) {
+  if (now < runtimeGuardUntilAt) {
+    return runtimeGuardMode;
+  }
+  return 'off';
+}
 let runtimeMobRowsCacheAt = 0;
 let runtimeMobRowsCachedValue = 'n/a';
 const STARTUP_MOB_CLEANUP_BATCH_SIZE = 1000;
@@ -5788,10 +5806,15 @@ async function logRuntimeHealth(expectedAt = Date.now()) {
     }
   }
   let cleanupInfo = null;
+  const aggressive = heapRatio >= RUNTIME_HEAP_CRITICAL_RATIO || loopLagMs >= RUNTIME_LAG_CRITICAL_MS;
+  const normal = heapRatio >= RUNTIME_HEAP_WARN_RATIO || loopLagMs >= RUNTIME_LAG_WARN_MS;
+  if (aggressive) {
+    activateRuntimeGuard('aggressive', RUNTIME_GUARD_HOLD_AGGRESSIVE_MS, now);
+  } else if (normal && getRuntimeGuardMode(now) !== 'aggressive') {
+    activateRuntimeGuard('normal', RUNTIME_GUARD_HOLD_NORMAL_MS, now);
+  }
   const shouldRunCleanup = now - runtimeCacheCleanupLastAt >= RUNTIME_CACHE_CLEANUP_COOLDOWN_MS;
   if (shouldRunCleanup) {
-    const aggressive = heapRatio >= RUNTIME_HEAP_CRITICAL_RATIO || loopLagMs >= RUNTIME_LAG_CRITICAL_MS;
-    const normal = heapRatio >= RUNTIME_HEAP_WARN_RATIO || loopLagMs >= RUNTIME_LAG_WARN_MS;
     if (aggressive || normal) {
       cleanupInfo = cleanupRuntimeCaches({ aggressive });
     } else {
@@ -5806,9 +5829,10 @@ async function logRuntimeHealth(expectedAt = Date.now()) {
   const onlineCount = Number(io?.engine?.clientsCount || 0);
   const playerHealth = getPlayerHealthBreakdown();
   const realmStateCount = realmStates.size;
-  const guardTag = cleanupInfo
-    ? ` guard=${cleanupInfo.aggressive ? 'aggr' : 'normal'}`
-    : '';
+  const guardMode = getRuntimeGuardMode(now);
+  const guardTag = guardMode === 'off'
+    ? ''
+    : ` guard=${guardMode === 'aggressive' ? 'aggr' : 'normal'}`;
   console.log(
     `[health] lag=${loopLagMs}ms rss=${rssMb}MB heap=${heapUsedMb}/${heapTotalMb}MB ext=${externalMb}MB ab=${arrayBuffersMb}MB `
     + `online=${onlineCount} players=${playerHealth.total} conn=${playerHealth.connected} managed=${playerHealth.managedAuto} pending=${playerHealth.managedPending} detached=${playerHealth.detached} `
@@ -13642,6 +13666,7 @@ async function sendState(player) {
   if (!player.socket) return;
   const { enabled, intervalSec, overrideServerAllowed } = await getStateThrottleSettingsCached();
   const override = Boolean(player.stateThrottleOverride) && overrideServerAllowed;
+  const guardMode = getRuntimeGuardMode();
   const inBossRoom = player.position
     ? isBossRoom(player.position.zone, player.position.room, player.realmId || 1)
     : false;
@@ -13674,6 +13699,17 @@ async function sendState(player) {
     stateThrottleLastSent.set(key, now);
   } else if (enabled && !override && !inBossRoom) {
     stateThrottleLastSent.set(key, Date.now());
+  }
+  const guardMinIntervalMs = guardMode === 'aggressive'
+    ? (inBossRoom ? 1400 : 2200)
+    : (guardMode === 'normal' ? (inBossRoom ? 1000 : 1500) : 0);
+  if (!override && !forceSend && guardMinIntervalMs > 0 && key) {
+    const now = Date.now();
+    const lastSent = Number(stateThrottleLastSent.get(key) || 0);
+    if (now - lastSent < guardMinIntervalMs) {
+      return;
+    }
+    stateThrottleLastSent.set(key, now);
   }
   const state = await buildState(player);
   const now = Date.now();
@@ -13787,6 +13823,9 @@ async function sendState(player) {
   }
   if (key) {
     stateThrottleLastInBoss.set(key, inBossRoom);
+    if (player.position) {
+      stateThrottleLastRoom.set(key, `${player.position.zone}:${player.position.room}`);
+    }
   }
 }
 
@@ -13823,9 +13862,11 @@ function buildRoomStatePayload(zoneId, roomId, realmId = 1) {
     classRank: cached.bossClassRank || null,
     next: cached.bossNextRespawn || null
   });
-  const includeMobs = mobsHash !== meta.mobsHash || (now - meta.lastMobsAt >= ROOM_STATE_MOBS_TTL);
-  const includePlayers = playersHash !== meta.playersHash || (now - meta.lastPlayersAt >= ROOM_STATE_PLAYERS_TTL);
-  const includeRank = rankHash !== meta.rankHash || (now - meta.lastRankAt >= ROOM_STATE_RANK_TTL);
+  const guardMode = getRuntimeGuardMode(now);
+  const guardTtlMul = guardMode === 'aggressive' ? 2.0 : (guardMode === 'normal' ? 1.4 : 1);
+  const includeMobs = mobsHash !== meta.mobsHash || (now - meta.lastMobsAt >= ROOM_STATE_MOBS_TTL * guardTtlMul);
+  const includePlayers = playersHash !== meta.playersHash || (now - meta.lastPlayersAt >= ROOM_STATE_PLAYERS_TTL * guardTtlMul);
+  const includeRank = rankHash !== meta.rankHash || (now - meta.lastRankAt >= ROOM_STATE_RANK_TTL * guardTtlMul);
   if (includeMobs) {
     meta.mobsHash = mobsHash;
     meta.lastMobsAt = now;
@@ -13838,7 +13879,7 @@ function buildRoomStatePayload(zoneId, roomId, realmId = 1) {
     meta.rankHash = rankHash;
     meta.lastRankAt = now;
   }
-  const includeServerTime = now - Number(meta.lastServerTimeAt || 0) >= ROOM_STATE_SERVER_TIME_TTL;
+  const includeServerTime = now - Number(meta.lastServerTimeAt || 0) >= ROOM_STATE_SERVER_TIME_TTL * guardTtlMul;
   if (includeServerTime) {
     meta.lastServerTimeAt = now;
   }
@@ -13913,18 +13954,20 @@ async function sendRoomState(zoneId, roomId, realmId = 1) {
   
   // BOSS房间优化：批量处理，减少序列化开销
   const isBoss = isBossRoom(zoneId, roomId, effectiveRealmId);
-  
+  const guardMode = getRuntimeGuardMode();
+  let minIntervalMs = ROOM_STATE_TTL;
+  if (guardMode === 'normal') minIntervalMs = Math.max(minIntervalMs, 150);
+  if (guardMode === 'aggressive') minIntervalMs = Math.max(minIntervalMs, 240);
   if (isBoss && players.length > 5) {
-    // BOSS房间且人很多时，使用节流，每100ms最多更新一次
-    const cacheKey = roomCacheKey;
-    const now = Date.now();
-    const lastUpdate = roomStateCache.get(cacheKey) || 0;
-    
-    if (now - lastUpdate < ROOM_STATE_TTL) {
-      return; // 还在缓存期内，跳过
-    }
-    roomStateCache.set(cacheKey, now);
+    minIntervalMs = Math.max(minIntervalMs, guardMode === 'aggressive' ? 360 : 220);
   }
+  const cacheKey = roomCacheKey;
+  const now = Date.now();
+  const lastUpdate = roomStateCache.get(cacheKey) || 0;
+  if (now - lastUpdate < minIntervalMs) {
+    return;
+  }
+  roomStateCache.set(cacheKey, now);
   
   // 使用Promise.all并行发送
   const roomState = buildRoomStatePayload(zoneId, roomId, effectiveRealmId);
@@ -18146,7 +18189,59 @@ function updateSpecialBossStatsBasedOnPlayers() {
   });
 }
 
+const COMBAT_STATE_FLUSH_BATCH_SIZE = 24;
+const combatStateDirtyQueue = new Set();
+let combatStateFlushScheduled = false;
+let combatStateFlushRunning = false;
+
+function scheduleCombatStateFlush() {
+  if (combatStateFlushScheduled) return;
+  combatStateFlushScheduled = true;
+  setTimeout(() => {
+    flushCombatStateQueue().catch((err) => {
+      console.warn('[state-flush] failed:', err?.message || err);
+    });
+  }, 0);
+}
+
+function enqueueCombatStateFlush(player) {
+  if (!player) return;
+  combatStateDirtyQueue.add(player);
+  scheduleCombatStateFlush();
+}
+
+async function flushCombatStateQueue() {
+  if (combatStateFlushRunning) {
+    combatStateFlushScheduled = false;
+    return;
+  }
+  combatStateFlushRunning = true;
+  combatStateFlushScheduled = false;
+  try {
+    while (combatStateDirtyQueue.size > 0) {
+      const batch = [];
+      for (const player of combatStateDirtyQueue) {
+        batch.push(player);
+        combatStateDirtyQueue.delete(player);
+        if (batch.length >= COMBAT_STATE_FLUSH_BATCH_SIZE) break;
+      }
+      if (batch.length <= 0) break;
+      await Promise.allSettled(batch.map((player) => sendState(player)));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+  } finally {
+    combatStateFlushRunning = false;
+    if (combatStateDirtyQueue.size > 0) {
+      scheduleCombatStateFlush();
+    }
+  }
+}
+
 async function combatTick() {
+  const markStateDirty = (player) => {
+    if (!player) return;
+    enqueueCombatStateFlush(player);
+  };
   const online = listOnlinePlayers();
   const roomMobsCache = new Map();
   const regenRooms = new Set();
@@ -18673,8 +18768,8 @@ async function combatTick() {
         applyPetKillSoulOnKill(player);
         handleDeath(target);
       }
-      await sendState(player);
-      await sendState(target);
+      markStateDirty(player);
+      markStateDirty(target);
       continue;
     }
 
@@ -19375,7 +19470,7 @@ async function combatTick() {
     if (player.hp <= 0 && !tryRevive(player)) {
       handleDeath(player);
     }
-    await sendState(player);
+    markStateDirty(player);
 
     // 每30秒保存一次玩家数据,避免频繁写入数据库
     const lastSave = getRealmState(player.realmId || 1).lastSaveTime.get(player.name) || 0;
