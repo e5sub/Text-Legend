@@ -18191,8 +18191,15 @@ function updateSpecialBossStatsBasedOnPlayers() {
 
 const COMBAT_STATE_FLUSH_BATCH_SIZE = 24;
 const COMBAT_NON_CRITICAL_INTERVAL_MS = 5000;
+const COMBAT_NON_CRITICAL_INTERVAL_NORMAL_MS = 6000;
+const COMBAT_NON_CRITICAL_INTERVAL_AGGRESSIVE_MS = 9000;
 const COMBAT_BOSS_SCALE_INTERVAL_MS = 3000;
+const COMBAT_BOSS_SCALE_INTERVAL_NORMAL_MS = 4500;
+const COMBAT_BOSS_SCALE_INTERVAL_AGGRESSIVE_MS = 7000;
 const COMBAT_MANAGED_SHARDS = 3;
+const COMBAT_MANAGED_SHARDS_NORMAL = 5;
+const COMBAT_MANAGED_SHARDS_AGGRESSIVE = 8;
+const COMBAT_MANAGED_AURA_INTERVAL_MS = 2500;
 const combatStateDirtyQueue = new Set();
 let combatStateFlushScheduled = false;
 let combatStateFlushRunning = false;
@@ -18266,13 +18273,23 @@ async function combatTick() {
   };
   combatTickSeq += 1;
   const tickNow = Date.now();
-  const managedShardIndex = combatTickSeq % COMBAT_MANAGED_SHARDS;
+  const guardMode = getRuntimeGuardMode(tickNow);
+  const managedShardCount = guardMode === 'aggressive'
+    ? COMBAT_MANAGED_SHARDS_AGGRESSIVE
+    : (guardMode === 'normal' ? COMBAT_MANAGED_SHARDS_NORMAL : COMBAT_MANAGED_SHARDS);
+  const managedShardIndex = combatTickSeq % managedShardCount;
+  const bossScaleIntervalMs = guardMode === 'aggressive'
+    ? COMBAT_BOSS_SCALE_INTERVAL_AGGRESSIVE_MS
+    : (guardMode === 'normal' ? COMBAT_BOSS_SCALE_INTERVAL_NORMAL_MS : COMBAT_BOSS_SCALE_INTERVAL_MS);
+  const nonCriticalIntervalMs = guardMode === 'aggressive'
+    ? COMBAT_NON_CRITICAL_INTERVAL_AGGRESSIVE_MS
+    : (guardMode === 'normal' ? COMBAT_NON_CRITICAL_INTERVAL_NORMAL_MS : COMBAT_NON_CRITICAL_INTERVAL_MS);
   const online = listOnlinePlayers();
   const roomMobsCache = new Map();
   const regenRooms = new Set();
 
   // 特殊BOSS人数缩放改为低频执行，避免每秒全图扫描
-  if (tickNow - combatLastBossScaleAt >= COMBAT_BOSS_SCALE_INTERVAL_MS) {
+  if (tickNow - combatLastBossScaleAt >= bossScaleIntervalMs) {
     updateSpecialBossStatsBasedOnPlayers();
     combatLastBossScaleAt = tickNow;
   }
@@ -18280,7 +18297,7 @@ async function combatTick() {
   for (const player of online) {
     const now = Date.now();
     const isManagedPlayer = Boolean(!player?.socket && (player?.flags?.offlineManagedAuto || player?.flags?.offlineManagedPending));
-    if (isManagedPlayer && !shouldProcessManagedPlayerThisTick(player, managedShardIndex)) {
+    if (isManagedPlayer && !shouldProcessManagedPlayerThisTick(player, managedShardIndex, managedShardCount)) {
       continue;
     }
     if (!player?.socket && player?.flags?.offlineManagedPending) {
@@ -18311,12 +18328,15 @@ async function combatTick() {
     }
 
     refreshBuffs(player);
-    applyMoonFairyAura(player, online);
+    if (!isManagedPlayer || !player._managedAuraAt || (now - Number(player._managedAuraAt || 0)) >= COMBAT_MANAGED_AURA_INTERVAL_MS) {
+      applyMoonFairyAura(player, online);
+      if (isManagedPlayer) player._managedAuraAt = now;
+    }
     processPotionRegen(player);
     updateRedNameAutoClear(player);
     tryRestoreAutoFullAfterManualDowngrade(player);
     downgradeAutoFullInZhuxianTower(player);
-    if (!player._combatAuxAt || (now - Number(player._combatAuxAt || 0)) >= COMBAT_NON_CRITICAL_INTERVAL_MS) {
+    if (!player._combatAuxAt || (now - Number(player._combatAuxAt || 0)) >= nonCriticalIntervalMs) {
       updateAutoDailyUsage(player);
       recordHarvestOnlineMinute(player);
       autoClaimActivityRewardsForPlayer(player, now).catch(() => {});
