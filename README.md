@@ -306,6 +306,28 @@ node src/index.js
 - 建议停服或确保无在线玩家
 - 导入后会强制玩家下线
 
+## 运维：清理 mob_respawns
+
+当 `mob_respawns` 体量过大时，可用内置脚本分批限速清理“已过期且无血量快照”的记录。
+
+先预览（不删除）：
+
+```bash
+npm run db:cleanup-mob-respawns
+```
+
+执行清理（示例：每批 2000、最多 400 轮、每轮间隔 60ms）：
+
+```bash
+npm run db:cleanup-mob-respawns -- --execute --batch-size=2000 --max-rounds=400 --sleep-ms=60
+```
+
+可选限制本次最多删除条数（例如 50000）：
+
+```bash
+npm run db:cleanup-mob-respawns -- --execute --max-delete=50000
+```
+
 ## 安卓客户端（原生）
 
 项目包含 `android/` 目录（Kotlin + Jetpack Compose），通过 HTTP / Socket API 连接游戏服务器。
