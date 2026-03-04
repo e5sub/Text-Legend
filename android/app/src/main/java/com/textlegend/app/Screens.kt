@@ -3219,7 +3219,7 @@ private fun GuildBuildingBranchCard(
 
             Spacer(modifier = Modifier.height(10.dp))
             LinearProgressIndicator(
-                progress = { progress },
+                progress = progress,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(7.dp)
