@@ -311,6 +311,21 @@ body.theme-dark .admin-switch input:checked + .admin-switch-slider {
   white-space: nowrap;
 }
 
+.guild-system-compact .compact-config-table th:nth-child(1),
+.guild-system-compact .compact-config-table td:nth-child(1) {
+  width: 44%;
+}
+
+.guild-system-compact .compact-config-table th:nth-child(2),
+.guild-system-compact .compact-config-table td:nth-child(2) {
+  width: 28%;
+}
+
+.guild-system-compact .compact-config-table th:nth-child(3),
+.guild-system-compact .compact-config-table td:nth-child(3) {
+  width: 28%;
+}
+
 .compact-config-table-container table.compact-config-table th:nth-child(1),
 .compact-config-table-container table.compact-config-table td:nth-child(1) {
   width: 60%;
@@ -325,6 +340,14 @@ body.theme-dark .admin-switch input:checked + .admin-switch-slider {
 .compact-config-table-container table.compact-config-table td:nth-child(3) {
   width: 16%;
   white-space: nowrap;
+}
+
+.guild-system-compact #guild-system-shop-list td:first-child,
+.guild-system-compact #guild-system-shop-list td:nth-child(2),
+.guild-system-compact #guild-system-shop-list td:nth-child(3),
+.guild-system-compact #guild-system-shop-list td:nth-child(4) {
+  padding-top: 2px;
+  padding-bottom: 2px;
 }
 
 .compact-config-table-container table.compact-config-table select,
