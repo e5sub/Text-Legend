@@ -2786,139 +2786,19 @@ private fun SettingsScreen(vm: GameViewModel, onDismiss: () -> Unit) {
 
           if (building != null && members?.ok == true) {
               Spacer(modifier = Modifier.height(10.dp))
-              Card(
-                  modifier = Modifier.fillMaxWidth(),
-                  colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                  elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-              ) {
-                  Column(modifier = Modifier.padding(12.dp)) {
-                      Text("行会建设", fontWeight = FontWeight.Bold)
-                      Spacer(modifier = Modifier.height(4.dp))
-                      Text("建设等级：Lv${building.level}")
-                      Text("建设值：${building.exp}")
-                      Text("成员上限：${building.memberLimit}")
-                      Text("历练加成：+${building.expBonusPct}%  金币加成：+${building.goldBonusPct}%")
-                      Text("战斗汇总：攻+${building.atkBonusPct}% 法+${building.magBonusPct}% 道+${building.spiritBonusPct}%")
-                      Text("防御汇总：防+${building.defBonusPct}% 魔御+${building.mdefBonusPct}%")
-                      Text("收益加成：+${building.rewardBonusPct}%  战斗加成：+${building.battleBonusPct}%")
-                      Text("个人行会贡献：$contribution")
-                      val goldDonate = building.donationLimits?.gold
-                      val pointDonate = building.donationLimits?.points
-                      if (goldDonate != null && pointDonate != null) {
-                          Text("今日捐献剩余：金币 ${goldDonate.remaining}/${goldDonate.limit} 次，活动积分 ${pointDonate.remaining}/${pointDonate.limit} 次")
-                      }
-                      val remainSec = building.upgradeEndsAt?.let { ((it - System.currentTimeMillis()) / 1000L).toInt().coerceAtLeast(0) }
-                          ?: building.upgradeRemainingSec
-                      val upgradeText = when {
-                          building.upgrading -> "${building.activeUpgradeBranchLabel ?: "建筑"}升级中（剩余 ${formatCountdown(remainSec)}）"
-                          building.readyToUpgrade -> "有分支可升级"
-                          building.nextThreshold == null -> "已达到当前建设上限"
-                          else -> "距离下级还差 ${building.nextNeed}"
-                      }
-                      Text("升级状态：$upgradeText")
-                      val branches = building.branches
-                      if (branches.isNotEmpty()) {
-                          Spacer(modifier = Modifier.height(10.dp))
-                          Text("建筑分支", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                          Spacer(modifier = Modifier.height(6.dp))
-                          Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                              branches.forEach { branch ->
-                                  val branchRemainSec = branch.upgradeEndsAt
-                                      ?.let { ((it - System.currentTimeMillis()) / 1000L).toInt().coerceAtLeast(0) }
-                                      ?: branch.upgradeRemainingSec
-                                  val branchStatus = when {
-                                      branch.upgrading -> "升级中（剩余 ${formatCountdown(branchRemainSec)}）"
-                                      branch.readyToUpgrade -> "可升级（耗时 ${formatCountdown(branch.nextDurationSec)}）"
-                                      branch.nextThreshold == null -> "已满级"
-                                      else -> "距下级还差 ${branch.nextNeed}"
-                                  }
-                                  val branchCardColor = when {
-                                      branch.upgrading -> Color(0xFFE7F4EA)
-                                      branch.readyToUpgrade -> Color(0xFFF8F0D9)
-                                      else -> MaterialTheme.colorScheme.surface
-                                  }
-                                  val branchBorderColor = when {
-                                      branch.upgrading -> Color(0xFF4F8F62)
-                                      branch.readyToUpgrade -> Color(0xFFB68A2D)
-                                      else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
-                                  }
-                                  Surface(
-                                      shape = RoundedCornerShape(10.dp),
-                                      color = branchCardColor,
-                                      border = BorderStroke(1.dp, branchBorderColor)
-                                  ) {
-                                      Column(modifier = Modifier.fillMaxWidth().padding(10.dp)) {
-                                          Row(
-                                              modifier = Modifier.fillMaxWidth(),
-                                              horizontalArrangement = Arrangement.SpaceBetween,
-                                              verticalAlignment = Alignment.CenterVertically
-                                          ) {
-                                              Text("${branch.label}  Lv${branch.level}", fontWeight = FontWeight.SemiBold)
-                                              val tagText = when {
-                                                  branch.upgrading -> "升级中"
-                                                  branch.readyToUpgrade -> "可升级"
-                                                  branch.nextThreshold == null -> "满级"
-                                                  else -> "建设中"
-                                              }
-                                              Text(
-                                                  tagText,
-                                                  color = branchBorderColor,
-                                                  fontSize = 12.sp,
-                                                  fontWeight = FontWeight.Medium
-                                              )
-                                          }
-                                          Spacer(modifier = Modifier.height(4.dp))
-                                          Text(branch.bonusText)
-                                          Text(branchStatus, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                                          if (branch.nextThreshold != null) {
-                                              Text(
-                                                  "下级累计建设值 ${branch.nextThreshold}",
-                                                  color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                  fontSize = 12.sp
-                                              )
-                                          }
-                                          if (canManageBuild) {
-                                              Spacer(modifier = Modifier.height(8.dp))
-                                              Button(
-                                                  onClick = { vm.guildBuildUpgrade(branch.id) },
-                                                  enabled = !building.upgrading && branch.readyToUpgrade,
-                                                  modifier = Modifier.fillMaxWidth()
-                                              ) {
-                                                  Text(
-                                                      when {
-                                                          branch.upgrading -> "升级中"
-                                                          branch.nextThreshold == null -> "已满级"
-                                                          branch.readyToUpgrade -> "升级${branch.label}"
-                                                          else -> "暂不可升级"
-                                                      }
-                                                  )
-                                              }
-                                          }
-                                      }
-                                  }
-                              }
-                          }
-                      }
-                      Spacer(modifier = Modifier.height(8.dp))
-                      Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                          Button(
-                              onClick = { vm.guildDonate("gold") },
-                              enabled = (goldDonate?.remaining ?: 0) > 0,
-                              modifier = Modifier.weight(1f)
-                          ) { Text("捐献${goldDonateCost}金币（+${goldContributionGain}贡献）") }
-                          Button(
-                              onClick = { vm.guildDonate("points") },
-                              enabled = (pointDonate?.remaining ?: 0) > 0,
-                              modifier = Modifier.weight(1f)
-                          ) { Text("捐献${pointDonateCost}活动积分（+${pointContributionGain}贡献）") }
-                      }
-                      Spacer(modifier = Modifier.height(8.dp))
-                      Button(
-                          onClick = { showGuildShop = true },
-                          modifier = Modifier.fillMaxWidth()
-                      ) { Text("行会商城") }
-                  }
-              }
+              GuildBuildingPanel(
+                  building = building,
+                  contribution = contribution,
+                  canManageBuild = canManageBuild,
+                  goldDonateCost = goldDonateCost,
+                  pointDonateCost = pointDonateCost,
+                  goldContributionGain = goldContributionGain,
+                  pointContributionGain = pointContributionGain,
+                  onDonateGold = { vm.guildDonate("gold") },
+                  onDonatePoints = { vm.guildDonate("points") },
+                  onUpgradeBranch = { vm.guildBuildUpgrade(it) },
+                  onOpenShop = { showGuildShop = true }
+              )
           }
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -3087,6 +2967,296 @@ private fun SettingsScreen(vm: GameViewModel, onDismiss: () -> Unit) {
                     TextButton(onClick = { showGuildShop = false }) { Text("关闭") }
                 }
             )
+        }
+    }
+}
+
+@Composable
+private fun GuildBuildingPanel(
+    building: GuildBuildingInfo,
+    contribution: Int,
+    canManageBuild: Boolean,
+    goldDonateCost: Int,
+    pointDonateCost: Int,
+    goldContributionGain: Int,
+    pointContributionGain: Int,
+    onDonateGold: () -> Unit,
+    onDonatePoints: () -> Unit,
+    onUpgradeBranch: (String) -> Unit,
+    onOpenShop: () -> Unit
+) {
+    val goldDonate = building.donationLimits?.gold
+    val pointDonate = building.donationLimits?.points
+    val remainSec = building.upgradeEndsAt?.let { ((it - System.currentTimeMillis()) / 1000L).toInt().coerceAtLeast(0) }
+        ?: building.upgradeRemainingSec
+    val headerStatus = when {
+        building.upgrading -> "${building.activeUpgradeBranchLabel ?: "建筑"}升级中 · ${formatCountdown(remainSec)}"
+        building.readyToUpgrade -> "已有分支可升级"
+        else -> "稳步建设中"
+    }
+    val summaryItems = listOf(
+        "主殿" to "Lv${building.level}",
+        "建设值" to building.exp.toString(),
+        "成员上限" to building.memberLimit.toString(),
+        "个人贡献" to contribution.toString(),
+        "历练" to "+${building.expBonusPct}%",
+        "金币" to "+${building.goldBonusPct}%"
+    )
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.verticalGradient(
+                        listOf(
+                            Color(0xFF2D241D),
+                            Color(0xFF231B16)
+                        )
+                    )
+                )
+                .padding(14.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("行会建设", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFFFFE2B8))
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(headerStatus, color = Color(0xFFE9C998), fontSize = 12.sp)
+                }
+                Surface(
+                    shape = RoundedCornerShape(999.dp),
+                    color = Color(0x26FFB95E),
+                    border = BorderStroke(1.dp, Color(0x66FFB95E))
+                ) {
+                    Text(
+                        "战斗 +${building.battleBonusPct}%",
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        fontSize = 12.sp,
+                        color = Color(0xFFFFD39A),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+            summaryItems.chunked(2).forEach { rowItems ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    rowItems.forEach { (label, value) ->
+                        GuildMetricPill(
+                            label = label,
+                            value = value,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    if (rowItems.size == 1) Spacer(modifier = Modifier.weight(1f))
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = Color(0x1AFFFFFF),
+                border = BorderStroke(1.dp, Color(0x1FFFFFFF))
+            ) {
+                Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("加成总览", fontWeight = FontWeight.SemiBold, color = Color(0xFFFFDEB2))
+                    Text(
+                        "攻+${building.atkBonusPct}% / 法+${building.magBonusPct}% / 道+${building.spiritBonusPct}%",
+                        color = Color(0xFFE7CCAA),
+                        fontSize = 12.sp
+                    )
+                    Text(
+                        "防+${building.defBonusPct}% / 魔御+${building.mdefBonusPct}% / 收益+${building.rewardBonusPct}%",
+                        color = Color(0xFFE7CCAA),
+                        fontSize = 12.sp
+                    )
+                    if (goldDonate != null && pointDonate != null) {
+                        Text(
+                            "今日剩余：金币 ${goldDonate.remaining}/${goldDonate.limit} 次，活动积分 ${pointDonate.remaining}/${pointDonate.limit} 次",
+                            color = Color(0xFFDDBD94),
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                building.branches.forEach { branch ->
+                    GuildBuildingBranchCard(
+                        branch = branch,
+                        buildExp = building.exp,
+                        globalUpgrading = building.upgrading,
+                        canManageBuild = canManageBuild,
+                        onUpgrade = { onUpgradeBranch(branch.id) }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                FilledTonalButton(
+                    onClick = onDonateGold,
+                    enabled = (goldDonate?.remaining ?: 0) > 0,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = Color(0xFF4A3728),
+                        contentColor = Color(0xFFFFDEB2)
+                    )
+                ) { Text("金币 ${goldDonateCost}", fontSize = 12.sp) }
+                FilledTonalButton(
+                    onClick = onDonatePoints,
+                    enabled = (pointDonate?.remaining ?: 0) > 0,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = Color(0xFF3E2D39),
+                        contentColor = Color(0xFFFFDEB2)
+                    )
+                ) { Text("积分 ${pointDonateCost}", fontSize = 12.sp) }
+            }
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                "金币捐献 +$goldContributionGain 贡献，活动积分捐献 +$pointContributionGain 贡献",
+                color = Color(0xCCDBBD96),
+                fontSize = 11.sp
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            OutlinedButton(
+                onClick = onOpenShop,
+                modifier = Modifier.fillMaxWidth(),
+                border = BorderStroke(1.dp, Color(0x55FFBD73)),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFFDEB2))
+            ) { Text("打开行会商城") }
+        }
+    }
+}
+
+@Composable
+private fun GuildMetricPill(label: String, value: String, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        color = Color(0x14FFFFFF),
+        border = BorderStroke(1.dp, Color(0x26FFD199))
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp)) {
+            Text(label, color = Color(0xCCDAAF82), fontSize = 11.sp)
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(value, color = Color(0xFFFFE2B8), fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+@Composable
+private fun GuildBuildingBranchCard(
+    branch: GuildBuildingBranchInfo,
+    buildExp: Int,
+    globalUpgrading: Boolean,
+    canManageBuild: Boolean,
+    onUpgrade: () -> Unit
+) {
+    val remainSec = branch.upgradeEndsAt?.let { ((it - System.currentTimeMillis()) / 1000L).toInt().coerceAtLeast(0) }
+        ?: branch.upgradeRemainingSec
+    val progress = when {
+        branch.nextThreshold == null -> 1f
+        branch.nextThreshold <= branch.currentThreshold -> 0f
+        else -> ((buildExp - branch.currentThreshold).toFloat() / (branch.nextThreshold - branch.currentThreshold).toFloat()).coerceIn(0f, 1f)
+    }
+    val accent = when {
+        branch.upgrading -> Color(0xFF68C98A)
+        branch.readyToUpgrade -> Color(0xFFFFB95E)
+        branch.nextThreshold == null -> Color(0xFF8FB6D8)
+        else -> Color(0xFFC58E55)
+    }
+    val stateText = when {
+        branch.upgrading -> "升级中，剩余 ${formatCountdown(remainSec)}"
+        branch.readyToUpgrade -> "可升级，耗时 ${formatCountdown(branch.nextDurationSec)}"
+        branch.nextThreshold == null -> "已满级"
+        else -> "下级需 ${branch.nextThreshold}，还差 ${branch.nextNeed}"
+    }
+
+    Surface(
+        shape = RoundedCornerShape(18.dp),
+        color = Color(0x10FFFFFF),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.4f))
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(branch.label, fontWeight = FontWeight.Bold, color = Color(0xFFFFDFB1))
+                    Text(branch.bonusText, color = Color(0xFFE4C79E), fontSize = 12.sp)
+                }
+                Surface(
+                    shape = RoundedCornerShape(999.dp),
+                    color = accent.copy(alpha = 0.15f),
+                    border = BorderStroke(1.dp, accent.copy(alpha = 0.5f))
+                ) {
+                    Text(
+                        "Lv${branch.level}",
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        color = accent,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 12.sp
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(7.dp)
+                    .clip(RoundedCornerShape(999.dp)),
+                color = accent,
+                trackColor = Color(0x22FFFFFF)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                stateText,
+                color = Color(0xFFD8BA95),
+                fontSize = 12.sp
+            )
+
+            if (canManageBuild) {
+                Spacer(modifier = Modifier.height(10.dp))
+                FilledTonalButton(
+                    onClick = onUpgrade,
+                    enabled = !globalUpgrading && branch.readyToUpgrade,
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = accent.copy(alpha = if (!globalUpgrading && branch.readyToUpgrade) 0.18f else 0.10f),
+                        contentColor = accent
+                    )
+                ) {
+                    Text(
+                        when {
+                            branch.upgrading -> "正在升级"
+                            branch.nextThreshold == null -> "已满级"
+                            branch.readyToUpgrade -> "升级 ${branch.label}"
+                            globalUpgrading -> "等待当前升级完成"
+                            else -> "未满足升级条件"
+                        },
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
         }
     }
 }
