@@ -11,7 +11,7 @@ const DEFAULT_GUILD_BUILDING_CONFIG = {
     memberBaseLimit: 20,
     memberPerLevel: 5,
     memberBuildTimeReductionPctPerLevel: GUILD_MEMBER_TIME_REDUCTION_PCT_PER_LEVEL_DEFAULT,
-    expPctPerLevel: 0.2,
+    expPctPerLevel: 10,
     goldPctPerLevel: 0.2,
     hpPctPerLevel: 0.2,
     atkPctPerLevel: 0.2,
