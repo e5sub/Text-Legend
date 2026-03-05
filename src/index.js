@@ -3726,16 +3726,24 @@ app.post('/admin/smtp-settings/test', async (req, res) => {
       return res.status(400).json({ error: 'SMTP配置不完整，请填写服务器地址、用户名和密码' });
     }
     const nodemailer = await import('nodemailer');
+    const portNum = Number(port) || 587;
+    // 根据端口自动设置 secure：465 端口使用 SSL，其他端口使用 STARTTLS
+    const useSecure = secure === true || portNum === 465;
     const transporter = nodemailer.createTransport({
       host,
-      port: port || 587,
-      secure: secure === true,
+      port: portNum,
+      secure: useSecure,
       auth: { user, pass: password }
     });
     await transporter.verify();
     res.json({ ok: true, message: 'SMTP连接测试成功' });
   } catch (err) {
-    res.status(400).json({ error: err.message || 'SMTP连接测试失败' });
+    let errorMsg = err.message || 'SMTP连接测试失败';
+    // 提供更友好的错误提示
+    if (errorMsg.includes('wrong version number') || errorMsg.includes('SSL')) {
+      errorMsg = `SSL/TLS 配置错误。端口 ${settings.port || 587} 与 secure 设置不匹配。建议：端口 587/25 使用 secure=false (STARTTLS)，端口 465 使用 secure=true (SSL)`;
+    }
+    res.status(400).json({ error: errorMsg });
   }
 });
 
@@ -13592,17 +13600,18 @@ function normalizeGuildContribution(player) {
 async function buildState(player) {
   normalizeVipStatus(player);
   normalizeSvipStatus(player);
-  // 优化：行会建筑升级检查改为异步后台处理，不阻塞状态构建
+  // 行会建筑升级检查：如果升级时间已到，触发完成升级并同步状态
   if (player.guild?.id && player.guild.buildUpgradeEndsAt && Number(player.guild.buildUpgradeEndsAt) <= Date.now()) {
-    // 使用 setImmediate 让检查在下一个事件循环执行，不阻塞当前状态构建
-    setImmediate(async () => {
-      try {
-        const refreshedGuildBuilding = await getGuildBuildingInfo(player.guild.id);
-        if (refreshedGuildBuilding) syncGuildMetaToOnlineMembers(player.guild.id, refreshedGuildBuilding);
-      } catch (err) {
-        // 静默处理错误，不影响主流程
+    try {
+      const refreshedGuildBuilding = await getGuildBuildingInfo(player.guild.id);
+      if (refreshedGuildBuilding) {
+        syncGuildMetaToOnlineMembers(player.guild.id, refreshedGuildBuilding);
+        // 升级完成后立即刷新玩家状态
+        player.forceStateRefresh = true;
       }
-    });
+    } catch (err) {
+      // 静默处理错误，不影响主流程
+    }
   }
   computeDerived(player);
   const realmId = player.realmId || 1;
