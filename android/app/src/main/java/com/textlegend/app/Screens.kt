@@ -287,7 +287,7 @@ fun AuthScreen(vm: GameViewModel, onServerClick: () -> Unit, onAuthed: () -> Uni
                 Button(
                     onClick = {
                         if (newPassword != confirmPassword) {
-                            _loginMessage.value = "两次输入的密码不一致"
+                            vm.setLoginMessage("两次输入的密码不一致")
                             return@Button
                         }
                         vm.confirmPasswordReset(email, resetCode, newPassword)

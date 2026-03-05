@@ -480,6 +480,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         _toast.value = message
     }
 
+    fun setLoginMessage(message: String) {
+        _loginMessage.value = message
+    }
+
     fun showDialog(title: String, message: String) {
         _noticeDialog.value = DialogNotice(title, message)
     }
