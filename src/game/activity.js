@@ -630,6 +630,19 @@ function formatHarvestBlessingName(blessing, claimed = false) {
   return rawName || (claimed ? '已领' : '未领');
 }
 
+export function getHarvestBlessingMultipliers(player, { now = Date.now() } = {}) {
+  const ap = normalizeActivityProgress(player, now);
+  const blessing = ap.harvestSeason?.blessing;
+  if (!blessing || typeof blessing !== 'object') {
+    return { expMult: 1, goldMult: 1, active: false };
+  }
+  return {
+    expMult: Math.max(1, Number(blessing.expMult) || 1),
+    goldMult: Math.max(1, Number(blessing.goldMult) || 1),
+    active: true
+  };
+}
+
 export async function claimHarvestSupplyByMail(player, {
   sendMail,
   realmId = 1,
