@@ -14,19 +14,40 @@ const knex = knexModule({
         host: config.db.host,
         user: config.db.user,
         password: config.db.password,
-        database: config.db.database
+        database: config.db.database,
+        // MySQL 连接超时设置
+        connectTimeout: 10000,
+        // 启用压缩
+        compress: true
       },
   useNullAsDefault: isSqlite,
-  pool: { min: 0, max: config.db.poolMax }
+  pool: isSqlite
+    ? { min: 0, max: config.db.poolMax }
+    : {
+        min: 2,
+        max: Math.max(20, config.db.poolMax || 20),
+        // 连接在 pool 中的最大空闲时间
+        idleTimeoutMillis: 30000,
+        // 获取连接的最大等待时间
+        acquireTimeoutMillis: 60000,
+        // 连接创建超时
+        createTimeoutMillis: 30000,
+        // 连接销毁超时
+        destroyTimeoutMillis: 5000,
+        // 定期 reap 空闲连接
+        reapIntervalMillis: 1000
+      }
 });
 
 if (isSqlite) {
-  if (config.db.sqlite?.wal) {
-    knex.raw('PRAGMA journal_mode = WAL;').catch(() => {});
-  }
-  if (config.db.sqlite?.synchronous) {
-    knex.raw(`PRAGMA synchronous = ${config.db.sqlite.synchronous};`).catch(() => {});
-  }
+  // 启用 WAL 模式以提高并发性能
+  knex.raw('PRAGMA journal_mode = WAL;').catch(() => {});
+  // 设置同步模式为 NORMAL（平衡安全性和性能）
+  knex.raw('PRAGMA synchronous = NORMAL;').catch(() => {});
+  // 增加 WAL 文件大小限制，避免频繁 checkpoint
+  knex.raw('PRAGMA wal_autocheckpoint = 1000;').catch(() => {});
+  // 设置 busy timeout 为 10 秒，避免锁定等待过短
+  knex.raw('PRAGMA busy_timeout = 10000;').catch(() => {});
 }
 
 function toCompactSql(sqlText) {

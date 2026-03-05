@@ -20022,8 +20022,8 @@ async function start() {
   await runActivityRankingSettlements();
 
   // 批量持久化队列配置
-  const RESPAWN_PERSIST_BATCH_SIZE = 100; // 每批写入数量
-  const RESPAWN_PERSIST_INTERVAL_MS = 5000; // 每5秒刷新一次
+  const RESPAWN_PERSIST_BATCH_SIZE = 200; // 每批写入数量
+  const RESPAWN_PERSIST_INTERVAL_MS = 10000; // 每10秒刷新一次，减少数据库压力
   const respawnUpsertQueue = new Map(); // 待写入队列 set操作
   const respawnDeleteQueue = new Map(); // 待删除队列 clear操作
   let respawnPersistTimer = null;
@@ -20095,8 +20095,19 @@ async function start() {
     }
   }
 
-  // 启动定时刷新
-  respawnPersistTimer = setInterval(flushRespawnPersistQueue, RESPAWN_PERSIST_INTERVAL_MS);
+  // 启动定时刷新（使用递归 setTimeout 避免回调堆积）
+  async function startRespawnPersistLoop() {
+    while (respawnPersistTimer !== null) {
+      const startTime = Date.now();
+      await flushRespawnPersistQueue();
+      const elapsed = Date.now() - startTime;
+      // 动态调整间隔：如果执行快，按正常间隔；如果执行慢，延长间隔避免堆积
+      const waitTime = Math.max(1000, RESPAWN_PERSIST_INTERVAL_MS - elapsed);
+      await new Promise((r) => setTimeout(r, waitTime));
+    }
+  }
+  respawnPersistTimer = true; // 标记为运行中
+  void startRespawnPersistLoop();
 
   // 立即刷新函数（用于服务器关闭时）
   async function immediateFlushRespawnQueue() {

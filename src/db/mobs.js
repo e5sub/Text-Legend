@@ -165,7 +165,6 @@ export async function cleanupExpiredMobRespawnsBatch(nowMs = Date.now(), limit =
  */
 export async function batchUpsertMobRespawns(records) {
   if (!Array.isArray(records) || records.length === 0) return 0;
-  // 使用事务批量写入，MySQL 支持 ON DUPLICATE KEY UPDATE 批量语法
   return withWriteRetry(async () => {
     const insertData = records.map((r) => ({
       realm_id: r.realm_id,
@@ -177,10 +176,13 @@ export async function batchUpsertMobRespawns(records) {
       current_hp: r.current_hp ?? null,
       status: r.status ?? null
     }));
-    await knex('mob_respawns')
-      .insert(insertData)
-      .onConflict(['realm_id', 'zone_id', 'room_id', 'slot_index'])
-      .merge(['template_id', 'respawn_at', 'current_hp', 'status']);
+    // 使用显式事务减少提交开销
+    await knex.transaction(async (trx) => {
+      await trx('mob_respawns')
+        .insert(insertData)
+        .onConflict(['realm_id', 'zone_id', 'room_id', 'slot_index'])
+        .merge(['template_id', 'respawn_at', 'current_hp', 'status']);
+    });
     return records.length;
   });
 }
@@ -192,20 +194,15 @@ export async function batchUpsertMobRespawns(records) {
 export async function batchClearMobRespawns(keys) {
   if (!Array.isArray(keys) || keys.length === 0) return 0;
   return withWriteRetry(async () => {
-    const deleted = await knex('mob_respawns')
-      .where((q) => {
-        keys.forEach((k, index) => {
-          const clause = {
-            realm_id: k.realm_id,
-            zone_id: k.zone_id,
-            room_id: k.room_id,
-            slot_index: k.slot_index
-          };
-          if (index === 0) q.where(clause);
-          else q.orWhere(clause);
-        });
-      })
-      .del();
+    // 使用显式事务
+    const deleted = await knex.transaction(async (trx) => {
+      return trx('mob_respawns')
+        .whereIn(
+          ['realm_id', 'zone_id', 'room_id', 'slot_index'],
+          keys.map((k) => [k.realm_id, k.zone_id, k.room_id, k.slot_index])
+        )
+        .del();
+    });
     return deleted;
   });
 }

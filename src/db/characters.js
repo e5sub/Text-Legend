@@ -153,6 +153,19 @@ export async function saveCharacter(userId, player, realmId = 1) {
     return null;
   }
 
+  // 优先使用主键 ID 更新，性能更好（避免复合 WHERE 条件）
+  const characterId = player.id;
+  if (characterId && typeof characterId === 'number') {
+    const updated = await knex('characters')
+      .where({ id: characterId })
+      .update({ ...data, updated_at: knex.fn.now() });
+    if (Number(updated || 0) > 0) {
+      setCharacterPersistSignature(player, persistSignature);
+      return null;
+    }
+  }
+
+  // 回退到复合条件更新（兼容旧数据）
   const where = { user_id: userId, name: player.name, realm_id: resolvedRealmId };
   const updated = await knex('characters')
     .where(where)
@@ -165,6 +178,8 @@ export async function saveCharacter(userId, player, realmId = 1) {
   try {
     const [id] = await knex('characters').insert(data);
     setCharacterPersistSignature(player, persistSignature);
+    // 保存新创建的角色 ID 到 player 对象
+    player.id = id;
     return id;
   } catch (err) {
     const message = String(err?.sqlMessage || err?.message || '');
