@@ -4121,7 +4121,7 @@ async function loadSmtpSettings() {
   if (!smtpMsg) return;
   setSmtpMsg('');
   try {
-    const data = await api('/admin/smtp', 'GET');
+    const data = await api('/admin/smtp-settings', 'GET');
     const config = data?.settings || {};
     if (smtpEnabledInput) smtpEnabledInput.checked = config.enabled !== false;
     if (smtpHostInput) smtpHostInput.value = config.host || '';
@@ -4158,7 +4158,7 @@ async function saveSmtpSettings() {
   }
   setSmtpMsg('');
   try {
-    const data = await api('/admin/smtp', 'POST', config);
+    const data = await api('/admin/smtp-settings/update', 'POST', { settings: config });
     setSmtpMsg('SMTP配置保存成功', 'green');
     setTimeout(() => setSmtpMsg(''), 1500);
   } catch (err) {
@@ -4170,8 +4170,8 @@ async function testSmtpConnection() {
   if (!smtpMsg) return;
   setSmtpMsg('正在测试连接...');
   try {
-    const data = await api('/admin/smtp/test', 'POST', {});
-    setSmtpMsg('连接测试成功！邮件发送功能正常', 'green');
+    const data = await api('/admin/smtp-settings/test', 'POST', {});
+    setSmtpMsg(data.message || '连接测试成功！邮件发送功能正常', 'green');
     setTimeout(() => setSmtpMsg(''), 1500);
   } catch (err) {
     setSmtpMsg(`测试失败: ${err.message}`, 'red');
