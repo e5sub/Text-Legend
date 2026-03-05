@@ -792,6 +792,17 @@
               <div id="vip-self-claim-msg" class="msg"></div>
             </div>
 
+            <div style="margin-bottom: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+              <h3>VIP 领取次数限制</h3>
+              <p>当前状态: <span id="vip-claim-limit-status">加载中...</span></p>
+              <label class="admin-switch">
+                <input type="checkbox" id="vip-claim-limit-toggle">
+                <span class="admin-switch-slider" aria-hidden="true"></span>
+                <span class="admin-switch-label">限制每个角色只能领取一次</span>
+              </label>
+              <div id="vip-claim-limit-msg" class="msg"></div>
+            </div>
+
             <div style="border-top: 1px solid #ddd; padding-top: 20px;">
               <h3>VIP 激活码管理</h3>
               <input id="vip-count" type="number" min="1" max="100" value="5">

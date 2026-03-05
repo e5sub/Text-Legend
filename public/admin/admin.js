@@ -60,6 +60,9 @@ const charMigrateMsg = document.getElementById('char-migrate-msg');
 const vipSelfClaimStatus = document.getElementById('vip-self-claim-status');
 const vipSelfClaimMsg = document.getElementById('vip-self-claim-msg');
 const vipSelfClaimToggle = document.getElementById('vip-self-claim-toggle');
+const vipClaimLimitStatus = document.getElementById('vip-claim-limit-status');
+const vipClaimLimitMsg = document.getElementById('vip-claim-limit-msg');
+const vipClaimLimitToggle = document.getElementById('vip-claim-limit-toggle');
 const svipPriceMonthInput = document.getElementById('svip-price-month');
 const svipPriceQuarterInput = document.getElementById('svip-price-quarter');
 const svipPriceYearInput = document.getElementById('svip-price-year');
@@ -2920,6 +2923,7 @@ async function login() {
       showDashboard();
       await refreshUsers();
       await refreshVipSelfClaimStatus();
+      await refreshVipClaimLimitStatus();
       await loadSvipSettings();
       await loadFirstRechargeSettings();
       await loadInviteRewardSettings();
@@ -4359,6 +4363,29 @@ async function toggleVipSelfClaim(enabled) {
     await refreshVipSelfClaimStatus();
   } catch (err) {
     vipSelfClaimMsg.textContent = err.message;
+  }
+}
+
+async function refreshVipClaimLimitStatus() {
+  try {
+    const data = await api('/admin/vip/claim-limit-status', 'GET');
+    vipClaimLimitStatus.textContent = data.enabled ? '已限制（每个角色只能领取一次）' : '未限制（可重复领取）';
+    vipClaimLimitStatus.style.color = data.enabled ? 'orange' : 'green';
+    if (vipClaimLimitToggle) vipClaimLimitToggle.checked = data.enabled === true;
+  } catch (err) {
+    vipClaimLimitStatus.textContent = '加载失败';
+  }
+}
+
+async function toggleVipClaimLimit(enabled) {
+  vipClaimLimitMsg.textContent = '';
+  try {
+    await api('/admin/vip/claim-limit-toggle', 'POST', { enabled });
+    vipClaimLimitMsg.textContent = enabled ? '已限制每个角色只能领取一次VIP' : '已取消限制，角色可重复领取VIP';
+    vipClaimLimitMsg.style.color = enabled ? 'orange' : 'green';
+    await refreshVipClaimLimitStatus();
+  } catch (err) {
+    vipClaimLimitMsg.textContent = err.message;
   }
 }
 
@@ -7546,6 +7573,7 @@ async function initDashboard() {
       showDashboard();
       refreshUsers();
       refreshVipSelfClaimStatus();
+      refreshVipClaimLimitStatus();
       loadSvipSettings();
       refreshStateThrottleStatus();
     refreshRoomVariantStatus();
@@ -8084,6 +8112,9 @@ if (rechargeCodesNext) {
 }
 if (vipSelfClaimToggle) {
   vipSelfClaimToggle.addEventListener('change', () => toggleVipSelfClaim(vipSelfClaimToggle.checked));
+}
+if (vipClaimLimitToggle) {
+  vipClaimLimitToggle.addEventListener('change', () => toggleVipClaimLimit(vipClaimLimitToggle.checked));
 }
 if (svipSaveBtn) {
   svipSaveBtn.addEventListener('click', saveSvipSettings);

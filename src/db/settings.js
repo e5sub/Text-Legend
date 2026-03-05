@@ -330,10 +330,31 @@ export async function incrementCharacterVipClaimCount(characterName) {
 }
 
 /**
- * 获取角色是否可以领取VIP激活码（不限制角色领取次数）
+ * 获取是否限制VIP领取次数（每个角色只能领取一次）
+ */
+export async function getVipClaimLimitEnabled() {
+  const enabled = await getSetting('vip_claim_limit_enabled', 'false');
+  return enabled === 'true' || enabled === '1';
+}
+
+/**
+ * 设置是否限制VIP领取次数
+ */
+export async function setVipClaimLimitEnabled(enabled) {
+  await setSetting('vip_claim_limit_enabled', enabled ? 'true' : 'false');
+}
+
+/**
+ * 获取角色是否可以领取VIP激活码
+ * 根据 vip_claim_limit_enabled 设置决定是否限制次数
  */
 export async function canUserClaimVip(characterName) {
-  return true;
+  const limitEnabled = await getVipClaimLimitEnabled();
+  if (!limitEnabled) {
+    return true;
+  }
+  const count = await getCharacterVipClaimCount(characterName);
+  return count === 0;
 }
 
 // 世界BOSS设置
