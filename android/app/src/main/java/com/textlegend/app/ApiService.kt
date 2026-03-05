@@ -38,10 +38,11 @@ class ApiService(private val json: Json) {
         }
     }
 
-    suspend fun register(baseUrl: String, username: String, password: String, captchaToken: String, captchaCode: String) {
+    suspend fun register(baseUrl: String, username: String, password: String, email: String, captchaToken: String, captchaCode: String) {
         val payload = mapOf(
             "username" to username,
             "password" to password,
+            "email" to email,
             "captchaToken" to captchaToken,
             "captchaCode" to captchaCode
         )
@@ -73,6 +74,22 @@ class ApiService(private val json: Json) {
             "newPassword" to newPassword
         )
         post(baseUrl, "/api/password", payload)
+    }
+
+    suspend fun requestPasswordReset(baseUrl: String, email: String): PasswordResetRequestResponse {
+        val payload = mapOf(
+            "email" to email
+        )
+        return post(baseUrl, "/api/password-reset/request", payload, PasswordResetRequestResponse.serializer())
+    }
+
+    suspend fun confirmPasswordReset(baseUrl: String, email: String, code: String, newPassword: String): PasswordResetConfirmResponse {
+        val payload = mapOf(
+            "email" to email,
+            "code" to code,
+            "newPassword" to newPassword
+        )
+        return post(baseUrl, "/api/password-reset/reset", payload, PasswordResetConfirmResponse.serializer())
     }
 
     suspend fun createCharacter(baseUrl: String, token: String, name: String, classId: String, realmId: Int) {

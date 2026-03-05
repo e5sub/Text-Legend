@@ -178,14 +178,46 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun register(username: String, password: String, captchaToken: String, captchaCode: String) {
+    fun register(username: String, password: String, email: String, captchaToken: String, captchaCode: String) {
         viewModelScope.launch {
             _loginMessage.value = null
             runCatching {
-                api.register(serverUrl.value, username, password, captchaToken, captchaCode)
+                api.register(serverUrl.value, username, password, email, captchaToken, captchaCode)
                 _loginMessage.value = "注册成功，请登录"
             }.onFailure { err ->
                 _loginMessage.value = err.message ?: "注册失败"
+            }
+        }
+    }
+
+    fun requestPasswordReset(email: String) {
+        viewModelScope.launch {
+            _loginMessage.value = null
+            runCatching {
+                val response = api.requestPasswordReset(serverUrl.value, email)
+                if (response.ok) {
+                    _loginMessage.value = "重置链接已发送到邮箱，请查收"
+                } else {
+                    _loginMessage.value = response.error ?: "发送失败"
+                }
+            }.onFailure { err ->
+                _loginMessage.value = err.message ?: "发送失败"
+            }
+        }
+    }
+
+    fun confirmPasswordReset(email: String, code: String, newPassword: String) {
+        viewModelScope.launch {
+            _loginMessage.value = null
+            runCatching {
+                val response = api.confirmPasswordReset(serverUrl.value, email, code, newPassword)
+                if (response.ok) {
+                    _loginMessage.value = "密码重置成功，请登录"
+                } else {
+                    _loginMessage.value = response.error ?: "重置失败"
+                }
+            }.onFailure { err ->
+                _loginMessage.value = err.message ?: "重置失败"
             }
         }
     }

@@ -871,3 +871,15 @@ data class ActivityDivineBeastExchangeItem(
     val name: String = "",
     val cost: Int = 0
 )
+
+@Serializable
+data class PasswordResetRequestResponse(
+    val ok: Boolean = false,
+    val error: String? = null
+)
+
+@Serializable
+data class PasswordResetConfirmResponse(
+    val ok: Boolean = false,
+    val error: String? = null
+)

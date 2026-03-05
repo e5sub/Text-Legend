@@ -97,7 +97,11 @@ fun AuthScreen(vm: GameViewModel, onServerClick: () -> Unit, onAuthed: () -> Uni
     var tabIndex by remember { mutableStateOf(0) }
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
     var captchaCode by remember { mutableStateOf("") }
+    var resetCode by remember { mutableStateOf("") }
+    var newPassword by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         vm.loadRealms()
@@ -120,72 +124,190 @@ fun AuthScreen(vm: GameViewModel, onServerClick: () -> Unit, onAuthed: () -> Uni
         TabRow(selectedTabIndex = tabIndex) {
             Tab(selected = tabIndex == 0, onClick = { tabIndex = 0 }, text = { Text("登录") })
             Tab(selected = tabIndex == 1, onClick = { tabIndex = 1 }, text = { Text("注册") })
+            Tab(selected = tabIndex == 2, onClick = { tabIndex = 2 }, text = { Text("找回密码") })
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        OutlinedTextField(value = username, onValueChange = { username = it }, label = { Text("账号") }, modifier = Modifier.fillMaxWidth())
-        Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("密码") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
-        )
+        when (tabIndex) {
+            0 -> {
+                // 登录表单
+                OutlinedTextField(value = username, onValueChange = { username = it }, label = { Text("账号") }, modifier = Modifier.fillMaxWidth())
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("密码") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(
-                value = captchaCode,
-                onValueChange = { captchaCode = it },
-                label = { Text("验证码") },
-                modifier = Modifier.weight(1f)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            val bitmap = remember(captcha?.svg) { captcha?.svg?.let { svgToImageBitmap(it) } }
-            if (bitmap != null) {
-                Box(
-                    modifier = Modifier
-                        .height(64.dp)
-                        .width(200.dp)
-                        .clickable { vm.refreshCaptcha() }
-                ) {
-                    androidx.compose.foundation.Image(
-                        bitmap = bitmap,
-                        contentDescription = "captcha",
-                        modifier = Modifier.fillMaxSize()
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = captchaCode,
+                        onValueChange = { captchaCode = it },
+                        label = { Text("验证码") },
+                        modifier = Modifier.weight(1f)
                     )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    val bitmap = remember(captcha?.svg) { captcha?.svg?.let { svgToImageBitmap(it) } }
+                    if (bitmap != null) {
+                        Box(
+                            modifier = Modifier
+                                .height(64.dp)
+                                .width(200.dp)
+                                .clickable { vm.refreshCaptcha() }
+                        ) {
+                            androidx.compose.foundation.Image(
+                                bitmap = bitmap,
+                                contentDescription = "captcha",
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .height(64.dp)
+                                .width(200.dp)
+                                .background(Color(0xFFEDEDED))
+                                .clickable { vm.refreshCaptcha() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("刷新")
+                        }
+                    }
                 }
-            } else {
-                Box(
-                    modifier = Modifier
-                        .height(64.dp)
-                        .width(200.dp)
-                        .background(Color(0xFFEDEDED))
-                        .clickable { vm.refreshCaptcha() },
-                    contentAlignment = Alignment.Center
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Button(
+                    onClick = {
+                        val token = captcha?.token.orEmpty()
+                        vm.login(username, password, token, captchaCode, onAuthed)
+                    },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("刷新")
+                    Text("登录")
                 }
             }
-        }
+            1 -> {
+                // 注册表单
+                OutlinedTextField(value = username, onValueChange = { username = it }, label = { Text("账号") }, modifier = Modifier.fillMaxWidth())
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("密码") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("邮箱（可选）") }, modifier = Modifier.fillMaxWidth())
+                Spacer(modifier = Modifier.height(8.dp))
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Button(
-            onClick = {
-                val token = captcha?.token.orEmpty()
-                if (tabIndex == 0) {
-                    vm.login(username, password, token, captchaCode, onAuthed)
-                } else {
-                    vm.register(username, password, token, captchaCode)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = captchaCode,
+                        onValueChange = { captchaCode = it },
+                        label = { Text("验证码") },
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    val bitmap = remember(captcha?.svg) { captcha?.svg?.let { svgToImageBitmap(it) } }
+                    if (bitmap != null) {
+                        Box(
+                            modifier = Modifier
+                                .height(64.dp)
+                                .width(200.dp)
+                                .clickable { vm.refreshCaptcha() }
+                        ) {
+                            androidx.compose.foundation.Image(
+                                bitmap = bitmap,
+                                contentDescription = "captcha",
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .height(64.dp)
+                                .width(200.dp)
+                                .background(Color(0xFFEDEDED))
+                                .clickable { vm.refreshCaptcha() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("刷新")
+                        }
+                    }
                 }
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(if (tabIndex == 0) "登录" else "注册")
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Button(
+                    onClick = {
+                        val token = captcha?.token.orEmpty()
+                        vm.register(username, password, email, token, captchaCode)
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("注册")
+                }
+            }
+            2 -> {
+                // 找回密码表单
+                OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("邮箱") }, modifier = Modifier.fillMaxWidth())
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = resetCode,
+                    onValueChange = { resetCode = it },
+                    label = { Text("重置代码") },
+                    placeholder = { Text("输入邮件中的6位代码") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = newPassword,
+                    onValueChange = { newPassword = it },
+                    label = { Text("新密码") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it },
+                    label = { Text("确认密码") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Button(
+                    onClick = {
+                        if (newPassword != confirmPassword) {
+                            _loginMessage.value = "两次输入的密码不一致"
+                            return@Button
+                        }
+                        vm.confirmPasswordReset(email, resetCode, newPassword)
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("重置密码")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = {
+                        vm.requestPasswordReset(email)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF757575))
+                ) {
+                    Text("发送重置代码到邮箱")
+                }
+            }
         }
 
         if (!msg.isNullOrBlank()) {
