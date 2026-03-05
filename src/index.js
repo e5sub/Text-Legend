@@ -6022,6 +6022,9 @@ function buildRewardBonusBreakdown(player, party) {
   const treasureExpPct = Math.max(0, Number(player?.flags?.treasureExpBonusPct || 0));
   const cultivationPct = Math.max(0, ((Number(cultivationMult) || 1) - 1) * 100);
   const partyPct = Math.max(0, ((Number(partyMult) || 1) - 1) * 100);
+  const blessingMults = getHarvestBlessingMultipliers(player);
+  const blessingExpPct = Math.max(0, Math.round((blessingMults.expMult - 1) * 100));
+  const blessingGoldPct = Math.max(0, Math.round((blessingMults.goldMult - 1) * 100));
   const expSources = [];
   const goldSources = [];
   if (vipActive) {
@@ -6045,6 +6048,8 @@ function buildRewardBonusBreakdown(player, party) {
     goldSources.push({ key: 'party', label: `队伍(${totalPartyCount}人)`, pct: partyPct });
   }
   if (treasureExpPct > 0) expSources.push({ key: 'treasure', label: '法宝经验', pct: treasureExpPct });
+  if (blessingExpPct > 0) expSources.push({ key: 'blessing_exp', label: '经验丰收', pct: blessingExpPct });
+  if (blessingGoldPct > 0) goldSources.push({ key: 'blessing_gold', label: '金币丰收', pct: blessingGoldPct });
   const expMult = totalRewardMultiplier({
     vipActive,
     svipActive,
