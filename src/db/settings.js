@@ -330,11 +330,10 @@ export async function incrementCharacterVipClaimCount(characterName) {
 }
 
 /**
- * 获取角色是否可以领取VIP激活码（限制每个角色只能领取一次）
+ * 获取角色是否可以领取VIP激活码（不限制角色领取次数）
  */
 export async function canUserClaimVip(characterName) {
-  const count = await getCharacterVipClaimCount(characterName);
-  return count === 0;
+  return true;
 }
 
 // 世界BOSS设置
