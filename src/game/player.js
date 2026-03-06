@@ -1280,6 +1280,12 @@ export function addItem(player, itemId, qty = 1, effects = null, durability = nu
   if (!player.inventory) player.inventory = [];
   const normalized = normalizeEffects(effects);
   const itemTemplate = ITEM_TEMPLATES[itemId];
+  
+  // 检查物品模板是否存在
+  if (!itemTemplate) {
+    return { ok: false, error: `无效的物品：${itemId}` };
+  }
+  
   const isEquipment = itemTemplate && itemTemplate.slot;
   
   // 装备类型根据耐久度和锻造等级分开存储，不堆叠
@@ -1334,6 +1340,8 @@ export function addItem(player, itemId, qty = 1, effects = null, durability = nu
       player.inventory.push(item);
     }
   }
+  
+  return { ok: true };
 }
 
 
