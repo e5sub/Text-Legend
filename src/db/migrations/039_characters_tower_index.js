@@ -25,9 +25,9 @@ export async function up(knex) {
     }
 
     try {
-      // 创建复合索引：realm_id + has_tower_data，覆盖排行榜查询
+      // 创建复合索引：realm_id + has_tower_data（不包含 flags_json，因为 TEXT 不能索引）
       await knex.schema.alterTable('characters', (t) => {
-        t.index(['realm_id', 'has_tower_data', 'name', 'class', 'level', 'flags_json'], 'idx_characters_tower_ranking');
+        t.index(['realm_id', 'has_tower_data', 'name', 'class', 'level'], 'idx_characters_tower_ranking');
       });
     } catch {
       // 索引可能已存在
