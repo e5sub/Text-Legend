@@ -861,6 +861,21 @@ export async function setPetTrainingFruitDropRate(rate) {
   await setSetting('pet_training_fruit_drop_rate', String(normalized));
 }
 
+/**
+ * 获取缓存怪物血量开关
+ */
+export async function getCacheMonsterHealthEnabled() {
+  const enabled = await getSetting('cache_monster_health_enabled', 'true');
+  return enabled === 'true' || enabled === '1';
+}
+
+/**
+ * 设置缓存怪物血量开关
+ */
+export async function setCacheMonsterHealthEnabled(enabled) {
+  await setSetting('cache_monster_health_enabled', enabled ? 'true' : 'false');
+}
+
 // 特效装备掉落配置
 export async function getEffectDropSingleChance() {
   const value = await getSetting('effect_drop_single_chance', '0.009');

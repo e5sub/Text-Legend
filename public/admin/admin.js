@@ -77,6 +77,7 @@ const collapseAllBtn = document.getElementById('collapse-all');
 
 const stateThrottleToggle = document.getElementById('state-throttle-toggle');
 const stateThrottleOverrideAllowedToggle = document.getElementById('state-throttle-override-allowed');
+const cacheMonsterHealthToggle = document.getElementById('cache-monster-health-toggle');
 const stateThrottleIntervalInput = document.getElementById('state-throttle-interval');
 const stateThrottleSaveBtn = document.getElementById('state-throttle-save');
 const stateThrottleStatus = document.getElementById('state-throttle-status');
@@ -4597,6 +4598,9 @@ async function refreshStateThrottleStatus() {
     if (stateThrottleOverrideAllowedToggle) {
       stateThrottleOverrideAllowedToggle.checked = data.overrideServerAllowed === true;
     }
+    if (cacheMonsterHealthToggle) {
+      cacheMonsterHealthToggle.checked = data.cacheMonsterHealth !== false;
+    }
   } catch (err) {
     stateThrottleStatus.textContent = '加载失败';
   }
@@ -4927,7 +4931,8 @@ async function toggleStateThrottle(enabled) {
   try {
     const intervalSec = stateThrottleIntervalInput ? Number(stateThrottleIntervalInput.value || 10) : undefined;
     const overrideServerAllowed = stateThrottleOverrideAllowedToggle ? stateThrottleOverrideAllowedToggle.checked : undefined;
-    await api('/admin/state-throttle-toggle', 'POST', { enabled, intervalSec, overrideServerAllowed });
+    const cacheMonsterHealth = cacheMonsterHealthToggle ? cacheMonsterHealthToggle.checked : undefined;
+    await api('/admin/state-throttle-toggle', 'POST', { enabled, intervalSec, overrideServerAllowed, cacheMonsterHealth });
     stateThrottleMsg.textContent = enabled ? '状态刷新节流已开启' : '状态刷新节流已关闭';
     await refreshStateThrottleStatus();
   } catch (err) {
@@ -5002,7 +5007,8 @@ async function saveStateThrottleInterval() {
       throw new Error('请输入有效秒数');
     }
     const overrideServerAllowed = stateThrottleOverrideAllowedToggle ? stateThrottleOverrideAllowedToggle.checked : undefined;
-    await api('/admin/state-throttle-toggle', 'POST', { enabled: stateThrottleToggle?.checked === true, intervalSec, overrideServerAllowed });
+    const cacheMonsterHealth = cacheMonsterHealthToggle ? cacheMonsterHealthToggle.checked : undefined;
+    await api('/admin/state-throttle-toggle', 'POST', { enabled: stateThrottleToggle?.checked === true, intervalSec, overrideServerAllowed, cacheMonsterHealth });
     stateThrottleMsg.textContent = '节流秒数已保存';
     await refreshStateThrottleStatus();
   } catch (err) {
@@ -8147,6 +8153,11 @@ if (stateThrottleToggle) {
 }
 if (stateThrottleOverrideAllowedToggle) {
   stateThrottleOverrideAllowedToggle.addEventListener('change', () => {
+    toggleStateThrottle(stateThrottleToggle?.checked === true);
+  });
+}
+if (cacheMonsterHealthToggle) {
+  cacheMonsterHealthToggle.addEventListener('change', () => {
     toggleStateThrottle(stateThrottleToggle?.checked === true);
   });
 }
