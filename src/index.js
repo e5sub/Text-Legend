@@ -10602,6 +10602,7 @@ let stateThrottleOverrideAllowedLastUpdate = 0;
 let lootLogEnabled = false;
 const dailyLuckyCache = new Map();
 const zhuxianTowerRankCache = new Map();
+const zhuxianTowerRankPending = new Map(); // 防止并发查询的锁
 const stateThrottleLastSent = new Map();
 const stateThrottleLastExits = new Map();
 const stateThrottleLastRoom = new Map();
@@ -10700,12 +10701,22 @@ async function getZhuxianTowerRankTop10Cached(realmId) {
   if (cached && now - cached.at < ZHUXIAN_TOWER_RANK_CACHE_TTL) {
     return cached.value;
   }
-  // 优化：使用生成列 has_tower_data 快速过滤有诛仙塔数据的角色
-  // 索引 idx_characters_tower_ranking 覆盖此查询，避免回表
-  const rows = await knex('characters')
-    .select('name', 'class', 'level', 'flags_json')
-    .where({ realm_id: realmId, has_tower_data: 1 })
-    .limit(5000); // 限制最大查询数量
+
+  // 防止缓存击穿：如果已有请求在查询，等待其结果
+  const pending = zhuxianTowerRankPending.get(realmId);
+  if (pending) {
+    return pending;
+  }
+
+  // 创建新的查询 Promise，让其他并发请求可以共享结果
+  const queryPromise = (async () => {
+    try {
+      // 优化：使用生成列 has_tower_data 快速过滤有诛仙塔数据的角色
+      // 索引 idx_characters_tower_ranking 覆盖此查询，避免回表
+      const rows = await knex('characters')
+        .select('name', 'class', 'level', 'flags_json')
+        .where({ realm_id: realmId, has_tower_data: 1 })
+        .limit(5000); // 限制最大查询数量
   const ranked = rows
     .map((row) => {
       let flags = null;
@@ -10736,8 +10747,18 @@ async function getZhuxianTowerRankTop10Cached(realmId) {
       level: entry.level,
       floor: entry.floor
     }));
-  zhuxianTowerRankCache.set(realmId, { at: now, value: ranked });
-  return ranked;
+      zhuxianTowerRankCache.set(realmId, { at: now, value: ranked });
+      return ranked;
+    } catch (err) {
+      console.error(`[TowerRank] 查询排行榜失败 realmId=${realmId}:`, err);
+      throw err;
+    } finally {
+      zhuxianTowerRankPending.delete(realmId);
+    }
+  })();
+
+  zhuxianTowerRankPending.set(realmId, queryPromise);
+  return queryPromise;
 }
 
 function logLoot(message) {
