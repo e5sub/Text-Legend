@@ -6514,13 +6514,10 @@ function getPersonalBossDropCap(zoneId, roomId) {
 }
 
 async function syncZhuxianTowerTopTitleForRealm(realmId) {
-  // 优化：只查询有 flags_json 的角色，减少全表扫描
+  // 优化：使用生成列 has_tower_data 快速过滤
   const rows = await knex('characters')
     .select('id', 'name', 'flags_json')
-    .where({ realm_id: realmId })
-    .whereNotNull('flags_json')
-    .where('flags_json', '!=', '{}')
-    .where('flags_json', '!=', 'null')
+    .where({ realm_id: realmId, has_tower_data: 1 })
     .limit(5000);
   if (!rows || rows.length === 0) return null;
 
@@ -10669,14 +10666,11 @@ async function getZhuxianTowerRankTop10Cached(realmId) {
   if (cached && now - cached.at < ZHUXIAN_TOWER_RANK_CACHE_TTL) {
     return cached.value;
   }
-  // 优化：只查询有 flags_json 的角色（减少全表扫描）
-  // 同时限制最大查询数量，避免大数据量时过慢
+  // 优化：使用生成列 has_tower_data 快速过滤有诛仙塔数据的角色
+  // 索引 idx_characters_tower_ranking 覆盖此查询，避免回表
   const rows = await knex('characters')
     .select('name', 'class', 'level', 'flags_json')
-    .where({ realm_id: realmId })
-    .whereNotNull('flags_json')
-    .where('flags_json', '!=', '{}')
-    .where('flags_json', '!=', 'null')
+    .where({ realm_id: realmId, has_tower_data: 1 })
     .limit(5000); // 限制最大查询数量
   const ranked = rows
     .map((row) => {
