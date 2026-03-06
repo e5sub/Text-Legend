@@ -10606,10 +10606,15 @@ function getDisplayTitle(player) {
 }
 
 function getStateThrottleKey(player, socket = null) {
+  // 使用稳定的用户ID作为key，避免同一个玩家产生多个key导致Map泄漏
   if (player) {
-    return player.userId || player.name || player.socket?.id || socket?.id || null;
+    const uid = player.userId || player.id;
+    if (uid) return String(uid);
   }
-  return socket?.id || null;
+  // 备用：使用socket.id（仅用于未登录状态）
+  const sid = player?.socket?.id || socket?.id;
+  if (sid) return `sock:${sid}`;
+  return null;
 }
 
 async function getStateThrottleSettingsCached() {
