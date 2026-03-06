@@ -6514,9 +6514,14 @@ function getPersonalBossDropCap(zoneId, roomId) {
 }
 
 async function syncZhuxianTowerTopTitleForRealm(realmId) {
+  // 优化：只查询有 flags_json 的角色，减少全表扫描
   const rows = await knex('characters')
     .select('id', 'name', 'flags_json')
-    .where({ realm_id: realmId });
+    .where({ realm_id: realmId })
+    .whereNotNull('flags_json')
+    .where('flags_json', '!=', '{}')
+    .where('flags_json', '!=', 'null')
+    .limit(5000);
   if (!rows || rows.length === 0) return null;
 
   const parsed = rows.map((row) => {
@@ -6554,10 +6559,11 @@ async function syncZhuxianTowerTopTitleForRealm(realmId) {
     updates.push({ id: entry.id, flagsJson: JSON.stringify(entry.flags), name: entry.name, gained: shouldHave });
   });
 
+  // 批量更新改为串行执行，减少数据库并发压力
   if (updates.length > 0) {
-    await Promise.all(
-      updates.map((u) => knex('characters').where({ id: u.id }).update({ flags_json: u.flagsJson, updated_at: knex.fn.now() }))
-    );
+    for (const u of updates) {
+      await knex('characters').where({ id: u.id }).update({ flags_json: u.flagsJson, updated_at: knex.fn.now() });
+    }
   }
 
   updates.forEach((u) => {
@@ -7501,9 +7507,12 @@ async function savePlayer(player, options = {}) {
 async function recoverManagedHostedPlayersOnStartup() {
   let recovered = 0;
   let skipped = 0;
+  // 优化：只查询可能有托管标记的角色（flags_json 包含 managed 关键字）
   const rows = await knex('characters')
     .select('user_id', 'name', 'realm_id', 'flags_json')
-    .orderBy('id', 'asc');
+    .where('flags_json', 'like', '%managed%')
+    .orderBy('id', 'asc')
+    .limit(10000);
   for (const row of rows) {
     let flags = {};
     try {
@@ -10553,7 +10562,7 @@ const STATE_STATIC_AUX_TTL = 30000;
 const VIP_SELF_CLAIM_CACHE_TTL = 10000; // VIP自领缓存10秒
 const STATE_THROTTLE_CACHE_TTL = 10000; // 状态节流缓存10秒
 const DAILY_LUCKY_CACHE_TTL = 30000; // 每日幸运玩家缓存30秒
-const ZHUXIAN_TOWER_RANK_CACHE_TTL = 30000; // 浮图塔排行榜缓存30秒
+const ZHUXIAN_TOWER_RANK_CACHE_TTL = 300000; // 浮图塔排行榜缓存5分钟，减少数据库压力
 let vipSelfClaimCachedValue = null;
 let vipSelfClaimLastUpdate = 0;
 let svipSettingsCache = { prices: { month: 100, quarter: 260, year: 900, permanent: 3000 }, at: 0 };
@@ -10660,9 +10669,15 @@ async function getZhuxianTowerRankTop10Cached(realmId) {
   if (cached && now - cached.at < ZHUXIAN_TOWER_RANK_CACHE_TTL) {
     return cached.value;
   }
+  // 优化：只查询有 flags_json 的角色（减少全表扫描）
+  // 同时限制最大查询数量，避免大数据量时过慢
   const rows = await knex('characters')
     .select('name', 'class', 'level', 'flags_json')
-    .where({ realm_id: realmId });
+    .where({ realm_id: realmId })
+    .whereNotNull('flags_json')
+    .where('flags_json', '!=', '{}')
+    .where('flags_json', '!=', 'null')
+    .limit(5000); // 限制最大查询数量
   const ranked = rows
     .map((row) => {
       let flags = null;
