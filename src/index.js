@@ -5386,6 +5386,7 @@ let realmCache = [];
 // 房间玩家列表缓存
 const roomPlayersCache = new Map();
 const ROOM_PLAYERS_CACHE_TTL = 500; // 500ms缓存
+const ROOM_PLAYERS_CACHE_MAX_SIZE = 1000; // LRU 限制：最多保留1000个房间
 // 玩家状态缓存（用于减少buildState计算量）
 const playerStateCache = new WeakMap();
 const PLAYER_STATE_CACHE_TTL = 100; // 100ms缓存
@@ -5440,6 +5441,7 @@ function getCachedRoomPlayers(realmId, zoneId, roomId) {
       pk: p.pk || 0
     }));
   roomPlayersCache.set(cacheKey, { at: now, data: players });
+  ensureMapSizeLimit(roomPlayersCache, ROOM_PLAYERS_CACHE_MAX_SIZE);
   return players;
 }
 let runtimeMobRowsCacheAt = 0;
@@ -10561,6 +10563,19 @@ function transferOneEquipmentChance(from, to, chance) {
 const roomStateCache = new Map();
 const roomStateDataCache = new Map();
 const roomStatePatchMetaCache = new Map();
+const ROOM_STATE_CACHE_MAX_SIZE = 2000; // LRU 限制：最多保留2000个房间状态
+
+// LRU 清理：当 Map 超过大小时，删除最老的条目
+function ensureMapSizeLimit(map, maxSize) {
+  if (map.size <= maxSize) return;
+  const keysToDelete = map.size - maxSize;
+  let deleted = 0;
+  for (const key of map.keys()) {
+    if (deleted >= keysToDelete) break;
+    map.delete(key);
+    deleted++;
+  }
+}
 let roomStateLastUpdate = 0;
 let roomStateCachedData = null;
 const ROOM_STATE_TTL = 100; // 100ms缓存时间
@@ -10981,6 +10996,7 @@ function getRoomCommonState(zoneId, roomId, realmId = 1) {
     bossNextRespawn
   };
   roomStateDataCache.set(cacheKey, { at: now, data });
+  ensureMapSizeLimit(roomStateDataCache, ROOM_STATE_CACHE_MAX_SIZE);
   return data;
 }
 
