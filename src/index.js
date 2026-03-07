@@ -5947,6 +5947,8 @@ function getMobPersistStatus(status) {
 
 function shouldPersistMobTemplate(mobTemplate) {
   const templateId = String(mobTemplate?.id || '');
+  // 浮图塔BOSS不缓存（每个玩家独立，数量过多）
+  if (templateId === 'zxft_boss') return false;
   return Boolean(
     mobTemplate
     && (
