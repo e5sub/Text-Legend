@@ -157,7 +157,7 @@ import {
 import { MOB_TEMPLATES } from './game/mobs.js';
 import { ITEM_TEMPLATES, SHOP_STOCKS } from './game/items.js';
 import { WORLD, expandRoomVariants, shrinkRoomVariants, ensureZhuxianTowerRoom, ensurePersonalBossRoom } from './game/world.js';
-import { getRoomMobs, getAliveMobs, spawnMobs, removeMob, seedRespawnCache, appendRespawnCache, setRespawnStore, getAllAliveMobs, incrementWorldBossKills, setWorldBossKillCount as setWorldBossKillCountState, incrementSpecialBossKills, setSpecialBossKillCount as setSpecialBossKillCountState, incrementCultivationBossKills, setCultivationBossKillCount as setCultivationBossKillCountState } from './game/state.js';
+import { getRoomMobs, getAliveMobs, spawnMobs, removeMob, seedRespawnCache, appendRespawnCache, setRespawnStore, getAllAliveMobs, getSpecialBossRooms, incrementWorldBossKills, setWorldBossKillCount as setWorldBossKillCountState, incrementSpecialBossKills, setSpecialBossKillCount as setSpecialBossKillCountState, incrementCultivationBossKills, setCultivationBossKillCount as setCultivationBossKillCountState } from './game/state.js';
 import { calcHitChance, calcDamage, applyDamage, applyHealing, applyPoison, tickStatus, getDefenseMultiplier, consumeFirestrikeCrit } from './game/combat.js';
 import { randInt, clamp } from './game/utils.js';
 import { expForLevel, ROOM_VARIANT_COUNT, setRoomVariantCount as applyRoomVariantCount } from './game/constants.js';
@@ -18566,81 +18566,97 @@ async function processMobDeath(player, mob, online) {
   }
 }
 
+function getPlayerRoomKey(p) {
+  const zoneId = p?.position?.zone;
+  const roomId = p?.position?.room;
+  if (!zoneId || !roomId) return null;
+  const effectiveRealmId = getRoomRealmId(zoneId, roomId, p.realmId || 1);
+  return `${effectiveRealmId}:${zoneId}:${roomId}`;
+}
+
 function updateSpecialBossStatsBasedOnPlayers() {
-  const realmIds = Array.from(new Set([0, 1, ...realmStates.keys()]));
+  // 1. 只统计一次所有房间人数
+  const roomPlayerCount = new Map();
+  for (const p of players.values()) {
+    const key = getPlayerRoomKey(p);
+    if (!key) continue;
+    roomPlayerCount.set(key, (roomPlayerCount.get(key) || 0) + 1);
+  }
 
-  realmIds.forEach((realmId) => {
-    Object.keys(WORLD).forEach((zoneId) => {
-      const zone = WORLD[zoneId];
-      if (!zone?.rooms) return;
+  // 2. 配置只读取一次
+  const worldBossConfig = getWorldBossPlayerBonusConfigSync();
+  const cultivationBossConfig = getCultivationBossPlayerBonusConfigSync();
+  const specialBossConfig = getSpecialBossPlayerBonusConfigSync();
 
-      Object.keys(zone.rooms).forEach((roomId) => {
-        const effectiveRealmId = getRoomRealmId(zoneId, roomId, realmId);
-        const online = listOnlinePlayers(effectiveRealmId);
-        const roomMobs = getAliveMobs(zoneId, roomId, effectiveRealmId);
-        const specialBoss = roomMobs.find((m) => {
-          const tpl = MOB_TEMPLATES[m.templateId];
-          return tpl && (tpl.specialBoss || isCultivationBoss(tpl));
-        });
+  // 3. 只遍历有特殊BOSS的房间（使用索引，避免扫描全世界）
+  const specialBossRooms = getSpecialBossRooms();
+  for (const roomKey of specialBossRooms) {
+    const [realmIdStr, zoneId, roomId] = roomKey.split(':');
+    const realmId = Number(realmIdStr) || 1;
+    const effectiveRealmId = getRoomRealmId(zoneId, roomId, realmId);
 
-        if (!specialBoss) return;
+    // 如果effectiveRealmId不同，重新计算roomKey
+    const effectiveRoomKey = `${effectiveRealmId}:${zoneId}:${roomId}`;
 
-        const playersInRoom = online.filter(
-          (p) => p.position.zone === zoneId && p.position.room === roomId
-        ).length;
-
-        const tpl = MOB_TEMPLATES[specialBoss.templateId];
-
-        // 始终从模板读取基础属性，避免重复叠加
-        const scalingBaseStats = specialBoss.status?.scalingBaseStats || specialBoss.status?.baseStats || null;
-        const baseAtk = scalingBaseStats?.atk ?? tpl.atk ?? 0;
-        const baseDef = scalingBaseStats?.def ?? tpl.def ?? 0;
-        const baseMdef = scalingBaseStats?.mdef ?? tpl.mdef ?? 0;
-        const baseMaxHp = scalingBaseStats?.max_hp ?? tpl.hp ?? 0;
-
-        // 根据BOSS类型选择配置
-        const isWorldBoss = specialBoss.templateId === 'world_boss';
-        const isCultivation = isCultivationBoss(tpl);
-        const playerBonusConfig = isWorldBoss
-          ? getWorldBossPlayerBonusConfigSync()
-          : (isCultivation ? getCultivationBossPlayerBonusConfigSync() : getSpecialBossPlayerBonusConfigSync());
-
-        // 找到适用的人数加成配置（取最大满足档位）
-        const bonusConfig = pickPlayerBonusConfig(playerBonusConfig, playersInRoom);
-        const atkBonus = bonusConfig ? (bonusConfig.atk || 0) : 0;
-        const defBonus = bonusConfig ? (bonusConfig.def || 0) : 0;
-        const mdefBonus = bonusConfig ? (bonusConfig.mdef || 0) : 0;
-        const hpBonus = bonusConfig ? (bonusConfig.hp || 0) : 0;
-
-        // 应用加成（基于基础属性计算，避免重复叠加）
-        specialBoss.atk = Math.floor(baseAtk + atkBonus);
-        specialBoss.def = Math.floor(baseDef + defBonus);
-        specialBoss.mdef = Math.floor(baseMdef + mdefBonus);
-
-        // 更新baseStats
-        if (!specialBoss.status) specialBoss.status = {};
-        specialBoss.status.baseStats = {
-          max_hp: baseMaxHp,
-          atk: specialBoss.atk,
-          def: specialBoss.def,
-          mdef: specialBoss.mdef
-        };
-        if (!specialBoss.status.scalingBaseStats) {
-          specialBoss.status.scalingBaseStats = {
-            max_hp: Math.floor(baseMaxHp),
-            atk: Math.floor(baseAtk),
-            def: Math.floor(baseDef),
-            mdef: Math.floor(baseMdef)
-          };
-        }
-
-        // 如果有HP加成，应用到max_hp
-        specialBoss.max_hp = Math.floor(baseMaxHp + hpBonus);
-        specialBoss.hp = Math.min(specialBoss.hp, specialBoss.max_hp);
-        specialBoss.status.baseStats.max_hp = specialBoss.max_hp;
-      });
+    const roomMobs = getAliveMobs(zoneId, roomId, effectiveRealmId);
+    const specialBoss = roomMobs.find((m) => {
+      const tpl = MOB_TEMPLATES[m.templateId];
+      return tpl && (tpl.specialBoss || isCultivationBoss(tpl));
     });
-  });
+
+    if (!specialBoss) continue;
+
+    const playersInRoom = roomPlayerCount.get(effectiveRoomKey) || 0;
+
+    const tpl = MOB_TEMPLATES[specialBoss.templateId];
+    if (!tpl) continue;
+
+    const scalingBaseStats =
+      specialBoss.status?.scalingBaseStats ||
+      specialBoss.status?.baseStats ||
+      null;
+
+    const baseAtk = scalingBaseStats?.atk ?? tpl.atk ?? 0;
+    const baseDef = scalingBaseStats?.def ?? tpl.def ?? 0;
+    const baseMdef = scalingBaseStats?.mdef ?? tpl.mdef ?? 0;
+    const baseMaxHp = scalingBaseStats?.max_hp ?? tpl.hp ?? 0;
+
+    const isWorldBoss = specialBoss.templateId === 'world_boss';
+    const isCultivation = isCultivationBoss(tpl);
+
+    const playerBonusConfig = isWorldBoss
+      ? worldBossConfig
+      : (isCultivation ? cultivationBossConfig : specialBossConfig);
+
+    const bonusConfig = pickPlayerBonusConfig(playerBonusConfig, playersInRoom);
+    const atkBonus = bonusConfig ? (bonusConfig.atk || 0) : 0;
+    const defBonus = bonusConfig ? (bonusConfig.def || 0) : 0;
+    const mdefBonus = bonusConfig ? (bonusConfig.mdef || 0) : 0;
+    const hpBonus = bonusConfig ? (bonusConfig.hp || 0) : 0;
+
+    specialBoss.atk = Math.floor(baseAtk + atkBonus);
+    specialBoss.def = Math.floor(baseDef + defBonus);
+    specialBoss.mdef = Math.floor(baseMdef + mdefBonus);
+    specialBoss.max_hp = Math.floor(baseMaxHp + hpBonus);
+    specialBoss.hp = Math.min(specialBoss.hp, specialBoss.max_hp);
+
+    if (!specialBoss.status) specialBoss.status = {};
+    specialBoss.status.baseStats = {
+      max_hp: specialBoss.max_hp,
+      atk: specialBoss.atk,
+      def: specialBoss.def,
+      mdef: specialBoss.mdef
+    };
+
+    if (!specialBoss.status.scalingBaseStats) {
+      specialBoss.status.scalingBaseStats = {
+        max_hp: Math.floor(baseMaxHp),
+        atk: Math.floor(baseAtk),
+        def: Math.floor(baseDef),
+        mdef: Math.floor(baseMdef)
+      };
+    }
+  }
 }
 
 const COMBAT_STATE_FLUSH_BATCH_SIZE = 24;

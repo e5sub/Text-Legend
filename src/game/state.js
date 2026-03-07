@@ -14,6 +14,49 @@ const MOB_STAT_SCALE = 1.69;
 const MOB_DEF_SCALE = 1.5;
 const BOSS_KILL_GROWTH_STEP = 10;
 
+// 特殊BOSS房间索引 - 用于快速遍历需要做人数缩放的房间
+const specialBossRooms = new Set();
+
+function isSpecialBossForScaling(tpl) {
+  if (!tpl) return false;
+  return Boolean(
+    tpl.specialBoss ||
+    tpl.worldBoss ||
+    (tpl.id && tpl.id.startsWith('cultivation_boss_'))
+  );
+}
+
+function getSpecialBossRoomKey(realmId, zoneId, roomId) {
+  return `${realmId}:${zoneId}:${roomId}`;
+}
+
+export function getSpecialBossRooms() {
+  return Array.from(specialBossRooms);
+}
+
+export function clearSpecialBossRooms() {
+  specialBossRooms.clear();
+}
+
+function addSpecialBossRoom(realmId, zoneId, roomId) {
+  specialBossRooms.add(getSpecialBossRoomKey(realmId, zoneId, roomId));
+}
+
+function removeSpecialBossRoom(realmId, zoneId, roomId) {
+  specialBossRooms.delete(getSpecialBossRoomKey(realmId, zoneId, roomId));
+}
+
+function hasSpecialBossInRoom(realmId, zoneId, roomId) {
+  const mobs = getRoomMobs(zoneId, roomId, realmId);
+  for (const m of mobs) {
+    if (m.hp > 0) {
+      const tpl = MOB_TEMPLATES[m.templateId];
+      if (isSpecialBossForScaling(tpl)) return true;
+    }
+  }
+  return false;
+}
+
 function respawnKey(realmId, zoneId, roomId, slotIndex) {
   return `${realmId}:${zoneId}:${roomId}:${slotIndex}`;
 }
@@ -387,6 +430,20 @@ export function spawnMobs(zoneId, roomId, realmId = 1) {
       }
     }
   });
+
+  // 维护特殊BOSS房间索引
+  const hasSpecialBoss = mobList.some((m) => {
+    if (m.hp <= 0) return false;
+    const tpl = MOB_TEMPLATES[m.templateId];
+    return isSpecialBossForScaling(tpl);
+  });
+  const roomKey = getSpecialBossRoomKey(realmId, zoneId, roomId);
+  if (hasSpecialBoss) {
+    specialBossRooms.add(roomKey);
+  } else {
+    specialBossRooms.delete(roomKey);
+  }
+
   return mobList;
 }
 
@@ -474,6 +531,19 @@ export function removeMob(zoneId, roomId, mobId, realmId = 1) {
         respawnStore.clear(realmId, zoneId, roomId, mob.slotIndex);
       }
     }
+
+    // 更新特殊BOSS房间索引 - 检查是否还有存活的特殊BOSS
+    if (isSpecialBossForScaling(tpl)) {
+      const stillHasSpecialBoss = mobs.some((m) => {
+        if (m.id === mobId || m.hp <= 0) return false;
+        const t = MOB_TEMPLATES[m.templateId];
+        return isSpecialBossForScaling(t);
+      });
+      if (!stillHasSpecialBoss) {
+        removeSpecialBossRoom(realmId, zoneId, roomId);
+      }
+    }
+
     return mob;
   }
   return null;
