@@ -5414,10 +5414,10 @@ const playerStateCache = new WeakMap();
 const PLAYER_STATE_CACHE_TTL = 100; // 100ms缓存
 const RUNTIME_HEALTH_INTERVAL_MS = 60 * 1000;
 const RUNTIME_CACHE_CLEANUP_COOLDOWN_MS = 15 * 1000;
-const RUNTIME_HEAP_WARN_RATIO = 0.92;
-const RUNTIME_HEAP_CRITICAL_RATIO = 0.96;
-const RUNTIME_LAG_WARN_MS = 180;
-const RUNTIME_LAG_CRITICAL_MS = 320;
+const RUNTIME_HEAP_WARN_RATIO = 0.80;
+const RUNTIME_HEAP_CRITICAL_RATIO = 0.88;
+const RUNTIME_LAG_WARN_MS = 100;
+const RUNTIME_LAG_CRITICAL_MS = 200;
 const RUNTIME_MOB_ROWS_SAMPLE_INTERVAL_MS = 5 * 60 * 1000;
 const RUNTIME_GUARD_HOLD_NORMAL_MS = 2 * 60 * 1000;
 const RUNTIME_GUARD_HOLD_AGGRESSIVE_MS = 4 * 60 * 1000;
@@ -5890,6 +5890,13 @@ function cleanupRuntimeCaches(options = {}) {
     }
   }
 
+  // 限制怪物状态缓存大小
+  if (mobStatePersistCache.size > (aggressive ? 1000 : MOB_STATE_CACHE_MAX_SIZE)) {
+    const beforeSize = mobStatePersistCache.size;
+    trimMobStatePersistCache();
+    result.removed.mobStateCache = beforeSize - mobStatePersistCache.size;
+  }
+
   const roomDataMaxAge = aggressive ? 1000 : 10000;
   const roomMetaMaxAge = aggressive ? 2500 : 20000;
   const roomTickMaxAge = aggressive ? 2500 : 30000;
@@ -5935,6 +5942,17 @@ function cleanupRuntimeCaches(options = {}) {
 
 function getMobPersistCacheKey(mob) {
   return `${mob.realmId || 1}:${mob.zoneId}:${mob.roomId}:${mob.slotIndex}`;
+}
+
+// 限制怪物状态缓存大小，防止内存泄漏
+const MOB_STATE_CACHE_MAX_SIZE = 5000;
+function trimMobStatePersistCache() {
+  if (mobStatePersistCache.size <= MOB_STATE_CACHE_MAX_SIZE) return;
+  // LRU: 删除最老的50%条目
+  const keysToDelete = Array.from(mobStatePersistCache.keys()).slice(0, Math.floor(mobStatePersistCache.size * 0.5));
+  for (const key of keysToDelete) {
+    mobStatePersistCache.delete(key);
+  }
 }
 
 function getMobPersistStatus(status) {
@@ -6046,11 +6064,12 @@ async function logRuntimeHealth(expectedAt = Date.now()) {
   }
   const shouldRunCleanup = now - runtimeCacheCleanupLastAt >= RUNTIME_CACHE_CLEANUP_COOLDOWN_MS;
   if (shouldRunCleanup) {
-    if (aggressive || normal) {
-      cleanupInfo = cleanupRuntimeCaches({ aggressive });
-    } else {
-      cleanupRuntimeCaches({ aggressive: false });
-    }
+    cleanupInfo = cleanupRuntimeCaches({ aggressive: aggressive || normal });
+  }
+  // 每5分钟无论内存状态如何都执行一次常规清理
+  const shouldPeriodicCleanup = now - runtimeCacheCleanupLastAt >= 5 * 60 * 1000;
+  if (shouldPeriodicCleanup && !shouldRunCleanup) {
+    cleanupInfo = cleanupRuntimeCaches({ aggressive: false });
   }
   const rssMb = (memory.rss / (1024 * 1024)).toFixed(1);
   const heapUsedMb = (memory.heapUsed / (1024 * 1024)).toFixed(1);
@@ -6078,7 +6097,7 @@ async function logRuntimeHealth(expectedAt = Date.now()) {
         `[guard] mode=${cleanupInfo.aggressive ? 'aggressive' : 'normal'} `
         + `roomData=${removed.roomStateData} roomMeta=${removed.roomStateMeta} roomTick=${removed.roomStateTick} `
         + `autoFull=${removed.autoFullRoom} chars=${removed.allCharacters} lucky=${removed.dailyLucky} tower=${removed.towerRank} `
-        + `persistAt=${removed.playerLastPersistAt} throttle=${removed.stateThrottle}`
+        + `persistAt=${removed.playerLastPersistAt} throttle=${removed.stateThrottle} mobCache=${removed.mobStateCache || 0}`
       );
     }
   }

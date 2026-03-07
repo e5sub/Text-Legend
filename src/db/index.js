@@ -48,6 +48,12 @@ if (isSqlite) {
   knex.raw('PRAGMA wal_autocheckpoint = 1000;').catch(() => {});
   // 设置 busy timeout 为 10 秒，避免锁定等待过短
   knex.raw('PRAGMA busy_timeout = 10000;').catch(() => {});
+  // 增加缓存页数（每页4KB，8000页=32MB）
+  knex.raw('PRAGMA cache_size = -8000;').catch(() => {});
+  // 内存映射I/O，提升读取性能
+  knex.raw('PRAGMA mmap_size = 268435456;').catch(() => {});
+  // 临时表存储在内存中
+  knex.raw('PRAGMA temp_store = memory;').catch(() => {});
 }
 
 function toCompactSql(sqlText) {

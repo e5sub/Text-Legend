@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "start": "node --max-old-space-size=2048 src/index.js",
+    "start:win": "set NODE_OPTIONS=--max-old-space-size=2048 && node src/index.js",
     "db:migrate": "node src/db/migrate.js",
     "db:cleanup-mob-respawns": "node src/db/cleanup_mob_respawns.js",
     "db:purge-normal-mob-respawns": "node src/db/purge_mob_respawns_normal.js"
