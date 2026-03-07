@@ -5898,7 +5898,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         if (!pet) return send('找不到指定的宠物。');
         pet.training = normalizeTrainingRecord(pet.training);
 
-        const attrArgs = parts.slice(2).slice(1); // 跳过宠物ID，取属性和次数
+        const attrArgs = parts.slice(3); // 跳过 'pet train <宠物ID>'，取属性和次数
         if (attrArgs.length === 0) {
           const perLevelCfg = getTrainingPerLevelConfig();
           PET_TRAINING_KEYS.forEach((key) => {
