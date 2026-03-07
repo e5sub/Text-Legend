@@ -40,6 +40,6 @@ export async function deleteUser(userId) {
   await knex('characters').where({ user_id: userId }).delete();
   await knex('sessions').where({ user_id: userId }).delete();
   await knex('guild_members').where({ user_id: userId }).delete();
-  await knex('mail').where({ to_user_id: userId }).delete();
+  await knex('mails').where({ to_user_id: userId }).delete();
   await knex('users').where({ id: userId }).delete();
 }
