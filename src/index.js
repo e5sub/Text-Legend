@@ -7475,6 +7475,7 @@ function schedulePendingPlayerSaveFlush(delayMs = PLAYER_SAVE_DEBOUNCE_MS) {
 }
 
 async function flushPendingPlayerSaves() {
+  const t0 = Date.now();
   if (pendingPlayerSaveTimer) {
     clearTimeout(pendingPlayerSaveTimer);
     pendingPlayerSaveTimer = null;
@@ -7511,6 +7512,10 @@ async function flushPendingPlayerSaves() {
   }
   if (pendingPlayerSaves.size > 0) {
     schedulePendingPlayerSaveFlush(nextDelayMs || PLAYER_SAVE_DEBOUNCE_MS);
+  }
+  const elapsed = Date.now() - t0;
+  if (elapsed > 50) {
+    console.log(`[perf] flushPendingPlayerSaves ${elapsed}ms writes=${writes}`);
   }
 }
 
@@ -13708,6 +13713,7 @@ function normalizeGuildContribution(player) {
 }
 
 async function buildState(player) {
+  const t0 = Date.now();
   normalizeVipStatus(player);
   normalizeSvipStatus(player);
   // 行会建筑升级检查：如果升级时间已到，触发完成升级并同步状态
@@ -13939,6 +13945,11 @@ async function buildState(player) {
   const guildSystemConfig = getGuildSystemConfigSnapshot();
   const bonusBreakdown = buildRewardBonusBreakdown(player, party);
 
+  const elapsed = Date.now() - t0;
+  if (elapsed > 50) {
+    console.log(`[perf] buildState ${elapsed}ms ${player?.name || 'unknown'}`);
+  }
+
   return {
     player: {
       name: player.name,
@@ -14126,6 +14137,7 @@ async function buildState(player) {
 }
 
 async function sendState(player) {
+  const t0 = Date.now();
   if (!player.socket) return;
   const { enabled, intervalSec, overrideServerAllowed } = await getStateThrottleSettingsCached();
   const override = Boolean(player.stateThrottleOverride) && overrideServerAllowed;
@@ -14289,6 +14301,10 @@ async function sendState(player) {
     if (player.position) {
       stateThrottleLastRoom.set(key, `${player.position.zone}:${player.position.room}`);
     }
+  }
+  const elapsed = Date.now() - t0;
+  if (elapsed > 50) {
+    console.log(`[perf] sendState ${elapsed}ms ${player?.name || 'unknown'}`);
   }
 }
 
@@ -18737,6 +18753,14 @@ function shouldProcessManagedPlayerThisTick(player, shardIndex, shardCount = COM
 }
 
 async function combatTick() {
+  const tickStart = Date.now();
+  const perfLog = (label, startTime) => {
+    const elapsed = Date.now() - startTime;
+    if (elapsed > 50) {
+      console.log(`[perf] ${label} ${elapsed}ms`);
+    }
+  };
+
   const markStateDirty = (player) => {
     if (!player) return;
     enqueueCombatStateFlush(player);
@@ -18760,7 +18784,9 @@ async function combatTick() {
 
   // 特殊BOSS人数缩放改为低频执行，避免每秒全图扫描
   if (tickNow - combatLastBossScaleAt >= bossScaleIntervalMs) {
+    const t0 = Date.now();
     updateSpecialBossStatsBasedOnPlayers();
+    perfLog('updateSpecialBossStatsBasedOnPlayers', t0);
     combatLastBossScaleAt = tickNow;
   }
 
@@ -18850,7 +18876,9 @@ async function combatTick() {
       }
 
     if (player.flags?.autoFullEnabled) {
+      const tAutoFull0 = Date.now();
       const bossMove = tryAutoFullBossMove(player);
+      perfLog('tryAutoFullBossMove', tAutoFull0);
       if (bossMove === 'moved') {
         player.combat = null;
         continue;
@@ -18879,7 +18907,9 @@ async function combatTick() {
         }
       }
       if (!player.combat && player.flags?.autoFullEnabled) {
+        const tAutoFull1 = Date.now();
         const autoFullResult = tryAutoFullAction(player, roomMobs);
+        perfLog('tryAutoFullAction', tAutoFull1);
         if (autoFullResult === 'moved') {
           continue;
         }
@@ -20000,10 +20030,18 @@ async function combatTick() {
     // 每30秒保存一次玩家数据,避免频繁写入数据库
     const lastSave = getRealmState(player.realmId || 1).lastSaveTime.get(player.name) || 0;
     if (now - lastSave >= 30000) {
-      savePlayer(player);
+      const tSave = Date.now();
+      savePlayer(player).then(() => {
+        const elapsed = Date.now() - tSave;
+        if (elapsed > 50) {
+          console.log(`[perf] savePlayer ${elapsed}ms ${player?.name || 'unknown'}`);
+        }
+      }).catch(() => {});
       getRealmState(player.realmId || 1).lastSaveTime.set(player.name, now);
     }
   }
+
+  perfLog('combatTick_total', tickStart);
 }
 
 setInterval(combatTick, 1000);
