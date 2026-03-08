@@ -18703,7 +18703,7 @@ function scheduleCombatStateFlush() {
 }
 
 function enqueueCombatStateFlush(player) {
-  if (!player) return;
+  if (!player || !player.socket) return;  // 无socket连接的玩家跳过状态刷新
   combatStateDirtyQueue.add(player);
   scheduleCombatStateFlush();
 }
