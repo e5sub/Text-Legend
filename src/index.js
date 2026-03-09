@@ -10388,6 +10388,10 @@ function applyDamageToSummon(target, dmg) {
   }
   dmg = Math.max(0, Math.floor(Number(dmg) || 0));
   applyDamage(target, dmg);
+  // 召唤兽HP变化也需要刷新主人状态
+  if (target.owner) {
+    target.owner.forceStateRefresh = true;
+  }
   return dmg;
 }
 
@@ -10443,6 +10447,8 @@ function applyDamageToPlayer(target, dmg) {
   }
   dmg = Math.max(0, Math.floor(Number(dmg) || 0));
   applyDamage(target, dmg);
+  // 标记状态需要刷新，确保状态条实时更新
+  target.forceStateRefresh = true;
   return dmg;
 }
 
@@ -10496,8 +10502,14 @@ function regenOutOfCombat(player) {
   const hpRegen = Math.max(1, Math.floor(player.max_hp * 0.01));
   const mpRegen = Math.max(1, Math.floor(player.max_mp * 0.015));
   const hpGain = Math.max(1, Math.floor(hpRegen * getHealMultiplier(player)));
+  const prevHp = player.hp;
+  const prevMp = player.mp;
   player.hp = clamp(player.hp + hpGain, 1, player.max_hp);
   player.mp = clamp(player.mp + mpRegen, 0, player.max_mp);
+  // 如果有变化，标记状态需要刷新
+  if (player.hp !== prevHp || player.mp !== prevMp) {
+    player.forceStateRefresh = true;
+  }
 }
 
 function processPotionRegen(player) {
@@ -10510,6 +10522,8 @@ function processPotionRegen(player) {
     delete player.status.regen;
     return;
   }
+  const prevHp = player.hp;
+  const prevMp = player.mp;
   if (regen.hpRemaining && regen.hpRemaining > 0) {
     const amount = Math.ceil(regen.hpRemaining / regen.ticksRemaining);
     const hpGain = Math.max(1, Math.floor(amount * getHealMultiplier(player)));
@@ -10524,6 +10538,10 @@ function processPotionRegen(player) {
   regen.ticksRemaining -= 1;
   if (regen.ticksRemaining <= 0) {
     delete player.status.regen;
+  }
+  // 如果有变化，标记状态需要刷新
+  if (player.hp !== prevHp || player.mp !== prevMp) {
+    player.forceStateRefresh = true;
   }
 }
 function applyOfflineRewards(player) {
@@ -14258,7 +14276,8 @@ async function sendState(player) {
     player.forceStateRefresh = false;
     return;
   }
-  if (!player.socket?.connected) {
+  // 只要有socket对象就允许发送（connected状态由socket.io管理，可能不够实时）
+  if (!player.socket) {
     player.forceStateRefresh = false;
     return;
   }
@@ -15450,6 +15469,7 @@ function tryAutoPotion(player) {
   if (!player.status) player.status = {};
   if (!player.status.potionLock) player.status.potionLock = {};
   const potionLock = player.status.potionLock;
+  let hpOrMpChanged = false;
 
   if (hpPct && hpRate <= hpPct / 100) {
     const lockActive = potionLock.hp && potionLock.hp > now;
@@ -15464,6 +15484,7 @@ function tryAutoPotion(player) {
             player.hp = clamp(player.hp + hpGain, 1, player.max_hp);
           }
           if (item.mp) player.mp = clamp(player.mp + item.mp, 0, player.max_mp);
+          hpOrMpChanged = true;
         } else if (!lockActive) {
           player.status.regen = {
             ticksRemaining: ticks,
@@ -15486,6 +15507,7 @@ function tryAutoPotion(player) {
       if (isInstant) {
         if (item.hp) player.hp = clamp(player.hp + item.hp, 1, player.max_hp);
         if (item.mp) player.mp = clamp(player.mp + item.mp, 0, player.max_mp);
+        hpOrMpChanged = true;
       } else if (!lockActive) {
         player.status.regen = {
           ticksRemaining: ticks,
@@ -15496,6 +15518,11 @@ function tryAutoPotion(player) {
       }
       player.send(`自动使用 ${item.name}。`);
     }
+  }
+  
+  // 如果有HP/MP变化，标记状态需要刷新
+  if (hpOrMpChanged) {
+    player.forceStateRefresh = true;
   }
 }
 
@@ -17667,6 +17694,7 @@ function tryAutoHeal(player) {
     const hasLow = allCandidates.some((c) => c.target.hp / c.target.max_hp < healThreshold);
     if (hasLow) {
       player.mp = clamp(player.mp - groupHealSkill.mp, 0, player.max_mp);
+      player.forceStateRefresh = true; // MP变化，标记状态需要刷新
       const baseHeal = Math.floor(getSpiritValue(player) * 0.8 * scaledSkillPower(healSkill, getSkillLevel(player, healSkill.id)) + player.level * 4);
       const groupHeal = Math.max(1, Math.floor(baseHeal * 0.3));
       candidates.forEach((entry) => {
@@ -17690,6 +17718,7 @@ function tryAutoHeal(player) {
   const toHeal = candidates[0];
 
   player.mp = clamp(player.mp - healSkill.mp, 0, player.max_mp);
+  player.forceStateRefresh = true; // MP变化，标记状态需要刷新
   const baseHeal = Math.floor(getSpiritValue(player) * 0.8 * scaledSkillPower(healSkill, getSkillLevel(player, healSkill.id)) + player.level * 4);
   const heal = Math.max(1, Math.floor(baseHeal * getHealMultiplier(player)));
 
@@ -18819,7 +18848,12 @@ function scheduleCombatStateFlush() {
 }
 
 function enqueueCombatStateFlush(player) {
-  if (!player || !player.socket) return;  // 无socket连接的玩家跳过状态刷新
+  if (!player) return;
+  // 只跳过离线托管玩家，有socket连接的玩家都允许状态刷新
+  if (!player.socket && (player.flags?.offlineManagedAuto || player.flags?.offlineManagedPending)) return;
+  if (!player.socket?.connected && !player.flags?.offlineManagedAuto && !player.flags?.offlineManagedPending) {
+    // 有连接记录但暂时断开的在线玩家，仍然允许刷新（socket可能处于重建中）
+  }
   combatStateDirtyQueue.add(player);
   scheduleCombatStateFlush();
 }
@@ -19181,7 +19215,10 @@ async function combatTick() {
           const crit = consumeFirestrikeCrit(player, 'player', isNormal);
           dmg = Math.floor(calcDamage(player, target, skillPower) * crit);
         }
-        if (skill.mp > 0) player.mp = clamp(player.mp - skill.mp, 0, player.max_mp);
+        if (skill.mp > 0) {
+          player.mp = clamp(player.mp - skill.mp, 0, player.max_mp);
+          player.forceStateRefresh = true; // MP变化，标记状态需要刷新
+        }
         
         // 记录技能CD
         if (skill.cooldown) {
@@ -19511,7 +19548,10 @@ async function combatTick() {
         } else {
           dmg = calcDamage(player, mob, skillPower);
         }
-        if (skill.mp > 0) player.mp = clamp(player.mp - skill.mp, 0, player.max_mp);
+        if (skill.mp > 0) {
+          player.mp = clamp(player.mp - skill.mp, 0, player.max_mp);
+          player.forceStateRefresh = true; // MP变化，标记状态需要刷新
+        }
         
         // 记录技能CD
         if (skill.cooldown) {
@@ -20172,6 +20212,21 @@ async function combatTick() {
 }
 
 setInterval(combatTick, 1000);
+
+// 高频状态刷新tick，每200ms检查一次需要刷新的玩家状态
+async function stateFlushTick() {
+  const online = listOnlinePlayers();
+  for (const player of online) {
+    // 跳过离线托管玩家
+    if (player.flags?.offlineManagedAuto || player.flags?.offlineManagedPending) continue;
+    // 只处理有socket连接且标记了强制刷新的玩家
+    if (player.socket && player.forceStateRefresh) {
+      await sendState(player).catch(() => {});
+    }
+  }
+}
+
+setInterval(stateFlushTick, 200);
 
 async function sabakTick(realmId) {
   const sabakState = getSabakState(realmId);
