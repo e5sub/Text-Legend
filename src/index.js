@@ -8292,7 +8292,7 @@ const tradeApi = {
     }
     return { ok: false, msg: '没有可取消的交易。' };
   },
-  finalize(trade) {
+  async finalize(trade) {
     const realmId = trade?.realmId || null;
     const playerA = playersByName(trade.a.name, realmId);
     const playerB = playersByName(trade.b.name, realmId);
