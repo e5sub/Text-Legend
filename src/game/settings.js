@@ -483,4 +483,80 @@ export function calcUltimateGrowthBonusPct(level) {
   return lv * cfg.perLevelPct + tierCount * cfg.tierBonusPct;
 }
 
+// ==================== 全局内存缓存配置（用于buildState快速读取） ====================
+// 这些配置在应用启动时从数据库加载，后台修改时同步更新内存
+
+// SVIP价格配置
+let svipPricesCache = { month: 100, quarter: 260, year: 900, permanent: 3000 };
+
+// 状态推送节流配置
+let stateThrottleEnabledCache = false;
+let stateThrottleIntervalSecCache = 10;
+let stateThrottleOverrideAllowedCache = false;
+
+/**
+ * 设置SVIP价格配置（后台修改时调用）
+ * @param {object} prices - 价格配置 { month, quarter, year, permanent }
+ */
+export function setSvipPrices(prices) {
+  if (prices && typeof prices === 'object') {
+    svipPricesCache = {
+      month: Number(prices.month) || svipPricesCache.month,
+      quarter: Number(prices.quarter) || svipPricesCache.quarter,
+      year: Number(prices.year) || svipPricesCache.year,
+      permanent: Number(prices.permanent) || svipPricesCache.permanent
+    };
+  }
+}
+
+/**
+ * 获取SVIP价格配置（同步读取，零开销）
+ * @returns {object} 价格配置
+ */
+export function getSvipPricesSync() {
+  return svipPricesCache;
+}
+
+/**
+ * 设置状态推送节流配置（后台修改时调用）
+ * @param {object} config - 配置 { enabled, intervalSec, overrideServerAllowed }
+ */
+export function setStateThrottleConfig(config) {
+  if (config && typeof config === 'object') {
+    if (typeof config.enabled === 'boolean') stateThrottleEnabledCache = config.enabled;
+    if (typeof config.intervalSec === 'number') stateThrottleIntervalSecCache = config.intervalSec;
+    if (typeof config.overrideServerAllowed === 'boolean') stateThrottleOverrideAllowedCache = config.overrideServerAllowed;
+  }
+}
+
+/**
+ * 获取状态推送节流配置（同步读取，零开销）
+ * @returns {object} 配置对象 { enabled, intervalSec, overrideServerAllowed }
+ */
+export function getStateThrottleConfigSync() {
+  return {
+    enabled: stateThrottleEnabledCache,
+    intervalSec: stateThrottleIntervalSecCache,
+    overrideServerAllowed: stateThrottleOverrideAllowedCache
+  };
+}
+
+/**
+ * 批量初始化所有配置（应用启动时调用）
+ * @param {object} configs - 所有配置对象
+ */
+export function initRuntimeConfigs(configs) {
+  if (!configs) return;
+  if (configs.svipPrices) setSvipPrices(configs.svipPrices);
+  if (configs.stateThrottle) setStateThrottleConfig(configs.stateThrottle);
+  if (configs.refineMaterialCount !== undefined) setRefineMaterialCount(configs.refineMaterialCount);
+  if (configs.effectResetSuccessRate !== undefined) setEffectResetSuccessRate(configs.effectResetSuccessRate);
+  if (configs.effectResetDoubleRate !== undefined) setEffectResetDoubleRate(configs.effectResetDoubleRate);
+  if (configs.effectResetTripleRate !== undefined) setEffectResetTripleRate(configs.effectResetTripleRate);
+  if (configs.effectResetQuadrupleRate !== undefined) setEffectResetQuadrupleRate(configs.effectResetQuadrupleRate);
+  if (configs.effectResetQuintupleRate !== undefined) setEffectResetQuintupleRate(configs.effectResetQuintupleRate);
+}
+
+
+
 

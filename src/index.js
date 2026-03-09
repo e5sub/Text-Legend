@@ -72,7 +72,11 @@ import {
   getEffectDropDoubleChance,
   setEffectDropDoubleChance,
   getEquipSkillDropChance,
-  setEquipSkillDropChance
+  setEquipSkillDropChance,
+  getSvipPricesSync,
+  setSvipPrices as setSvipPricesRuntime,
+  getStateThrottleConfigSync,
+  setStateThrottleConfig
 } from './game/settings.js';
 import {
   listItems,
@@ -2768,6 +2772,8 @@ app.post('/admin/svip-settings/update', async (req, res) => {
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
   const prices = req.body?.prices || {};
   await setSvipPrices(prices);
+  // 同步更新内存缓存
+  setSvipPricesRuntime(prices);
   const next = await getSvipPrices();
   res.json({ ok: true, prices: next });
 });
@@ -2793,12 +2799,17 @@ app.post('/admin/state-throttle-toggle', async (req, res) => {
   }
   if (overrideServerAllowed !== undefined) {
     await setStateThrottleOverrideServerAllowed(overrideServerAllowed === true);
-    stateThrottleOverrideAllowedCachedValue = overrideServerAllowed === true;
-    stateThrottleOverrideAllowedLastUpdate = Date.now();
   }
   if (cacheMonsterHealth !== undefined) {
     await setCacheMonsterHealthEnabled(cacheMonsterHealth === true);
   }
+  // 同步更新内存缓存（供buildState快速读取）
+  setStateThrottleConfig({
+    enabled: nextEnabled,
+    intervalSec: intervalSec !== undefined ? Number(intervalSec) : undefined,
+    overrideServerAllowed: overrideServerAllowed !== undefined ? overrideServerAllowed === true : undefined
+  });
+  // 保留旧缓存变量以兼容其他代码
   stateThrottleCachedValue = nextEnabled;
   stateThrottleLastUpdate = Date.now();
   const intervalValue = await getStateThrottleIntervalSec();
@@ -10668,6 +10679,22 @@ const STATE_STATIC_AUX_TTL = 30000;
 const VIP_SELF_CLAIM_CACHE_TTL = 10000; // VIP自领缓存10秒
 const STATE_THROTTLE_CACHE_TTL = 10000; // 状态节流缓存10秒
 const DAILY_LUCKY_CACHE_TTL = 30000; // 每日幸运玩家缓存30秒
+const SETTINGS_SNAPSHOT_TTL = 10000; // 全局配置快照缓存10秒
+
+// ===== 全局配置快照（extra_settings 优化）=====
+let settingsSnapshot = {
+  stateThrottle: { enabled: false, intervalSec: 10, overrideServerAllowed: false },
+  refineMaterialCount: 1,
+  svipSettings: { prices: null },
+  effectReset: {
+    successRate: 50,
+    doubleRate: 30,
+    tripleRate: 15,
+    quadrupleRate: 4,
+    quintupleRate: 1
+  },
+  updatedAt: 0
+};
 
 // ===== 动态排行短TTL缓存（同一秒内复用）=====
 const DYNAMIC_RANK_CACHE_TTL = 1000; // 1秒内复用同一份排行数据
@@ -10816,6 +10843,48 @@ async function getSvipSettingsCached() {
     svipSettingsCache = { prices, at: now };
   }
   return svipSettingsCache;
+}
+
+async function refreshSettingsSnapshot() {
+  const now = Date.now();
+  if (now - settingsSnapshot.updatedAt < SETTINGS_SNAPSHOT_TTL) {
+    return settingsSnapshot;
+  }
+
+  // 并行获取所有配置
+  const [
+    stateThrottle,
+    refineMaterialCount,
+    svipSettings,
+    successRate,
+    doubleRate,
+    tripleRate,
+    quadrupleRate,
+    quintupleRate
+  ] = await Promise.all([
+    getStateThrottleSettingsCached(),
+    Promise.resolve(getRefineMaterialCount()),
+    getSvipSettingsCached(),
+    Promise.resolve(getEffectResetSuccessRate()),
+    Promise.resolve(getEffectResetDoubleRate()),
+    Promise.resolve(getEffectResetTripleRate()),
+    Promise.resolve(getEffectResetQuadrupleRate()),
+    Promise.resolve(getEffectResetQuintupleRate())
+  ]);
+
+  settingsSnapshot = {
+    stateThrottle,
+    refineMaterialCount,
+    svipSettings,
+    effectReset: { successRate, doubleRate, tripleRate, quadrupleRate, quintupleRate },
+    updatedAt: now
+  };
+
+  return settingsSnapshot;
+}
+
+function getSettingsSnapshot() {
+  return settingsSnapshot;
 }
 
 async function getConsignExpireHoursCached() {
@@ -14069,23 +14138,23 @@ async function buildState(player, options = {}) {
   t4Marks.vip = Date.now() - t4VipStart;
 
   const t4SettingsStart = Date.now();
+  // 使用全局配置快照（零开销，直接从内存读取）
+  const snap = getSettingsSnapshot();
   const { enabled: stateThrottleEnabled, intervalSec: stateThrottleIntervalSec, overrideServerAllowed } =
-    await getStateThrottleSettingsCached();
-
-  // 获取锻造材料数量配置
-  const refineMaterialCount = getRefineMaterialCount();
-  const svipSettings = await getSvipSettingsCached();
+    snap.stateThrottle;
+  const refineMaterialCount = snap.refineMaterialCount;
+  const svipSettings = snap.svipSettings;
+  const effectResetSuccessRate = snap.effectReset.successRate;
+  const effectResetDoubleRate = snap.effectReset.doubleRate;
+  const effectResetTripleRate = snap.effectReset.tripleRate;
+  const effectResetQuadrupleRate = snap.effectReset.quadrupleRate;
+  const effectResetQuintupleRate = snap.effectReset.quintupleRate;
+  
+  // 玩家相关的个性化配置
   const autoFullTrialInfo = getAutoFullTrialInfo(player);
   const autoFullBossFilter = Array.isArray(player.flags?.autoFullBossFilter)
     ? player.flags.autoFullBossFilter
     : null;
-
-  // 获取特效重置配置
-  const effectResetSuccessRate = getEffectResetSuccessRate();
-  const effectResetDoubleRate = getEffectResetDoubleRate();
-  const effectResetTripleRate = getEffectResetTripleRate();
-  const effectResetQuadrupleRate = getEffectResetQuadrupleRate();
-  const effectResetQuintupleRate = getEffectResetQuintupleRate();
   t4Marks.settings = Date.now() - t4SettingsStart;
 
   const t4GuildStart = Date.now();
@@ -20862,6 +20931,14 @@ async function start() {
     }
   }
   startRuntimeHealthLogging();
+  
+  // 启动全局配置快照刷新定时器
+  setInterval(() => {
+    refreshSettingsSnapshot().catch(() => {});
+  }, SETTINGS_SNAPSHOT_TTL);
+  // 立即刷新一次
+  refreshSettingsSnapshot().catch(() => {});
+  
   server.listen(config.port, () => {
     console.log(`Server on http://localhost:${config.port}`);
   });
