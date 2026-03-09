@@ -2400,7 +2400,7 @@ app.post('/admin/first-recharge-settings/reissue', async (req, res) => {
   if (typeof saveOffline === 'function') {
     await saveOffline();
   } else {
-    await savePlayer(player);
+    await savePlayer(player, { immediate: true }); // 首充奖励立即保存
     if (player?.socket) {
       player.forceStateRefresh = true;
       await sendState(player);
@@ -2586,7 +2586,7 @@ app.post('/admin/first-recharge-settings/reissue-divine-beast-all', async (req, 
       }
       if (saveOffline) await saveOffline();
       else {
-        await savePlayer(player);
+        await savePlayer(player, { immediate: true }); // 首充奖励立即保存
         if (player?.socket) {
           player.forceStateRefresh = true;
           await sendState(player);
@@ -2699,7 +2699,7 @@ app.post('/admin/first-recharge-settings/reissue-all', async (req, res) => {
       }
       if (saveOffline) await saveOffline();
       else {
-        await savePlayer(player);
+        await savePlayer(player, { immediate: true }); // 首充奖励立即保存
         if (player?.socket) {
           player.forceStateRefresh = true;
           await sendState(player);
@@ -7425,8 +7425,8 @@ function dropLoot(mobTemplate, bonus = 1) {
 }
 
 const PLAYER_SAVE_DEBOUNCE_MS = 1500;
-const PLAYER_SAVE_MIN_INTERVAL_MS = 8000;
-const PLAYER_SAVE_MANAGED_MIN_INTERVAL_MS = 20000;
+const PLAYER_SAVE_MIN_INTERVAL_MS = 5000;  // 在线玩家5秒
+const PLAYER_SAVE_MANAGED_MIN_INTERVAL_MS = 10000;  // 托管玩家10秒
 const PLAYER_SAVE_DETACHED_MIN_INTERVAL_MS = 15000;
 const PLAYER_SAVE_MAX_WRITES_PER_FLUSH = 80;
 const pendingPlayerSaves = new Map();
@@ -8329,6 +8329,9 @@ const tradeApi = {
     playerA.yuanbao = (playerA.yuanbao || 0) + (offerB.yuanbao || 0);
     applyOfferItems(playerA, playerB, offerA);
     applyOfferItems(playerB, playerA, offerB);
+    // 交易完成后立即保存双方数据
+    await savePlayer(playerA, { immediate: true });
+    await savePlayer(playerB, { immediate: true });
     clearTrade(trade, '交易完成。', realmId);
     return { ok: true };
   },
@@ -8469,6 +8472,7 @@ const consignApi = {
       player.gold -= serverTotal;
     }
     addItem(player, row.item_id, qtyResult.value, parseJson(row.effects_json), row.durability, row.max_durability, row.refine_level ?? null, row.base_roll_pct ?? null, row.growth_level ?? null, row.growth_fail_stack ?? null);
+    await savePlayer(player, { immediate: true }); // 购买后立即保存
 
     const remain = row.qty - qtyResult.value;
     if (remain > 0) {
@@ -8536,6 +8540,7 @@ const consignApi = {
     if (!row) return { ok: false, msg: '寄售不存在。' };
     if (row.seller_name !== player.name) return { ok: false, msg: '只能取消自己的寄售。' };
     addItem(player, row.item_id, row.qty, parseJson(row.effects_json), row.durability, row.max_durability, row.refine_level ?? null, row.base_roll_pct ?? null, row.growth_level ?? null, row.growth_fail_stack ?? null);
+    await savePlayer(player, { immediate: true }); // 取消寄售后立即保存
     await deleteConsignment(idResult.value, player.realmId || 1);
     await consignApi.listMine(player);
     await consignApi.listMarket(player);
@@ -8632,6 +8637,7 @@ const rechargeApi = {
       }
     }
     await addSponsor(player.name, amount);
+    await savePlayer(player, { immediate: true }); // 充值后立即保存
     player.forceStateRefresh = true;
     return { ok: true, msg: `充值成功，获得 ${amount + inviteExtraYuanbao} 元宝。${inviteBonusMsg}${firstRechargeMsg}`.trim() };
   }
@@ -16724,7 +16730,7 @@ io.on('connection', (socket) => {
     const refreshedMails = await listMail(player.userId, player.realmId || 1);
     socket.emit('mail_list', { ok: true, mails: refreshedMails.map(buildMailPayload) });
     await sendState(player);
-    await savePlayer(player);
+    await savePlayer(player, { immediate: true });
   });
 
   socket.on('mail_claim_all', async (payload) => {
@@ -16776,7 +16782,7 @@ io.on('connection', (socket) => {
     const refreshedMails = await listMail(player.userId, player.realmId || 1);
     socket.emit('mail_list', { ok: true, mails: refreshedMails.map(buildMailPayload) });
     await sendState(player);
-    await savePlayer(player);
+    await savePlayer(player, { immediate: true });
   });
 
   socket.on('mail_read', async (payload) => {
