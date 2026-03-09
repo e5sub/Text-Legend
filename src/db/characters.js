@@ -18,6 +18,15 @@ function cloneJsonSafe(value, fallback) {
   }
 }
 
+function getZhuxianTowerBestFloorFromFlags(flags) {
+  if (!flags || typeof flags !== 'object') return 0;
+  const zxft = flags.zxft;
+  if (!zxft || typeof zxft !== 'object') return 0;
+  const best = Math.floor(Number(zxft.bestFloor || 0));
+  const highest = Math.floor(Number(zxft.highestClearedFloor || 0));
+  return Math.max(0, best, highest);
+}
+
 function cloneRawData(rawData) {
   return {
     user_id: rawData.user_id,
@@ -56,10 +65,13 @@ const JSON_FIELD_MAP = {
 };
 
 // 轻量字段（标量，无需序列化）
-const LIGHT_FIELDS = ['user_id', 'realm_id', 'name', 'class', 'level', 'exp', 'gold', 'yuanbao', 'hp', 'mp', 'max_hp', 'max_mp'];
+const LIGHT_FIELDS = ['user_id', 'realm_id', 'name', 'class', 'level', 'exp', 'gold', 'yuanbao', 'hp', 'mp', 'max_hp', 'max_mp', 'zhuxian_tower_best_floor'];
 
 // 构建原始数据对象（不进行JSON序列化）
 function buildCharacterRawData(userId, player, realmId) {
+  // 计算诛仙塔最佳层数
+  const zhuxianTowerBestFloor = getZhuxianTowerBestFloorFromFlags(player.flags || {});
+  
   return {
     user_id: userId,
     realm_id: realmId,
@@ -73,6 +85,7 @@ function buildCharacterRawData(userId, player, realmId) {
     mp: player.mp,
     max_hp: player.max_hp,
     max_mp: player.max_mp,
+    zhuxian_tower_best_floor: zhuxianTowerBestFloor,
     stats: player.stats || {},
     position: player.position || {},
     inventory: player.inventory || [],

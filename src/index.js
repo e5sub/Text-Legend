@@ -10935,42 +10935,24 @@ async function getZhuxianTowerRankTop10Cached(realmId) {
   // 创建新的查询 Promise，让其他并发请求可以共享结果
   const queryPromise = (async () => {
     try {
-      // 优化：使用生成列 has_tower_data 快速过滤有诛仙塔数据的角色
-      // 索引 idx_characters_tower_ranking 覆盖此查询，避免回表
+      // 使用新的 zhuxian_tower_best_floor 列和索引进行纯 SQL 查询
       const rows = await knex('characters')
-        .select('name', 'class', 'level', 'flags_json')
-        .where({ realm_id: realmId, has_tower_data: 1 })
-        .limit(5000); // 限制最大查询数量
-  const ranked = rows
-    .map((row) => {
-      let flags = null;
-      try {
-        flags = row.flags_json ? JSON.parse(row.flags_json) : null;
-      } catch {
-        flags = null;
-      }
-      const floor = getZhuxianTowerBestFloorFromFlags(flags);
-      return {
+        .select('name', 'class', 'level', 'zhuxian_tower_best_floor as floor')
+        .where('realm_id', realmId)
+        .andWhere('zhuxian_tower_best_floor', '>', 0)
+        .orderBy('zhuxian_tower_best_floor', 'desc')
+        .orderBy('level', 'desc')
+        .orderBy('name', 'asc')
+        .limit(10);
+
+      const ranked = rows.map((row, idx) => ({
+        rank: idx + 1,
         name: row.name,
         classId: row.class,
         level: Math.max(1, Math.floor(Number(row.level || 1))),
-        floor
-      };
-    })
-    .filter((entry) => entry.floor > 0)
-    .sort((a, b) => {
-      if (b.floor !== a.floor) return b.floor - a.floor;
-      if (b.level !== a.level) return b.level - a.level;
-      return String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hans-CN');
-    })
-    .slice(0, 10)
-    .map((entry, idx) => ({
-      rank: idx + 1,
-      name: entry.name,
-      classId: entry.classId,
-      level: entry.level,
-      floor: entry.floor
-    }));
+        floor: Math.max(0, Math.floor(Number(row.floor || 0)))
+      }));
+
       zhuxianTowerRankCache.set(realmId, { at: now, value: ranked });
       return ranked;
     } catch (err) {
@@ -14082,8 +14064,9 @@ async function buildState(player, options = {}) {
 
   const t4ZhuxianStart = Date.now();
   const zhuxianTowerProgress = normalizeZhuxianTowerProgress(player);
+  // 只读缓存，不 await
   const zhuxianTowerRankTop10 = (includeDynamicAux || forceSend)
-    ? await getZhuxianTowerRankTop10Cached(realmId)
+    ? zhuxianTowerRankCache.get(realmId)?.value || null
     : null;
   t4Marks.zhuxian = Date.now() - t4ZhuxianStart;
 
