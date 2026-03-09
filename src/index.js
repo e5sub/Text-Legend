@@ -18934,6 +18934,17 @@ async function combatTick() {
       savePlayer(player).catch(() => {});
       continue;
     }
+    // 托管自动状态下定期检查SVIP是否过期
+    if (!player?.socket && player?.flags?.offlineManagedAuto) {
+      if (!isSvipActive(player)) {
+        delete player.flags.offlineManagedAuto;
+        delete player.flags.offlineManagedAt;
+        player.flags.offlineAt = now;
+        player.flags.autoFullEnabled = false;
+        savePlayer(player, { immediate: true }).catch(() => {});
+        continue;
+      }
+    }
     if (player.hp <= 0) {
       handleDeath(player);
       continue;
