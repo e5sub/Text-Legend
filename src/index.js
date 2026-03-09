@@ -10105,6 +10105,14 @@ function updateAutoFullCultivationBossRespawnWatch(player, roomRealmId, now = Da
 
 function tryAutoFullAction(player, roomMobs) {
   if (!player?.flags?.autoFullEnabled) return null;
+  // 托管玩家节流：每3秒执行一次
+  const isManaged = Boolean(player.flags?.offlineManagedAuto || player.flags?.offlineManagedPending);
+  if (isManaged) {
+    const now = Date.now();
+    const nextAt = Number(player.flags._autoFullManagedNextAt || 0);
+    if (nextAt > now) return null;
+    player.flags._autoFullManagedNextAt = now + 3000;
+  }
   if (!isSvipActive(player)) {
     const trialInfo = getAutoFullTrialInfo(player);
     if (!trialInfo.available) {
@@ -14138,7 +14146,16 @@ async function buildState(player) {
 
 async function sendState(player) {
   const t0 = Date.now();
-  if (!player.socket) return;
+  if (!player) return;
+  // 跳过离线托管玩家
+  if (player.flags?.offlineManagedAuto || player.flags?.offlineManagedPending) {
+    player.forceStateRefresh = false;
+    return;
+  }
+  if (!player.socket?.connected) {
+    player.forceStateRefresh = false;
+    return;
+  }
   const { enabled, intervalSec, overrideServerAllowed } = await getStateThrottleSettingsCached();
   const override = Boolean(player.stateThrottleOverride) && overrideServerAllowed;
   const guardMode = getRuntimeGuardMode();
@@ -14424,7 +14441,9 @@ async function sendRoomState(zoneId, roomId, realmId = 1) {
   const effectiveRealmId = getRoomRealmId(zoneId, roomId, realmId);
   const roomCacheKey = `${effectiveRealmId}:${zoneId}:${roomId}`;
   const players = listConnectedPlayers(effectiveRealmId)
-    .filter((p) => p.position.zone === zoneId && p.position.room === roomId);
+    .filter((p) => p.position.zone === zoneId && p.position.room === roomId)
+    .filter((p) => !p.flags?.offlineManagedAuto && !p.flags?.offlineManagedPending)  // 跳过离线托管玩家
+    .filter((p) => p.socket?.connected);  // 跳过未连接玩家
   
   if (players.length === 0) {
     roomStatePatchMetaCache.delete(roomCacheKey);
