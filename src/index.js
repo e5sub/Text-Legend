@@ -7451,7 +7451,7 @@ function getPlayerSaveMinIntervalMs(player) {
 async function savePlayerNow(player) {
   if (!player?.userId) return;
   const wasCompactedManaged = restoreManagedPlayerState(player);
-  await saveCharacter(player.userId, player, player.realmId || 1);
+  await saveCharacter(player.userId, player, player.realmId || 1, { allowHeavy: true });
   if (wasCompactedManaged && isManagedHostedPlayer(player)) {
     compactManagedPlayerState(player);
   }
