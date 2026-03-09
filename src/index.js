@@ -7454,11 +7454,91 @@ const PLAYER_SAVE_DEBOUNCE_MS = 1500;
 const PLAYER_SAVE_MIN_INTERVAL_MS = 2000;  // 在线玩家2秒
 const PLAYER_SAVE_MANAGED_MIN_INTERVAL_MS = 10000;  // 托管玩家10秒
 const PLAYER_SAVE_DETACHED_MIN_INTERVAL_MS = 15000;
+const PLAYER_SAVE_FORCE_DEADLINE_MS = 5000;  // 脏标记最长延迟5秒必须保存
 const PLAYER_SAVE_MAX_WRITES_PER_FLUSH = 80;
 const pendingPlayerSaves = new Map();
 let pendingPlayerSaveTimer = null;
 let pendingPlayerSaveDueAt = 0;
 const playerLastPersistAt = new Map();
+
+/**
+ * 初始化玩家保存状态（脏标记机制）
+ * @param {object} player - 玩家对象
+ */
+function initPlayerSaveState(player) {
+  if (!player || player._saveState) return;
+  player._saveState = {
+    dirty: {
+      base: false,      // exp/gold/hp/mp/level/yuanbao
+      position: false,  // position_json
+      inventory: false, // inventory_json
+      warehouse: false, // warehouse_json
+      equipment: false, // equipment_json
+      flags: false,     // flags_json/stats_json/quests_json/skills_json
+      heavy: false      // 其他大字段
+    },
+    saving: false,
+    queued: false,
+    lastSaveAt: 0,
+    nextDueAt: 0,
+    forceDeadlineAt: 0
+  };
+}
+
+/**
+ * 标记玩家脏字段
+ * @param {object} player - 玩家对象
+ * @param {string[]} fields - 脏字段列表 ['base', 'position', 'inventory', 'flags', 'heavy']
+ */
+export function markPlayerDirty(player, fields = []) {
+  if (!player) return;
+  initPlayerSaveState(player);
+  const dirty = player._saveState.dirty;
+  for (const field of fields) {
+    if (field in dirty) {
+      dirty[field] = true;
+    }
+  }
+  // 设置强制截止时间：5秒内必须保存
+  player._saveState.forceDeadlineAt = Math.max(
+    player._saveState.forceDeadlineAt || 0,
+    Date.now() + PLAYER_SAVE_FORCE_DEADLINE_MS
+  );
+}
+
+/**
+ * 清空玩家脏标记
+ * @param {object} player - 玩家对象
+ */
+function clearPlayerDirty(player) {
+  if (!player?._saveState?.dirty) return;
+  const dirty = player._saveState.dirty;
+  Object.keys(dirty).forEach(key => {
+    dirty[key] = false;
+  });
+  player._saveState.forceDeadlineAt = 0;
+  player._saveState.nextDueAt = 0;
+}
+
+/**
+ * 检查玩家是否有脏标记
+ * @param {object} player - 玩家对象
+ * @returns {boolean}
+ */
+function hasPlayerDirty(player) {
+  if (!player?._saveState?.dirty) return false;
+  return Object.values(player._saveState.dirty).some(Boolean);
+}
+
+/**
+ * 检查玩家是否需要强制保存（超过截止时间）
+ * @param {object} player - 玩家对象
+ * @returns {boolean}
+ */
+function isPlayerForceSaveDue(player) {
+  if (!player?._saveState?.forceDeadlineAt) return false;
+  return Date.now() >= player._saveState.forceDeadlineAt;
+}
 
 function getPlayerSaveKey(player) {
   return `${Number(player?.userId || 0)}:${Number(player?.realmId || 1)}:${String(player?.name || '')}`;
@@ -7474,12 +7554,24 @@ function getPlayerSaveMinIntervalMs(player) {
   return PLAYER_SAVE_MIN_INTERVAL_MS;
 }
 
-async function savePlayerNow(player) {
+async function savePlayerNow(player, options = {}) {
   if (!player?.userId) return;
   const wasCompactedManaged = restoreManagedPlayerState(player);
-  await saveCharacter(player.userId, player, player.realmId || 1, { allowHeavy: true });
+  // 如果有脏标记且指定了 dirtyFirst，优先使用脏标记
+  const dirtyFirst = options.dirtyFirst || hasPlayerDirty(player);
+  await saveCharacter(player.userId, player, player.realmId || 1, {
+    allowHeavy: true,
+    dirtyFirst
+  });
   if (wasCompactedManaged && isManagedHostedPlayer(player)) {
     compactManagedPlayerState(player);
+  }
+  // 更新保存状态
+  if (player._saveState) {
+    player._saveState.lastSaveAt = Date.now();
+    if (dirtyFirst) {
+      clearPlayerDirty(player);
+    }
   }
 }
 
@@ -7512,23 +7604,41 @@ async function flushPendingPlayerSaves() {
   pendingPlayerSaves.clear();
   let nextDelayMs = 0;
   let writes = 0;
+  let dirtyWrites = 0;
   for (const [saveKey, queuedPlayer] of batch) {
     if (writes >= PLAYER_SAVE_MAX_WRITES_PER_FLUSH) {
       pendingPlayerSaves.set(saveKey, queuedPlayer);
       nextDelayMs = nextDelayMs > 0 ? Math.min(nextDelayMs, PLAYER_SAVE_DEBOUNCE_MS) : PLAYER_SAVE_DEBOUNCE_MS;
       continue;
     }
+
+    // 检查是否有脏标记且超过强制截止时间
+    const hasDirty = hasPlayerDirty(queuedPlayer);
+    const forceDue = isPlayerForceSaveDue(queuedPlayer);
+
     const lastPersistAt = playerLastPersistAt.get(saveKey) || 0;
     const minIntervalMs = getPlayerSaveMinIntervalMs(queuedPlayer);
     const remaining = minIntervalMs - (Date.now() - lastPersistAt);
-    if (remaining > 0) {
+
+    // 如果有脏标记但没到强制时间，且没到最小间隔，则延迟
+    if (hasDirty && !forceDue && remaining > 0) {
+      pendingPlayerSaves.set(saveKey, queuedPlayer);
+      nextDelayMs = nextDelayMs > 0 ? Math.min(nextDelayMs, remaining) : remaining;
+      continue;
+    }
+
+    // 如果没有脏标记且没到最小间隔，也延迟
+    if (!hasDirty && remaining > 0) {
       pendingPlayerSaves.set(saveKey, queuedPlayer);
       nextDelayMs = nextDelayMs > 0 ? Math.min(nextDelayMs, remaining) : remaining;
       continue;
     }
     try {
-      await savePlayerNow(queuedPlayer);
+      // 如果有脏标记，使用脏标记优先模式
+      const useDirtyFirst = hasPlayerDirty(queuedPlayer);
+      await savePlayerNow(queuedPlayer, { dirtyFirst: useDirtyFirst });
       writes += 1;
+      if (useDirtyFirst) dirtyWrites += 1;
       playerLastPersistAt.set(saveKey, Date.now());
     } catch (err) {
       console.warn('[savePlayer] deferred flush failed:', err?.message || err);
@@ -7541,7 +7651,7 @@ async function flushPendingPlayerSaves() {
   }
   const elapsed = Date.now() - t0;
   if (elapsed > 50) {
-    console.log(`[perf] flushPendingPlayerSaves ${elapsed}ms writes=${writes}`);
+    console.log(`[perf] flushPendingPlayerSaves ${elapsed}ms writes=${writes} dirtyWrites=${dirtyWrites}`);
   }
 }
 
@@ -7573,22 +7683,41 @@ async function runStartupMobRespawnCleanup() {
   }
 }
 
-function queuePlayerSave(player) {
+function queuePlayerSave(player, delayMs = PLAYER_SAVE_DEBOUNCE_MS) {
   if (!player?.userId) return;
+  initPlayerSaveState(player);
   pendingPlayerSaves.set(getPlayerSaveKey(player), player);
-  schedulePendingPlayerSaveFlush(PLAYER_SAVE_DEBOUNCE_MS);
+  // 记录下次到期时间
+  player._saveState.nextDueAt = Math.min(
+    player._saveState.nextDueAt || Infinity,
+    Date.now() + delayMs
+  );
+  schedulePendingPlayerSaveFlush(delayMs);
 }
 
 async function savePlayer(player, options = {}) {
   if (!player?.userId) return;
   const saveKey = getPlayerSaveKey(player);
+
+  // 如果有指定脏字段，先标记
+  if (options?.dirty && Array.isArray(options.dirty)) {
+    markPlayerDirty(player, options.dirty);
+  }
+
   if (options?.immediate) {
     pendingPlayerSaves.delete(saveKey);
-    await savePlayerNow(player);
+    // 立即保存时标记所有脏字段
+    if (!options.dirty) {
+      markPlayerDirty(player, ['base', 'position', 'inventory', 'warehouse', 'equipment', 'flags']);
+    }
+    await savePlayerNow(player, { dirtyFirst: true });
     playerLastPersistAt.set(saveKey, Date.now());
     return;
   }
-  queuePlayerSave(player);
+
+  // 使用指定的延迟或默认延迟
+  const delayMs = options?.delayMs || PLAYER_SAVE_DEBOUNCE_MS;
+  queuePlayerSave(player, delayMs);
 }
 
 async function recoverManagedHostedPlayersOnStartup() {
@@ -10628,6 +10757,8 @@ function applyOfflineRewards(player) {
   if (petFruitGain > 0) {
     addItem(player, 'pet_training_fruit', petFruitGain);
   }
+  // 标记基础数据和背包脏（exp/gold/ inventory变化）
+  markPlayerDirty(player, ['base', 'inventory']);
   player.flags.offlineAt = null;
   const offlineLabel = offlineSmartManaged ? '离线托管（智能挂机）收益' : '离线挂机收益';
   if (fruitGain > 0 || petFruitGain > 0) {
@@ -18487,6 +18618,8 @@ async function processMobDeath(player, mob, online) {
       if (Array.isArray(petExpResult?.autoLearned) && petExpResult.autoLearned.length > 0) {
         member.send(`宠物领悟技能: ${petExpResult.autoLearned.map((s) => s.name).join('、')}。`);
       }
+      // 标记基础数据脏（exp/gold变化）
+      markPlayerDirty(member, ['base']);
     });
 
   const dropTargets = [];
@@ -20328,15 +20461,19 @@ async function combatTick() {
     markStateDirty(player);
 
     // 每30秒保存一次玩家数据,避免频繁写入数据库
+    // 使用脏标记机制：只有有脏数据才保存
     const lastSave = getRealmState(player.realmId || 1).lastSaveTime.get(player.name) || 0;
     if (now - lastSave >= 30000) {
-      const tSave = Date.now();
-      savePlayer(player).then(() => {
-        const elapsed = Date.now() - tSave;
-        if (elapsed > 50) {
-          console.log(`[perf] savePlayer ${elapsed}ms ${player?.name || 'unknown'}`);
-        }
-      }).catch(() => {});
+      // 检查是否有脏标记需要保存
+      if (hasPlayerDirty(player)) {
+        const tSave = Date.now();
+        savePlayer(player, { dirtyFirst: true }).then(() => {
+          const elapsed = Date.now() - tSave;
+          if (elapsed > 50) {
+            console.log(`[perf] savePlayer ${elapsed}ms ${player?.name || 'unknown'}`);
+          }
+        }).catch(() => {});
+      }
       getRealmState(player.realmId || 1).lastSaveTime.set(player.name, now);
     }
   }
@@ -20977,6 +21114,29 @@ async function start() {
   }, SETTINGS_SNAPSHOT_TTL);
   // 立即刷新一次
   await refreshSettingsSnapshot().catch(() => {});
+
+  // 脏标记强制保存检查循环（每250ms检查一次是否有超过截止时间的脏数据）
+  setInterval(() => {
+    const now = Date.now();
+    let forceSaveCount = 0;
+    for (const player of listOnlinePlayers()) {
+      const st = player?._saveState;
+      if (!st || st.saving) continue;
+
+      const hasDirty = Object.values(st.dirty).some(Boolean);
+      if (!hasDirty) continue;
+
+      // 检查是否超过强制截止时间
+      if (st.forceDeadlineAt && now >= st.forceDeadlineAt) {
+        const saveKey = getPlayerSaveKey(player);
+        pendingPlayerSaves.set(saveKey, player);
+        forceSaveCount++;
+      }
+    }
+    if (forceSaveCount > 0) {
+      schedulePendingPlayerSaveFlush(100); // 尽快保存
+    }
+  }, 250);
   
   // 预热 VIP 自助领取缓存（现在通过 settings snapshot）
   console.log(`[Startup] VIP自领将通过全局配置快照缓存`);

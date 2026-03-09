@@ -4444,7 +4444,7 @@ function getHighTierRecycleMaterialQty(materialId) {
 function isBatchRecyclableEquipment(item) {
   if (!item?.slot) return false;
   const rarity = normalizeRarityKey(item.rarity);
-  if (rarity !== 'epic' && rarity !== 'legendary') return false;
+  if (rarity !== 'epic' && rarity !== 'legendary' && rarity !== 'supreme') return false;
   if (Math.max(0, Math.floor(Number(item.refine_level || 0))) > 0) return false;
   const effects = item?.effects && typeof item.effects === 'object' ? item.effects : null;
   if (effects && Object.keys(effects).length > 0) return false;
@@ -4509,11 +4509,11 @@ function renderHighTierRecycleSalvage() {
     highTierRecycleUi.batchLegend.disabled = batchLegendCount <= 0;
   }
   if (highTierRecycleUi.batchSupremeEquip) {
-    highTierRecycleUi.batchSupremeEquip.textContent = `一键回收至尊装备（${batchSupremeEquipCount}）`;
+    highTierRecycleUi.batchSupremeEquip.textContent = `一键回收至尊（${batchSupremeEquipCount}）`;
     highTierRecycleUi.batchSupremeEquip.disabled = batchSupremeEquipCount <= 0;
   }
   if (highTierRecycleUi.batchSupremeBook) {
-    highTierRecycleUi.batchSupremeBook.textContent = `一键回收至尊技能书（${batchSupremeBookCount}）`;
+    highTierRecycleUi.batchSupremeBook.textContent = `一键回收技能书（${batchSupremeBookCount}）`;
     highTierRecycleUi.batchSupremeBook.disabled = batchSupremeBookCount <= 0;
   }
   const items = (lastState?.items || [])

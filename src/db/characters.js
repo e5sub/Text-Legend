@@ -67,6 +67,46 @@ const JSON_FIELD_MAP = {
 // 轻量字段（标量，无需序列化）
 const LIGHT_FIELDS = ['user_id', 'realm_id', 'name', 'class', 'level', 'exp', 'gold', 'yuanbao', 'hp', 'mp', 'max_hp', 'max_mp', 'zhuxian_tower_best_floor'];
 
+// 脏标记字段映射：dirty key -> 实际字段列表
+const DIRTY_FIELD_MAP = {
+  base: ['exp', 'gold', 'yuanbao', 'hp', 'mp', 'max_hp', 'max_mp', 'level'],
+  position: ['position'],
+  inventory: ['inventory'],
+  warehouse: ['warehouse'],
+  equipment: ['equipment'],
+  flags: ['flags', 'stats', 'quests', 'skills'], // stats包含flags相关内容
+  heavy: ['stats', 'warehouse', 'equipment', 'quests', 'skills'] // 其他大字段
+};
+
+/**
+ * 根据脏标记获取要保存的字段列表
+ * @param {Object} dirty - 脏标记对象
+ * @returns {string[]} - 字段名列表
+ */
+function getFieldsFromDirty(dirty) {
+  if (!dirty || typeof dirty !== 'object') return [];
+  const fields = new Set();
+  for (const [key, isDirty] of Object.entries(dirty)) {
+    if (isDirty && DIRTY_FIELD_MAP[key]) {
+      DIRTY_FIELD_MAP[key].forEach(f => fields.add(f));
+    }
+  }
+  return Array.from(fields);
+}
+
+/**
+ * 清空脏标记
+ * @param {Object} player - 玩家对象
+ */
+function clearDirtyMarks(player) {
+  if (!player?._saveState?.dirty) return;
+  const dirty = player._saveState.dirty;
+  Object.keys(dirty).forEach(key => {
+    dirty[key] = false;
+  });
+  player._saveState.forceDeadlineAt = 0;
+}
+
 // 构建原始数据对象（不进行JSON序列化）
 function buildCharacterRawData(userId, player, realmId) {
   // 计算诛仙塔最佳层数
@@ -295,11 +335,28 @@ export async function saveCharacter(userId, player, realmId = 1, options = {}) {
   // 确定要保存的字段
   let fieldsToSave = [];
 
+  // 优先使用脏标记（如果有）
+  const dirtyFields = getFieldsFromDirty(player?._saveState?.dirty);
+  const hasDirtyMarks = dirtyFields.length > 0;
+
   if (force) {
     // 强制模式：根据 allowHeavy 决定保存范围
     fieldsToSave = allowHeavy
       ? [...LIGHT_FIELDS, ...Object.keys(JSON_FIELD_MAP)]  // 全量
       : [...LIGHT_FIELDS];  // 仅标量
+  } else if (hasDirtyMarks && options.dirtyFirst) {
+    // 脏标记优先模式：只保存标记为脏的字段
+    const heavyKeys = Object.keys(JSON_FIELD_MAP);
+    if (allowHeavy) {
+      fieldsToSave = dirtyFields;
+    } else {
+      fieldsToSave = dirtyFields.filter(k => !heavyKeys.includes(k));
+    }
+    // 如果没有可保存的脏字段，回退到diff模式
+    if (fieldsToSave.length === 0) {
+      const changed = diffRawData(prev, rawData, allowHeavy);
+      fieldsToSave = allowHeavy ? changed : changed.filter(k => !heavyKeys.includes(k));
+    }
   } else {
     // diff 模式：只保存变化的字段
     const changed = diffRawData(prev, rawData, allowHeavy);
@@ -322,6 +379,11 @@ export async function saveCharacter(userId, player, realmId = 1, options = {}) {
   const updateData = force && allowHeavy
     ? serializeAll(rawData)  // force全量：全部序列化
     : serializeFields(rawData, fieldsToSave);  // 增量：只序列化变化的字段
+
+  // 如果是脏标记模式，保存成功后清空脏标记
+  if (hasDirtyMarks && options.dirtyFirst) {
+    clearDirtyMarks(player);
+  }
 
   // 执行更新
   const characterId = player.id;

@@ -5049,7 +5049,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       const nextInfo = getCultivationInfo(player.flags.cultivationLevel);
       computeDerived(player);
       player.forceStateRefresh = true;
-      await savePlayer(player, { immediate: true });
+      await savePlayer(player, { immediate: true, dirty: ['base', 'flags'] });
       const stoneText = requiresRebirthStone ? '、修真转生石 x1' : '';
       send(`修真提升至 ${nextInfo.name} (+${nextInfo.bonus})，消耗等级 ${costLevels}${stoneText}，当前等级 ${player.level}。`);
       return;
