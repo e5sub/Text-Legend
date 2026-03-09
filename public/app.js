@@ -715,6 +715,8 @@ const highTierRecycleUi = {
   panels: Array.from(document.querySelectorAll('#high-tier-recycle-modal .consign-panel')),
   batchEpic: document.getElementById('high-tier-recycle-batch-epic'),
   batchLegend: document.getElementById('high-tier-recycle-batch-legend'),
+  batchSupremeEquip: document.getElementById('high-tier-recycle-batch-supreme-equip'),
+  batchSupremeBook: document.getElementById('high-tier-recycle-batch-supreme-book'),
   salvageList: document.getElementById('high-tier-recycle-salvage-list'),
   exchangeList: document.getElementById('high-tier-recycle-exchange-list'),
   close: document.getElementById('high-tier-recycle-close')
@@ -4488,6 +4490,16 @@ function renderHighTierRecycleSalvage() {
       ? Math.max(0, Math.floor(Number(item.qty || 0)))
       : 0)
   ), 0);
+  const batchSupremeEquipCount = (lastState?.items || []).reduce((sum, item) => (
+    sum + (isBatchRecyclableEquipment(item) && normalizeRarityKey(item.rarity) === 'supreme'
+      ? Math.max(0, Math.floor(Number(item.qty || 0)))
+      : 0)
+  ), 0);
+  const batchSupremeBookCount = (lastState?.items || []).reduce((sum, item) => (
+    sum + (item?.type === 'book' && normalizeRarityKey(item.rarity) === 'supreme'
+      ? Math.max(0, Math.floor(Number(item.qty || 0)))
+      : 0)
+  ), 0);
   if (highTierRecycleUi.batchEpic) {
     highTierRecycleUi.batchEpic.textContent = `一键回收史诗（${batchEpicCount}）`;
     highTierRecycleUi.batchEpic.disabled = batchEpicCount <= 0;
@@ -4495,6 +4507,14 @@ function renderHighTierRecycleSalvage() {
   if (highTierRecycleUi.batchLegend) {
     highTierRecycleUi.batchLegend.textContent = `一键回收传说（${batchLegendCount}）`;
     highTierRecycleUi.batchLegend.disabled = batchLegendCount <= 0;
+  }
+  if (highTierRecycleUi.batchSupremeEquip) {
+    highTierRecycleUi.batchSupremeEquip.textContent = `一键回收至尊装备（${batchSupremeEquipCount}）`;
+    highTierRecycleUi.batchSupremeEquip.disabled = batchSupremeEquipCount <= 0;
+  }
+  if (highTierRecycleUi.batchSupremeBook) {
+    highTierRecycleUi.batchSupremeBook.textContent = `一键回收至尊技能书（${batchSupremeBookCount}）`;
+    highTierRecycleUi.batchSupremeBook.disabled = batchSupremeBookCount <= 0;
   }
   const items = (lastState?.items || [])
     .filter((item) => (
@@ -11996,6 +12016,28 @@ if (highTierRecycleUi.batchLegend) {
     });
     if (!confirmed) return;
     socket.emit('cmd', { text: 'highrecycle decompose_all legendary', source: 'ui' });
+  });
+}
+if (highTierRecycleUi.batchSupremeEquip) {
+  highTierRecycleUi.batchSupremeEquip.addEventListener('click', async () => {
+    if (!socket || highTierRecycleUi.batchSupremeEquip.disabled) return;
+    const confirmed = await confirmModal({
+      title: '一键回收至尊装备',
+      text: '仅会回收无特效、无附加技能、无锻造的至尊装备，是否继续？'
+    });
+    if (!confirmed) return;
+    socket.emit('cmd', { text: 'highrecycle decompose_all supreme_equipment', source: 'ui' });
+  });
+}
+if (highTierRecycleUi.batchSupremeBook) {
+  highTierRecycleUi.batchSupremeBook.addEventListener('click', async () => {
+    if (!socket || highTierRecycleUi.batchSupremeBook.disabled) return;
+    const confirmed = await confirmModal({
+      title: '一键回收至尊技能书',
+      text: '是否一键回收所有至尊技能书？'
+    });
+    if (!confirmed) return;
+    socket.emit('cmd', { text: 'highrecycle decompose_all supreme_book', source: 'ui' });
   });
 }
 if (highTierRecycleUi.modal) {

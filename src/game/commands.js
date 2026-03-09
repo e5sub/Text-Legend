@@ -223,7 +223,7 @@ export function getEquipmentRecycleExchangeConfig() {
 }
 
 function isHighTierRecycleRarity(rarity) {
-  return rarity === 'epic' || rarity === 'legendary';
+  return rarity === 'epic' || rarity === 'legendary' || rarity === 'supreme_equipment' || rarity === 'supreme_book';
 }
 
 function isHighTierRecycleSalvageable(item) {
@@ -2628,17 +2628,28 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       }
       if (sub === 'decompose_all' || sub === 'salvage_all' || sub === '一键分解' || sub === '一键回收') {
         const rarity = String(parts[0] || '').trim().toLowerCase();
-        if (!isHighTierRecycleRarity(rarity)) return send('仅支持一键回收 epic 或 legendary。');
+        if (!isHighTierRecycleRarity(rarity)) return send('仅支持一键回收 epic、legendary、supreme_equipment 或 supreme_book。');
+        const isSupremeEquipment = rarity === 'supreme_equipment';
+        const isSupremeBook = rarity === 'supreme_book';
+        const actualRarity = isSupremeEquipment || isSupremeBook ? 'supreme' : rarity;
         const targets = (player.inventory || [])
           .filter((slot) => {
-            if (!isEquipmentRecycleBatchEligible(slot)) return false;
             const item = ITEM_TEMPLATES[slot?.id];
-            return item && getHighTierRecycleRarity(item) === rarity && Number(slot.qty || 0) > 0;
+            if (!item || getHighTierRecycleRarity(item) !== actualRarity || Number(slot.qty || 0) <= 0) return false;
+            if (item.type === 'book') {
+              return !isSupremeEquipment;
+            }
+            return !isSupremeBook && isEquipmentRecycleBatchEligible(slot);
           });
-        if (!targets.length) return send('没有符合条件的可回收装备（需无特效、无附加技能、无锻造）。');
+        if (!targets.length) {
+          const msg = isSupremeEquipment ? '没有符合条件的可回收至尊装备（需无特效、无附加技能、无锻造）。' :
+            isSupremeBook ? '没有符合条件的可回收至尊技能书。' :
+            '没有符合条件的可回收物品（装备需无特效、无附加技能、无锻造）。';
+          return send(msg);
+        }
         let totalCount = 0;
         let totalReward = 0;
-        const rewardId = getHighTierRecycleMaterialIdByCurrency(rarity);
+        const rewardId = getHighTierRecycleMaterialIdByCurrency(actualRarity);
         for (const slot of targets) {
           const item = ITEM_TEMPLATES[slot.id];
           const yieldInfo = getHighTierRecycleYield(item);
@@ -2665,7 +2676,8 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         addItem(player, rewardId, totalReward);
         player.forceStateRefresh = true;
         await savePlayer(player, { immediate: true });
-        return send(`一键回收完成：共回收 ${totalCount} 件，获得 ${ITEM_TEMPLATES[rewardId]?.name || rewardId} x${totalReward}。`);
+        const typeLabel = isSupremeEquipment ? '至尊装备' : isSupremeBook ? '至尊技能书' : '物品';
+        return send(`一键回收完成：共回收 ${totalCount} 件${typeLabel}，获得 ${ITEM_TEMPLATES[rewardId]?.name || rewardId} x${totalReward}。`);
       }
       if (sub === 'exchange' || sub === 'redeem' || sub === '兑换') {
         const exchangeId = String(parts[0] || '').trim();
