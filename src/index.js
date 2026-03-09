@@ -14048,7 +14048,16 @@ async function buildState(player, options = {}) {
 
   // ==== 第4段：活动/排行/额外配置 ====
   const t4Start = Date.now();
-  const t4Marks = {};
+  const t4Marks = {
+    party: 0,
+    activity: 0,
+    zhuxian: 0,
+    treasure: 0,
+    vip: 0,
+    settings: 0,
+    guild: 0,
+    bonus: 0
+  };
 
   const party = getPartyByMember(player.name, realmId);
   const partyMembers = party
@@ -14167,14 +14176,14 @@ async function buildState(player, options = {}) {
       `p2_room=${tMarks.p2_room}ms ` +
       `p3_bag=${tMarks.p3_bag}ms ` +
       `p4_extra=${tMarks.p4_extra}ms ` +
-      `| extra_party=${t4Marks.party}ms ` +
-      `extra_activity=${t4Marks.activity}ms ` +
-      `extra_zhuxian=${t4Marks.zhuxian}ms ` +
-      `extra_treasure=${t4Marks.treasure}ms ` +
-      `extra_vip=${t4Marks.vip}ms ` +
-      `extra_settings=${t4Marks.settings}ms ` +
-      `extra_guild=${t4Marks.guild}ms ` +
-      `extra_bonus=${t4Marks.bonus}ms ` +
+      `| extra_party=${t4Marks.party ?? 0}ms ` +
+      `extra_activity=${t4Marks.activity ?? 0}ms ` +
+      `extra_zhuxian=${t4Marks.zhuxian ?? 0}ms ` +
+      `extra_treasure=${t4Marks.treasure ?? 0}ms ` +
+      `extra_vip=${t4Marks.vip ?? 0}ms ` +
+      `extra_settings=${t4Marks.settings ?? 0}ms ` +
+      `extra_guild=${t4Marks.guild ?? 0}ms ` +
+      `extra_bonus=${t4Marks.bonus ?? 0}ms ` +
       `${player?.name || 'unknown'}`
     );
   }
