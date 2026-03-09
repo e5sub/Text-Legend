@@ -6505,15 +6505,6 @@ function normalizeZhuxianTowerProgress(player, now = Date.now()) {
   return player.flags.zxft;
 }
 
-function getZhuxianTowerBestFloorFromFlags(flags) {
-  if (!flags || typeof flags !== 'object') return 0;
-  const zxft = flags.zxft;
-  if (!zxft || typeof zxft !== 'object') return 0;
-  const best = Math.floor(Number(zxft.bestFloor || 0));
-  const highest = Math.floor(Number(zxft.highestClearedFloor || 0));
-  return Math.max(0, best, highest);
-}
-
 function getZhuxianTowerFloor(zoneId, roomId) {
   if (zoneId !== ZHUXIAN_TOWER_ZONE_ID) return 0;
   ensureZhuxianTowerRoom(roomId);
@@ -6584,46 +6575,51 @@ function getPersonalBossDropCap(zoneId, roomId) {
 }
 
 async function syncZhuxianTowerTopTitleForRealm(realmId) {
-  // 优化：使用生成列 has_tower_data 快速过滤
+  // 使用新的 zhuxian_tower_best_floor 列进行纯 SQL 查询
   const rows = await knex('characters')
     .select('id', 'name', 'flags_json')
-    .where({ realm_id: realmId, has_tower_data: 1 })
-    .limit(5000);
+    .where('realm_id', realmId)
+    .andWhere('zhuxian_tower_best_floor', '>', 0)
+    .orderBy('zhuxian_tower_best_floor', 'desc')
+    .orderBy('name', 'asc')
+    .limit(1);
+
   if (!rows || rows.length === 0) return null;
 
-  const parsed = rows.map((row) => {
+  const topEntry = rows[0];
+  const topName = String(topEntry.name || '');
+
+  // 获取所有可能需要更新的角色（当前有称号或应该是第一名）
+  const allRows = await knex('characters')
+    .select('id', 'name', 'flags_json')
+    .where('realm_id', realmId)
+    .andWhere(function() {
+      this.where('flags_json', 'like', '%zhuxianTowerTitle%')
+         .orWhere('name', topName);
+    });
+
+  const updates = [];
+
+  allRows.forEach((row) => {
     let flags = {};
     try {
       flags = row.flags_json ? JSON.parse(row.flags_json) : {};
     } catch {
       flags = {};
     }
-    const floor = getZhuxianTowerBestFloorFromFlags(flags);
-    return { id: row.id, name: row.name, flags, floor };
-  });
 
-  const ranked = parsed
-    .filter((entry) => entry.floor > 0)
-    .sort((a, b) => {
-      if (b.floor !== a.floor) return b.floor - a.floor;
-      return String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hans-CN');
-    });
+    const hasTitle = String(flags?.zhuxianTowerTitle || '') === ZHUXIAN_TOWER_TOP1_TITLE;
+    const shouldHave = row.name === topName;
 
-  const topName = ranked.length > 0 ? String(ranked[0].name || '') : '';
-  const updates = [];
-
-  parsed.forEach((entry) => {
-    const hasTitle = String(entry.flags?.zhuxianTowerTitle || '') === ZHUXIAN_TOWER_TOP1_TITLE;
-    const shouldHave = topName && entry.name === topName;
     if (hasTitle === shouldHave) return;
 
-    if (!entry.flags || typeof entry.flags !== 'object') entry.flags = {};
+    if (!flags || typeof flags !== 'object') flags = {};
     if (shouldHave) {
-      entry.flags.zhuxianTowerTitle = ZHUXIAN_TOWER_TOP1_TITLE;
+      flags.zhuxianTowerTitle = ZHUXIAN_TOWER_TOP1_TITLE;
     } else {
-      delete entry.flags.zhuxianTowerTitle;
+      delete flags.zhuxianTowerTitle;
     }
-    updates.push({ id: entry.id, flagsJson: JSON.stringify(entry.flags), name: entry.name, gained: shouldHave });
+    updates.push({ id: row.id, flagsJson: JSON.stringify(flags), name: row.name, gained: shouldHave });
   });
 
   // 批量更新改为串行执行，减少数据库并发压力
