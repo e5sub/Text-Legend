@@ -4002,14 +4002,32 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       }
       if (sub.startsWith('redeem') || sub.startsWith('兑换')) {
         const rest = rawSub.replace(/^(redeem|兑换)\s*/i, '').trim();
-        const [shopIdRaw, qtyRaw] = rest.split(/\s+/).filter(Boolean);
-        const shopId = String(shopIdRaw || '').trim();
+        const config = normalizeActivityPointShopConfig(await activityApi?.getPointShopConfig?.());
+        const items = (config.items || []).filter((it) => it.active !== false);
+        // 尝试匹配商品ID（支持ID中包含空格的情况）
+        let shopId = '';
+        let qtyRaw = '';
+        const restParts = rest.split(/\s+/).filter(Boolean);
+        for (let i = restParts.length; i >= 1; i--) {
+          const tryId = restParts.slice(0, i).join(' ');
+          const found = items.find((it) => String(it.id) === tryId);
+          if (found) {
+            shopId = tryId;
+            qtyRaw = restParts.slice(i).join(' ');
+            break;
+          }
+        }
+        // 如果没找到，回退到原来的解析方式
+        if (!shopId) {
+          const [firstPart, ...restPart] = restParts;
+          shopId = String(firstPart || '').trim();
+          qtyRaw = restPart.join(' ');
+        }
         const qty = Math.min(ACTIVITY_POINT_SHOP_MAX_REDEEM_QTY, Math.max(1, Math.floor(Number(qtyRaw || 1))));
         if (!shopId) {
           return send('请输入要兑换的商品ID，例如：活动 兑换 商品ID');
         }
-        const config = normalizeActivityPointShopConfig(await activityApi?.getPointShopConfig?.());
-        const item = (config.items || []).find((it) => String(it.id) === shopId && it.active !== false);
+        const item = items.find((it) => String(it.id) === shopId);
         if (!item) return send('积分商城没有这个商品。');
         if (item.minLevel > 0 && Number(player.level || 0) < item.minLevel) return send(`等级不足，需要 ${item.minLevel} 级。`);
         if (item.maxLevel > 0 && Number(player.level || 0) > item.maxLevel) return send(`等级过高，需要不高于 ${item.maxLevel} 级。`);
