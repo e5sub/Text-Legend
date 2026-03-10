@@ -67,6 +67,9 @@ const JSON_FIELD_MAP = {
 // 轻量字段（标量，无需序列化）
 const LIGHT_FIELDS = ['user_id', 'realm_id', 'name', 'class', 'level', 'exp', 'gold', 'yuanbao', 'hp', 'mp', 'max_hp', 'max_mp', 'zhuxian_tower_best_floor'];
 
+// 支持增量更新的字段（使用 SQL 表达式: exp = exp + ?）
+const INCREMENTAL_FIELDS = new Set(['exp', 'gold', 'yuanbao']);
+
 // 脏标记字段映射：dirty key -> 实际字段列表
 const DIRTY_FIELD_MAP = {
   base: ['exp', 'gold', 'yuanbao', 'hp', 'mp', 'max_hp', 'max_mp', 'level'],
@@ -431,6 +434,130 @@ export async function saveCharacter(userId, player, realmId = 1, options = {}) {
   // 更新快照（深拷贝隔离）
   setCharacterPersistSnapshot(player, cloneRawData(rawData));
   return null;
+}
+
+/**
+ * 批量增量更新角色数据（用于托管玩家高频数据合并写入）
+ * @param {Array<{userId, player, realmId, deltas}>} batch - 批量更新项
+ * @returns {Promise<number>} - 成功更新的数量
+ * 
+ * deltas 格式: { exp: 100, gold: 50 } 表示 exp += 100, gold += 50
+ */
+export async function batchIncrementalUpdate(batch) {
+  if (!Array.isArray(batch) || batch.length === 0) return 0;
+  
+  let updated = 0;
+  
+  for (const item of batch) {
+    const { userId, player, realmId = 1, deltas = {} } = item;
+    if (!userId || !player?.name) continue;
+    
+    const resolvedRealmId = Number(player?.realmId ?? realmId ?? 1) || 1;
+    const characterId = player.id;
+    
+    // 构建增量更新数据
+    const updateData = { updated_at: knex.fn.now() };
+    const rawUpdates = {};
+    
+    for (const [field, delta] of Object.entries(deltas)) {
+      if (INCREMENTAL_FIELDS.has(field) && Number.isFinite(delta) && delta !== 0) {
+        // 使用 SQL 表达式: field = field + delta
+        rawUpdates[field] = knex.raw(`?? + ?`, [field, delta]);
+      }
+    }
+    
+    // 添加其他轻量字段的更新（如 hp, mp, level）
+    const rawData = buildCharacterRawData(userId, player, resolvedRealmId);
+    for (const field of ['hp', 'mp', 'level', 'max_hp', 'max_mp']) {
+      if (!rawUpdates[field] && rawData[field] !== undefined) {
+        rawUpdates[field] = rawData[field];
+      }
+    }
+    
+    // 诛仙塔最佳层数
+    const zhuxianTowerBestFloor = getZhuxianTowerBestFloorFromFlags(player.flags || {});
+    if (zhuxianTowerBestFloor > 0) {
+      rawUpdates.zhuxian_tower_best_floor = zhuxianTowerBestFloor;
+    }
+    
+    if (Object.keys(rawUpdates).length === 0) continue;
+    
+    try {
+      let result = 0;
+      
+      if (characterId && typeof characterId === 'number') {
+        result = await knex('characters')
+          .where({ id: characterId })
+          .update({ ...rawUpdates, ...updateData });
+      }
+      
+      if (Number(result || 0) === 0) {
+        result = await knex('characters')
+          .where({ user_id: userId, name: player.name, realm_id: resolvedRealmId })
+          .update({ ...rawUpdates, ...updateData });
+      }
+      
+      if (Number(result || 0) > 0) {
+        updated++;
+        // 更新快照
+        setCharacterPersistSnapshot(player, cloneRawData(rawData));
+      }
+    } catch (err) {
+      console.warn(`[batchIncrementalUpdate] failed for ${player.name}:`, err?.message || err);
+    }
+  }
+  
+  return updated;
+}
+
+/**
+ * 轻量保存 - 仅保存标量字段，不序列化 JSON 大字段
+ * 适用于托管玩家的频繁自动保存
+ */
+export async function saveCharacterLight(userId, player, realmId = 1) {
+  const resolvedRealmId = Number(player?.realmId ?? realmId ?? 1) || 1;
+  const characterId = player.id;
+  
+  // 仅构建标量数据
+  const rawData = buildCharacterRawData(userId, player, resolvedRealmId);
+  const updateData = {};
+  
+  // 只包含轻量字段
+  for (const field of LIGHT_FIELDS) {
+    if (field !== 'user_id' && field !== 'realm_id' && rawData[field] !== undefined) {
+      updateData[field] = rawData[field];
+    }
+  }
+  
+  // 诛仙塔最佳层数
+  const zhuxianTowerBestFloor = getZhuxianTowerBestFloorFromFlags(player.flags || {});
+  if (zhuxianTowerBestFloor > 0) {
+    updateData.zhuxian_tower_best_floor = zhuxianTowerBestFloor;
+  }
+  
+  if (Object.keys(updateData).length === 0) return null;
+  
+  updateData.updated_at = knex.fn.now();
+  
+  let updated = 0;
+  
+  if (characterId && typeof characterId === 'number') {
+    updated = await knex('characters')
+      .where({ id: characterId })
+      .update(updateData);
+  }
+  
+  if (Number(updated || 0) === 0) {
+    updated = await knex('characters')
+      .where({ user_id: userId, name: player.name, realm_id: resolvedRealmId })
+      .update(updateData);
+  }
+  
+  if (Number(updated || 0) > 0) {
+    setCharacterPersistSnapshot(player, cloneRawData(rawData));
+  }
+  
+  return updated;
 }
 
 export async function deleteCharacter(userId, name, realmId = 1) {

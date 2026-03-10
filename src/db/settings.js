@@ -1,21 +1,94 @@
 ﻿import knex from './index.js';
 
+// ===== 内存缓存 =====
+const settingsCache = new Map();
+let cacheLoaded = false;
+
 /**
- * 获取游戏设置
+ * 从数据库加载所有设置到内存缓存
+ * 服务端启动时调用一次
+ */
+export async function loadSettingsCache() {
+  const rows = await knex('game_settings').select('key', 'value');
+  settingsCache.clear();
+  for (const row of rows) {
+    settingsCache.set(row.key, row.value);
+  }
+  cacheLoaded = true;
+  console.log(`[settings] loaded ${rows.length} settings into cache`);
+  return rows.length;
+}
+
+/**
+ * 刷新单个设置项（从数据库重新加载）
+ */
+export async function refreshSettingCache(key) {
+  const row = await knex('game_settings').where({ key }).first();
+  if (row) {
+    settingsCache.set(row.key, row.value);
+  } else {
+    settingsCache.delete(key);
+  }
+  return row ? row.value : null;
+}
+
+/**
+ * 清空并重新加载缓存
+ */
+export async function reloadSettingsCache() {
+  cacheLoaded = false;
+  return loadSettingsCache();
+}
+
+/**
+ * 获取游戏设置（优先从内存缓存读取）
  */
 export async function getSetting(key, defaultValue = null) {
+  // 如果缓存已加载，直接读取内存
+  if (cacheLoaded) {
+    return settingsCache.has(key) ? settingsCache.get(key) : defaultValue;
+  }
+  // 缓存未加载时回退到数据库查询（兼容启动阶段）
   const row = await knex('game_settings').where({ key }).first();
   return row ? row.value : defaultValue;
 }
 
 /**
- * 设置游戏配置
+ * 同步获取设置（仅用于缓存加载后的高频调用）
+ * 注意：使用此函数前确保已调用 loadSettingsCache()
+ */
+export function getSettingSync(key, defaultValue = null) {
+  return settingsCache.has(key) ? settingsCache.get(key) : defaultValue;
+}
+
+/**
+ * 设置游戏配置（更新缓存和数据库）
  */
 export async function setSetting(key, value) {
+  // 先更新数据库
   await knex('game_settings')
     .insert({ key, value })
     .onConflict('key')
     .merge({ value, updated_at: knex.fn.now() });
+  // 同步更新缓存
+  settingsCache.set(key, value);
+}
+
+/**
+ * 批量设置（减少数据库往返）
+ */
+export async function setSettingsBatch(entries) {
+  if (!Array.isArray(entries) || entries.length === 0) return;
+  const now = knex.fn.now();
+  const rows = entries.map(e => ({ key: e.key, value: e.value, updated_at: now }));
+  await knex('game_settings')
+    .insert(rows)
+    .onConflict('key')
+    .merge({ value: knex.raw('excluded.value'), updated_at: now });
+  // 同步更新缓存
+  for (const e of entries) {
+    settingsCache.set(e.key, e.value);
+  }
 }
 
 export async function getPetSettings() {

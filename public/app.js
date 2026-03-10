@@ -6638,8 +6638,10 @@ function showAutoFullBossModal() {
         const item = items.find((x) => String(x.id) === itemId);
         if (!item) return;
         let qty = 1;
-        const canStack = !item.limit || item.limitType === 'none' || Number(item.limit || 0) > 1;
-        if (canStack) {
+        // 允许输入数量的条件：没有限制、限制大于1、或者限制类型为none
+        // 即使限制为1，也允许输入数量（但兑换时会检查是否超限）
+        const canInputQty = !item.limit || item.limitType === 'none' || Number(item.limit || 0) >= 1;
+        if (canInputQty) {
           const input = await promptModal({
             title: '兑换数量',
             text: `${item.name}\n单价：${Number(item.cost || 0)} 积分`,
