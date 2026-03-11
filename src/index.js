@@ -6106,7 +6106,9 @@ async function logRuntimeHealth(expectedAt = Date.now()) {
   }
   const shouldRunCleanup = now - runtimeCacheCleanupLastAt >= RUNTIME_CACHE_CLEANUP_COOLDOWN_MS;
   if (shouldRunCleanup) {
-    cleanupInfo = cleanupRuntimeCaches({ aggressive: aggressive || normal });
+    // 缓存清理的 aggressive 模式只看内存压力（critical 档 0.88），避免 lag 高时"越清越卡"
+    const cleanupAggressive = heapRatio >= RUNTIME_HEAP_CRITICAL_RATIO;
+    cleanupInfo = cleanupRuntimeCaches({ aggressive: cleanupAggressive });
   }
   // 每5分钟无论内存状态如何都执行一次常规清理
   const shouldPeriodicCleanup = now - runtimeCacheCleanupLastAt >= 5 * 60 * 1000;
