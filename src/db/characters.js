@@ -466,7 +466,7 @@ export async function batchIncrementalUpdate(batch) {
       }
     }
     
-    // 添加其他轻量字段的更新（如 hp, mp, level）
+    // 其他轻量字段的更新（如 hp, mp, level）
     const rawData = buildCharacterRawData(userId, player, resolvedRealmId);
     for (const field of ['hp', 'mp', 'level', 'max_hp', 'max_mp']) {
       if (!rawUpdates[field] && rawData[field] !== undefined) {
