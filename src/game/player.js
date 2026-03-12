@@ -91,6 +91,14 @@ function randomEquipBaseRollPct() {
   return Math.floor(Math.random() * (EQUIP_BASE_ROLL_MAX_PCT - EQUIP_BASE_ROLL_MIN_PCT + 1)) + EQUIP_BASE_ROLL_MIN_PCT;
 }
 
+function getEquipBaseRollPctByRarity(itemTemplate) {
+  // 只有终极装备有随机属性，其他稀有度固定为100%
+  if (itemTemplate?.rarity === 'ultimate') {
+    return randomEquipBaseRollPct();
+  }
+  return 100;
+}
+
 export function normalizeSpecializationState(player) {
   if (!player?.flags) player.flags = {};
   const defs = SPECIALIZATION_DEFS[player.classId] || [];
@@ -1294,7 +1302,7 @@ export function addItem(player, itemId, qty = 1, effects = null, durability = nu
     const finalDur = durability !== null ? durability : maxDur;
     const finalMaxDur = max_durability !== null ? max_durability : maxDur;
     const finalRefineLevel = refine_level !== null ? refine_level : 0;
-    const finalBaseRollPct = normalizeEquipBaseRollPct(itemTemplate, base_roll_pct, randomEquipBaseRollPct());
+    const finalBaseRollPct = normalizeEquipBaseRollPct(itemTemplate, base_roll_pct, getEquipBaseRollPctByRarity(itemTemplate));
     const finalGrowthLevel = growth_level !== null ? normalizeGrowthLevel(growth_level) : 0;
     const finalGrowthFailStack = growth_fail_stack !== null ? normalizeGrowthFailStack(growth_fail_stack) : 0;
     
@@ -1356,7 +1364,7 @@ export function addItemToList(list, itemId, qty = 1, effects = null, durability 
     const finalDur = durability !== null ? durability : maxDur;
     const finalMaxDur = max_durability !== null ? max_durability : maxDur;
     const finalRefineLevel = refine_level !== null ? refine_level : 0;
-    const finalBaseRollPct = normalizeEquipBaseRollPct(itemTemplate, base_roll_pct, randomEquipBaseRollPct());
+    const finalBaseRollPct = normalizeEquipBaseRollPct(itemTemplate, base_roll_pct, getEquipBaseRollPctByRarity(itemTemplate));
     const finalGrowthLevel = growth_level !== null ? normalizeGrowthLevel(growth_level) : 0;
     const finalGrowthFailStack = growth_fail_stack !== null ? normalizeGrowthFailStack(growth_fail_stack) : 0;
 
