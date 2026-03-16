@@ -11082,8 +11082,7 @@ function findAliveBossTarget(player) {
       }
       if (zoneId === ZHUXIAN_TOWER_ZONE_ID) continue;
       if (isCultivationBoss(tpl)) {
-        // 修真BOSS仅在本服realm内追踪，避免因为跨服realm的同名目标导致反复空跑切房
-        if (realmId !== (player.realmId || 1)) continue;
+        // 修真BOSS允许跨服追踪，仅按修真等级与房间限制过滤
         const roomMinLevel = Number(WORLD[zoneId]?.rooms?.[roomId]?.minCultivationLevel);
         if (!Number.isFinite(roomMinLevel) || roomMinLevel !== playerCultivationLevel) continue;
       }
@@ -11166,10 +11165,6 @@ function summarizeBossTargetReasons(player, mobs, realmId) {
       continue;
     }
     if (isCultivationBoss(tpl)) {
-      if (realmId !== (player.realmId || 1)) {
-        summary.cultivationMismatch += 1;
-        continue;
-      }
       const roomMinLevel = Number(roomDef?.minCultivationLevel);
       if (!Number.isFinite(roomMinLevel) || roomMinLevel !== playerCultivationLevel) {
         summary.cultivationMismatch += 1;
