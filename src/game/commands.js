@@ -105,6 +105,16 @@ const PET_RARITY_APTITUDE_RANGE = {
 const PET_BASE_SKILL_SLOTS = 3;
 const ACTIVITY_POINT_SHOP_MAX_REDEEM_QTY = 99;
 const ACTIVITY_DIVINE_BEAST_EXCHANGE_MAX_QTY = 20;
+
+function normalizeNumberText(text) {
+  return String(text || '').replace(/[０-９]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xFF10 + 0x30));
+}
+
+function parsePositiveInt(text, fallback = 1) {
+  const normalized = normalizeNumberText(text).match(/\d+/);
+  const value = normalized ? parseInt(normalized[0], 10) : NaN;
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+}
 const HIGH_TIER_RECYCLE_ESSENCE_ITEM_IDS = Object.freeze({
   epic: 'epic_essence',
   legendary: 'legend_essence',
@@ -2682,7 +2692,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       }
       if (sub === 'exchange' || sub === 'redeem' || sub === '兑换') {
         const exchangeId = String(parts[0] || '').trim();
-        const qty = Math.max(1, Math.min(99, Math.floor(Number(parts[1] || 1) || 1)));
+        const qty = Math.min(99, parsePositiveInt(parts[1], 1));
         if (!exchangeId) return send('请选择兑换项。');
         const exchange = getHighTierRecycleExchangeItem(exchangeId);
         if (!exchange) return send('没有这个兑换项。');
@@ -4001,7 +4011,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         }
         const [exchangeIdRaw, qtyRaw] = rawRest.split(/\s+/).filter(Boolean);
         const exchangeId = String(exchangeIdRaw || '').trim();
-        const qty = Math.min(ACTIVITY_DIVINE_BEAST_EXCHANGE_MAX_QTY, Math.max(1, Math.floor(Number(qtyRaw || 1))));
+        const qty = Math.min(ACTIVITY_DIVINE_BEAST_EXCHANGE_MAX_QTY, parsePositiveInt(qtyRaw, 1));
         if (!exchangeId) return send('请输入兑换ID，例如：活动 神兽兑换 dbf_1');
         const item = list.find((it) => String(it.id) === exchangeId);
         if (!item) return send('神兽碎片兑换没有这个选项。');
@@ -4047,7 +4057,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           shopId = String(firstPart || '').trim();
           qtyRaw = restPart.join(' ');
         }
-        const qty = Math.min(ACTIVITY_POINT_SHOP_MAX_REDEEM_QTY, Math.max(1, Math.floor(Number(qtyRaw || 1))));
+        const qty = Math.min(ACTIVITY_POINT_SHOP_MAX_REDEEM_QTY, parsePositiveInt(qtyRaw, 1));
         if (!shopId) {
           return send('请输入要兑换的商品ID，例如：活动 兑换 商品ID');
         }

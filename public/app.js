@@ -2287,6 +2287,16 @@ function promptModal({ title, text, placeholder, value, extra, allowEmpty, type 
   });
 }
 
+function normalizeNumberText(text) {
+  return String(text || '').replace(/[０-９]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xFF10 + 0x30));
+}
+
+function parsePositiveInt(text, fallback = 1) {
+  const normalized = normalizeNumberText(text).match(/\d+/);
+  const value = normalized ? parseInt(normalized[0], 10) : NaN;
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
 function promptDualModal({
   title,
   text,
@@ -6650,8 +6660,7 @@ function showAutoFullBossModal() {
             allowEmpty: true
           });
           if (input === null) return;
-          const n = Number((input || '1').trim() || '1');
-          qty = Number.isFinite(n) ? Math.max(1, Math.floor(n)) : 1;
+          qty = parsePositiveInt(input, 1);
         }
         if (!socket) return showToast('未连接服务器');
         socket.emit('cmd', { text: `活动 redeem ${itemId} ${qty}`, source: 'ui' });
@@ -6697,8 +6706,7 @@ function showAutoFullBossModal() {
           allowEmpty: true
         });
         if (input === null) return;
-        const n = Number((input || '1').trim() || '1');
-        const qty = Number.isFinite(n) ? Math.max(1, Math.floor(n)) : 1;
+        const qty = parsePositiveInt(input, 1);
         if (!socket) return showToast('未连接服务器');
         socket.emit('cmd', { text: `活动 神兽兑换 ${exchangeId} ${qty}`, source: 'ui' });
         showToast(`已请求兑换：${item.name || item.species} x${qty}`);

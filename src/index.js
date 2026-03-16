@@ -2857,7 +2857,7 @@ app.post('/admin/state-throttle-toggle', async (req, res) => {
   const intervalValue = await getStateThrottleIntervalSec();
   const overrideAllowed = await getStateThrottleOverrideServerAllowed();
   const cacheMonsterHealthValue = await getCacheMonsterHealthEnabled();
-  const playerSave = {
+  const playerSaveNext = {
     debounceMs: await getPlayerSaveDebounceMs(),
     minIntervalMs: await getPlayerSaveMinIntervalMs(),
     managedMinIntervalMs: await getPlayerSaveManagedMinIntervalMs(),
@@ -2865,7 +2865,7 @@ app.post('/admin/state-throttle-toggle', async (req, res) => {
     forceDeadlineMs: await getPlayerSaveForceDeadlineMs(),
     maxWritesPerFlush: await getPlayerSaveMaxWritesPerFlush()
   };
-  res.json({ ok: true, enabled: nextEnabled, intervalSec: intervalValue, overrideServerAllowed: overrideAllowed, cacheMonsterHealth: cacheMonsterHealthValue, playerSave });
+  res.json({ ok: true, enabled: nextEnabled, intervalSec: intervalValue, overrideServerAllowed: overrideAllowed, cacheMonsterHealth: cacheMonsterHealthValue, playerSave: playerSaveNext });
 });
 
 // 缓存怪物血量开关独立接口（便于单独控制）
