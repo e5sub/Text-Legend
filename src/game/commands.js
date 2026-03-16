@@ -1549,7 +1549,7 @@ function trainingCostByLevel(currentLevel) {
 }
 
 function playerTrainingFruitNeededByLevel(currentLevel) {
-  return Number(currentLevel) >= 500 ? 1 : 0;
+  return 1;
 }
 
 function playerTrainingFruitNeededForBatch(currentLevel, count) {
@@ -4928,10 +4928,10 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           const perLevel = getTrainingPerLevelConfig()[key];
           const totalBonus = currentLevel * perLevel;
           const needFruit = playerTrainingFruitNeededByLevel(currentLevel);
-          const costText = needFruit > 0 ? `${cost} 金币 + 修炼果x${needFruit}` : `${cost} 金币`;
+          const costText = `${cost} 金币 + 修炼果x${needFruit}`;
           send(`${info.label}: Lv${currentLevel} (属性+${totalBonus.toFixed(2)}), 消耗 ${costText}, 升至 Lv${currentLevel + 1}`);
         });
-        send('说明：属性修炼达到 Lv500 后，每次继续修炼额外消耗 修炼果 x1。');
+        send('说明：每次修炼都需要 修炼果 x1。');
         return;
       }
 
@@ -4988,7 +4988,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         player.forceStateRefresh = true;
         await savePlayer(player, { immediate: true });
         send(`修炼成功: ${TRAINING_OPTIONS[key].label} 升至 Lv${newLevel} (属性+${totalBonus.toFixed(2)})。`);
-        send(needFruit > 0 ? `消耗 ${cost} 金币、修炼果 x${needFruit}。` : `消耗 ${cost} 金币。`);
+        send(`消耗 ${cost} 金币、修炼果 x${needFruit}。`);
         return;
       }
 
@@ -5040,9 +5040,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       await savePlayer(player, { immediate: true });
 
       send(`批量修炼成功: ${TRAINING_OPTIONS[key].label} 从 Lv${currentLevel} 升至 Lv${newLevel} (属性+${totalBonus.toFixed(2)})。`);
-      send(needFruit > 0
-        ? `共 ${trainCount} 次修炼，消耗 ${totalCost} 金币、修炼果 x${needFruit}。`
-        : `共 ${trainCount} 次修炼，消耗 ${totalCost} 金币。`);
+      send(`共 ${trainCount} 次修炼，消耗 ${totalCost} 金币、修炼果 x${needFruit}。`);
       return;
     }
     case 'cultivate':
