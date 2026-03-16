@@ -81,6 +81,21 @@ const dashboardOps = document.getElementById('dashboard-ops');
 const dashboardRecentLogins = document.getElementById('dashboard-recent-logins');
 const dashboardRefreshBtn = document.getElementById('dashboard-refresh-btn');
 const dashboardMsg = document.getElementById('dashboard-msg');
+const gmMailScopeSelect = document.getElementById('gm-mail-scope');
+const gmMailRealmSelect = document.getElementById('gm-mail-realm');
+const gmMailUserRow = document.getElementById('gm-mail-user-row');
+const gmMailUsernameInput = document.getElementById('gm-mail-username');
+const gmMailCharacterInput = document.getElementById('gm-mail-character');
+const gmMailTitleInput = document.getElementById('gm-mail-title');
+const gmMailBodyInput = document.getElementById('gm-mail-body');
+const gmMailGoldInput = document.getElementById('gm-mail-gold');
+const gmMailYuanbaoInput = document.getElementById('gm-mail-yuanbao');
+const gmMailItemIdInput = document.getElementById('gm-mail-item-id');
+const gmMailItemQtyInput = document.getElementById('gm-mail-item-qty');
+const gmMailItemAddBtn = document.getElementById('gm-mail-item-add');
+const gmMailItemList = document.getElementById('gm-mail-item-list');
+const gmMailSendBtn = document.getElementById('gm-mail-send-btn');
+const gmMailMsg = document.getElementById('gm-mail-msg');
 
 const stateThrottleToggle = document.getElementById('state-throttle-toggle');
 const stateThrottleOverrideAllowedToggle = document.getElementById('state-throttle-override-allowed');
@@ -5639,6 +5654,24 @@ function updateBossRealmSelects(realms) {
     cbKillRealmInput.appendChild(crossOption);
     cbKillRealmInput.value = '0';
   }
+
+  if (gmMailRealmSelect) {
+    const currentValue = gmMailRealmSelect.value;
+    gmMailRealmSelect.innerHTML = '';
+    const allOption = document.createElement('option');
+    allOption.value = '';
+    allOption.textContent = '全部区服';
+    gmMailRealmSelect.appendChild(allOption);
+    realms.forEach((r) => {
+      const option = document.createElement('option');
+      option.value = r.id;
+      option.textContent = `${r.id} - ${r.name}`;
+      gmMailRealmSelect.appendChild(option);
+    });
+    if (currentValue !== '') {
+      gmMailRealmSelect.value = currentValue;
+    }
+  }
 }
 
 async function loadCmdRateSettings() {
@@ -10324,6 +10357,129 @@ if (worldRoomEditNpcAddBtn) {
 if (dashboardRefreshBtn) {
   dashboardRefreshBtn.addEventListener('click', loadDashboardStats);
 }
+
+let gmMailAttachments = [];
+
+function renderGmMailAttachments() {
+  if (!gmMailItemList) return;
+  if (!gmMailAttachments.length) {
+    gmMailItemList.textContent = '暂无附件';
+    return;
+  }
+  gmMailItemList.innerHTML = '';
+  gmMailAttachments.forEach((item, index) => {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.style.justifyContent = 'space-between';
+    row.style.gap = '8px';
+    row.innerHTML = `
+      <span>${item.id} x${item.qty}</span>
+      <button class="btn-small" data-index="${index}" style="background:#6c757d;">移除</button>
+    `;
+    const btn = row.querySelector('button');
+    if (btn) {
+      btn.addEventListener('click', () => {
+        gmMailAttachments.splice(index, 1);
+        renderGmMailAttachments();
+      });
+    }
+    gmMailItemList.appendChild(row);
+  });
+}
+
+if (gmMailItemAddBtn) {
+  gmMailItemAddBtn.addEventListener('click', () => {
+    const id = String(gmMailItemIdInput?.value || '').trim();
+    const qty = Math.max(1, Math.floor(Number(gmMailItemQtyInput?.value || 1) || 1));
+    if (!id) {
+      if (gmMailMsg) {
+        gmMailMsg.textContent = '请输入物品ID';
+        gmMailMsg.style.color = 'red';
+      }
+      return;
+    }
+    gmMailAttachments.push({ id, qty });
+    if (gmMailItemIdInput) gmMailItemIdInput.value = '';
+    if (gmMailItemQtyInput) gmMailItemQtyInput.value = '';
+    renderGmMailAttachments();
+  });
+}
+
+if (gmMailScopeSelect) {
+  gmMailScopeSelect.addEventListener('change', () => {
+    const scope = String(gmMailScopeSelect.value || 'user');
+    if (gmMailUserRow) {
+      gmMailUserRow.style.display = scope === 'user' ? '' : 'none';
+    }
+  });
+}
+
+if (gmMailSendBtn) {
+  gmMailSendBtn.addEventListener('click', async () => {
+    if (!gmMailMsg) return;
+    gmMailMsg.textContent = '';
+    const scope = String(gmMailScopeSelect?.value || 'user');
+    const realmRaw = String(gmMailRealmSelect?.value || '').trim();
+    const realmId = realmRaw === '' ? null : Math.max(1, Math.floor(Number(realmRaw) || 1));
+    const username = String(gmMailUsernameInput?.value || '').trim();
+    const characterName = String(gmMailCharacterInput?.value || '').trim();
+    const title = String(gmMailTitleInput?.value || '').trim();
+    const body = String(gmMailBodyInput?.value || '').trim();
+    const gold = Math.max(0, Math.floor(Number(gmMailGoldInput?.value || 0) || 0));
+    const yuanbao = Math.max(0, Math.floor(Number(gmMailYuanbaoInput?.value || 0) || 0));
+    const items = gmMailAttachments.map((item) => ({ id: String(item.id), qty: Math.max(1, Math.floor(Number(item.qty) || 1)) }));
+    if (!title || !body) {
+      gmMailMsg.textContent = '标题和内容不能为空';
+      gmMailMsg.style.color = 'red';
+      return;
+    }
+    if (scope === 'user' && !username && !characterName) {
+      gmMailMsg.textContent = '请输入玩家账号或角色名';
+      gmMailMsg.style.color = 'red';
+      return;
+    }
+    try {
+      let res = null;
+      if (scope === 'user') {
+        res = await api('/admin/mail/send', 'POST', {
+          username,
+          characterName,
+          title,
+          body,
+          realmId: realmId ?? undefined,
+          items,
+          gold,
+          yuanbao
+        });
+      } else if (scope === 'online') {
+        res = await api('/admin/mail/send-online', 'POST', {
+          title,
+          body,
+          realmId: realmId ?? undefined,
+          items,
+          gold,
+          yuanbao
+        });
+      } else {
+        res = await api('/admin/mail/send-all', 'POST', {
+          title,
+          body,
+          realmId: realmId ?? undefined,
+          items,
+          gold,
+          yuanbao
+        });
+      }
+      gmMailMsg.textContent = res?.message || '发送成功';
+      gmMailMsg.style.color = 'green';
+    } catch (err) {
+      gmMailMsg.textContent = `发送失败: ${err.message}`;
+      gmMailMsg.style.color = 'red';
+    }
+  });
+}
+
+renderGmMailAttachments();
 
 function slugifySectionTitle(title) {
   const cleaned = String(title || '')

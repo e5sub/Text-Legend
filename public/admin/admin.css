@@ -25,6 +25,31 @@ body {
   min-height: 100vh;
 }
 
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(110, 86, 63, 0.7) rgba(20, 14, 10, 0.2);
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(20, 14, 10, 0.2);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(185, 132, 78, 0.75), rgba(110, 86, 63, 0.85));
+  border-radius: 999px;
+  border: 2px solid rgba(20, 14, 10, 0.2);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(224, 154, 88, 0.9), rgba(130, 96, 68, 0.9));
+}
+
 .admin-layout {
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);

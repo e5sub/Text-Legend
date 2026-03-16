@@ -2241,21 +2241,127 @@ app.post('/admin/worldboss-respawn', async (req, res) => {
 app.post('/admin/mail/send', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
-  const { username, title, body, realmId: rawRealmId } = req.body || {};
-  const user = await getUserByName(username);
-  if (!user) return res.status(404).json({ error: '用户不存在。' });
-  let realmInfo = await resolveRealmId(rawRealmId);
-  // 如果请求的区服不存在（合区后可能发生），使用第一个可用的区服
-  if (realmInfo.error) {
-    const realms = await listRealms();
-    if (Array.isArray(realms) && realms.length > 0) {
-      realmInfo = { realmId: realms[0].id };
+  const { username, characterName, title, body, realmId: rawRealmId, items: rawItems, gold, yuanbao } = req.body || {};
+  if (!title || !body) return res.status(400).json({ error: '标题或内容不能为空。' });
+  const trimmedCharacterName = String(characterName || '').trim();
+  const trimmedUsername = String(username || '').trim();
+  let targetUserId = null;
+  let targetRealmId = null;
+  let targetName = null;
+
+  if (trimmedCharacterName) {
+    const realmId = rawRealmId == null ? null : Math.max(1, Math.floor(Number(rawRealmId) || 1));
+    if (realmId) {
+      const row = await findCharacterByNameInRealm(trimmedCharacterName, realmId);
+      if (!row) return res.status(404).json({ error: '该区服不存在该角色。' });
+      targetUserId = Number(row.user_id || 0);
+      targetRealmId = Number(row.realm_id || realmId) || realmId;
+      targetName = trimmedCharacterName;
     } else {
-      return res.status(400).json({ error: realmInfo.error });
+      const rows = await knex('characters').where({ name: trimmedCharacterName }).select('user_id', 'realm_id');
+      if (!rows || rows.length === 0) return res.status(404).json({ error: '角色不存在。' });
+      if (rows.length > 1) return res.status(400).json({ error: '该角色名在多个区服存在，请先选择区服。' });
+      targetUserId = Number(rows[0].user_id || 0);
+      targetRealmId = Number(rows[0].realm_id || 1) || 1;
+      targetName = trimmedCharacterName;
     }
+  } else {
+    if (!trimmedUsername) return res.status(400).json({ error: '请输入玩家账号或角色名。' });
+    const user = await getUserByName(trimmedUsername);
+    if (!user) return res.status(404).json({ error: '用户不存在。' });
+    let realmInfo = await resolveRealmId(rawRealmId);
+    // 如果请求的区服不存在（合区后可能发生），使用第一个可用的区服
+    if (realmInfo.error) {
+      const realms = await listRealms();
+      if (Array.isArray(realms) && realms.length > 0) {
+        realmInfo = { realmId: realms[0].id };
+      } else {
+        return res.status(400).json({ error: realmInfo.error });
+      }
+    }
+    targetUserId = Number(user.id || 0);
+    targetRealmId = Number(realmInfo.realmId || 1) || 1;
+    targetName = trimmedUsername;
   }
-  await sendMail(user.id, 'GM', title, body, null, 0, realmInfo.realmId);
+  if (!targetUserId || !targetRealmId) return res.status(400).json({ error: '目标玩家无效。' });
+  const items = Array.isArray(rawItems)
+    ? rawItems
+        .map((item) => {
+          const id = String(item?.id || '').trim();
+          const qty = Math.max(1, Math.floor(Number(item?.qty || 1) || 1));
+          if (!id || !ITEM_TEMPLATES[id]) return null;
+          return { id, qty };
+        })
+        .filter(Boolean)
+    : null;
+  const safeGold = Math.max(0, Math.floor(Number(gold || 0) || 0));
+  const safeYuanbao = Math.max(0, Math.floor(Number(yuanbao || 0) || 0));
+  await sendMail(targetUserId, targetName, 'GM', admin.id || null, title, body, items, safeGold, targetRealmId, safeYuanbao);
   res.json({ ok: true });
+});
+
+app.post('/admin/mail/send-online', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const { title, body, realmId: rawRealmId, items: rawItems, gold, yuanbao } = req.body || {};
+  if (!title || !body) return res.status(400).json({ error: '标题或内容不能为空。' });
+  const realmId = rawRealmId == null ? null : Math.max(1, Math.floor(Number(rawRealmId) || 1));
+  const targets = realmId ? listOnlinePlayers(realmId) : listOnlinePlayers();
+  const items = Array.isArray(rawItems)
+    ? rawItems
+        .map((item) => {
+          const id = String(item?.id || '').trim();
+          const qty = Math.max(1, Math.floor(Number(item?.qty || 1) || 1));
+          if (!id || !ITEM_TEMPLATES[id]) return null;
+          return { id, qty };
+        })
+        .filter(Boolean)
+    : null;
+  const safeGold = Math.max(0, Math.floor(Number(gold || 0) || 0));
+  const safeYuanbao = Math.max(0, Math.floor(Number(yuanbao || 0) || 0));
+  const sent = new Set();
+  let total = 0;
+  for (const player of targets) {
+    if (!player?.userId) continue;
+    const key = `${player.userId}:${player.realmId || 1}`;
+    if (sent.has(key)) continue;
+    sent.add(key);
+    await sendMail(player.userId, player.name || 'GM', 'GM', admin.id || null, title, body, items, safeGold, player.realmId || 1, safeYuanbao);
+    total += 1;
+  }
+  res.json({ ok: true, total, message: `已发送给在线玩家 ${total} 人` });
+});
+
+app.post('/admin/mail/send-all', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const { title, body, realmId: rawRealmId, items: rawItems, gold, yuanbao } = req.body || {};
+  if (!title || !body) return res.status(400).json({ error: '标题或内容不能为空。' });
+  const realmId = rawRealmId == null ? null : Math.max(1, Math.floor(Number(rawRealmId) || 1));
+  const items = Array.isArray(rawItems)
+    ? rawItems
+        .map((item) => {
+          const id = String(item?.id || '').trim();
+          const qty = Math.max(1, Math.floor(Number(item?.qty || 1) || 1));
+          if (!id || !ITEM_TEMPLATES[id]) return null;
+          return { id, qty };
+        })
+        .filter(Boolean)
+    : null;
+  const safeGold = Math.max(0, Math.floor(Number(gold || 0) || 0));
+  const safeYuanbao = Math.max(0, Math.floor(Number(yuanbao || 0) || 0));
+  const query = knex('characters').distinct('user_id', 'realm_id');
+  if (realmId) query.where('realm_id', realmId);
+  const rows = await query;
+  let total = 0;
+  for (const row of rows) {
+    const userId = Number(row.user_id || 0);
+    const rowRealmId = Number(row.realm_id || 1) || 1;
+    if (!userId) continue;
+    await sendMail(userId, 'GM', 'GM', admin.id || null, title, body, items, safeGold, rowRealmId, safeYuanbao);
+    total += 1;
+  }
+  res.json({ ok: true, total, message: `已发送给全服玩家 ${total} 人` });
 });
 
 app.post('/admin/vip/create', async (req, res) => {
@@ -7050,6 +7156,7 @@ function buildMailPayload(row) {
     read_at: row.read_at,
     claimed_at: row.claimed_at,
     gold: Number(row.gold || 0),
+    yuanbao: Number(row.yuanbao || 0),
     items: itemViews
   };
 }
@@ -17841,7 +17948,8 @@ io.on('connection', (socket) => {
     if (mail.claimed_at) return socket.emit('mail_claim_result', { ok: false, msg: '附件已领取。' });
     const items = parseJson(mail.items_json, []);
     const gold = Number(mail.gold || 0);
-    if ((!items || !items.length) && gold <= 0) {
+    const yuanbao = Number(mail.yuanbao || 0);
+    if ((!items || !items.length) && gold <= 0 && yuanbao <= 0) {
       await markMailRead(player.userId, mailId, player.realmId || 1);
       return socket.emit('mail_claim_result', { ok: false, msg: '该邮件没有附件。' });
     }
@@ -17865,6 +17973,9 @@ io.on('connection', (socket) => {
     if (gold > 0) {
       player.gold += gold;
     }
+    if (yuanbao > 0) {
+      player.yuanbao = Math.max(0, Math.floor(Number(player.yuanbao || 0))) + yuanbao;
+    }
     await markMailClaimed(player.userId, mailId, player.realmId || 1);
     await markMailRead(player.userId, mailId, player.realmId || 1);
     socket.emit('mail_claim_result', { ok: true, msg: '领取成功：附件已到账。' });
@@ -17882,13 +17993,16 @@ io.on('connection', (socket) => {
     let claimedCount = 0;
     let gainedGold = 0;
     let gainedItems = 0;
+    let gainedYuanbao = 0;
     for (const mail of mails) {
       if (!mail || mail.claimed_at) continue;
       const items = parseJson(mail.items_json, []);
       const gold = Number(mail.gold || 0);
+      const yuanbao = Number(mail.yuanbao || 0);
       const hasItems = Array.isArray(items) && items.length > 0;
       const hasGold = gold > 0;
-      if (!hasItems && !hasGold) continue;
+      const hasYuanbao = yuanbao > 0;
+      if (!hasItems && !hasGold && !hasYuanbao) continue;
       if (hasItems) {
         items.forEach((entry) => {
           if (!entry || !entry.id) return;
@@ -17912,6 +18026,10 @@ io.on('connection', (socket) => {
         player.gold += gold;
         gainedGold += gold;
       }
+      if (hasYuanbao) {
+        player.yuanbao = Math.max(0, Math.floor(Number(player.yuanbao || 0))) + yuanbao;
+        gainedYuanbao += yuanbao;
+      }
       await markMailClaimed(player.userId, mail.id, player.realmId || 1);
       await markMailRead(player.userId, mail.id, player.realmId || 1);
       claimedCount += 1;
@@ -17919,7 +18037,7 @@ io.on('connection', (socket) => {
     if (claimedCount <= 0) {
       return socket.emit('mail_claim_result', { ok: false, msg: '没有可领取的附件。' });
     }
-    socket.emit('mail_claim_result', { ok: true, msg: `一键领取成功：已领取 ${claimedCount} 封邮件附件（金币+${gainedGold}，物品+${gainedItems}）。` });
+    socket.emit('mail_claim_result', { ok: true, msg: `一键领取成功：已领取 ${claimedCount} 封邮件附件（金币+${gainedGold}，元宝+${gainedYuanbao}，物品+${gainedItems}）。` });
     const refreshedMails = await listMail(player.userId, player.realmId || 1);
     socket.emit('mail_list', { ok: true, mails: refreshedMails.map(buildMailPayload) });
     await sendState(player);
@@ -17958,9 +18076,11 @@ io.on('connection', (socket) => {
       const mails = await listMail(player.userId, player.realmId || 1);
       const mail = mails.find(m => m.id === mailId);
       if (mail) {
-        const hasItems = mail.items_json && JSON.parse(mail.items_json).length > 0;
-        const hasGold = mail.gold && mail.gold > 0;
-        if ((hasItems || hasGold) && !mail.claimed_at) {
+        const items = parseJson(mail.items_json, []);
+        const hasItems = Array.isArray(items) && items.length > 0;
+        const hasGold = Number(mail.gold || 0) > 0;
+        const hasYuanbao = Number(mail.yuanbao || 0) > 0;
+        if ((hasItems || hasGold || hasYuanbao) && !mail.claimed_at) {
           return socket.emit('mail_delete_result', { ok: false, msg: '该邮件有附件未领取，无法删除。' });
         }
       }
@@ -18527,7 +18647,8 @@ io.on('connection', (socket) => {
         const items = parseJson(mail?.items_json, []);
         const hasItems = Array.isArray(items) && items.length > 0;
         const hasGold = Number(mail?.gold || 0) > 0;
-        if ((hasItems || hasGold) && !mail?.claimed_at) {
+        const hasYuanbao = Number(mail?.yuanbao || 0) > 0;
+        if ((hasItems || hasGold || hasYuanbao) && !mail?.claimed_at) {
           skippedCount += 1;
           continue;
         }

@@ -5813,6 +5813,11 @@ function renderMailDetail(mail) {
     goldLine.textContent = `\u91D1\u5E01: ${mail.gold}`;
     mailUi.detailItems.appendChild(goldLine);
   }
+  if (mail.yuanbao && mail.yuanbao > 0) {
+    const yuanbaoLine = document.createElement('div');
+    yuanbaoLine.textContent = `\u5143\u5B9D: ${mail.yuanbao}`;
+    mailUi.detailItems.appendChild(yuanbaoLine);
+  }
   if (mail.items && mail.items.length) {
     const itemsLine = document.createElement('div');
     itemsLine.append('\u9644\u4EF6: ');
@@ -5830,7 +5835,7 @@ function renderMailDetail(mail) {
   }
   // 只有收件箱中的邮件显示领取附件按钮
   if (mailUi.claim) {
-    if (currentMailFolder === 'inbox' && ((mail.items && mail.items.length) || (mail.gold && mail.gold > 0))) {
+    if (currentMailFolder === 'inbox' && ((mail.items && mail.items.length) || (mail.gold && mail.gold > 0) || (mail.yuanbao && mail.yuanbao > 0))) {
       if (mail.claimed_at) {
         mailUi.claim.classList.add('hidden');
       } else {
