@@ -394,7 +394,6 @@ const ui = {
   actions: document.getElementById('actions-list'),
   changePasswordButtons: Array.from(document.querySelectorAll('[data-action="change-password"]'))
 };
-const appVersionEl = document.getElementById('app-version');
 const battleUi = {
   players: document.getElementById('battle-players'),
   skills: document.getElementById('battle-skills'),
@@ -1076,19 +1075,6 @@ function buildApiUrl(path) {
   return base ? `${base}${normalizedPath}` : normalizedPath;
 }
 
-async function loadAppVersion() {
-  if (!appVersionEl) return;
-  try {
-    const res = await fetch(buildApiUrl('/api/version'));
-    if (!res.ok) throw new Error('version fetch failed');
-    const payload = await res.json();
-    if (payload && payload.version) {
-      appVersionEl.textContent = `版本 ${payload.version}`;
-    }
-  } catch {
-    // ignore version errors
-  }
-}
 
 function setLineAutoStatus(text) {
   if (!lineAutoStatus) return;
@@ -13034,7 +13020,6 @@ if (logThrottleNormal) {
   });
 }
 
-loadAppVersion();
 
 
 

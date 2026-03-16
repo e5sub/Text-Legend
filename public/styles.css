@@ -826,17 +826,6 @@ header {
   gap: 16px;
 }
 
-.footer-version {
-  font-size: 0.85rem;
-  color: #fff3df;
-  margin-left: 8px;
-  letter-spacing: 0.4px;
-}
-
-.footer-sep {
-  color: #ffd699;
-  margin-left: 8px;
-}
 
 .theme-toggle {
   background: var(--accent-soft);
