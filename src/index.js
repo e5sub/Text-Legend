@@ -6927,6 +6927,44 @@ async function logRuntimeHealth(expectedAt = Date.now()) {
     + `realms=${realmStateCount} pendingSaves=${pendingPlayerSaves.size} `
     + `mobCache=${mobStatePersistCache.size} mobRows=${mobRespawnRows}${guardTag}`
   );
+  const shouldDetail = heapRatio >= RUNTIME_HEAP_WARN_RATIO || loopLagMs >= RUNTIME_LAG_WARN_MS || pendingPlayerSaves.size > 50;
+  if (shouldDetail) {
+    const candidates = [];
+    for (const p of players.values()) {
+      if (!p) continue;
+      const invLen = Array.isArray(p.inventory) ? p.inventory.length : 0;
+      const wareLen = Array.isArray(p.warehouse) ? p.warehouse.length : 0;
+      const equipLen = p.equipment ? Object.keys(p.equipment).length : 0;
+      const weight = invLen * 50 + wareLen * 50 + equipLen * 80;
+      if (weight <= 0) continue;
+      candidates.push({ p, invLen, wareLen, equipLen, weight });
+    }
+    candidates.sort((a, b) => b.weight - a.weight);
+    const top = candidates.slice(0, 3).map((entry) => {
+      const player = entry.p;
+      const safeSize = (value) => {
+        try {
+          return Buffer.byteLength(JSON.stringify(value || null), 'utf8');
+        } catch {
+          return 0;
+        }
+      };
+      const invBytes = safeSize(player.inventory);
+      const wareBytes = safeSize(player.warehouse);
+      const equipBytes = safeSize(player.equipment);
+      const flagsBytes = safeSize(player.flags);
+      const statsBytes = safeSize(player.stats);
+      const questsBytes = safeSize(player.quests);
+      const skillsBytes = safeSize(player.skills);
+      const totalBytes = invBytes + wareBytes + equipBytes + flagsBytes + statsBytes + questsBytes + skillsBytes;
+      const totalMb = (totalBytes / (1024 * 1024)).toFixed(2);
+      const managedTag = isManagedHostedPlayer(player) ? 'managed' : 'online';
+      return `${player.name || 'unknown'} ${managedTag} size=${totalMb}MB inv=${entry.invLen} ware=${entry.wareLen} equip=${entry.equipLen}`;
+    });
+    if (top.length) {
+      console.log(`[health] heavyPlayers=${top.join(' | ')}`);
+    }
+  }
   if (cleanupInfo) {
     const removed = cleanupInfo.removed;
     const totalRemoved = Object.values(removed).reduce((sum, value) => sum + Number(value || 0), 0);
