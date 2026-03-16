@@ -9268,6 +9268,7 @@ const DEFAULT_ROOM_TEMPLATE = {
 };
 
 let mobOverridesCache = [];
+let mobBaseCache = [];
 let worldZonesCache = [];
 let worldZoneOverridesCache = new Map();
 let worldRoomsCache = [];
@@ -9282,6 +9283,13 @@ function formatAdminTime(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return String(value);
   return date.toLocaleString();
+}
+
+function formatIdWithName(name, id) {
+  const safeName = String(name || '').trim();
+  const safeId = String(id || '').trim();
+  if (!safeName) return safeId || '-';
+  return `${safeName}<div class="muted" style="font-size: 11px;">${safeId}</div>`;
 }
 
 function toNumber(value, fallback = 0) {
@@ -9305,10 +9313,24 @@ function renderMobOverrides() {
   if (!mobOverridesList) return;
   mobOverridesList.innerHTML = '';
   const keyword = String(mobOverrideSearchInput?.value || '').trim().toLowerCase();
-  const list = mobOverridesCache.filter((item) => {
+  const overrideMap = new Map(mobOverridesCache.map((item) => [item.templateId, item]));
+  const merged = mobBaseCache.length
+    ? mobBaseCache.map((mob) => ({
+        templateId: mob.id,
+        base: mob,
+        override: overrideMap.get(mob.id) || null
+      }))
+    : Array.from(overrideMap.values()).map((item) => ({
+        templateId: item.templateId,
+        base: null,
+        override: item
+      }));
+
+  const list = merged.filter((entry) => {
     if (!keyword) return true;
-    const id = String(item.templateId || '').toLowerCase();
-    const name = String(getMobDisplayValue(item.templateId, item).name || '').toLowerCase();
+    const id = String(entry.templateId || '').toLowerCase();
+    const display = getMobDisplayValue(entry.templateId, entry.override || {});
+    const name = String(display.name || '').toLowerCase();
     return id.includes(keyword) || name.includes(keyword);
   });
 
@@ -9317,20 +9339,21 @@ function renderMobOverrides() {
     return;
   }
 
-  list.forEach((item) => {
-    const { name, level, exp, goldText, fields } = getMobDisplayValue(item.templateId, item);
+  list.forEach((entry) => {
+    const override = entry.override;
+    const { name, level, exp, goldText, fields } = getMobDisplayValue(entry.templateId, override || {});
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td style="font-size: 12px;">${item.templateId}</td>
+      <td style="font-size: 12px;">${entry.templateId}</td>
       <td style="font-size: 13px;">${name}</td>
       <td style="font-size: 12px;">${level}</td>
       <td style="font-size: 12px;">${exp}</td>
       <td style="font-size: 12px;">${goldText}</td>
-      <td style="font-size: 12px;">${fields}</td>
-      <td style="font-size: 12px;">${formatAdminTime(item.updatedAt)}</td>
+      <td style="font-size: 12px;">${override ? fields : 0}</td>
+      <td style="font-size: 12px;">${override ? formatAdminTime(override.updatedAt) : '-'}</td>
       <td>
-        <button class="btn-small" onclick="editMobOverride('${item.templateId}')">编辑</button>
-        <button class="btn-small" style="background: #c00;" onclick="deleteMobOverride('${item.templateId}')">删除覆盖</button>
+        <button class="btn-small" onclick="editMobOverride('${entry.templateId}')">编辑</button>
+        <button class="btn-small" style="background: #c00;" onclick="deleteMobOverride('${entry.templateId}')">删除覆盖</button>
       </td>
     `;
     mobOverridesList.appendChild(tr);
@@ -9341,11 +9364,13 @@ async function loadMobOverrides() {
   if (!mobOverridesList) return;
   mobOverrideMsg.textContent = '';
   try {
-    if (mobsList.length === 0) {
-      await loadMobs();
-    }
-    const res = await api('/admin/mobs/overrides', 'GET');
-    mobOverridesCache = Array.isArray(res.overrides) ? res.overrides : [];
+    const [mobRes, overrideRes] = await Promise.all([
+      api('/admin/mobs', 'GET'),
+      api('/admin/mobs/overrides', 'GET')
+    ]);
+    mobsList = Array.isArray(mobRes.mobs) ? mobRes.mobs : [];
+    mobBaseCache = mobsList.slice();
+    mobOverridesCache = Array.isArray(overrideRes.overrides) ? overrideRes.overrides : [];
     renderMobOverrides();
   } catch (err) {
     mobOverrideMsg.textContent = `加载失败: ${err.message}`;
@@ -9525,7 +9550,7 @@ function renderWorldZones() {
     const roomCount = zone.roomCount ?? (override?.data?.rooms ? Object.keys(override.data.rooms).length : 0);
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td style="font-size: 12px;">${zone.id}</td>
+      <td style="font-size: 12px;">${formatIdWithName(name, zone.id)}</td>
       <td style="font-size: 13px;">${name}</td>
       <td style="font-size: 12px;">${roomCount}</td>
       <td style="font-size: 12px;">${override ? '是' : '否'}</td>
@@ -9656,7 +9681,7 @@ function renderWorldRooms() {
     const overrideText = overrideStatus === true ? '是' : overrideStatus === false ? '否' : '未知';
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td style="font-size: 12px;">${room.id}</td>
+      <td style="font-size: 12px;">${formatIdWithName(room.name, room.id)}</td>
       <td style="font-size: 13px;">${room.name}</td>
       <td style="font-size: 12px;">${room.hasSpawns ? '有' : '无'}</td>
       <td style="font-size: 12px;">${overrideText}</td>
