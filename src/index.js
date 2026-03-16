@@ -11073,6 +11073,13 @@ function findAliveBossTarget(player) {
       const zoneId = mob.zoneId;
       const roomId = mob.roomId;
       if (!zoneId || !roomId) continue;
+      const roomDef = WORLD[zoneId]?.rooms?.[roomId];
+      if (roomDef?.sabakOnly) {
+        const sabakState = getSabakState(player.realmId || 1);
+        if (!player.guild || !sabakState?.ownerGuildId || String(player.guild.id) !== String(sabakState.ownerGuildId)) {
+          continue;
+        }
+      }
       if (zoneId === ZHUXIAN_TOWER_ZONE_ID) continue;
       if (isCultivationBoss(tpl)) {
         // 修真BOSS仅在本服realm内追踪，避免因为跨服realm的同名目标导致反复空跑切房
@@ -11111,6 +11118,81 @@ function findAliveBossTarget(player) {
     }
   }
   return best;
+}
+
+function summarizeBossTargetReasons(player, mobs, realmId) {
+  const summary = {
+    total: 0,
+    missingRoom: 0,
+    sabakDenied: 0,
+    notAllowed: 0,
+    cultivationMismatch: 0,
+    crossCooldown: 0,
+    cannotEnter: 0,
+    sameRoom: 0,
+    ok: 0
+  };
+  const playerCultivationLevel = getCultivationLevel(player);
+  const now = Date.now();
+  const crossBossCooldownUntil = Number(player.flags?.autoFullCrossBossCooldownUntil || 0);
+  for (const mob of mobs) {
+    if (!mob || mob.hp <= 0) continue;
+    summary.total += 1;
+    const tpl = MOB_TEMPLATES[mob.templateId];
+    if (!tpl || !isBossMob(tpl)) {
+      summary.notAllowed += 1;
+      continue;
+    }
+    if (!isAutoFullBossAllowed(player, tpl)) {
+      summary.notAllowed += 1;
+      continue;
+    }
+    const zoneId = mob.zoneId;
+    const roomId = mob.roomId;
+    if (!zoneId || !roomId || !WORLD[zoneId]?.rooms?.[roomId]) {
+      summary.missingRoom += 1;
+      continue;
+    }
+    const roomDef = WORLD[zoneId]?.rooms?.[roomId];
+    if (roomDef?.sabakOnly) {
+      const sabakState = getSabakState(player.realmId || 1);
+      if (!player.guild || !sabakState?.ownerGuildId || String(player.guild.id) !== String(sabakState.ownerGuildId)) {
+        summary.sabakDenied += 1;
+        continue;
+      }
+    }
+    if (zoneId === ZHUXIAN_TOWER_ZONE_ID || zoneId === CROSS_RANK_ZONE_ID) {
+      summary.notAllowed += 1;
+      continue;
+    }
+    if (isCultivationBoss(tpl)) {
+      if (realmId !== (player.realmId || 1)) {
+        summary.cultivationMismatch += 1;
+        continue;
+      }
+      const roomMinLevel = Number(roomDef?.minCultivationLevel);
+      if (!Number.isFinite(roomMinLevel) || roomMinLevel !== playerCultivationLevel) {
+        summary.cultivationMismatch += 1;
+        continue;
+      }
+    }
+    if (tpl.id === 'cross_world_boss' && zoneId === CROSS_REALM_ZONE_ID && roomId === 'arena') {
+      if (crossBossCooldownUntil > now) {
+        summary.crossCooldown += 1;
+        continue;
+      }
+    }
+    if (!canEnterRoomByCultivation(player, zoneId, roomId)) {
+      summary.cannotEnter += 1;
+      continue;
+    }
+    if (player.position?.zone === zoneId && player.position?.room === roomId) {
+      summary.sameRoom += 1;
+      continue;
+    }
+    summary.ok += 1;
+  }
+  return summary;
 }
 
 function ensureAutoFullPersonalBossTargets(player, now = Date.now()) {
@@ -11156,6 +11238,20 @@ function movePlayerToRoom(player, zoneId, roomId) {
   }
   if (player.position.zone === zoneId && player.position.room === targetRoomId) return false;
   if (!WORLD[zoneId]?.rooms?.[targetRoomId]) return false;
+  const targetRoom = WORLD[zoneId]?.rooms?.[targetRoomId];
+  if (targetRoom?.sabakOnly) {
+    const sabakState = getSabakState(player.realmId || 1);
+    const isOwnerGuild = Boolean(player.guild && sabakState?.ownerGuildId && String(player.guild.id) === String(sabakState.ownerGuildId));
+    if (!isOwnerGuild) {
+      if (isManagedHostedPlayer(player)) {
+        const lastLogAt = Number(player._autoFullBossLogAt || 0);
+        if (Date.now() - lastLogAt >= 30000) {
+          console.log(`[managed][autoafk] ${player.name} sabakOnly blocked target=${zoneId}:${targetRoomId} guild=${player.guild?.id || '-'} owner=${sabakState?.ownerGuildId || '-'}`);
+        }
+      }
+      return false;
+    }
+  }
   if (!canEnterRoomByCultivation(player, zoneId, targetRoomId)) return false;
   const fromRoom = { zone: player.position.zone, room: player.position.room };
   player.position.zone = zoneId;
@@ -11223,6 +11319,19 @@ function tryAutoFullBossMove(player) {
       const cachedBosses = aliveBossCache.get(player.realmId || 1);
       const cachedCrossBosses = aliveBossCache.get(CROSS_REALM_REALM_ID);
       const cacheInfo = `cache=${cachedBosses?.length || 0}/${cachedCrossBosses?.length || 0}`;
+      let reasonText = '';
+      if (!bossTarget) {
+        const localList = Array.isArray(cachedBosses) ? cachedBosses : [];
+        const crossList = Array.isArray(cachedCrossBosses) ? cachedCrossBosses : [];
+        const localSummary = summarizeBossTargetReasons(player, localList, player.realmId || 1);
+        const crossSummary = summarizeBossTargetReasons(player, crossList, CROSS_REALM_REALM_ID);
+        reasonText = ` reasons=local(${localSummary.ok}/${localSummary.total} missRoom=${localSummary.missingRoom} ` +
+          `sabak=${localSummary.sabakDenied} filter=${localSummary.notAllowed} cult=${localSummary.cultivationMismatch} ` +
+          `crossCd=${localSummary.crossCooldown} enter=${localSummary.cannotEnter} same=${localSummary.sameRoom})` +
+          ` cross(${crossSummary.ok}/${crossSummary.total} missRoom=${crossSummary.missingRoom} ` +
+          `sabak=${crossSummary.sabakDenied} filter=${crossSummary.notAllowed} cult=${crossSummary.cultivationMismatch} ` +
+          `crossCd=${crossSummary.crossCooldown} enter=${crossSummary.cannotEnter} same=${crossSummary.sameRoom})`;
+      }
       if (bossTarget) {
         console.log(
           `[managed][autoafk] ${player.name} room=${currentRoom} realm=${player.realmId || 1} ` +
@@ -11233,7 +11342,7 @@ function tryAutoFullBossMove(player) {
         console.log(
           `[managed][autoafk] ${player.name} room=${currentRoom} realm=${player.realmId || 1} ` +
           `${filterInfo} cooldown=${cooldownLeft}ms crossCd=${crossCdLeft}ms ${cacheInfo} ` +
-          'target=none'
+          `target=none${reasonText}`
         );
       }
     }
