@@ -2047,6 +2047,29 @@ body.theme-dark textarea {
   color: var(--ink);
 }
 
+body.theme-dark input[type="file"] {
+  background: #1f1711;
+  border-color: #3a2b1f;
+  color: var(--ink);
+}
+
+body.theme-dark input[type="file"]::file-selector-button,
+body.theme-dark input[type="file"]::-webkit-file-upload-button {
+  background: linear-gradient(135deg, #c77633, #a7541f);
+  border: 1px solid #6b3d1d;
+  color: #f7e6c9;
+  padding: 6px 12px;
+  border-radius: 8px;
+  margin-right: 10px;
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+
+body.theme-dark input[type="file"]::file-selector-button:hover,
+body.theme-dark input[type="file"]::-webkit-file-upload-button:hover {
+  background: linear-gradient(135deg, #d5833b, #b85b24);
+}
+
 body.theme-dark table,
 body.theme-dark .list {
   background: #201710;
