@@ -7,25 +7,43 @@
   <link rel="stylesheet" href="admin.css?v=3">
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <h1>GM 后台</h1>
-      <p>账号、角色、活动、托管与养成配置</p>
-      <div class="header-actions">
-        <button id="theme-toggle" class="btn-small">切换暗色</button>
-        <button id="collapse-all" class="btn-small">折叠全部</button>
+  <div class="admin-layout">
+    <aside class="sidebar">
+      <div class="sidebar-inner">
+        <div class="sidebar-brand">
+          <div class="sidebar-title">GM 后台</div>
+          <div class="sidebar-subtitle">配置导航</div>
+        </div>
+        <div class="sidebar-search">
+          <input id="sidebar-search" type="text" placeholder="搜索设置模块...">
+        </div>
+        <nav id="sidebar-nav" class="sidebar-nav">
+          <div class="sidebar-empty">加载中...</div>
+        </nav>
       </div>
-    </header>
+    </aside>
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+    <main class="content">
+      <div class="wrap">
+        <header id="top">
+          <h1>GM 后台</h1>
+          <p>账号、角色、活动、托管与养成配置</p>
+          <div class="header-actions">
+            <button id="sidebar-toggle" class="btn-small">菜单</button>
+            <button id="theme-toggle" class="btn-small">切换暗色</button>
+            <button id="collapse-all" class="btn-small">折叠全部</button>
+          </div>
+        </header>
 
-    <section id="login" class="panel">
-      <h2>管理员登录</h2>
-      <input id="admin-user" type="text" placeholder="管理员账号">
-      <input id="admin-pass" type="password" placeholder="管理员密码">
-      <button id="admin-login-btn">登录</button>
-      <div id="login-msg" class="msg"></div>
-    </section>
+        <section id="login" class="panel">
+          <h2>管理员登录</h2>
+          <input id="admin-user" type="text" placeholder="管理员账号">
+          <input id="admin-pass" type="password" placeholder="管理员密码">
+          <button id="admin-login-btn">登录</button>
+          <div id="login-msg" class="msg"></div>
+        </section>
 
-    <section id="dashboard" class="panel hidden">
+        <section id="dashboard" class="panel hidden">
       <div class="grid">
         <div class="block full" data-collapsible>
           <div class="block-title">
@@ -2742,6 +2760,10 @@
         <button id="world-room-edit-save" class="btn-small">保存</button>
       </div>
     </div>
+  </div>
+
+      </div>
+    </main>
   </div>
 
   <script src="admin.js?v=9"></script>

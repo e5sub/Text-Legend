@@ -10233,5 +10233,192 @@ if (worldRoomEditNpcAddBtn) {
   worldRoomEditNpcAddBtn.addEventListener('click', addWorldRoomNpc);
 }
 
+function slugifySectionTitle(title) {
+  const cleaned = String(title || '')
+    .replace(/[^\w\u4e00-\u9fa5]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase();
+  return cleaned || 'section';
+}
+
+function initSidebarNav() {
+  const nav = document.getElementById('sidebar-nav');
+  const searchInput = document.getElementById('sidebar-search');
+  const toggleBtn = document.getElementById('sidebar-toggle');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  if (!nav) return;
+
+  const usedIds = new Set();
+  const sections = [];
+  const blocks = Array.from(dashboardSection?.querySelectorAll('.block') || []);
+  const blockIdSet = new Set();
+
+  const topHeader = document.getElementById('top');
+  if (topHeader) {
+    topHeader.id = 'top';
+    sections.push({ id: 'top', label: '顶部' });
+    usedIds.add('top');
+  }
+
+  sections.push({ id: 'all', label: '全部模块' });
+
+  if (loginSection) {
+    const id = loginSection.id || 'login';
+    loginSection.id = id;
+    usedIds.add(id);
+    sections.push({ id, label: '管理员登录' });
+  }
+
+  for (const block of blocks) {
+    const titleEl = block.querySelector('h2');
+    const label = String(titleEl?.textContent || '').trim();
+    if (!label) continue;
+    const baseId = `section-${slugifySectionTitle(label)}`;
+    let nextId = baseId;
+    let i = 2;
+    while (usedIds.has(nextId)) {
+      nextId = `${baseId}-${i}`;
+      i += 1;
+    }
+    block.id = block.id || nextId;
+    usedIds.add(block.id);
+    sections.push({ id: block.id, label });
+    blockIdSet.add(block.id);
+  }
+
+  if (!sections.length) {
+    nav.innerHTML = '<div class="sidebar-empty">暂无可导航模块</div>';
+    return;
+  }
+
+  const showSection = (id) => {
+    if (!dashboardSection) return;
+    const showAll = id === 'all' || id === 'top' || !id;
+    blocks.forEach((block) => {
+      block.style.display = showAll || block.id === id ? '' : 'none';
+    });
+    if (showAll) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      const target = document.getElementById(id);
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const normalizeLabel = (label) => String(label || '').replace(/^[^\w\u4e00-\u9fa5]+/g, '').trim();
+  const getGroup = (label) => {
+    const text = normalizeLabel(label);
+    if (text === '顶部') return '概览';
+    if (text === '全部模块') return '概览';
+    if (/(管理员登录|用户与权限|赞助名单)/.test(text)) return '账号与权限';
+    if (/(区服|线路|合区|房间变种)/.test(text)) return '区服与线路';
+    if (/BOSS/.test(text)) return 'BOSS与战斗';
+    if (/(活动|丰收季|神兽碎片|积分商城|每日幸运玩家|VIP)/.test(text)) return '活动与运营';
+    if (/(修炼|锻造|装备成长|法宝|特效重置|宠物|职业升级属性)/.test(text)) return '养成系统';
+    if (/(装备管理|怪物管理|地图管理|装备回收|行会)/.test(text)) return '内容与世界';
+    if (/(状态刷新|命令限频|SMTP|数据备份)/.test(text)) return '系统与工具';
+    return '其他';
+  };
+
+  const groupOrder = [
+    '概览',
+    '账号与权限',
+    '区服与线路',
+    'BOSS与战斗',
+    '活动与运营',
+    '养成系统',
+    '内容与世界',
+    '系统与工具',
+    '其他'
+  ];
+
+  const grouped = new Map();
+  for (const item of sections) {
+    const group = getGroup(item.label);
+    if (!grouped.has(group)) grouped.set(group, []);
+    grouped.get(group).push(item);
+  }
+
+  nav.innerHTML = '';
+  for (const groupName of groupOrder) {
+    const items = grouped.get(groupName);
+    if (!items || !items.length) continue;
+    const groupEl = document.createElement('div');
+    groupEl.className = 'sidebar-group';
+    const titleEl = document.createElement('div');
+    titleEl.className = 'sidebar-group-title';
+    titleEl.textContent = groupName;
+    groupEl.appendChild(titleEl);
+    for (const item of items) {
+      const link = document.createElement('a');
+      link.href = `#${item.id}`;
+      link.dataset.section = item.id;
+      link.textContent = item.label;
+      link.addEventListener('click', (event) => {
+        if (item.id === 'all' || !document.getElementById(item.id)) {
+          event.preventDefault();
+        }
+        if (item.id === 'all') {
+          showSection('all');
+          setActive('all');
+        } else if (blockIdSet.has(item.id)) {
+          event.preventDefault();
+          showSection(item.id);
+          setActive(item.id);
+        }
+        if (document.body.classList.contains('sidebar-open')) {
+          document.body.classList.remove('sidebar-open');
+        }
+      });
+      groupEl.appendChild(link);
+    }
+    nav.appendChild(groupEl);
+  }
+
+  const setActive = (id) => {
+    nav.querySelectorAll('a').forEach((link) => {
+      link.classList.toggle('active', link.dataset.section === id);
+    });
+  };
+
+  setActive('all');
+
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      const keyword = String(searchInput.value || '').trim().toLowerCase();
+      nav.querySelectorAll('.sidebar-group').forEach((group) => {
+        let visibleCount = 0;
+        group.querySelectorAll('a').forEach((link) => {
+          const match = link.textContent.toLowerCase().includes(keyword);
+          link.style.display = match ? '' : 'none';
+          if (match) visibleCount += 1;
+        });
+        group.style.display = visibleCount > 0 ? '' : 'none';
+      });
+    });
+  }
+
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      document.body.classList.toggle('sidebar-open');
+    });
+  }
+
+  if (backdrop) {
+    backdrop.addEventListener('click', () => {
+      document.body.classList.remove('sidebar-open');
+    });
+  }
+
+  const hash = String(window.location.hash || '').replace('#', '');
+  if (hash && blockIdSet.has(hash)) {
+    showSection(hash);
+    setActive(hash);
+  }
+}
+
+initSidebarNav();
+
 
 
