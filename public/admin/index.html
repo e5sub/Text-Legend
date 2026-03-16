@@ -195,8 +195,8 @@
             <h2>📮 GM邮件</h2>
             <button class="btn-small block-toggle">折叠</button>
           </div>
-          <div class="block-body">
-            <div class="row" style="gap: 12px; flex-wrap: wrap; align-items: center;">
+          <div class="block-body gm-mail-body">
+            <div class="row gm-mail-grid-3">
               <label style="min-width: 70px;">发送范围</label>
               <select id="gm-mail-scope" style="max-width: 180px;">
                 <option value="user">指定玩家</option>
@@ -207,27 +207,27 @@
                 <option value="">全部区服</option>
               </select>
             </div>
-            <div class="row" id="gm-mail-user-row" style="gap: 12px; flex-wrap: wrap; align-items: center;">
+            <div class="row gm-mail-grid-4" id="gm-mail-user-row">
               <label style="min-width: 70px;">玩家账号</label>
               <input id="gm-mail-username" type="text" placeholder="用户名（登录账号）" style="max-width: 260px;">
               <label style="min-width: 70px;">角色名</label>
               <input id="gm-mail-character" type="text" placeholder="角色名（优先）" style="max-width: 260px;">
             </div>
-            <div class="row" style="gap: 12px; flex-wrap: wrap; align-items: center;">
+            <div class="row gm-mail-grid-2">
               <label style="min-width: 70px;">标题</label>
               <input id="gm-mail-title" type="text" placeholder="邮件标题" style="max-width: 420px;">
             </div>
-            <div class="row" style="gap: 12px; flex-wrap: wrap; align-items: flex-start;">
+            <div class="row gm-mail-grid-2 gm-mail-textarea">
               <label style="min-width: 70px;">内容</label>
               <textarea id="gm-mail-body" placeholder="邮件内容" style="min-height: 120px;"></textarea>
             </div>
-            <div class="row" style="gap: 12px; flex-wrap: wrap; align-items: center;">
+            <div class="row gm-mail-grid-4">
               <label style="min-width: 70px;">金币</label>
               <input id="gm-mail-gold" type="number" min="0" step="1" placeholder="0" style="max-width: 160px;">
               <label style="min-width: 70px;">元宝</label>
               <input id="gm-mail-yuanbao" type="number" min="0" step="1" placeholder="0" style="max-width: 160px;">
             </div>
-            <div class="row" style="gap: 12px; flex-wrap: wrap; align-items: center;">
+            <div class="row gm-mail-grid-attach">
               <label style="min-width: 70px;">附件</label>
               <input id="gm-mail-item-id" type="text" placeholder="物品ID" style="max-width: 220px;">
               <input id="gm-mail-item-qty" type="number" min="1" step="1" placeholder="数量" style="max-width: 120px;">

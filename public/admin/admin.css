@@ -301,6 +301,55 @@ button:hover {
   gap: 12px;
 }
 
+/* GM 邮件对齐 */
+.gm-mail-body .row {
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.gm-mail-grid-2,
+.gm-mail-grid-3,
+.gm-mail-grid-4,
+.gm-mail-grid-attach {
+  display: grid;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+}
+
+.gm-mail-grid-2 {
+  grid-template-columns: 90px minmax(0, 1fr);
+}
+
+.gm-mail-grid-3 {
+  grid-template-columns: 90px minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.gm-mail-grid-4 {
+  grid-template-columns: 90px minmax(0, 1fr) 90px minmax(0, 1fr);
+}
+
+.gm-mail-grid-attach {
+  grid-template-columns: 90px minmax(0, 1fr) minmax(0, 220px) minmax(120px, 160px);
+}
+
+.gm-mail-body label {
+  width: 90px;
+  min-width: 90px;
+  color: var(--text-muted);
+}
+
+.gm-mail-body input,
+.gm-mail-body select,
+.gm-mail-body textarea {
+  width: 100%;
+  max-width: none;
+}
+
+.gm-mail-textarea {
+  align-items: flex-start;
+}
+
 .block-title {
   display: flex;
   align-items: center;
