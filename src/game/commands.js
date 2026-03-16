@@ -2848,6 +2848,13 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         send(`使用了 ${item.name}，获得 10 倍经验，持续 2 小时。`);
         return;
       }
+      if (item.id === 'yuanbao_card_1') {
+        if (!removeItem(player, item.id, 1, resolved.slot.effects)) return send('背包里没有该物品。');
+        player.yuanbao = Math.max(0, Math.floor(Number(player.yuanbao || 0))) + 1;
+        player.forceStateRefresh = true;
+        send(`使用了 ${item.name}，元宝+1。`);
+        return;
+      }
       // 修炼果：随机增加属性（支持批量使用）
       if (item.id === 'training_fruit') {
         // 解析数量参数，格式如 "修炼果 10" 或 "修炼果 5"
