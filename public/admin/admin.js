@@ -2921,6 +2921,7 @@ async function loadDashboardStats() {
     renderStatList(dashboardServer, [
       { label: '服务器时间', value: formatAdminTime(server.time) },
       { label: '运行时长', value: formatDuration(server.uptimeSec) },
+      { label: '游戏版本', value: server.gameVersion || '-' },
       { label: 'Node版本', value: server.nodeVersion || '-' },
       { label: '进程内存', value: formatBytes(server.memory?.rss) },
       { label: '堆内存', value: `${formatBytes(server.memory?.heapUsed)} / ${formatBytes(server.memory?.heapTotal)}` },

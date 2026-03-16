@@ -4,13 +4,50 @@ import { Server } from 'socket.io';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mkdir, copyFile, unlink, stat } from 'node:fs/promises';
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import crypto from 'node:crypto';
 import os from 'node:os';
 import cron from 'node-cron';
+import { execSync } from 'node:child_process';
 import { setupConsoleColors } from './log/console_colors.js';
 
 setupConsoleColors();
+
+function formatBuildTimestamp(ms) {
+  const date = new Date(ms);
+  if (Number.isNaN(date.getTime())) return '';
+  const pad = (value) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+const BUILD_VERSION_INFO = (() => {
+  const fallback = { version: 'unknown', timestamp: null, commit: null, source: 'fallback' };
+  try {
+    const output = execSync('git log -1 --format=%ct:%h', { cwd: process.cwd(), stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim();
+    if (output) {
+      const [tsRaw, hash] = output.split(':');
+      const ts = Number(tsRaw) * 1000;
+      const timestampText = formatBuildTimestamp(ts);
+      if (timestampText && hash) {
+        return { version: `${timestampText} + ${hash}`, timestamp: ts, commit: hash, source: 'git' };
+      }
+    }
+  } catch {
+    // ignore git failures
+  }
+  try {
+    const pkgPath = path.join(process.cwd(), 'package.json');
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+    if (pkg?.version) {
+      return { version: `v${pkg.version}`, timestamp: null, commit: null, source: 'package' };
+    }
+  } catch {
+    // ignore package errors
+  }
+  return fallback;
+})();
 
 import config from './config.js';
 import { validatePlayerName } from './game/validator.js';
@@ -983,6 +1020,16 @@ if (ADMIN_BASE !== '/admin') {
   });
 }
 
+app.get('/api/version', (req, res) => {
+  res.json({
+    ok: true,
+    version: BUILD_VERSION_INFO.version,
+    commit: BUILD_VERSION_INFO.commit,
+    timestamp: BUILD_VERSION_INFO.timestamp,
+    source: BUILD_VERSION_INFO.source
+  });
+});
+
 const CAPTCHA_TTL_MS = 5 * 60 * 1000;
 const captchaStore = new Map();
 
@@ -1823,7 +1870,8 @@ app.get('/admin/dashboard-stats', async (req, res) => {
       pid: process.pid,
       memory: process.memoryUsage(),
       loadAvg: os.loadavg(),
-      platform: `${os.platform()} ${os.release()}`
+      platform: `${os.platform()} ${os.release()}`,
+      gameVersion: BUILD_VERSION_INFO.version
     },
     config: {
       port: config.port,

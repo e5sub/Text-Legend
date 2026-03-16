@@ -394,6 +394,7 @@ const ui = {
   actions: document.getElementById('actions-list'),
   changePasswordButtons: Array.from(document.querySelectorAll('[data-action="change-password"]'))
 };
+const appVersionEl = document.getElementById('app-version');
 const battleUi = {
   players: document.getElementById('battle-players'),
   skills: document.getElementById('battle-skills'),
@@ -1073,6 +1074,20 @@ function buildApiUrl(path) {
   const normalizedPath = text.startsWith('/') ? text : `/${text}`;
   const base = getApiBaseUrl();
   return base ? `${base}${normalizedPath}` : normalizedPath;
+}
+
+async function loadAppVersion() {
+  if (!appVersionEl) return;
+  try {
+    const res = await fetch(buildApiUrl('/api/version'));
+    if (!res.ok) throw new Error('version fetch failed');
+    const payload = await res.json();
+    if (payload && payload.version) {
+      appVersionEl.textContent = `版本 ${payload.version}`;
+    }
+  } catch {
+    // ignore version errors
+  }
 }
 
 function setLineAutoStatus(text) {
@@ -13013,11 +13028,13 @@ if (logThrottleNormal) {
   logThrottleNormal.addEventListener('change', () => {
     stateThrottleOverride = logThrottleNormal.checked;
     localStorage.setItem('stateThrottleOverride', stateThrottleOverride.toString());
-    if (socket && stateThrottleOverrideServerAllowed) {
-      socket.emit('state_throttle_override', { enabled: stateThrottleOverride });
-    }
+  if (socket && stateThrottleOverrideServerAllowed) {
+    socket.emit('state_throttle_override', { enabled: stateThrottleOverride });
+  }
   });
 }
+
+loadAppVersion();
 
 
 
