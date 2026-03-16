@@ -6165,7 +6165,21 @@ function cultivationRewardMultiplier(player) {
   return 1 + (level + 1) * 0.1;
 }
 
-function totalRewardMultiplier({ vipActive, svipActive = false, guildActive, guildBuildRewardPct = 0, cultivationMult = 1, partyMult = 1, treasureExpPct = 0, blessingExpMult = 1 }) {
+function getExpCardMultiplier(player, now = Date.now()) {
+  if (!player?.flags) return 1;
+  const expiresAt = Math.max(0, Number(player.flags.expCardExpiresAt || 0));
+  if (!expiresAt || expiresAt <= now) {
+    if (expiresAt) {
+      delete player.flags.expCardExpiresAt;
+      delete player.flags.expCardMultiplier;
+    }
+    return 1;
+  }
+  const mult = Number(player.flags.expCardMultiplier || 1);
+  return Number.isFinite(mult) && mult > 1 ? mult : 1;
+}
+
+function totalRewardMultiplier({ vipActive, svipActive = false, guildActive, guildBuildRewardPct = 0, cultivationMult = 1, partyMult = 1, treasureExpPct = 0, blessingExpMult = 1, expCardMult = 1 }) {
   const vipBonus = (vipActive ? 1 : 0) + (svipActive ? 1 : 0);
   const guildBonus = guildActive ? 1 : 0;
   const guildBuildBonus = Math.max(0, Number(guildBuildRewardPct || 0) / 100);
@@ -6173,7 +6187,8 @@ function totalRewardMultiplier({ vipActive, svipActive = false, guildActive, gui
   const partyBonus = Math.max(0, (Number(partyMult) || 1) - 1);
   const treasureBonus = Math.max(0, Number(treasureExpPct || 0) / 100);
   const blessingExpBonus = Math.max(0, (Number(blessingExpMult) || 1) - 1);
-  return 1 + vipBonus + guildBonus + guildBuildBonus + cultivationBonus + partyBonus + treasureBonus + blessingExpBonus;
+  const base = 1 + vipBonus + guildBonus + guildBuildBonus + cultivationBonus + partyBonus + treasureBonus + blessingExpBonus;
+  return base * (Number(expCardMult) || 1);
 }
 
 function totalGoldRewardMultiplier({ vipActive, svipActive = false, guildActive, guildBuildGoldPct = 0, cultivationMult = 1, partyMult = 1, blessingGoldMult = 1 }) {
@@ -6201,6 +6216,8 @@ function buildRewardBonusBreakdown(player, party) {
   const blessingMults = getHarvestBlessingMultipliers(player);
   const blessingExpPct = Math.max(0, Math.round((blessingMults.expMult - 1) * 100));
   const blessingGoldPct = Math.max(0, Math.round((blessingMults.goldMult - 1) * 100));
+  const expCardMult = getExpCardMultiplier(player);
+  const expCardPct = Math.max(0, Math.round((expCardMult - 1) * 100));
   const expSources = [];
   const goldSources = [];
   if (vipActive) {
@@ -6225,6 +6242,7 @@ function buildRewardBonusBreakdown(player, party) {
   }
   if (treasureExpPct > 0) expSources.push({ key: 'treasure', label: '法宝经验', pct: treasureExpPct });
   if (blessingExpPct > 0) expSources.push({ key: 'blessing_exp', label: '经验丰收', pct: blessingExpPct });
+  if (expCardPct > 0) expSources.push({ key: 'exp_card', label: '10倍经验卡', pct: expCardPct });
   if (blessingGoldPct > 0) goldSources.push({ key: 'blessing_gold', label: '金币丰收', pct: blessingGoldPct });
   const expMult = totalRewardMultiplier({
     vipActive,
@@ -6234,7 +6252,8 @@ function buildRewardBonusBreakdown(player, party) {
     cultivationMult,
     partyMult,
     treasureExpPct,
-    blessingExpMult: blessingMults.expMult
+    blessingExpMult: blessingMults.expMult,
+    expCardMult
   });
   const goldMult = totalGoldRewardMultiplier({
     vipActive,
@@ -10750,7 +10769,8 @@ function applyOfflineRewards(player) {
     guildBuildRewardPct: Number(player.guild?.buildExpBonusPct || player.guild?.buildRewardBonusPct || 0),
     cultivationMult,
     partyMult: 1,
-    treasureExpPct: Number(player.flags?.treasureExpBonusPct || 0)
+    treasureExpPct: Number(player.flags?.treasureExpBonusPct || 0),
+    expCardMult: getExpCardMultiplier(player)
   });
   const goldRewardMult = totalGoldRewardMultiplier({
     vipActive,
@@ -18628,7 +18648,8 @@ async function processMobDeath(player, mob, online) {
         guildActive: Boolean(member.guild),
         guildBuildRewardPct: Number(member.guild?.buildExpBonusPct || member.guild?.buildRewardBonusPct || 0),
         cultivationMult,
-        treasureExpPct: Number(member.flags?.treasureExpBonusPct || 0)
+        treasureExpPct: Number(member.flags?.treasureExpBonusPct || 0),
+        expCardMult: getExpCardMultiplier(member)
       });
       const goldRewardMult = totalGoldRewardMultiplier({
         vipActive: isVipActive(member),

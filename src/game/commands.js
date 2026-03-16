@@ -2835,6 +2835,19 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         send(`学会技能: ${skill.name}。`);
         return;
       }
+      if (item.id === 'exp_card_10x_2h') {
+        const now = Date.now();
+        const durationMs = 2 * 60 * 60 * 1000;
+        if (!removeItem(player, item.id, 1, resolved.slot.effects)) return send('背包里没有该物品。');
+        if (!player.flags) player.flags = {};
+        const currentExpire = Math.max(0, Number(player.flags.expCardExpiresAt || 0));
+        const base = currentExpire > now ? currentExpire : now;
+        player.flags.expCardExpiresAt = base + durationMs;
+        player.flags.expCardMultiplier = 10;
+        player.forceStateRefresh = true;
+        send(`使用了 ${item.name}，获得 10 倍经验，持续 2 小时。`);
+        return;
+      }
       // 修炼果：随机增加属性（支持批量使用）
       if (item.id === 'training_fruit') {
         // 解析数量参数，格式如 "修炼果 10" 或 "修炼果 5"
