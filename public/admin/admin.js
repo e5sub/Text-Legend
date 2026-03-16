@@ -81,6 +81,7 @@ const dashboardOps = document.getElementById('dashboard-ops');
 const dashboardRecentLogins = document.getElementById('dashboard-recent-logins');
 const dashboardRefreshBtn = document.getElementById('dashboard-refresh-btn');
 const dashboardMsg = document.getElementById('dashboard-msg');
+let dashboardUpdateBound = false;
 const gmMailScopeSelect = document.getElementById('gm-mail-scope');
 const gmMailRealmSelect = document.getElementById('gm-mail-realm');
 const gmMailUserRow = document.getElementById('gm-mail-user-row');
@@ -2918,10 +2919,16 @@ async function loadDashboardStats() {
     const economy = data.economy || {};
     const activity = data.activity || {};
 
+    if (dashboardServer) {
+      dashboardServer.dataset.gameCommit = String(server.gameCommit || '');
+      dashboardServer.dataset.gameVersion = String(server.gameVersion || '');
+      dashboardServer.dataset.gameBuildTime = String(server.gameBuildTime || '');
+    }
+
     renderStatList(dashboardServer, [
       { label: '服务器时间', value: formatAdminTime(server.time) },
       { label: '运行时长', value: formatDuration(server.uptimeSec) },
-      { label: '游戏版本', value: server.gameVersion || '-' },
+      { label: '游戏版本', value: `${server.gameVersion || '-'} <button class="btn-link" data-action="check-update" type="button">检查更新</button>` },
       { label: 'Node版本', value: server.nodeVersion || '-' },
       { label: '进程内存', value: formatBytes(server.memory?.rss) },
       { label: '堆内存', value: `${formatBytes(server.memory?.heapUsed)} / ${formatBytes(server.memory?.heapTotal)}` },
@@ -2956,6 +2963,7 @@ async function loadDashboardStats() {
     ]);
 
     renderRecentLogins(dashboardRecentLogins, data.recentLogins || []);
+    bindDashboardUpdateCheck();
 
     if (dashboardMsg) {
       dashboardMsg.textContent = `更新时间：${formatAdminTime(server.time)}`;
@@ -9423,6 +9431,59 @@ function formatDuration(seconds) {
   if (mins || hours || days) parts.push(`${mins}分`);
   parts.push(`${secs}秒`);
   return parts.join(' ');
+}
+
+function formatIsoLocal(iso) {
+  if (!iso) return '-';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '-';
+  const pad = (v) => String(v).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+function bindDashboardUpdateCheck() {
+  if (dashboardUpdateBound || !dashboardServer) return;
+  dashboardUpdateBound = true;
+  dashboardServer.addEventListener('click', async (event) => {
+    const btn = event.target?.closest?.('[data-action="check-update"]');
+    if (!btn) return;
+    const currentCommit = String(dashboardServer.dataset.gameCommit || '').trim();
+    if (!currentCommit) {
+      if (dashboardMsg) {
+        dashboardMsg.textContent = '当前版本无commit信息，无法检查更新。';
+        dashboardMsg.style.color = 'orange';
+      }
+      return;
+    }
+    try {
+      if (dashboardMsg) {
+        dashboardMsg.textContent = '检查更新中...';
+        dashboardMsg.style.color = '';
+      }
+      const res = await fetch('https://api.github.com/repos/e5sub/Text-Legend/commits?per_page=1', { cache: 'no-store' });
+      if (!res.ok) throw new Error('请求失败');
+      const data = await res.json();
+      const latest = Array.isArray(data) ? data[0] : data;
+      const latestSha = String(latest?.sha || '').slice(0, 7);
+      const latestTime = formatIsoLocal(latest?.commit?.committer?.date || latest?.commit?.author?.date);
+      if (latestSha && latestSha.startsWith(currentCommit) || currentCommit.startsWith(latestSha)) {
+        if (dashboardMsg) {
+          dashboardMsg.textContent = `已是最新版本（${latestSha} ${latestTime}）。`;
+          dashboardMsg.style.color = 'green';
+        }
+      } else {
+        if (dashboardMsg) {
+          dashboardMsg.textContent = `发现新版本：${latestSha} ${latestTime}（当前 ${currentCommit}）。`;
+          dashboardMsg.style.color = 'orange';
+        }
+      }
+    } catch (err) {
+      if (dashboardMsg) {
+        dashboardMsg.textContent = `检查更新失败: ${err.message}`;
+        dashboardMsg.style.color = 'red';
+      }
+    }
+  });
 }
 
 function renderStatList(target, items) {

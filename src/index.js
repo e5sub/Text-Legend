@@ -1871,7 +1871,9 @@ app.get('/admin/dashboard-stats', async (req, res) => {
       memory: process.memoryUsage(),
       loadAvg: os.loadavg(),
       platform: `${os.platform()} ${os.release()}`,
-      gameVersion: BUILD_VERSION_INFO.version
+      gameVersion: BUILD_VERSION_INFO.version,
+      gameCommit: BUILD_VERSION_INFO.commit,
+      gameBuildTime: BUILD_VERSION_INFO.timestamp
     },
     config: {
       port: config.port,
