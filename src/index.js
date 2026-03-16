@@ -8,10 +8,13 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import crypto from 'node:crypto';
 import os from 'node:os';
 import cron from 'node-cron';
-import { execSync } from 'node:child_process';
+import { execSync, exec } from 'node:child_process';
+import { promisify } from 'node:util';
 import { setupConsoleColors } from './log/console_colors.js';
 
 setupConsoleColors();
+
+const execAsync = promisify(exec);
 
 function formatBuildTimestamp(ms) {
   const date = new Date(ms);
@@ -48,6 +51,10 @@ const BUILD_VERSION_INFO = (() => {
   }
   return fallback;
 })();
+
+let updateInProgress = false;
+const UPDATE_GIT_CMD = String(process.env.UPDATE_GIT_CMD || 'git pull --ff-only').trim();
+const UPDATE_RESTART_CMD = String(process.env.UPDATE_RESTART_CMD || '').trim();
 
 import config from './config.js';
 import { validatePlayerName } from './game/validator.js';
@@ -2809,6 +2816,58 @@ app.post('/admin/first-recharge-settings/reissue-divine-beast', async (req, res)
       rarity: petGrant.pet.rarity
     }
   });
+});
+
+app.post('/admin/update', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  if (updateInProgress) return res.status(409).json({ error: '更新进行中，请稍后再试。' });
+  if (!UPDATE_GIT_CMD) return res.status(400).json({ error: '未配置更新命令。' });
+
+  updateInProgress = true;
+  try {
+    const gitResult = await execAsync(UPDATE_GIT_CMD, {
+      cwd: process.cwd(),
+      timeout: 120000,
+      maxBuffer: 1024 * 1024 * 4
+    });
+    const gitOutput = `${gitResult.stdout || ''}\n${gitResult.stderr || ''}`.trim();
+    const alreadyUpToDate = /Already up[ -]?to[ -]?date|Already up to date/i.test(gitOutput);
+
+    if (!UPDATE_RESTART_CMD) {
+      updateInProgress = false;
+      return res.json({
+        ok: true,
+        updated: !alreadyUpToDate,
+        restart: 'not_configured',
+        output: gitOutput || null,
+        message: '代码已拉取，未配置重启命令。'
+      });
+    }
+
+    res.json({
+      ok: true,
+      updated: !alreadyUpToDate,
+      restart: 'scheduled',
+      output: gitOutput || null,
+      message: '代码已拉取，正在重启服务...'
+    });
+
+    setTimeout(() => {
+      exec(UPDATE_RESTART_CMD, { cwd: process.cwd() }, (err, stdout, stderr) => {
+        if (err) {
+          console.error('[update] restart failed:', err.message);
+        }
+        if (stdout) console.log('[update] restart stdout:', stdout.trim());
+        if (stderr) console.error('[update] restart stderr:', stderr.trim());
+      });
+    }, 800);
+  } catch (err) {
+    updateInProgress = false;
+    return res.status(500).json({ error: `更新失败: ${err.message}` });
+  } finally {
+    updateInProgress = false;
+  }
 });
 
 app.post('/admin/first-recharge-settings/reissue-divine-beast-all', async (req, res) => {

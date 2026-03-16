@@ -18,6 +18,7 @@ services:
       - ADMIN_BOOTSTRAP_SECRET=GM账号 #GM账号账号
       - ADMIN_BOOTSTRAP_USER=GM密码 #GM账号密码
       - ADMIN_PATH=admin  #默认后台地址admin，可以修改为其他路径
+      - UPDATE_RESTART_CMD=kill -TERM 1
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
     volumes:

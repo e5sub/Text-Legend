@@ -18,6 +18,7 @@ services:
       - ADMIN_BOOTSTRAP_SECRET=change_me
       - ADMIN_BOOTSTRAP_USER=admin_account
       - ADMIN_PATH=admin
+      - UPDATE_RESTART_CMD=kill -TERM 1
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
     volumes:

@@ -76,9 +76,11 @@
                 <div id="dashboard-recent-logins" class="dashboard-list">加载中...</div>
               </div>
             </div>
-            <div class="row" style="margin-top: 12px; justify-content: flex-start;">
-              <button id="dashboard-refresh-btn" class="btn-small">刷新概览</button>
+            <div class="action-grid" style="margin-top: 12px;">
               <div id="dashboard-msg" class="msg"></div>
+              <div class="action-right">
+                <button id="dashboard-refresh-btn" class="btn-small">刷新概览</button>
+              </div>
             </div>
           </div>
         </div>
@@ -89,11 +91,22 @@
             <button class="btn-small block-toggle">折叠</button>
           </div>
           <div class="block-body">
-            <div class="row" style="margin-bottom: 8px;">
-              <input id="realm-name-input" type="text" placeholder="区服名称" style="max-width: 200px;">
-              <button id="realm-create-btn" class="btn-small">创建新区</button>
-              <button id="realm-refresh-btn" class="btn-small">刷新列表</button>
-              <button id="fix-realm-btn" class="btn-small" style="background: #ff9800;">修复旧数据</button>
+            <div class="form-grid-compact" style="margin-bottom: 8px; grid-template-columns: minmax(220px, 1fr) auto;">
+              <div class="form-field compact">
+                <label for="realm-name-input">区服名称</label>
+                <input id="realm-name-input" type="text" placeholder="区服名称">
+              </div>
+              <div class="form-field compact">
+                <label>&nbsp;</label>
+                <button id="realm-create-btn" class="btn-small">创建新区</button>
+              </div>
+            </div>
+            <div class="action-grid" style="margin-bottom: 8px;">
+              <div></div>
+              <div class="action-right">
+                <button id="realm-refresh-btn" class="btn-small">刷新列表</button>
+                <button id="fix-realm-btn" class="btn-small" style="background: #ff9800;">修复旧数据</button>
+              </div>
             </div>
             <table id="realms-table">
               <thead>
@@ -125,10 +138,13 @@
             <p class="muted" style="margin-bottom: 8px;">
               配置前台可用线路。前台会按线路延迟自动选最优线路。
             </p>
-            <div class="row" style="margin-bottom: 8px; justify-content: flex-start; gap: 8px; flex-wrap: wrap;">
-              <button id="route-lines-load-btn" class="btn-small">加载</button>
-              <button id="route-lines-add-btn" class="btn-small">+ 添加线路</button>
-              <button id="route-lines-save-btn" class="btn-small">保存</button>
+            <div class="action-grid" style="margin-bottom: 8px;">
+              <div></div>
+              <div class="action-right">
+                <button id="route-lines-load-btn" class="btn-small">加载</button>
+                <button id="route-lines-add-btn" class="btn-small">+ 添加线路</button>
+                <button id="route-lines-save-btn" class="btn-small">保存</button>
+              </div>
             </div>
             <div class="table-container compact-config-table-container">
               <table class="compact-config-table" style="font-size: 12px;">
@@ -156,13 +172,22 @@
             <button class="btn-small block-toggle">折叠</button>
           </div>
           <div class="block-body">
-          <div class="row">
-            <button id="refresh-users">刷新列表</button>
+          <div class="action-grid" style="margin-bottom: 6px;">
+            <div></div>
+            <div class="action-right">
+              <button id="refresh-users" class="btn-small">刷新列表</button>
+            </div>
           </div>
           <div class="table-container">
-            <div class="row" style="margin-bottom: 8px;">
-              <input id="users-search" type="text" placeholder="搜索用户名">
-              <button id="users-search-btn" class="btn-small">搜索</button>
+            <div class="form-grid-compact" style="margin-bottom: 8px; grid-template-columns: minmax(220px, 1fr) auto;">
+              <div class="form-field compact">
+                <label for="users-search">搜索用户名</label>
+                <input id="users-search" type="text" placeholder="搜索用户名">
+              </div>
+              <div class="form-field compact">
+                <label>&nbsp;</label>
+                <button id="users-search-btn" class="btn-small">搜索</button>
+              </div>
             </div>
             <table id="users-table">
               <thead>
@@ -180,9 +205,9 @@
               </tbody>
             </table>
           </div>
-          <div class="row" style="margin-top: 12px;">
+          <div class="action-grid" style="margin-top: 12px;">
             <div id="users-pagination-info" style="color: #666;"></div>
-            <div>
+            <div class="action-right">
               <button id="users-prev-page" class="btn-small">上一页</button>
               <button id="users-next-page" class="btn-small">下一页</button>
             </div>
@@ -234,9 +259,11 @@
               <button id="gm-mail-item-add" class="btn-small">添加附件</button>
             </div>
             <div id="gm-mail-item-list" class="list" style="min-height: 48px; margin-top: 6px;"></div>
-            <div class="row" style="margin-top: 8px;">
-              <button id="gm-mail-send-btn" class="btn-small">发送</button>
+            <div class="action-grid" style="margin-top: 8px;">
               <div id="gm-mail-msg" class="msg"></div>
+              <div class="action-right">
+                <button id="gm-mail-send-btn" class="btn-small">发送</button>
+              </div>
             </div>
           </div>
         </div>
@@ -294,9 +321,12 @@
                   <input id="wb-kill-count" type="number" min="0" step="1">
                 </div>
               </div>
-              <div class="row" style="margin-bottom: 6px; gap: 8px;">
-                <button id="wb-kill-save-btn" class="btn-small">保存</button>
-                <button id="wb-kill-reset-btn" class="btn-small">清零</button>
+              <div class="action-grid" style="margin-bottom: 6px;">
+                <div></div>
+                <div class="action-right">
+                  <button id="wb-kill-save-btn" class="btn-small">保存</button>
+                  <button id="wb-kill-reset-btn" class="btn-small">清零</button>
+                </div>
               </div>
               <div id="wb-kill-msg" class="msg"></div>
 
@@ -320,9 +350,12 @@
                 </tbody>
               </table>
             </div>
-            <div class="row" style="margin-top: 8px;">
-              <button id="wb-add-bonus-btn" class="btn-small">+ 添加配置</button>
-              <button id="wb-save-btn" class="btn-small">保存</button>
+            <div class="action-grid" style="margin-top: 8px;">
+              <div></div>
+              <div class="action-right">
+                <button id="wb-add-bonus-btn" class="btn-small">+ 添加配置</button>
+                <button id="wb-save-btn" class="btn-small">保存</button>
+              </div>
             </div>
             <div id="wb-msg" class="msg"></div>
           </div>
@@ -381,9 +414,12 @@
                   <input id="sb-kill-count" type="number" min="0" step="1">
                 </div>
               </div>
-              <div class="row" style="margin-bottom: 6px; gap: 8px;">
-                <button id="sb-kill-save-btn" class="btn-small">保存</button>
-                <button id="sb-kill-reset-btn" class="btn-small">清零</button>
+              <div class="action-grid" style="margin-bottom: 6px;">
+                <div></div>
+                <div class="action-right">
+                  <button id="sb-kill-save-btn" class="btn-small">保存</button>
+                  <button id="sb-kill-reset-btn" class="btn-small">清零</button>
+                </div>
               </div>
               <div id="sb-kill-msg" class="msg"></div>
 
@@ -407,9 +443,12 @@
                 </tbody>
               </table>
             </div>
-            <div class="row" style="margin-top: 8px;">
-              <button id="sb-add-bonus-btn" class="btn-small">+ 添加配置</button>
-              <button id="sb-save-btn" class="btn-small">保存</button>
+            <div class="action-grid" style="margin-top: 8px;">
+              <div></div>
+              <div class="action-right">
+                <button id="sb-add-bonus-btn" class="btn-small">+ 添加配置</button>
+                <button id="sb-save-btn" class="btn-small">保存</button>
+              </div>
             </div>
             <div id="sb-msg" class="msg"></div>
           </div>
@@ -468,9 +507,12 @@
                 <input id="cb-kill-count" type="number" min="0" step="1">
               </div>
             </div>
-            <div class="row" style="margin-bottom: 6px; gap: 8px;">
-              <button id="cb-kill-save-btn" class="btn-small">保存</button>
-              <button id="cb-kill-reset-btn" class="btn-small">清零</button>
+            <div class="action-grid" style="margin-bottom: 6px;">
+              <div></div>
+              <div class="action-right">
+                <button id="cb-kill-save-btn" class="btn-small">保存</button>
+                <button id="cb-kill-reset-btn" class="btn-small">清零</button>
+              </div>
             </div>
             <div id="cb-kill-msg" class="msg"></div>
             <p style="color: #666; margin: 10px 0 6px; font-size: 13px;">人数加成配置</p>
@@ -493,9 +535,12 @@
                 </tbody>
               </table>
             </div>
-            <div class="row" style="margin-top: 8px;">
-              <button id="cb-add-bonus-btn" class="btn-small">+ 添加配置</button>
-              <button id="cb-save-btn" class="btn-small">保存</button>
+            <div class="action-grid" style="margin-top: 8px;">
+              <div></div>
+              <div class="action-right">
+                <button id="cb-add-bonus-btn" class="btn-small">+ 添加配置</button>
+                <button id="cb-save-btn" class="btn-small">保存</button>
+              </div>
             </div>
             <div id="cb-msg" class="msg"></div>
           </div>
@@ -539,8 +584,11 @@
               </div>
             </div>
 
-            <div class="row" style="margin-top: 8px;">
-              <button id="event-time-save-btn" class="btn-small">保存</button>
+            <div class="action-grid" style="margin-top: 8px;">
+              <div></div>
+              <div class="action-right">
+                <button id="event-time-save-btn" class="btn-small">保存</button>
+              </div>
             </div>
             <div id="event-time-msg" class="msg"></div>
           </div>
@@ -628,8 +676,11 @@
               </div>
             </div>
 
-            <div class="row" style="margin-top: 8px;">
-              <button id="pb-save-btn" class="btn-small">保存</button>
+            <div class="action-grid" style="margin-top: 8px;">
+              <div></div>
+              <div class="action-right">
+                <button id="pb-save-btn" class="btn-small">保存</button>
+              </div>
             </div>
             <div id="pb-msg" class="msg"></div>
           </div>
@@ -644,13 +695,19 @@
             <p class="muted" style="margin-bottom: 8px;">
               简化配置：直接选择兑换物品、数量并填写所需积分。
             </p>
-            <div class="row" style="margin-bottom: 8px; gap: 8px;">
-              <button id="activity-point-shop-load-btn" class="btn-small">加载</button>
-              <button id="activity-point-shop-add-btn" class="btn-small">+ 添加商品</button>
-              <button id="activity-point-shop-save-btn" class="btn-small">保存</button>
+            <div class="action-grid" style="margin-bottom: 8px;">
+              <div></div>
+              <div class="action-right">
+                <button id="activity-point-shop-load-btn" class="btn-small">加载</button>
+                <button id="activity-point-shop-add-btn" class="btn-small">+ 添加商品</button>
+                <button id="activity-point-shop-save-btn" class="btn-small">保存</button>
+              </div>
             </div>
-            <div class="row" style="margin-bottom: 8px; gap: 8px;">
-              <input id="activity-point-shop-item-search" type="text" placeholder="搜索物品名/ID/类型（过滤下拉选项）" style="max-width: 320px;">
+            <div class="form-grid-compact" style="margin-bottom: 8px;">
+              <div class="form-field compact">
+                <label for="activity-point-shop-item-search">搜索物品</label>
+                <input id="activity-point-shop-item-search" type="text" placeholder="搜索物品名/ID/类型（过滤下拉选项）">
+              </div>
             </div>
             <div class="table-container compact-config-table-container">
               <table class="compact-config-table activity-point-shop-table" style="font-size: 12px;">
@@ -680,10 +737,13 @@
             <p class="muted" style="margin-bottom: 8px;">
               直接选择指定神兽并填写所需神兽碎片数量（网页/安卓活动中心都会读取这里的配置）。
             </p>
-            <div class="row" style="margin-bottom: 8px; gap: 8px;">
-              <button id="divine-beast-fragment-load-btn" class="btn-small">加载</button>
-              <button id="divine-beast-fragment-add-btn" class="btn-small">+ 添加兑换项</button>
-              <button id="divine-beast-fragment-save-btn" class="btn-small">保存</button>
+            <div class="action-grid" style="margin-bottom: 8px;">
+              <div></div>
+              <div class="action-right">
+                <button id="divine-beast-fragment-load-btn" class="btn-small">加载</button>
+                <button id="divine-beast-fragment-add-btn" class="btn-small">+ 添加兑换项</button>
+                <button id="divine-beast-fragment-save-btn" class="btn-small">保存</button>
+              </div>
             </div>
             <div class="table-container compact-config-table-container harvest-reward-config-container">
               <table class="compact-config-table harvest-reward-table" style="font-size: 12px;">
@@ -712,10 +772,13 @@
             <p class="muted" style="margin-bottom: 8px;">
               配置丰收签到通过邮件发放的奖励和赠送的活动积分（保存后立即生效）。
             </p>
-            <div class="row" style="margin-bottom: 8px; gap: 8px;">
-              <button id="harvest-sign-load-btn" class="btn-small">加载</button>
-              <button id="harvest-sign-add-btn" class="btn-small">+ 添加物品</button>
-              <button id="harvest-sign-save-btn" class="btn-small">保存</button>
+            <div class="action-grid" style="margin-bottom: 8px;">
+              <div></div>
+              <div class="action-right">
+                <button id="harvest-sign-load-btn" class="btn-small">加载</button>
+                <button id="harvest-sign-add-btn" class="btn-small">+ 添加物品</button>
+                <button id="harvest-sign-save-btn" class="btn-small">保存</button>
+              </div>
             </div>
             <div class="form-grid" style="margin-bottom: 8px;">
               <div class="form-field">
@@ -731,8 +794,11 @@
                 <input id="harvest-sign-gold" type="number" min="0" placeholder="0">
               </div>
             </div>
-            <div class="row" style="margin-bottom: 8px; gap: 8px;">
-              <input id="harvest-sign-item-search" type="text" placeholder="搜索签到奖励物品名/ID/类型" style="max-width: 320px;">
+            <div class="form-grid-compact" style="margin-bottom: 8px;">
+              <div class="form-field compact">
+                <label for="harvest-sign-item-search">搜索签到物品</label>
+                <input id="harvest-sign-item-search" type="text" placeholder="搜索签到奖励物品名/ID/类型">
+              </div>
             </div>
             <div class="table-container compact-config-table-container">
               <table class="compact-config-table activity-point-shop-table" style="font-size: 12px;">
@@ -761,13 +827,19 @@
             <p class="muted" style="margin-bottom: 8px;">
               配置丰收季挂机分钟档位奖励（保存后立即生效，活动领取会按这里的档位发邮件）。
             </p>
-            <div class="row" style="margin-bottom: 8px; gap: 8px;">
-              <button id="harvest-reward-load-btn" class="btn-small">加载</button>
-              <button id="harvest-reward-add-btn" class="btn-small">+ 添加档位</button>
-              <button id="harvest-reward-save-btn" class="btn-small">保存</button>
+            <div class="action-grid" style="margin-bottom: 8px;">
+              <div></div>
+              <div class="action-right">
+                <button id="harvest-reward-load-btn" class="btn-small">加载</button>
+                <button id="harvest-reward-add-btn" class="btn-small">+ 添加档位</button>
+                <button id="harvest-reward-save-btn" class="btn-small">保存</button>
+              </div>
             </div>
-            <div class="row" style="margin-bottom: 8px; gap: 8px;">
-              <input id="harvest-reward-item-search" type="text" placeholder="搜索附加物品名/ID/类型（过滤下拉选项）" style="max-width: 320px;">
+            <div class="form-grid-compact" style="margin-bottom: 8px;">
+              <div class="form-field compact">
+                <label for="harvest-reward-item-search">搜索附加物品</label>
+                <input id="harvest-reward-item-search" type="text" placeholder="搜索附加物品名/ID/类型（过滤下拉选项）">
+              </div>
             </div>
             <div class="table-container compact-config-table-container">
               <table class="compact-config-table" style="font-size: 12px;">
@@ -799,13 +871,19 @@
             <p class="muted" style="margin-bottom: 8px;">
               配置装备回收的精华兑换项（网页/安卓装备回收界面都会读取这里的配置）。
             </p>
-            <div class="row" style="margin-bottom: 8px; gap: 8px;">
-              <button id="equipment-recycle-load-btn" class="btn-small">加载</button>
-              <button id="equipment-recycle-add-btn" class="btn-small">+ 添加兑换项</button>
-              <button id="equipment-recycle-save-btn" class="btn-small">保存</button>
+            <div class="action-grid" style="margin-bottom: 8px;">
+              <div></div>
+              <div class="action-right">
+                <button id="equipment-recycle-load-btn" class="btn-small">加载</button>
+                <button id="equipment-recycle-add-btn" class="btn-small">+ 添加兑换项</button>
+                <button id="equipment-recycle-save-btn" class="btn-small">保存</button>
+              </div>
             </div>
-            <div class="row" style="margin-bottom: 8px; gap: 8px;">
-              <input id="equipment-recycle-item-search" type="text" placeholder="搜索物品名/ID/类型" style="max-width: 220px;">
+            <div class="form-grid-compact" style="margin-bottom: 8px;">
+              <div class="form-field compact">
+                <label for="equipment-recycle-item-search">搜索回收物品</label>
+                <input id="equipment-recycle-item-search" type="text" placeholder="搜索物品名/ID/类型">
+              </div>
             </div>
             <div class="table-container compact-config-table-container equipment-recycle-config-container">
               <table class="compact-config-table equipment-recycle-table" style="font-size: 12px;">
@@ -837,10 +915,13 @@
             <p class="muted" style="margin-bottom: 6px;">
               配置行会捐献上限、捐献成本、贡献产出和行会商城商品（网页端立即读取）。
             </p>
-            <div class="row" style="margin-bottom: 4px; gap: 6px; justify-content: flex-start; flex-wrap: wrap;">
-              <button id="guild-system-load-btn" class="btn-small">加载</button>
-              <button id="guild-system-shop-add-btn" class="btn-small">+ 添加商城商品</button>
-              <button id="guild-system-save-btn" class="btn-small">保存</button>
+            <div class="action-grid" style="margin-bottom: 4px;">
+              <div></div>
+              <div class="action-right">
+                <button id="guild-system-load-btn" class="btn-small">加载</button>
+                <button id="guild-system-shop-add-btn" class="btn-small">+ 添加商城商品</button>
+                <button id="guild-system-save-btn" class="btn-small">保存</button>
+              </div>
             </div>
             <div class="table-container compact-config-table-container" style="margin-bottom: 6px;">
               <table class="compact-config-table" style="font-size: 12px;">
@@ -870,8 +951,11 @@
                 </tbody>
               </table>
             </div>
-            <div class="row" style="margin-bottom: 6px; gap: 6px; justify-content: flex-start;">
-              <input id="guild-system-item-search" type="text" placeholder="搜索商城物品名/ID/类型">
+            <div class="form-grid-compact" style="margin-bottom: 6px;">
+              <div class="form-field compact">
+                <label for="guild-system-item-search">搜索商城物品</label>
+                <input id="guild-system-item-search" type="text" placeholder="搜索商城物品名/ID/类型">
+              </div>
             </div>
             <div class="table-container compact-config-table-container equipment-recycle-config-container">
               <table class="compact-config-table equipment-recycle-table" style="font-size: 12px;">
@@ -901,9 +985,12 @@
             <p style="color: #666; margin-bottom: 8px; font-size: 13px;">
               配置行会建筑分支的基础升级门槛、每级升级时长和每级加成（行会建筑等级无上限，超出基础配置后按同规则递增）。
             </p>
-            <div class="row" style="margin-bottom: 8px;">
-              <button id="guild-building-load-btn" class="btn-small">加载</button>
-              <button id="guild-building-save-btn" class="btn-small">保存</button>
+            <div class="action-grid" style="margin-bottom: 8px;">
+              <div></div>
+              <div class="action-right">
+                <button id="guild-building-load-btn" class="btn-small">加载</button>
+                <button id="guild-building-save-btn" class="btn-small">保存</button>
+              </div>
             </div>
             <div class="form-grid-compact" style="margin-bottom: 8px;">
               <div class="form-field compact">
@@ -945,9 +1032,12 @@
             <p style="color: #666; margin-bottom: 8px; font-size: 13px;">
               每日0点自动抽取幸运玩家，获得称号"欧皇"和100%属性加成。
             </p>
-            <div class="row" style="margin-bottom: 8px;">
-              <button id="daily-lucky-refresh-btn" class="btn-small">立即刷新</button>
-              <button id="daily-lucky-info-btn" class="btn-small">查看当前状态</button>
+            <div class="action-grid" style="margin-bottom: 8px;">
+              <div></div>
+              <div class="action-right">
+                <button id="daily-lucky-refresh-btn" class="btn-small">立即刷新</button>
+                <button id="daily-lucky-info-btn" class="btn-small">查看当前状态</button>
+              </div>
             </div>
             <div id="daily-lucky-msg" class="msg"></div>
             <div class="table-container" id="daily-lucky-table-container" style="display: none;">
@@ -996,19 +1086,34 @@
 
             <div style="border-top: 1px solid #ddd; padding-top: 20px;">
               <h3>VIP 激活码管理</h3>
-              <input id="vip-count" type="number" min="1" max="100" value="5">
-              <select id="vip-duration">
-                <option value="month">月卡</option>
-                <option value="quarter">季卡</option>
-                <option value="year">年卡</option>
-                <option value="permanent">永久</option>
-              </select>
-              <button id="vip-create-btn">生成激活码</button>
-              <button id="vip-list-btn">查看激活码列表</button>
-              <div class="row" style="margin-top: 8px;">
-                <button id="vip-codes-prev" class="btn-small">上一页</button>
-                <span id="vip-codes-page" class="muted" style="margin: 0 8px;">第 1/1 页</span>
-                <button id="vip-codes-next" class="btn-small">下一页</button>
+              <div class="form-grid-compact" style="margin-bottom: 8px;">
+                <div class="form-field compact">
+                  <label for="vip-count">生成数量</label>
+                  <input id="vip-count" type="number" min="1" max="100" value="5">
+                </div>
+                <div class="form-field compact">
+                  <label for="vip-duration">类型</label>
+                  <select id="vip-duration">
+                    <option value="month">月卡</option>
+                    <option value="quarter">季卡</option>
+                    <option value="year">年卡</option>
+                    <option value="permanent">永久</option>
+                  </select>
+                </div>
+              </div>
+              <div class="action-grid" style="margin-bottom: 8px;">
+                <div></div>
+                <div class="action-right">
+                  <button id="vip-create-btn">生成激活码</button>
+                  <button id="vip-list-btn">查看激活码列表</button>
+                </div>
+              </div>
+              <div class="action-grid" style="margin-top: 8px;">
+                <span id="vip-codes-page" class="muted">第 1/1 页</span>
+                <div class="action-right">
+                  <button id="vip-codes-prev" class="btn-small">上一页</button>
+                  <button id="vip-codes-next" class="btn-small">下一页</button>
+                </div>
               </div>
               <div id="vip-codes-result" class="list"></div>
               
@@ -1030,42 +1135,76 @@
 
             <div style="border-top: 1px solid #ddd; padding-top: 20px;">
               <h3>SVIP 开通设置</h3>
-              <div class="input-with-unit">
-                <input id="svip-price-month" type="number" min="0" value="100">
-                <span class="unit">元宝/月卡</span>
+              <div class="form-grid-compact" style="margin-bottom: 8px;">
+                <div class="form-field compact">
+                  <label for="svip-price-month">月卡价格</label>
+                  <div class="input-with-unit">
+                    <input id="svip-price-month" type="number" min="0" value="100">
+                    <span class="unit">元宝</span>
+                  </div>
+                </div>
+                <div class="form-field compact">
+                  <label for="svip-price-quarter">季卡价格</label>
+                  <div class="input-with-unit">
+                    <input id="svip-price-quarter" type="number" min="0" value="260">
+                    <span class="unit">元宝</span>
+                  </div>
+                </div>
+                <div class="form-field compact">
+                  <label for="svip-price-year">年卡价格</label>
+                  <div class="input-with-unit">
+                    <input id="svip-price-year" type="number" min="0" value="900">
+                    <span class="unit">元宝</span>
+                  </div>
+                </div>
+                <div class="form-field compact">
+                  <label for="svip-price-permanent">永久价格</label>
+                  <div class="input-with-unit">
+                    <input id="svip-price-permanent" type="number" min="0" value="3000">
+                    <span class="unit">元宝</span>
+                  </div>
+                </div>
               </div>
-              <div class="input-with-unit">
-                <input id="svip-price-quarter" type="number" min="0" value="260">
-                <span class="unit">元宝/季卡</span>
+              <div class="action-grid" style="margin-bottom: 8px;">
+                <div></div>
+                <div class="action-right">
+                  <button id="svip-save-btn">保存设置</button>
+                </div>
               </div>
-              <div class="input-with-unit">
-                <input id="svip-price-year" type="number" min="0" value="900">
-                <span class="unit">元宝/年卡</span>
-              </div>
-              <div class="input-with-unit">
-                <input id="svip-price-permanent" type="number" min="0" value="3000">
-                <span class="unit">元宝/永久</span>
-              </div>
-              <button id="svip-save-btn">保存设置</button>
               <div id="svip-msg" class="msg"></div>
             </div>
 
             <div style="border-top: 1px solid #ddd; padding-top: 20px;">
               <h3>元宝卡密管理</h3>
-              <div class="input-with-unit">
-                <input id="recharge-count" type="number" min="1" max="200" value="5">
-                <span class="unit">张</span>
+              <div class="form-grid-compact" style="margin-bottom: 8px;">
+                <div class="form-field compact">
+                  <label for="recharge-count">生成数量</label>
+                  <div class="input-with-unit">
+                    <input id="recharge-count" type="number" min="1" max="200" value="5">
+                    <span class="unit">张</span>
+                  </div>
+                </div>
+                <div class="form-field compact">
+                  <label for="recharge-amount">每张额度</label>
+                  <div class="input-with-unit">
+                    <input id="recharge-amount" type="number" min="1" value="100">
+                    <span class="unit">元宝</span>
+                  </div>
+                </div>
               </div>
-              <div class="input-with-unit">
-                <input id="recharge-amount" type="number" min="1" value="100">
-                <span class="unit">元宝</span>
+              <div class="action-grid" style="margin-bottom: 8px;">
+                <div></div>
+                <div class="action-right">
+                  <button id="recharge-create-btn">生成卡密</button>
+                  <button id="recharge-list-btn">查看卡密列表</button>
+                </div>
               </div>
-              <button id="recharge-create-btn">生成卡密</button>
-              <button id="recharge-list-btn">查看卡密列表</button>
-              <div class="row" style="margin-top: 8px;">
-                <button id="recharge-codes-prev" class="btn-small">上一页</button>
-                <span id="recharge-codes-page" class="muted" style="margin: 0 8px;">第 1/1 页</span>
-                <button id="recharge-codes-next" class="btn-small">下一页</button>
+              <div class="action-grid" style="margin-top: 8px;">
+                <span id="recharge-codes-page" class="muted">第 1/1 页</span>
+                <div class="action-right">
+                  <button id="recharge-codes-prev" class="btn-small">上一页</button>
+                  <button id="recharge-codes-next" class="btn-small">下一页</button>
+                </div>
               </div>
               <div id="recharge-codes-result" class="list"></div>
 
@@ -1119,9 +1258,12 @@
                     <input id="first-recharge-treasure-exp" type="number" min="0" value="200">
                   </div>
                 </div>
-                <div class="row" style="margin-top: 8px;">
-                  <button id="first-recharge-load-btn" class="btn-small">加载首充配置</button>
-                  <button id="first-recharge-save-btn" class="btn-small">保存首充配置</button>
+                <div class="action-grid" style="margin-top: 8px;">
+                  <div></div>
+                  <div class="action-right">
+                    <button id="first-recharge-load-btn" class="btn-small">加载首充配置</button>
+                    <button id="first-recharge-save-btn" class="btn-small">保存首充配置</button>
+                  </div>
                 </div>
                 <div class="form-grid-compact" style="margin-top: 10px;">
                   <div class="form-field compact">
@@ -1133,11 +1275,14 @@
                     <input id="first-recharge-reissue-realm" type="number" min="1" value="1" placeholder="区服">
                   </div>
                 </div>
-                <div class="row" style="margin-top: 8px; gap: 8px; align-items: center; flex-wrap: wrap;">
-                  <button id="first-recharge-reissue-btn" class="btn-small">补发首充礼包</button>
-                  <button id="first-recharge-reissue-divine-beast-btn" class="btn-small">补发马年神兽</button>
-                  <button id="first-recharge-reissue-divine-beast-all-btn" class="btn-small">补发全部马年神兽</button>
-                  <button id="first-recharge-reissue-all-btn" class="btn-small">补发全部充值玩家</button>
+                <div class="action-grid" style="margin-top: 8px;">
+                  <div></div>
+                  <div class="action-right">
+                    <button id="first-recharge-reissue-btn" class="btn-small">补发首充礼包</button>
+                    <button id="first-recharge-reissue-divine-beast-btn" class="btn-small">补发马年神兽</button>
+                    <button id="first-recharge-reissue-divine-beast-all-btn" class="btn-small">补发全部马年神兽</button>
+                    <button id="first-recharge-reissue-all-btn" class="btn-small">补发全部充值玩家</button>
+                  </div>
                 </div>
                 <div id="first-recharge-msg" class="msg"></div>
 
@@ -1154,34 +1299,56 @@
                       <input id="invite-reward-rate" type="number" min="0" max="100" step="0.1" value="20">
                     </div>
                   </div>
-                  <div class="row" style="margin-top: 8px;">
-                    <button id="invite-reward-load-btn" class="btn-small">加载邀请配置</button>
-                    <button id="invite-reward-save-btn" class="btn-small">保存邀请配置</button>
+                  <div class="action-grid" style="margin-top: 8px;">
+                    <div></div>
+                    <div class="action-right">
+                      <button id="invite-reward-load-btn" class="btn-small">加载邀请配置</button>
+                      <button id="invite-reward-save-btn" class="btn-small">保存邀请配置</button>
+                    </div>
                   </div>
                   <div id="invite-reward-msg" class="msg"></div>
                 </div>
 
                 <div style="border-top: 1px solid #ddd; margin-top: 14px; padding-top: 12px;">
                   <h4 style="margin: 0 0 10px;">角色迁移（转移账号）</h4>
-                  <div class="row" style="gap: 8px; align-items: center;">
-                    <input id="char-migrate-char" type="text" placeholder="角色名">
+                  <div class="form-grid-compact" style="margin-top: 6px;">
+                    <div class="form-field compact">
+                      <label for="char-migrate-char">角色名</label>
+                      <input id="char-migrate-char" type="text" placeholder="角色名">
+                    </div>
+                    <div class="form-field compact">
+                      <label for="char-migrate-realm">区服</label>
+                      <input id="char-migrate-realm" type="number" min="1" value="1" placeholder="区服">
+                    </div>
+                    <div class="form-field compact">
+                      <label for="char-migrate-target-user">目标账号</label>
+                      <input id="char-migrate-target-user" type="text" placeholder="目标账号(用户名)">
+                    </div>
                   </div>
-                  <div class="char-migrate-pair-row">
-                    <input id="char-migrate-realm" type="number" min="1" value="1" placeholder="区服">
-                    <input id="char-migrate-target-user" type="text" placeholder="目标账号(用户名)">
-                  </div>
-                  <div class="row" style="margin-top: 8px;">
-                    <button id="char-migrate-btn" class="btn-small">迁移角色</button>
+                  <div class="action-grid" style="margin-top: 8px;">
+                    <div></div>
+                    <div class="action-right">
+                      <button id="char-migrate-btn" class="btn-small">迁移角色</button>
+                    </div>
                   </div>
                   <p class="muted" style="margin-top: 6px;">支持在线迁移；迁移成功后会自动强制下线。会同步迁移该角色关联的行会成员、行会申请、邮件归属等账号字段。</p>
                   <div style="border-top: 1px solid #ddd; margin-top: 12px; padding-top: 10px;">
                     <h4 style="margin: 0 0 10px;">恢复已删角色</h4>
-                    <div class="char-migrate-pair-row">
-                      <input id="char-restore-name" type="text" placeholder="已删除角色名">
-                      <input id="char-restore-realm" type="number" min="1" value="1" placeholder="区服">
+                    <div class="form-grid-compact" style="margin-top: 6px;">
+                      <div class="form-field compact">
+                        <label for="char-restore-name">已删除角色名</label>
+                        <input id="char-restore-name" type="text" placeholder="已删除角色名">
+                      </div>
+                      <div class="form-field compact">
+                        <label for="char-restore-realm">区服</label>
+                        <input id="char-restore-realm" type="number" min="1" value="1" placeholder="区服">
+                      </div>
                     </div>
-                    <div class="row" style="margin-top: 8px;">
-                      <button id="char-restore-btn" class="btn-small" style="background: #2e7d32;">恢复角色</button>
+                    <div class="action-grid" style="margin-top: 8px;">
+                      <div></div>
+                      <div class="action-right">
+                        <button id="char-restore-btn" class="btn-small" style="background: #2e7d32;">恢复角色</button>
+                      </div>
                     </div>
                     <p class="muted" style="margin-top: 6px;">按“角色名 + 区服”恢复最近一次删除的归档角色。若当前区服已有同名角色，则不会恢复。</p>
                   </div>
@@ -1221,8 +1388,11 @@
                 <input id="state-throttle-interval" type="number" min="1" value="10">
               </div>
             </div>
-            <div class="row" style="margin-top: 6px;">
-              <button id="state-throttle-save" class="btn-small">保存</button>
+            <div class="action-grid" style="margin-top: 6px;">
+              <div></div>
+              <div class="action-right">
+                <button id="state-throttle-save" class="btn-small">保存</button>
+              </div>
             </div>
             <div class="form-grid-compact" style="margin-top: 10px;">
               <div class="form-field compact">
@@ -1267,8 +1437,11 @@
                 <input id="room-variant-count" type="number" min="1" value="5">
               </div>
             </div>
-            <div class="row" style="margin-top: 6px;">
-              <button id="room-variant-save" class="btn-small">保存数量</button>
+            <div class="action-grid" style="margin-top: 6px;">
+              <div></div>
+              <div class="action-right">
+                <button id="room-variant-save" class="btn-small">保存数量</button>
+              </div>
             </div>
             <p class="muted" style="margin-top: 6px;">修改后立即生效；减少时仅影响分流选择</p>
             <div id="room-variant-msg" class="msg"></div>
@@ -1656,9 +1829,12 @@
                 </tbody>
               </table>
             </div>
-            <div class="row" style="margin-top: 8px;">
-              <button id="ug-load-btn" class="btn-small">加载</button>
-              <button id="ug-save-btn" class="btn-small">保存设置</button>
+            <div class="action-grid" style="margin-top: 8px;">
+              <div></div>
+              <div class="action-right">
+                <button id="ug-load-btn" class="btn-small">加载</button>
+                <button id="ug-save-btn" class="btn-small">保存设置</button>
+              </div>
             </div>
             <div id="ug-msg" class="msg"></div>
           </div>
@@ -2124,10 +2300,13 @@
             <h3 style="margin: 16px 0 8px; font-size: 13px;">技能效果</h3>
             <textarea id="pet-skill-effects" rows="8" style="width: 100%; font-family: Consolas, 'Courier New', monospace; font-size: 12px; padding: 8px; border-radius: 8px; border: 1px solid #ddd;" placeholder="格式: id=说明\n示例: pet_bash=被动：宠物物理伤害+4.5%"></textarea>
 
-            <div class="row" style="margin-top: 10px;">
-              <button id="pet-settings-refresh" class="btn-small">加载</button>
-              <button id="pet-settings-save" class="btn-small">保存</button>
-              <button id="pet-settings-reset-skill-effects" class="btn-small">重置技能说明</button>
+            <div class="action-grid" style="margin-top: 10px;">
+              <div></div>
+              <div class="action-right">
+                <button id="pet-settings-refresh" class="btn-small">加载</button>
+                <button id="pet-settings-save" class="btn-small">保存</button>
+                <button id="pet-settings-reset-skill-effects" class="btn-small">重置技能说明</button>
+              </div>
             </div>
             <div id="pet-settings-msg" class="msg"></div>
           </div>
@@ -2187,9 +2366,12 @@
                 </tbody>
               </table>
             </div>
-            <div class="row" style="margin-top: 12px;">
-              <button id="class-bonus-save" class="btn-small">保存配置</button>
-              <button id="class-bonus-reset" class="btn-small" style="background: #c00;">恢复默认</button>
+            <div class="action-grid" style="margin-top: 12px;">
+              <div></div>
+              <div class="action-right">
+                <button id="class-bonus-save" class="btn-small">保存配置</button>
+                <button id="class-bonus-reset" class="btn-small" style="background: #c00;">恢复默认</button>
+              </div>
             </div>
             <div id="class-bonus-msg" class="msg"></div>
           </div>
@@ -2202,10 +2384,19 @@
           </div>
           <div class="block-body">
             <p class="muted" style="margin-bottom: 8px;">玩家名和金额由GM在后台设置，在前台显示前5位</p>
-            <div class="row" style="margin-bottom: 8px;">
-              <input id="sponsor-name" type="text" placeholder="玩家名" style="max-width: 150px;">
-              <input id="sponsor-amount" type="number" min="0" placeholder="金额" style="max-width: 100px;">
-              <button id="sponsor-add-btn" class="btn-small">添加</button>
+            <div class="form-grid-compact" style="margin-bottom: 8px;">
+              <div class="form-field compact">
+                <label for="sponsor-name">玩家名</label>
+                <input id="sponsor-name" type="text" placeholder="玩家名">
+              </div>
+              <div class="form-field compact">
+                <label for="sponsor-amount">金额</label>
+                <input id="sponsor-amount" type="number" min="0" placeholder="金额">
+              </div>
+              <div class="form-field compact">
+                <label>&nbsp;</label>
+                <button id="sponsor-add-btn" class="btn-small">添加</button>
+              </div>
             </div>
             <div class="table-container">
               <table>
@@ -2225,9 +2416,9 @@
                 </tbody>
               </table>
             </div>
-            <div class="row" style="margin-top: 12px;">
+            <div class="action-grid" style="margin-top: 12px;">
               <div id="sponsors-pagination-info" style="color: #666;"></div>
-              <div>
+              <div class="action-right">
                 <button id="sponsors-prev-page" class="btn-small">上一页</button>
                 <button id="sponsors-next-page" class="btn-small">下一页</button>
               </div>
@@ -2264,15 +2455,26 @@
             <button class="btn-small block-toggle">折叠</button>
           </div>
           <div class="block-body">
-            <div class="row" style="margin-bottom: 12px;">
-              <input id="items-search" type="text" placeholder="搜索装备名称或ID" style="max-width: 200px;">
-              <button id="items-search-btn" class="btn-small">搜索</button>
-              <button id="items-refresh-btn" class="btn-small">刷新列表</button>
-              <button id="items-create-btn" class="btn-small" style="background: #2196F3;">+ 新增装备</button>
-              <button id="items-import-btn" class="btn-small" style="background: #4CAF50;">从游戏导入装备</button>
-              <button id="items-export-btn" class="btn-small" style="background: #ff9800;">导出全部装备</button>
-              <button id="items-import-json-btn" class="btn-small" style="background: #607d8b;">导入装备JSON</button>
-              <input id="items-import-json-file" type="file" accept=".json,application/json" style="display:none;">
+            <div class="form-grid-compact" style="margin-bottom: 8px; grid-template-columns: minmax(220px, 1fr) auto;">
+              <div class="form-field compact">
+                <label for="items-search">搜索装备</label>
+                <input id="items-search" type="text" placeholder="搜索装备名称或ID">
+              </div>
+              <div class="form-field compact">
+                <label>&nbsp;</label>
+                <button id="items-search-btn" class="btn-small">搜索</button>
+              </div>
+            </div>
+            <div class="action-grid" style="margin-bottom: 12px;">
+              <div></div>
+              <div class="action-right">
+                <button id="items-refresh-btn" class="btn-small">刷新列表</button>
+                <button id="items-create-btn" class="btn-small" style="background: #2196F3;">+ 新增装备</button>
+                <button id="items-import-btn" class="btn-small" style="background: #4CAF50;">从游戏导入装备</button>
+                <button id="items-export-btn" class="btn-small" style="background: #ff9800;">导出全部装备</button>
+                <button id="items-import-json-btn" class="btn-small" style="background: #607d8b;">导入装备JSON</button>
+                <input id="items-import-json-file" type="file" accept=".json,application/json" style="display:none;">
+              </div>
             </div>
             <div class="table-container">
               <table id="items-table">
@@ -2298,12 +2500,12 @@
                 </tbody>
               </table>
             </div>
-            <div class="row" style="margin-top: 12px;">
+            <div class="action-grid" style="margin-top: 12px;">
               <div id="items-pagination-info" style="color: #666;"></div>
-              <div style="display: flex; align-items: center; gap: 8px;">
+              <div class="action-right">
                 <button id="items-prev-page" class="btn-small">上一页</button>
                 <span style="color: #666;">跳转到</span>
-                <input id="items-page-input" type="number" min="1" style="width: 60px; padding: 4px 6px;">
+                <input id="items-page-input" type="number" min="1" class="input-compact">
                 <button id="items-go-page" class="btn-small">前往</button>
                 <button id="items-next-page" class="btn-small">下一页</button>
               </div>
@@ -2318,10 +2520,21 @@
           </div>
           <div class="block-body">
             <p class="muted" style="margin-bottom: 8px;">仅覆盖/新增怪物模板，保存后立即生效，删除覆盖会恢复默认。</p>
-            <div class="row" style="margin-bottom: 12px;">
-              <input id="mob-override-search" type="text" placeholder="搜索怪物ID或名称" style="max-width: 200px;">
-              <button id="mob-override-refresh" class="btn-small">刷新列表</button>
-              <button id="mob-override-create" class="btn-small" style="background: #2196F3;">+ 新增/覆盖怪物</button>
+            <div class="form-grid-compact" style="margin-bottom: 8px; grid-template-columns: minmax(220px, 1fr) auto;">
+              <div class="form-field compact">
+                <label for="mob-override-search">搜索怪物</label>
+                <input id="mob-override-search" type="text" placeholder="搜索怪物ID或名称">
+              </div>
+              <div class="form-field compact">
+                <label>&nbsp;</label>
+                <button id="mob-override-refresh" class="btn-small">刷新列表</button>
+              </div>
+            </div>
+            <div class="action-grid" style="margin-bottom: 12px;">
+              <div></div>
+              <div class="action-right">
+                <button id="mob-override-create" class="btn-small" style="background: #2196F3;">+ 新增/覆盖怪物</button>
+              </div>
             </div>
             <div class="table-container">
               <table id="mob-overrides-table">
@@ -2356,9 +2569,9 @@
           <div class="block-body">
             <p class="muted" style="margin-bottom: 8px;">支持区域与房间覆盖配置，保存后立即生效。</p>
 
-            <div class="row" style="margin-bottom: 10px;">
+            <div class="action-grid" style="margin-bottom: 10px;">
               <strong>区域覆盖</strong>
-              <div>
+              <div class="action-right">
                 <button id="world-zones-refresh" class="btn-small">刷新区域</button>
                 <button id="world-zone-create" class="btn-small" style="background: #2196F3;">+ 新增/覆盖区域</button>
               </div>
@@ -2386,8 +2599,9 @@
 
             <div class="divider"></div>
 
-            <div class="row" style="margin-bottom: 10px; align-items: center;">
+            <div class="action-grid" style="margin-bottom: 10px;">
               <strong>房间覆盖</strong>
+              <div></div>
             </div>
             <div class="form-grid-compact" style="margin-bottom: 8px;">
               <div class="form-field compact">
@@ -2395,10 +2609,13 @@
                 <select id="world-zone-select"></select>
               </div>
             </div>
-            <div class="row" style="margin-bottom: 10px; gap: 8px; flex-wrap: wrap;">
-              <button id="world-rooms-refresh" class="btn-small">加载房间</button>
-              <button id="world-room-check" class="btn-small" style="background: #607d8b;">刷新覆盖状态</button>
-              <button id="world-room-create" class="btn-small" style="background: #2196F3;">+ 新增/覆盖房间</button>
+            <div class="action-grid" style="margin-bottom: 10px;">
+              <div></div>
+              <div class="action-right">
+                <button id="world-rooms-refresh" class="btn-small">加载房间</button>
+                <button id="world-room-check" class="btn-small" style="background: #607d8b;">刷新覆盖状态</button>
+                <button id="world-room-create" class="btn-small" style="background: #2196F3;">+ 新增/覆盖房间</button>
+              </div>
             </div>
             <div class="table-container">
               <table id="world-rooms-table">
@@ -2429,9 +2646,19 @@
           </div>
           <div class="block-body">
             <p style="color: #666;">导入会覆盖当前全部数据，建议停服或确保无在线玩家。</p>
-            <button id="backup-download">下载备份</button>
-            <input id="import-file" type="file" accept="application/json">
-            <button id="import-btn">导入备份</button>
+            <div class="form-grid-compact" style="margin-top: 8px;">
+              <div class="form-field compact">
+                <label for="import-file">选择备份文件</label>
+                <input id="import-file" type="file" accept="application/json">
+              </div>
+            </div>
+            <div class="action-grid" style="margin-top: 8px;">
+              <div></div>
+              <div class="action-right">
+                <button id="backup-download">下载备份</button>
+                <button id="import-btn">导入备份</button>
+              </div>
+            </div>
             <div id="backup-msg" class="msg"></div>
           </div>
         </div>
@@ -2627,13 +2854,22 @@
               </tbody>
             </table>
           </div>
-          <div style="margin-top: 8px;">
-            <select id="item-drop-mob-select" class="input-compact" style="max-width: 180px;">
+        <div class="form-grid-compact" style="margin-top: 8px;">
+          <div class="form-field compact">
+            <label for="item-drop-mob-select">怪物</label>
+            <select id="item-drop-mob-select" class="input-compact">
               <option value="">选择怪物</option>
             </select>
-            <input id="item-drop-chance" type="number" min="0" max="1" step="0.0001" placeholder="掉落概率 (0-1)" class="input-compact" style="max-width: 100px;">
+          </div>
+          <div class="form-field compact">
+            <label for="item-drop-chance">掉落概率(0-1)</label>
+            <input id="item-drop-chance" type="number" min="0" max="1" step="0.0001" placeholder="0-1" class="input-compact">
+          </div>
+          <div class="form-field compact">
+            <label>&nbsp;</label>
             <button id="item-drop-add-btn" class="btn-small">添加掉落</button>
           </div>
+        </div>
         </div>
       </div>
       <div class="modal-actions">
@@ -2672,8 +2908,9 @@
             </tbody>
           </table>
         </div>
-        <div class="row" style="margin-top: 12px;">
+        <div class="action-grid" style="margin-top: 12px;">
           <div id="import-items-info" style="color: #666;"></div>
+          <div class="action-right"></div>
         </div>
       </div>
       <div class="modal-actions" style="flex-shrink: 0;">
@@ -2774,12 +3011,21 @@
               </tbody>
             </table>
           </div>
-          <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-            <select id="mob-drop-item-id" class="input-compact" style="max-width: 220px;">
-              <option value="">选择物品</option>
-            </select>
-            <input id="mob-drop-chance" type="number" min="0" max="1" step="0.0001" class="input-compact" placeholder="概率(0-1)" style="max-width: 120px;">
-            <button id="mob-drop-add" class="btn-small">添加掉落</button>
+          <div class="form-grid-compact" style="margin-top: 8px;">
+            <div class="form-field compact">
+              <label for="mob-drop-item-id">物品</label>
+              <select id="mob-drop-item-id" class="input-compact">
+                <option value="">选择物品</option>
+              </select>
+            </div>
+            <div class="form-field compact">
+              <label for="mob-drop-chance">概率(0-1)</label>
+              <input id="mob-drop-chance" type="number" min="0" max="1" step="0.0001" class="input-compact" placeholder="0-1">
+            </div>
+            <div class="form-field compact">
+              <label>&nbsp;</label>
+              <button id="mob-drop-add" class="btn-small">添加掉落</button>
+            </div>
           </div>
         </div>
       </div>
@@ -2922,11 +3168,17 @@
               </tbody>
             </table>
           </div>
-          <div style="margin-top: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-            <select id="world-room-spawn-input" class="input-compact" style="max-width: 220px;">
-              <option value="">选择怪物</option>
-            </select>
-            <button id="world-room-spawn-add" class="btn-small">添加怪物</button>
+          <div class="form-grid-compact" style="margin-top: 8px;">
+            <div class="form-field compact">
+              <label for="world-room-spawn-input">怪物</label>
+              <select id="world-room-spawn-input" class="input-compact">
+                <option value="">选择怪物</option>
+              </select>
+            </div>
+            <div class="form-field compact">
+              <label>&nbsp;</label>
+              <button id="world-room-spawn-add" class="btn-small">添加怪物</button>
+            </div>
           </div>
         </div>
         <div style="margin-top: 16px; border-top: 1px solid #ddd; padding-top: 12px;">
@@ -2947,16 +3199,31 @@
               </tbody>
             </table>
           </div>
-          <div style="margin-top: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-            <input id="world-room-exit-dir" type="text" class="input-compact" placeholder="方向(如 north)" style="max-width: 140px;">
-            <select id="world-room-exit-zone" class="input-compact" style="max-width: 180px;">
-              <option value="">目标区域</option>
-            </select>
-            <select id="world-room-exit-room" class="input-compact" style="max-width: 200px;">
-              <option value="">目标房间</option>
-            </select>
-            <input id="world-room-exit-target" type="text" class="input-compact" placeholder="自定义目标(可选)" style="max-width: 200px;">
-            <button id="world-room-exit-add" class="btn-small">添加出口</button>
+          <div class="form-grid-compact" style="margin-top: 8px;">
+            <div class="form-field compact">
+              <label for="world-room-exit-dir">方向</label>
+              <input id="world-room-exit-dir" type="text" class="input-compact" placeholder="如 north">
+            </div>
+            <div class="form-field compact">
+              <label for="world-room-exit-zone">目标区域</label>
+              <select id="world-room-exit-zone" class="input-compact">
+                <option value="">目标区域</option>
+              </select>
+            </div>
+            <div class="form-field compact">
+              <label for="world-room-exit-room">目标房间</label>
+              <select id="world-room-exit-room" class="input-compact">
+                <option value="">目标房间</option>
+              </select>
+            </div>
+            <div class="form-field compact">
+              <label for="world-room-exit-target">自定义目标</label>
+              <input id="world-room-exit-target" type="text" class="input-compact" placeholder="可选">
+            </div>
+            <div class="form-field compact">
+              <label>&nbsp;</label>
+              <button id="world-room-exit-add" class="btn-small">添加出口</button>
+            </div>
           </div>
         </div>
         <div style="margin-top: 16px; border-top: 1px solid #ddd; padding-top: 12px;">

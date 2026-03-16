@@ -2928,7 +2928,7 @@ async function loadDashboardStats() {
     renderStatList(dashboardServer, [
       { label: '服务器时间', value: formatAdminTime(server.time) },
       { label: '运行时长', value: formatDuration(server.uptimeSec) },
-      { label: '游戏版本', value: `${server.gameVersion || '-'} <button class="btn-link" data-action="check-update" type="button">检查更新</button><span class="update-status" data-role="update-status"></span>` },
+      { label: '游戏版本', value: `${server.gameVersion || '-'} <button class="btn-link" data-action="check-update" type="button">检查更新</button><button class="btn-link" data-action="run-update" type="button">在线更新</button><span class="update-status" data-role="update-status"></span>` },
       { label: 'Node版本', value: server.nodeVersion || '-' },
       { label: '进程内存', value: formatBytes(server.memory?.rss) },
       { label: '堆内存', value: `${formatBytes(server.memory?.heapUsed)} / ${formatBytes(server.memory?.heapTotal)}` },
@@ -9446,6 +9446,48 @@ function bindDashboardUpdateCheck() {
   dashboardUpdateBound = true;
   dashboardServer.addEventListener('click', async (event) => {
     const btn = event.target?.closest?.('[data-action="check-update"]');
+    const updateBtn = event.target?.closest?.('[data-action="run-update"]');
+    if (updateBtn) {
+      const row = updateBtn.closest('.stat-item');
+      const statusEl = row?.querySelector('[data-role="update-status"]');
+      const setStatus = (text, cls) => {
+        if (!statusEl) return;
+        statusEl.textContent = text ? ` ${text}` : '';
+        statusEl.className = 'update-status';
+        if (cls) statusEl.classList.add(cls);
+      };
+      const confirmed = await customConfirm('在线更新', '将执行 git pull 并重启服务，期间可能短暂不可用。确定继续吗？');
+      if (!confirmed) return;
+      updateBtn.disabled = true;
+      const prevText = updateBtn.textContent;
+      updateBtn.textContent = '更新中...';
+      try {
+        setStatus('更新中...', 'status-pending');
+        if (dashboardMsg) {
+          dashboardMsg.textContent = '正在拉取更新并重启...';
+          dashboardMsg.style.color = '';
+        }
+        const result = await api('/admin/update', 'POST');
+        if (result.restart === 'not_configured') {
+          setStatus('需手动重启', 'status-warn');
+          customAlert('在线更新', result.message || '已拉取代码，但未配置重启命令。');
+        } else {
+          setStatus('已触发更新', 'status-ok');
+          customAlert('在线更新', result.message || '更新已触发，服务将重启。');
+        }
+      } catch (err) {
+        setStatus('更新失败', 'status-error');
+        customAlert('在线更新', `更新失败：${err.message}`);
+        if (dashboardMsg) {
+          dashboardMsg.textContent = `在线更新失败: ${err.message}`;
+          dashboardMsg.style.color = 'red';
+        }
+      } finally {
+        updateBtn.disabled = false;
+        updateBtn.textContent = prevText || '在线更新';
+      }
+      return;
+    }
     if (!btn) return;
     const row = btn.closest('.stat-item');
     const statusEl = row?.querySelector('[data-role="update-status"]');
