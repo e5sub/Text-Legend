@@ -15,7 +15,7 @@ FROM node:24-bookworm-slim
 WORKDIR /app
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends tzdata git \
+  && apt-get install -y --no-install-recommends tzdata git ca-certificates \
   && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
   && echo "Asia/Shanghai" > /etc/timezone \
   && rm -rf /var/lib/apt/lists/*
