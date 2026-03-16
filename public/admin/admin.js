@@ -9274,6 +9274,7 @@ const DEFAULT_ROOM_TEMPLATE = {
 
 let mobOverridesCache = [];
 let mobBaseCache = [];
+let mobItemOptionsCache = [];
 let worldZonesCache = [];
 let worldZoneOverridesCache = new Map();
 let worldRoomsCache = [];
@@ -9301,6 +9302,34 @@ function toNumber(value, fallback = 0) {
   const num = Number(value);
   if (Number.isNaN(num)) return fallback;
   return num;
+}
+
+function getMobNameById(mobId) {
+  const found = Array.isArray(mobsList) ? mobsList.find((mob) => String(mob.id) === String(mobId)) : null;
+  return found?.name || mobId;
+}
+
+function renderWorldRoomSpawnOptions() {
+  if (!worldRoomSpawnInput) return;
+  worldRoomSpawnInput.innerHTML = '<option value="">选择怪物</option>';
+  const list = Array.isArray(mobsList) ? mobsList : [];
+  list.forEach((mob) => {
+    const option = document.createElement('option');
+    option.value = mob.id;
+    option.textContent = `${mob.name} (${mob.id})`;
+    worldRoomSpawnInput.appendChild(option);
+  });
+}
+
+function syncPersonalBossToggle() {
+  if (!worldRoomEditPersonalOnlyInput) return;
+  const tier = String(worldRoomEditPersonalTierInput?.value || '').trim();
+  if (tier) {
+    worldRoomEditPersonalOnlyInput.checked = true;
+    worldRoomEditPersonalOnlyInput.disabled = true;
+  } else {
+    worldRoomEditPersonalOnlyInput.disabled = false;
+  }
 }
 
 function getMobDisplayValue(mobId, override) {
@@ -9390,6 +9419,7 @@ async function openMobOverrideModal(templateId, allowEditId = false) {
   const res = await api(`/admin/mobs/${encodeURIComponent(id)}`, 'GET');
   const base = res.template || null;
   const override = res.override || null;
+  mobItemOptionsCache = Array.isArray(res.itemOptions) ? res.itemOptions : [];
   const effective = {
     ...(base || {}),
     ...(override || {})
@@ -9419,8 +9449,21 @@ async function openMobOverrideModal(templateId, allowEditId = false) {
   mobEditSabakBossInput.checked = Boolean(editable.sabakBoss);
   mobEditSummonedInput.checked = Boolean(editable.summoned);
   mobDropsCache = Array.isArray(editable.drops) ? editable.drops.map(drop => ({ id: drop.id, chance: drop.chance })) : [];
+  renderMobDropOptions();
   renderMobDrops();
   mobEditModal.classList.remove('hidden');
+}
+
+function renderMobDropOptions() {
+  if (!mobDropItemInput) return;
+  const options = Array.isArray(mobItemOptionsCache) ? mobItemOptionsCache : [];
+  mobDropItemInput.innerHTML = '<option value="">选择物品</option>';
+  options.forEach((opt) => {
+    const option = document.createElement('option');
+    option.value = opt.id;
+    option.textContent = opt.name ? `${opt.name} (${opt.id})` : opt.id;
+    mobDropItemInput.appendChild(option);
+  });
 }
 
 function renderMobDrops() {
@@ -9432,8 +9475,12 @@ function renderMobDrops() {
   }
   mobDropsCache.forEach((drop, index) => {
     const tr = document.createElement('tr');
+    const display = Array.isArray(mobItemOptionsCache)
+      ? mobItemOptionsCache.find((opt) => String(opt.id) === String(drop.id))
+      : null;
+    const nameLabel = display?.name ? `${display.name} (${drop.id})` : drop.id;
     tr.innerHTML = `
-      <td>${drop.id}</td>
+      <td>${nameLabel}</td>
       <td>${Number(drop.chance).toFixed(4)}</td>
       <td><button class="btn-small" style="background: #c00;" onclick="removeMobDrop(${index})">删除</button></td>
     `;
@@ -9743,6 +9790,13 @@ async function openWorldRoomOverrideModal(zoneId, roomId, allowEditId = false) {
   const zid = String(zoneId || '').trim();
   const rid = String(roomId || '').trim();
   if (!zid || !rid) return;
+  if (mobsList.length === 0) {
+    try {
+      await loadMobs();
+    } catch {
+      // ignore
+    }
+  }
   const res = await api(`/admin/world/rooms/${encodeURIComponent(zid)}/${encodeURIComponent(rid)}`, 'GET');
   const base = res.room || null;
   const override = res.override || null;
@@ -9766,6 +9820,8 @@ async function openWorldRoomOverrideModal(zoneId, roomId, allowEditId = false) {
   worldRoomSpawnsCache = Array.isArray(editable.spawns) ? editable.spawns.map(item => String(item)) : [];
   worldRoomNpcsCache = Array.isArray(editable.npcs) ? editable.npcs.map(item => String(item)) : [];
   worldRoomExitsCache = editable.exits && typeof editable.exits === 'object' ? Object.entries(editable.exits) : [];
+  syncPersonalBossToggle();
+  renderWorldRoomSpawnOptions();
   renderWorldRoomSpawns();
   renderWorldRoomExits();
   renderWorldRoomNpcs();
@@ -9782,7 +9838,7 @@ function renderWorldRoomSpawns() {
   worldRoomSpawnsCache.forEach((spawn, index) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${spawn}</td>
+      <td>${getMobNameById(spawn)}<div class="muted" style="font-size: 11px;">${spawn}</div></td>
       <td><button class="btn-small" style="background: #c00;" onclick="removeWorldRoomSpawn(${index})">删除</button></td>
     `;
     worldRoomSpawnsList.appendChild(tr);
@@ -9792,7 +9848,7 @@ function renderWorldRoomSpawns() {
 function addWorldRoomSpawn() {
   const spawnId = String(worldRoomSpawnInput?.value || '').trim();
   if (!spawnId) {
-    customAlert('错误', '怪物ID不能为空');
+    customAlert('错误', '请选择怪物');
     return;
   }
   worldRoomSpawnsCache.push(spawnId);
@@ -10043,6 +10099,10 @@ if (worldRoomEditCancelBtn) {
 
 if (worldRoomEditSaveBtn) {
   worldRoomEditSaveBtn.addEventListener('click', saveWorldRoomOverride);
+}
+
+if (worldRoomEditPersonalTierInput) {
+  worldRoomEditPersonalTierInput.addEventListener('change', syncPersonalBossToggle);
 }
 
 if (worldRoomSpawnAddBtn) {

@@ -5125,10 +5125,19 @@ app.get('/admin/mobs/:id', async (req, res) => {
   if (!templateId) return res.status(400).json({ error: '缺少怪物ID' });
   try {
     const override = await getMobTemplateOverride(templateId);
+    const itemOptions = Object.values(ITEM_TEMPLATES || {})
+      .filter((it) => it && it.id)
+      .map((it) => ({
+        id: String(it.id),
+        name: String(it.name || it.id),
+        type: String(it.type || 'unknown')
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN'));
     res.json({
       ok: true,
       template: MOB_TEMPLATES[templateId] || null,
-      override: override ? safeParseJson(override.data_json, {}) : null
+      override: override ? safeParseJson(override.data_json, {}) : null,
+      itemOptions
     });
   } catch (err) {
     res.status(500).json({ error: '获取怪物失败: ' + err.message });
