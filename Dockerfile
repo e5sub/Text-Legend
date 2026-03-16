@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM node:20-bookworm-slim AS deps
+FROM node:24-bookworm-slim AS deps
 
 WORKDIR /app
 
@@ -10,7 +10,7 @@ RUN apt-get update \
   && apt-get purge -y --auto-remove python3 make g++ \
   && rm -rf /var/lib/apt/lists/*
 
-FROM node:20-bookworm-slim
+FROM node:24-bookworm-slim
 
 WORKDIR /app
 

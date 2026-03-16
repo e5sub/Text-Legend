@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "start": "node --max-old-space-size=2048 src/index.js",
     "start:win": "set NODE_OPTIONS=--max-old-space-size=2048 && node src/index.js",
