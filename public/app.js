@@ -6652,24 +6652,27 @@ function showAutoFullBossModal() {
         const itemId = raw.slice('redeem:'.length);
         const item = items.find((x) => String(x.id) === itemId);
         if (!item) return;
-        let qty = 1;
-        // 允许输入数量的条件：没有限制、限制大于1、或者限制类型为none
-        // 即使限制为1，也允许输入数量（但兑换时会检查是否超限）
-        const canInputQty = !item.limit || item.limitType === 'none' || Number(item.limit || 0) >= 1;
-        if (canInputQty) {
-          const input = await promptModal({
-            title: '兑换数量',
-            text: `${item.name}\n单价：${Number(item.cost || 0)} 积分`,
-            placeholder: '输入数量（默认1）',
-            value: '1',
-            allowEmpty: true
-          });
-          if (input === null) return;
-          qty = parsePositiveInt(input, 1);
-        }
-        if (!socket) return showToast('未连接服务器');
-        socket.emit('cmd', { text: `活动 redeem ${itemId} ${qty}`, source: 'ui' });
-        showToast(`已请求兑换：${item.name} x${qty}`);
+        // 先关闭选择弹窗，避免多重弹窗事件冲突导致数量被重置
+        setTimeout(async () => {
+          let qty = 1;
+          // 允许输入数量的条件：没有限制、限制大于1、或者限制类型为none
+          // 即使限制为1，也允许输入数量（但兑换时会检查是否超限）
+          const canInputQty = !item.limit || item.limitType === 'none' || Number(item.limit || 0) >= 1;
+          if (canInputQty) {
+            const input = await promptModal({
+              title: '兑换数量',
+              text: `${item.name}\n单价：${Number(item.cost || 0)} 积分`,
+              placeholder: '输入数量（默认1）',
+              value: '1',
+              allowEmpty: true
+            });
+            if (input === null) return;
+            qty = parsePositiveInt(input, 1);
+          }
+          if (!socket) return showToast('未连接服务器');
+          socket.emit('cmd', { text: `活动 redeem ${itemId} ${qty}`, source: 'ui' });
+          showToast(`已请求兑换：${item.name} x${qty}`);
+        }, 0);
       }
     });
   }
