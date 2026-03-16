@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { mkdir, copyFile, unlink, stat } from 'node:fs/promises';
 import { existsSync, readdirSync } from 'node:fs';
 import crypto from 'node:crypto';
+import os from 'node:os';
 import cron from 'node-cron';
 import { setupConsoleColors } from './log/console_colors.js';
 
@@ -1724,6 +1725,130 @@ app.post('/admin/login', async (req, res) => {
   if (!user || !user.is_admin) return res.status(401).json({ error: '无管理员权限。' });
   const token = await createAdminSession(user.id);
   res.json({ ok: true, token });
+});
+
+app.get('/admin/dashboard-stats', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+
+  const now = new Date();
+  const dayStart = new Date(now);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+  const tableExists = new Map();
+  const hasTable = async (name) => {
+    if (tableExists.has(name)) return tableExists.get(name);
+    const exists = await knex.schema.hasTable(name);
+    tableExists.set(name, exists);
+    return exists;
+  };
+
+  const safeCount = async (table, modifier) => {
+    if (!(await hasTable(table))) return 0;
+    let query = knex(table);
+    if (modifier) query = modifier(query);
+    const row = await query.count({ count: '*' }).first();
+    return Number(row?.count || row?.['count(*)'] || 0);
+  };
+
+  const safeSum = async (table, column) => {
+    if (!(await hasTable(table))) return 0;
+    const row = await knex(table).sum({ total: column }).first();
+    return Number(row?.total || 0);
+  };
+
+  const safeAvg = async (table, column) => {
+    if (!(await hasTable(table))) return 0;
+    const row = await knex(table).avg({ avg: column }).first();
+    return Number(row?.avg || 0);
+  };
+
+  const [
+    users,
+    newUsersToday,
+    characters,
+    activeCharacters24h,
+    guilds,
+    realms,
+    mails,
+    consignments,
+    consignmentHistory,
+    activeSessions24h
+  ] = await Promise.all([
+    safeCount('users'),
+    safeCount('users', (q) => q.where('created_at', '>=', dayStart)),
+    safeCount('characters'),
+    safeCount('characters', (q) => q.where('updated_at', '>=', dayAgo)),
+    safeCount('guilds'),
+    safeCount('realms'),
+    safeCount('mails'),
+    safeCount('consignments'),
+    safeCount('consignment_history'),
+    safeCount('sessions', (q) => q.where('last_seen', '>=', dayAgo))
+  ]);
+
+  const [totalGold, totalYuanbao, avgLevel] = await Promise.all([
+    safeSum('characters', 'gold'),
+    safeSum('characters', 'yuanbao'),
+    safeAvg('characters', 'level')
+  ]);
+
+  let recentLogins = [];
+  if ((await hasTable('sessions')) && (await hasTable('users'))) {
+    recentLogins = await knex('sessions')
+      .leftJoin('users', 'sessions.user_id', 'users.id')
+      .select('users.username as username', 'sessions.last_seen as lastSeen', 'sessions.created_at as createdAt')
+      .orderBy('sessions.last_seen', 'desc')
+      .limit(10);
+  }
+
+  const onlineByRealm = {};
+  for (const player of Array.from(players.values())) {
+    const realmId = player.realmId || 1;
+    onlineByRealm[realmId] = (onlineByRealm[realmId] || 0) + 1;
+  }
+
+  res.json({
+    ok: true,
+    server: {
+      time: now.toISOString(),
+      uptimeSec: process.uptime(),
+      nodeVersion: process.version,
+      pid: process.pid,
+      memory: process.memoryUsage(),
+      loadAvg: os.loadavg(),
+      platform: `${os.platform()} ${os.release()}`
+    },
+    config: {
+      port: config.port,
+      adminBase: ADMIN_BASE,
+      dbClient: config.db?.client || ''
+    },
+    counts: {
+      users,
+      newUsersToday,
+      characters,
+      activeCharacters24h,
+      guilds,
+      realms,
+      mails,
+      consignments,
+      consignmentHistory
+    },
+    economy: {
+      totalGold,
+      totalYuanbao,
+      avgLevel
+    },
+    activity: {
+      onlinePlayers: players.size,
+      onlineByRealm,
+      activeUsers24h: activeSessions24h,
+      activeSessions24h
+    },
+    recentLogins
+  });
 });
 
 app.post('/admin/bootstrap', async (req, res) => {

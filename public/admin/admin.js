@@ -74,6 +74,13 @@ const backupMsg = document.getElementById('backup-msg');
 const importFileInput = document.getElementById('import-file');
 const themeToggleBtn = document.getElementById('theme-toggle');
 const collapseAllBtn = document.getElementById('collapse-all');
+const dashboardServer = document.getElementById('dashboard-server');
+const dashboardPlayers = document.getElementById('dashboard-players');
+const dashboardEconomy = document.getElementById('dashboard-economy');
+const dashboardOps = document.getElementById('dashboard-ops');
+const dashboardRecentLogins = document.getElementById('dashboard-recent-logins');
+const dashboardRefreshBtn = document.getElementById('dashboard-refresh-btn');
+const dashboardMsg = document.getElementById('dashboard-msg');
 
 const stateThrottleToggle = document.getElementById('state-throttle-toggle');
 const stateThrottleOverrideAllowedToggle = document.getElementById('state-throttle-override-allowed');
@@ -2821,20 +2828,18 @@ function toggleTheme() {
 
 function initCollapsibleBlocks() {
   const blocks = Array.from(document.querySelectorAll('.block[data-collapsible]'));
-  // 默认折叠所有模块
-  blocks.forEach((block) => {
-    block.classList.add('collapsed');
-  });
   blocks.forEach((block) => {
     const toggle = block.querySelector('.block-toggle');
     if (!toggle) return;
-    toggle.textContent = '展开';
+    toggle.textContent = '折叠';
     toggle.addEventListener('click', () => {
       block.classList.toggle('collapsed');
       toggle.textContent = block.classList.contains('collapsed') ? '展开' : '折叠';
     });
   });
   if (collapseAllBtn) {
+    collapseAllBtn.classList.remove('active');
+    collapseAllBtn.textContent = '折叠全部';
     collapseAllBtn.addEventListener('click', () => {
       const shouldCollapse = !collapseAllBtn.classList.contains('active');
       collapseAllBtn.classList.toggle('active', shouldCollapse);
@@ -2925,6 +2930,66 @@ async function api(path, method, body) {
   return data;
 }
 
+async function loadDashboardStats() {
+  if (!dashboardServer) return;
+  if (dashboardMsg) dashboardMsg.textContent = '加载中...';
+  try {
+    const data = await api('/admin/dashboard-stats', 'GET');
+    const server = data.server || {};
+    const config = data.config || {};
+    const counts = data.counts || {};
+    const economy = data.economy || {};
+    const activity = data.activity || {};
+
+    renderStatList(dashboardServer, [
+      { label: '服务器时间', value: formatAdminTime(server.time) },
+      { label: '运行时长', value: formatDuration(server.uptimeSec) },
+      { label: 'Node版本', value: server.nodeVersion || '-' },
+      { label: '进程内存', value: formatBytes(server.memory?.rss) },
+      { label: '堆内存', value: `${formatBytes(server.memory?.heapUsed)} / ${formatBytes(server.memory?.heapTotal)}` },
+      { label: '负载(1/5/15)', value: Array.isArray(server.loadAvg) ? server.loadAvg.map(n => Number(n).toFixed(2)).join(' / ') : '-' },
+      { label: '数据库', value: config.dbClient || '-' },
+      { label: '后台路径', value: config.adminBase || '-' }
+    ]);
+
+    renderStatList(dashboardPlayers, [
+      { label: '在线玩家', value: formatNumber(activity.onlinePlayers) },
+      { label: '24h活跃玩家', value: formatNumber(activity.activeUsers24h) },
+      { label: '今日新增', value: formatNumber(counts.newUsersToday) },
+      { label: '总账号', value: formatNumber(counts.users) },
+      { label: '总角色', value: formatNumber(counts.characters) },
+      { label: '24h活跃角色', value: formatNumber(counts.activeCharacters24h) },
+      { label: '总行会', value: formatNumber(counts.guilds) },
+      { label: '区服数量', value: formatNumber(counts.realms) }
+    ]);
+
+    renderStatList(dashboardEconomy, [
+      { label: '金币总量', value: formatNumber(economy.totalGold) },
+      { label: '元宝总量', value: formatNumber(economy.totalYuanbao) },
+      { label: '平均等级', value: formatNumber(economy.avgLevel) }
+    ]);
+
+    renderStatList(dashboardOps, [
+      { label: '活跃会话(24h)', value: formatNumber(activity.activeSessions24h) },
+      { label: '邮件总数', value: formatNumber(counts.mails) },
+      { label: '寄售总数', value: formatNumber(counts.consignments) },
+      { label: '寄售历史', value: formatNumber(counts.consignmentHistory) }
+    ]);
+
+    renderRecentLogins(dashboardRecentLogins, data.recentLogins || []);
+
+    if (dashboardMsg) {
+      dashboardMsg.textContent = `更新时间：${formatAdminTime(server.time)}`;
+      dashboardMsg.style.color = '';
+    }
+  } catch (err) {
+    if (dashboardMsg) {
+      dashboardMsg.textContent = `加载失败: ${err.message}`;
+      dashboardMsg.style.color = 'red';
+    }
+  }
+}
+
 async function login() {
   loginMsg.textContent = '';
   try {
@@ -2935,6 +3000,7 @@ async function login() {
       adminToken = data.token;
       localStorage.setItem('adminToken', adminToken);
       showDashboard();
+      await loadDashboardStats();
       await refreshUsers();
       await refreshVipSelfClaimStatus();
       await refreshVipClaimLimitStatus();
@@ -7640,6 +7706,7 @@ async function saveTreasureSettings() {
 async function initDashboard() {
   if (adminToken) {
       showDashboard();
+      loadDashboardStats();
       refreshUsers();
       refreshVipSelfClaimStatus();
       refreshVipClaimLimitStatus();
@@ -9324,6 +9391,65 @@ function formatAdminTime(value) {
   return date.toLocaleString();
 }
 
+const dashboardNumberFormatter = new Intl.NumberFormat('zh-CN');
+
+function formatNumber(value) {
+  if (value === null || value === undefined) return '-';
+  const num = Number(value);
+  if (!Number.isFinite(num)) return String(value);
+  return dashboardNumberFormatter.format(num);
+}
+
+function formatBytes(bytes) {
+  const num = Number(bytes);
+  if (!Number.isFinite(num)) return '-';
+  if (num < 1024) return `${num} B`;
+  const units = ['KB', 'MB', 'GB', 'TB'];
+  let value = num / 1024;
+  let unitIndex = 0;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+  return `${value.toFixed(1)} ${units[unitIndex]}`;
+}
+
+function formatDuration(seconds) {
+  const num = Number(seconds);
+  if (!Number.isFinite(num)) return '-';
+  const total = Math.max(0, Math.floor(num));
+  const days = Math.floor(total / 86400);
+  const hours = Math.floor((total % 86400) / 3600);
+  const mins = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+  const parts = [];
+  if (days) parts.push(`${days}天`);
+  if (hours || days) parts.push(`${hours}小时`);
+  if (mins || hours || days) parts.push(`${mins}分`);
+  parts.push(`${secs}秒`);
+  return parts.join(' ');
+}
+
+function renderStatList(target, items) {
+  if (!target) return;
+  target.innerHTML = items.map(({ label, value }) => {
+    return `<div class="stat-item"><span class="stat-label">${label}</span><span class="stat-value">${value}</span></div>`;
+  }).join('');
+}
+
+function renderRecentLogins(target, items) {
+  if (!target) return;
+  if (!Array.isArray(items) || items.length === 0) {
+    target.innerHTML = '<div class="dashboard-list-item"><span>暂无最近登录记录</span></div>';
+    return;
+  }
+  target.innerHTML = items.map((row) => {
+    const name = String(row.username || '未知用户');
+    const lastSeen = formatAdminTime(row.lastSeen || row.last_seen);
+    return `<div class="dashboard-list-item"><span>${name}</span><span class="dashboard-list-meta">${lastSeen}</span></div>`;
+  }).join('');
+}
+
 function formatIdWithName(name, id) {
   const safeName = String(name || '').trim();
   const safeId = String(id || '').trim();
@@ -10233,6 +10359,10 @@ if (worldRoomEditNpcAddBtn) {
   worldRoomEditNpcAddBtn.addEventListener('click', addWorldRoomNpc);
 }
 
+if (dashboardRefreshBtn) {
+  dashboardRefreshBtn.addEventListener('click', loadDashboardStats);
+}
+
 function slugifySectionTitle(title) {
   const cleaned = String(title || '')
     .replace(/[^\w\u4e00-\u9fa5]+/g, '-')
@@ -10253,22 +10383,6 @@ function initSidebarNav() {
   const sections = [];
   const blocks = Array.from(dashboardSection?.querySelectorAll('.block') || []);
   const blockIdSet = new Set();
-
-  const topHeader = document.getElementById('top');
-  if (topHeader) {
-    topHeader.id = 'top';
-    sections.push({ id: 'top', label: '顶部' });
-    usedIds.add('top');
-  }
-
-  sections.push({ id: 'all', label: '全部模块' });
-
-  if (loginSection) {
-    const id = loginSection.id || 'login';
-    loginSection.id = id;
-    usedIds.add(id);
-    sections.push({ id, label: '管理员登录' });
-  }
 
   for (const block of blocks) {
     const titleEl = block.querySelector('h2');
@@ -10292,25 +10406,29 @@ function initSidebarNav() {
     return;
   }
 
+  const defaultBlockId = document.getElementById('dashboard-overview')?.id || blocks[0]?.id || '';
+
   const showSection = (id) => {
     if (!dashboardSection) return;
-    const showAll = id === 'all' || id === 'top' || !id;
-    blocks.forEach((block) => {
-      block.style.display = showAll || block.id === id ? '' : 'none';
-    });
+    const showAll = id === 'all' || !id;
     if (showAll) {
+      blocks.forEach((block) => {
+        block.style.display = '';
+      });
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      const target = document.getElementById(id);
-      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
     }
+    blocks.forEach((block) => {
+      block.style.display = block.id === id ? '' : 'none';
+    });
+    const target = document.getElementById(id);
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const normalizeLabel = (label) => String(label || '').replace(/^[^\w\u4e00-\u9fa5]+/g, '').trim();
   const getGroup = (label) => {
     const text = normalizeLabel(label);
-    if (text === '顶部') return '概览';
-    if (text === '全部模块') return '概览';
+    if (/服务器概览/.test(text)) return '概览';
     if (/(管理员登录|用户与权限|赞助名单)/.test(text)) return '账号与权限';
     if (/(区服|线路|合区|房间变种)/.test(text)) return '区服与线路';
     if (/BOSS/.test(text)) return 'BOSS与战斗';
@@ -10382,7 +10500,7 @@ function initSidebarNav() {
     });
   };
 
-  setActive('all');
+  if (defaultBlockId) setActive(defaultBlockId);
 
   if (searchInput) {
     searchInput.addEventListener('input', () => {
@@ -10415,6 +10533,10 @@ function initSidebarNav() {
   if (hash && blockIdSet.has(hash)) {
     showSection(hash);
     setActive(hash);
+  } else {
+    const fallbackId = defaultBlockId || 'all';
+    showSection(fallbackId);
+    setActive(fallbackId);
   }
 }
 

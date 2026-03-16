@@ -45,6 +45,43 @@
 
         <section id="dashboard" class="panel hidden">
       <div class="grid">
+        <div class="block full dashboard-overview" id="dashboard-overview" data-collapsible>
+          <div class="block-title">
+            <h2>📊 服务器概览</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <div class="dashboard-grid">
+              <div class="dashboard-card">
+                <div class="dashboard-card-title">服务器</div>
+                <div id="dashboard-server" class="stat-list">加载中...</div>
+              </div>
+              <div class="dashboard-card">
+                <div class="dashboard-card-title">玩家与区服</div>
+                <div id="dashboard-players" class="stat-list">加载中...</div>
+              </div>
+              <div class="dashboard-card">
+                <div class="dashboard-card-title">经济</div>
+                <div id="dashboard-economy" class="stat-list">加载中...</div>
+              </div>
+              <div class="dashboard-card">
+                <div class="dashboard-card-title">运营与系统</div>
+                <div id="dashboard-ops" class="stat-list">加载中...</div>
+              </div>
+            </div>
+            <div class="dashboard-wide">
+              <div class="dashboard-card">
+                <div class="dashboard-card-title">最近登录</div>
+                <div id="dashboard-recent-logins" class="dashboard-list">加载中...</div>
+              </div>
+            </div>
+            <div class="row" style="margin-top: 12px; justify-content: flex-start;">
+              <button id="dashboard-refresh-btn" class="btn-small">刷新概览</button>
+              <div id="dashboard-msg" class="msg"></div>
+            </div>
+          </div>
+        </div>
+
         <div class="block full" data-collapsible>
           <div class="block-title">
             <h2>🖥️ 区服管理</h2>
