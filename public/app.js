@@ -9979,12 +9979,12 @@ function renderState(state) {
     }
     if (a.id === 'afk') {
       if (state.stats && state.stats.autoFullEnabled) {
-        socket.emit('cmd', { text: 'autoafk off' });
-        socket.emit('cmd', { text: 'autoskill off' });
+        socket.emit('cmd', { text: 'autoafk off', source: 'ui' });
+        socket.emit('cmd', { text: 'autoskill off', source: 'ui' });
         return;
       }
       if (state.stats && state.stats.autoSkillId) {
-        socket.emit('cmd', { text: 'autoskill off' });
+        socket.emit('cmd', { text: 'autoskill off', source: 'ui' });
         return;
       }
         showAfkModal(state.skills || [], state.stats ? state.stats.autoSkillId : null);
@@ -12604,15 +12604,15 @@ if (document.getElementById('rank-modal')) {
         } catch {
           // ignore storage errors
         }
-        socket.emit('cmd', { text: `autoskill set ${skillIds.join(',')}` });
+        socket.emit('cmd', { text: `autoskill set ${skillIds.join(',')}`, source: 'ui' });
       }
       try {
         localStorage.setItem(AUTOAFK_BOSS_STORAGE_KEY, JSON.stringify(selected));
       } catch {
         // ignore storage errors
       }
-      socket.emit('cmd', { text: `autoafk boss ${useAll ? 'all' : selected.join(',')}` });
-      socket.emit('cmd', { text: 'autoafk on' });
+      socket.emit('cmd', { text: `autoafk boss ${useAll ? 'all' : selected.join(',')}`, source: 'ui' });
+      socket.emit('cmd', { text: 'autoafk on', source: 'ui' });
       if (autoFullBossUi.modal) autoFullBossUi.modal.classList.add('hidden');
     });
   }
@@ -12644,9 +12644,9 @@ if (afkUi.start) {
       // ignore storage errors
     }
     if (ids.length) {
-      socket.emit('cmd', { text: `autoskill set ${ids.join(',')}` });
+      socket.emit('cmd', { text: `autoskill set ${ids.join(',')}`, source: 'ui' });
     } else {
-      socket.emit('cmd', { text: 'autoskill all' });
+      socket.emit('cmd', { text: 'autoskill all', source: 'ui' });
     }
     if (afkUi.modal) afkUi.modal.classList.add('hidden');
   });
@@ -12656,8 +12656,8 @@ if (afkUi.autoFull) {
     if (!socket) return;
     const enabled = Boolean(lastState?.stats?.autoFullEnabled);
     if (enabled) {
-      socket.emit('cmd', { text: 'autoafk off' });
-      socket.emit('cmd', { text: 'autoskill off' });
+      socket.emit('cmd', { text: 'autoafk off', source: 'ui' });
+      socket.emit('cmd', { text: 'autoskill off', source: 'ui' });
       if (afkUi.modal) afkUi.modal.classList.add('hidden');
     } else {
       if (afkUi.modal) afkUi.modal.classList.add('hidden');
