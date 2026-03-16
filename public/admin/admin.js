@@ -2954,6 +2954,7 @@ async function loadDashboardStats() {
 
     renderStatList(dashboardPlayers, [
       { label: '在线玩家', value: formatNumber(activity.onlinePlayers) },
+      { label: '托管玩家', value: formatNumber(activity.managedPlayers) },
       { label: '24h活跃玩家', value: formatNumber(activity.activeUsers24h) },
       { label: '今日新增', value: formatNumber(counts.newUsersToday) },
       { label: '总账号', value: formatNumber(counts.users) },
@@ -10377,12 +10378,14 @@ function initSidebarNav() {
   const searchInput = document.getElementById('sidebar-search');
   const toggleBtn = document.getElementById('sidebar-toggle');
   const backdrop = document.getElementById('sidebar-backdrop');
+  const tabsBar = document.getElementById('tabs-bar');
   if (!nav) return;
 
   const usedIds = new Set();
   const sections = [];
   const blocks = Array.from(dashboardSection?.querySelectorAll('.block') || []);
   const blockIdSet = new Set();
+  const blockLabels = new Map();
 
   for (const block of blocks) {
     const titleEl = block.querySelector('h2');
@@ -10399,6 +10402,7 @@ function initSidebarNav() {
     usedIds.add(block.id);
     sections.push({ id: block.id, label });
     blockIdSet.add(block.id);
+    blockLabels.set(block.id, label);
   }
 
   if (!sections.length) {
@@ -10423,6 +10427,70 @@ function initSidebarNav() {
     });
     const target = document.getElementById(id);
     if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const setActiveTab = (id) => {
+    if (!tabsBar) return;
+    tabsBar.querySelectorAll('.tab').forEach((tab) => {
+      tab.classList.toggle('active', tab.dataset.tab === id);
+    });
+  };
+
+  const closeTab = (id) => {
+    if (!tabsBar) return;
+    const tab = tabsBar.querySelector(`.tab[data-tab="${id}"]`);
+    if (!tab) return;
+    const wasActive = tab.classList.contains('active');
+    tab.remove();
+    if (wasActive) {
+      const remaining = Array.from(tabsBar.querySelectorAll('.tab'));
+      const next = remaining[remaining.length - 1];
+      if (next) {
+        const nextId = next.dataset.tab;
+        setActiveTab(nextId);
+        showSection(nextId);
+        setActive(nextId);
+      } else if (defaultBlockId) {
+        openTab(defaultBlockId);
+      }
+    }
+  };
+
+  const openTab = (id, labelOverride) => {
+    if (!blockIdSet.has(id)) return;
+    const label = labelOverride || blockLabels.get(id) || id;
+    if (!tabsBar) {
+      showSection(id);
+      setActive(id);
+      return;
+    }
+    let tab = tabsBar.querySelector(`.tab[data-tab="${id}"]`);
+    if (!tab) {
+      tab = document.createElement('div');
+      tab.className = 'tab';
+      tab.dataset.tab = id;
+      const text = document.createElement('span');
+      text.textContent = label;
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'tab-close';
+      closeBtn.type = 'button';
+      closeBtn.textContent = '×';
+      closeBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        closeTab(id);
+      });
+      tab.appendChild(text);
+      tab.appendChild(closeBtn);
+      tab.addEventListener('click', () => {
+        setActiveTab(id);
+        showSection(id);
+        setActive(id);
+      });
+      tabsBar.appendChild(tab);
+    }
+    setActiveTab(id);
+    showSection(id);
+    setActive(id);
   };
 
   const normalizeLabel = (label) => String(label || '').replace(/^[^\w\u4e00-\u9fa5]+/g, '').trim();
@@ -10474,16 +10542,11 @@ function initSidebarNav() {
       link.dataset.section = item.id;
       link.textContent = item.label;
       link.addEventListener('click', (event) => {
-        if (item.id === 'all' || !document.getElementById(item.id)) {
+        if (!document.getElementById(item.id)) {
           event.preventDefault();
-        }
-        if (item.id === 'all') {
-          showSection('all');
-          setActive('all');
         } else if (blockIdSet.has(item.id)) {
           event.preventDefault();
-          showSection(item.id);
-          setActive(item.id);
+          openTab(item.id, item.label);
         }
         if (document.body.classList.contains('sidebar-open')) {
           document.body.classList.remove('sidebar-open');
@@ -10500,7 +10563,10 @@ function initSidebarNav() {
     });
   };
 
-  if (defaultBlockId) setActive(defaultBlockId);
+  if (defaultBlockId) {
+    setActive(defaultBlockId);
+    openTab(defaultBlockId);
+  }
 
   if (searchInput) {
     searchInput.addEventListener('input', () => {
@@ -10531,12 +10597,10 @@ function initSidebarNav() {
 
   const hash = String(window.location.hash || '').replace('#', '');
   if (hash && blockIdSet.has(hash)) {
-    showSection(hash);
-    setActive(hash);
+    openTab(hash);
   } else {
-    const fallbackId = defaultBlockId || 'all';
-    showSection(fallbackId);
-    setActive(fallbackId);
+    const fallbackId = defaultBlockId || '';
+    if (fallbackId) openTab(fallbackId);
   }
 }
 

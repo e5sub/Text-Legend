@@ -1804,9 +1804,13 @@ app.get('/admin/dashboard-stats', async (req, res) => {
   }
 
   const onlineByRealm = {};
+  let managedPlayers = 0;
   for (const player of Array.from(players.values())) {
     const realmId = player.realmId || 1;
     onlineByRealm[realmId] = (onlineByRealm[realmId] || 0) + 1;
+    if (player?.flags?.offlineManagedAuto || player?.flags?.offlineManagedPending) {
+      managedPlayers += 1;
+    }
   }
 
   res.json({
@@ -1845,7 +1849,8 @@ app.get('/admin/dashboard-stats', async (req, res) => {
       onlinePlayers: players.size,
       onlineByRealm,
       activeUsers24h: activeSessions24h,
-      activeSessions24h
+      activeSessions24h,
+      managedPlayers
     },
     recentLogins
   });
@@ -10488,6 +10493,57 @@ function isAutoFullBossCategoryMatch(filterKey, mobTemplate) {
   return false;
 }
 
+const AUTO_FULL_BOSS_ROOMS = (() => {
+  const rooms = [];
+  for (const [zoneId, zone] of Object.entries(WORLD)) {
+    if (!zone?.rooms) continue;
+    for (const [roomId, room] of Object.entries(zone.rooms)) {
+      const spawns = Array.isArray(room?.spawns) ? room.spawns.filter(Boolean) : [];
+      if (!spawns.length) continue;
+      const hasBossSpawn = spawns.some((spawnId) => {
+        const tpl = MOB_TEMPLATES[spawnId];
+        return tpl && isBossMob(tpl);
+      });
+      if (hasBossSpawn) {
+        rooms.push({ zoneId, roomId, spawns });
+      }
+    }
+  }
+  return rooms;
+})();
+
+function ensureAutoFullBossSpawns(player, now = Date.now()) {
+  if (!player?.flags?.autoFullEnabled) return;
+  if (!player.flags) player.flags = {};
+  const nextAt = Number(player.flags.autoFullBossSpawnAt || 0);
+  if (nextAt > now) return;
+  player.flags.autoFullBossSpawnAt = now + 5000;
+
+  const filter = getAutoFullBossFilterSet(player);
+  if (filter && filter.size === 0) return;
+
+  const cultivationLevel = getCultivationLevel(player);
+  for (const entry of AUTO_FULL_BOSS_ROOMS) {
+    const zoneId = entry.zoneId;
+    if (zoneId === PERSONAL_BOSS_ZONE_ID) continue;
+    const roomId = entry.roomId;
+    const room = WORLD[zoneId]?.rooms?.[roomId];
+    if (!room) continue;
+    for (const spawnId of entry.spawns) {
+      const tpl = MOB_TEMPLATES[spawnId];
+      if (!tpl || !isBossMob(tpl)) continue;
+      if (!isAutoFullBossAllowed(player, tpl)) continue;
+      if (isCultivationBoss(tpl)) {
+        const roomMinLevel = Number(room?.minCultivationLevel);
+        if (Number.isFinite(roomMinLevel) && roomMinLevel !== cultivationLevel) continue;
+      }
+      const roomRealmId = getRoomRealmId(zoneId, roomId, player.realmId || 1);
+      spawnMobs(zoneId, roomId, roomRealmId);
+      break;
+    }
+  }
+}
+
 function getAutoFullSelectedCultivationBossNames(player) {
   const filter = getAutoFullBossFilterSet(player);
   if (filter == null || filter.size === 0) return null;
@@ -10743,6 +10799,7 @@ function selectLeastPopulatedRoomAuto(zoneId, roomId, realmId) {
 
 function findAliveBossTarget(player) {
   if (!player) return null;
+  ensureAutoFullBossSpawns(player);
   ensureAutoFullPersonalBossTargets(player);
   const realmIds = Array.from(new Set([player.realmId || 1, CROSS_REALM_REALM_ID]));
   const crossBossCooldownUntil = Number(player.flags?.autoFullCrossBossCooldownUntil || 0);
