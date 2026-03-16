@@ -312,6 +312,28 @@ button:hover {
   box-shadow: none;
 }
 
+.update-status {
+  margin-left: 6px;
+  font-size: 12px;
+  color: #d3b48a;
+}
+
+.update-status.status-ok {
+  color: #9be3a5;
+}
+
+.update-status.status-warn {
+  color: #ffd699;
+}
+
+.update-status.status-error {
+  color: #ff9a9a;
+}
+
+.update-status.status-pending {
+  color: #cfd9ff;
+}
+
 .row {
   display: flex;
   align-items: center;

@@ -2928,7 +2928,7 @@ async function loadDashboardStats() {
     renderStatList(dashboardServer, [
       { label: '服务器时间', value: formatAdminTime(server.time) },
       { label: '运行时长', value: formatDuration(server.uptimeSec) },
-      { label: '游戏版本', value: `${server.gameVersion || '-'} <button class="btn-link" data-action="check-update" type="button">检查更新</button>` },
+      { label: '游戏版本', value: `${server.gameVersion || '-'} <button class="btn-link" data-action="check-update" type="button">检查更新</button><span class="update-status" data-role="update-status"></span>` },
       { label: 'Node版本', value: server.nodeVersion || '-' },
       { label: '进程内存', value: formatBytes(server.memory?.rss) },
       { label: '堆内存', value: `${formatBytes(server.memory?.heapUsed)} / ${formatBytes(server.memory?.heapTotal)}` },
@@ -9447,15 +9447,29 @@ function bindDashboardUpdateCheck() {
   dashboardServer.addEventListener('click', async (event) => {
     const btn = event.target?.closest?.('[data-action="check-update"]');
     if (!btn) return;
+    const row = btn.closest('.stat-item');
+    const statusEl = row?.querySelector('[data-role="update-status"]');
+    const setStatus = (text, cls) => {
+      if (!statusEl) return;
+      statusEl.textContent = text ? ` ${text}` : '';
+      statusEl.className = 'update-status';
+      if (cls) statusEl.classList.add(cls);
+    };
     const currentCommit = String(dashboardServer.dataset.gameCommit || '').trim();
     if (!currentCommit) {
+      setStatus('无法检查（无commit）', 'status-warn');
       if (dashboardMsg) {
         dashboardMsg.textContent = '当前版本无commit信息，无法检查更新。';
         dashboardMsg.style.color = 'orange';
       }
+      customAlert('版本检查', '当前版本无commit信息，无法检查更新。');
       return;
     }
+    btn.disabled = true;
+    const prevText = btn.textContent;
+    btn.textContent = '检查中...';
     try {
+      setStatus('检查中...', 'status-pending');
       if (dashboardMsg) {
         dashboardMsg.textContent = '检查更新中...';
         dashboardMsg.style.color = '';
@@ -9466,22 +9480,32 @@ function bindDashboardUpdateCheck() {
       const latest = Array.isArray(data) ? data[0] : data;
       const latestSha = String(latest?.sha || '').slice(0, 7);
       const latestTime = formatIsoLocal(latest?.commit?.committer?.date || latest?.commit?.author?.date);
-      if (latestSha && latestSha.startsWith(currentCommit) || currentCommit.startsWith(latestSha)) {
+      const isLatest = (latestSha && (latestSha.startsWith(currentCommit) || currentCommit.startsWith(latestSha)));
+      if (isLatest) {
+        setStatus('已是最新', 'status-ok');
         if (dashboardMsg) {
           dashboardMsg.textContent = `已是最新版本（${latestSha} ${latestTime}）。`;
           dashboardMsg.style.color = 'green';
         }
+        customAlert('版本检查', `已是最新版本。\n最新：${latestSha} ${latestTime}`);
       } else {
+        setStatus('有新版本', 'status-warn');
         if (dashboardMsg) {
           dashboardMsg.textContent = `发现新版本：${latestSha} ${latestTime}（当前 ${currentCommit}）。`;
           dashboardMsg.style.color = 'orange';
         }
+        customAlert('版本检查', `检测到新版本。\n最新：${latestSha} ${latestTime}\n当前：${currentCommit}`);
       }
     } catch (err) {
+      setStatus('检查失败', 'status-error');
       if (dashboardMsg) {
         dashboardMsg.textContent = `检查更新失败: ${err.message}`;
         dashboardMsg.style.color = 'red';
       }
+      customAlert('版本检查', `检查更新失败：${err.message}`);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = prevText || '检查更新';
     }
   });
 }
