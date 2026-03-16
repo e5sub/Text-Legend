@@ -1809,13 +1809,89 @@ body.theme-dark .block {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-right: 8px;
+  margin: 0 12px 10px 0;
+  min-width: 260px;
+}
+
+.input-with-unit input {
+  width: 160px;
 }
 
 .input-with-unit .unit {
   color: #9a7b5f;
   font-size: 0.85rem;
   white-space: nowrap;
+  min-width: 80px;
+}
+
+.admin-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 220px;
+  margin-right: 12px;
+}
+
+.inline-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 220px;
+}
+
+.inline-field label {
+  min-width: 72px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.inline-field input,
+.inline-field select {
+  width: 180px;
+  max-width: none;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px 16px;
+  align-items: end;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.form-field label {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  max-width: none;
+}
+
+.form-field .input-compact {
+  width: 100%;
+  max-width: none;
+}
+
+.form-grid-compact {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px 14px;
+  align-items: end;
+}
+
+.form-field.compact label {
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
 .modal-body {

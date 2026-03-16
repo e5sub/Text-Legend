@@ -248,39 +248,53 @@
           </div>
           <div class="block-body">
             <p style="color: #666; margin-bottom: 6px; font-size: 13px;">基础属性</p>
-            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
-              <label style="min-width: 40px;">生命:</label>
-              <input id="wb-base-hp" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-              <label style="min-width: 40px;">攻击:</label>
-              <input id="wb-base-atk" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-            </div>
-            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
-              <label style="min-width: 40px;">防御:</label>
-              <input id="wb-base-def" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-              <label style="min-width: 40px;">魔御:</label>
-              <input id="wb-base-mdef" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-            </div>
-            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
-              <label style="min-width: 40px;">经验:</label>
-              <input id="wb-base-exp" type="number" min="1" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-              <label style="min-width: 40px;">金币:</label>
-              <input id="wb-base-gold" type="number" min="0" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-            </div>
-            <div class="row" style="margin-bottom: 6px; font-size: 13px; gap: 4px;">
-              <label style="min-width: 40px;">掉落加成:</label>
-              <input id="wb-drop-bonus" type="number" min="1" step="0.1" style="width: 70px; font-size: 13px; padding: 4px 6px;">
-              <label style="min-width: 70px;">刷新时间(分钟):</label>
-              <input id="wb-respawn-mins" type="number" min="1" step="1" style="width: 70px; font-size: 13px; padding: 4px 6px;">
-            </div>
-              <div class="row" style="margin-bottom: 6px; font-size: 13px; gap: 6px; align-items: center; justify-content: flex-start; flex-wrap: wrap;">
-                <label style="min-width: 40px;">区名:</label>
-                <select id="wb-kill-realm" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-                  <option value="">加载中...</option>
-                </select>
-                <label style="min-width: 60px;">击杀次数:</label>
-                <input id="wb-kill-count" type="number" min="0" step="1" style="width: 60px; font-size: 13px; padding: 4px 6px;">
+            <div class="form-grid-compact" style="margin-bottom: 8px;">
+              <div class="form-field compact">
+                <label for="wb-base-hp">生命</label>
+                <input id="wb-base-hp" type="number" min="1">
               </div>
-              <div class="row" style="margin-bottom: 6px; font-size: 13px; gap: 6px; align-items: center; justify-content: flex-start; flex-wrap: wrap;">
+              <div class="form-field compact">
+                <label for="wb-base-atk">攻击</label>
+                <input id="wb-base-atk" type="number" min="1">
+              </div>
+              <div class="form-field compact">
+                <label for="wb-base-def">防御</label>
+                <input id="wb-base-def" type="number" min="1">
+              </div>
+              <div class="form-field compact">
+                <label for="wb-base-mdef">魔御</label>
+                <input id="wb-base-mdef" type="number" min="1">
+              </div>
+              <div class="form-field compact">
+                <label for="wb-base-exp">经验</label>
+                <input id="wb-base-exp" type="number" min="1" step="1">
+              </div>
+              <div class="form-field compact">
+                <label for="wb-base-gold">金币</label>
+                <input id="wb-base-gold" type="number" min="0" step="1">
+              </div>
+              <div class="form-field compact">
+                <label for="wb-drop-bonus">掉落加成</label>
+                <input id="wb-drop-bonus" type="number" min="1" step="0.1">
+              </div>
+              <div class="form-field compact">
+                <label for="wb-respawn-mins">刷新时间(分钟)</label>
+                <input id="wb-respawn-mins" type="number" min="1" step="1">
+              </div>
+            </div>
+              <div class="form-grid-compact" style="margin-bottom: 6px;">
+                <div class="form-field compact">
+                  <label for="wb-kill-realm">区名</label>
+                  <select id="wb-kill-realm">
+                    <option value="">加载中...</option>
+                  </select>
+                </div>
+                <div class="form-field compact">
+                  <label for="wb-kill-count">击杀次数</label>
+                  <input id="wb-kill-count" type="number" min="0" step="1">
+                </div>
+              </div>
+              <div class="row" style="margin-bottom: 6px; gap: 8px;">
                 <button id="wb-kill-save-btn" class="btn-small">保存</button>
                 <button id="wb-kill-reset-btn" class="btn-small">清零</button>
               </div>
@@ -321,39 +335,53 @@
           </div>
           <div class="block-body">
             <p style="color: #666; margin-bottom: 6px; font-size: 13px;">基础属性（魔龙BOSS、暗之系列BOSS、沙巴克BOSS）</p>
-            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
-              <label style="min-width: 40px;">生命:</label>
-              <input id="sb-base-hp" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-              <label style="min-width: 40px;">攻击:</label>
-              <input id="sb-base-atk" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-            </div>
-            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
-              <label style="min-width: 40px;">防御:</label>
-              <input id="sb-base-def" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-              <label style="min-width: 40px;">魔御:</label>
-              <input id="sb-base-mdef" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-            </div>
-            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
-              <label style="min-width: 40px;">经验:</label>
-              <input id="sb-base-exp" type="number" min="1" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-              <label style="min-width: 40px;">金币:</label>
-              <input id="sb-base-gold" type="number" min="0" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-            </div>
-            <div class="row" style="margin-bottom: 6px; font-size: 13px; gap: 4px;">
-              <label style="min-width: 40px;">掉落加成:</label>
-              <input id="sb-drop-bonus" type="number" min="1" step="0.1" style="width: 70px; font-size: 13px; padding: 4px 6px;">
-              <label style="min-width: 70px;">刷新时间(分钟):</label>
-              <input id="sb-respawn-mins" type="number" min="1" step="1" style="width: 70px; font-size: 13px; padding: 4px 6px;">
-            </div>
-              <div class="row" style="margin-bottom: 6px; font-size: 13px; gap: 6px; align-items: center; justify-content: flex-start; flex-wrap: wrap;">
-                <label style="min-width: 40px;">区名:</label>
-                <select id="sb-kill-realm" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-                  <option value="">加载中...</option>
-                </select>
-                <label style="min-width: 60px;">击杀次数:</label>
-                <input id="sb-kill-count" type="number" min="0" step="1" style="width: 60px; font-size: 13px; padding: 4px 6px;">
+            <div class="form-grid-compact" style="margin-bottom: 8px;">
+              <div class="form-field compact">
+                <label for="sb-base-hp">生命</label>
+                <input id="sb-base-hp" type="number" min="1">
               </div>
-              <div class="row" style="margin-bottom: 6px; font-size: 13px; gap: 6px; align-items: center; justify-content: flex-start; flex-wrap: wrap;">
+              <div class="form-field compact">
+                <label for="sb-base-atk">攻击</label>
+                <input id="sb-base-atk" type="number" min="1">
+              </div>
+              <div class="form-field compact">
+                <label for="sb-base-def">防御</label>
+                <input id="sb-base-def" type="number" min="1">
+              </div>
+              <div class="form-field compact">
+                <label for="sb-base-mdef">魔御</label>
+                <input id="sb-base-mdef" type="number" min="1">
+              </div>
+              <div class="form-field compact">
+                <label for="sb-base-exp">经验</label>
+                <input id="sb-base-exp" type="number" min="1" step="1">
+              </div>
+              <div class="form-field compact">
+                <label for="sb-base-gold">金币</label>
+                <input id="sb-base-gold" type="number" min="0" step="1">
+              </div>
+              <div class="form-field compact">
+                <label for="sb-drop-bonus">掉落加成</label>
+                <input id="sb-drop-bonus" type="number" min="1" step="0.1">
+              </div>
+              <div class="form-field compact">
+                <label for="sb-respawn-mins">刷新时间(分钟)</label>
+                <input id="sb-respawn-mins" type="number" min="1" step="1">
+              </div>
+            </div>
+              <div class="form-grid-compact" style="margin-bottom: 6px;">
+                <div class="form-field compact">
+                  <label for="sb-kill-realm">区名</label>
+                  <select id="sb-kill-realm">
+                    <option value="">加载中...</option>
+                  </select>
+                </div>
+                <div class="form-field compact">
+                  <label for="sb-kill-count">击杀次数</label>
+                  <input id="sb-kill-count" type="number" min="0" step="1">
+                </div>
+              </div>
+              <div class="row" style="margin-bottom: 6px; gap: 8px;">
                 <button id="sb-kill-save-btn" class="btn-small">保存</button>
                 <button id="sb-kill-reset-btn" class="btn-small">清零</button>
               </div>
@@ -394,39 +422,53 @@
           </div>
           <div class="block-body cmd-rate-settings">
             <p style="color: #666; margin-bottom: 6px; font-size: 13px;">基础属性</p>
-            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
-              <label style="min-width: 40px;">生命:</label>
-              <input id="cb-base-hp" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-              <label style="min-width: 40px;">攻击:</label>
-              <input id="cb-base-atk" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+            <div class="form-grid-compact" style="margin-bottom: 8px;">
+              <div class="form-field compact">
+                <label for="cb-base-hp">生命</label>
+                <input id="cb-base-hp" type="number" min="1">
+              </div>
+              <div class="form-field compact">
+                <label for="cb-base-atk">攻击</label>
+                <input id="cb-base-atk" type="number" min="1">
+              </div>
+              <div class="form-field compact">
+                <label for="cb-base-def">防御</label>
+                <input id="cb-base-def" type="number" min="1">
+              </div>
+              <div class="form-field compact">
+                <label for="cb-base-mdef">魔御</label>
+                <input id="cb-base-mdef" type="number" min="1">
+              </div>
+              <div class="form-field compact">
+                <label for="cb-base-exp">经验</label>
+                <input id="cb-base-exp" type="number" min="1" step="1">
+              </div>
+              <div class="form-field compact">
+                <label for="cb-base-gold">金币</label>
+                <input id="cb-base-gold" type="number" min="0" step="1">
+              </div>
+              <div class="form-field compact">
+                <label for="cb-drop-bonus">掉落加成</label>
+                <input id="cb-drop-bonus" type="number" min="1" step="0.1">
+              </div>
+              <div class="form-field compact">
+                <label for="cb-respawn-mins">刷新时间(分钟)</label>
+                <input id="cb-respawn-mins" type="number" min="1" step="1">
+              </div>
             </div>
-            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
-              <label style="min-width: 40px;">防御:</label>
-              <input id="cb-base-def" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-              <label style="min-width: 40px;">魔御:</label>
-              <input id="cb-base-mdef" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
+            <div class="form-grid-compact" style="margin-bottom: 6px;">
+              <div class="form-field compact">
+                <label for="cb-kill-realm">区名</label>
+                <select id="cb-kill-realm">
+                  <option value="">加载中...</option>
+                </select>
+              </div>
+              <div class="form-field compact">
+                <label for="cb-kill-count">击杀次数</label>
+                <input id="cb-kill-count" type="number" min="0" step="1">
+              </div>
             </div>
-            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
-              <label style="min-width: 40px;">经验:</label>
-              <input id="cb-base-exp" type="number" min="1" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-              <label style="min-width: 40px;">金币:</label>
-              <input id="cb-base-gold" type="number" min="0" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-            </div>
-            <div class="row" style="margin-bottom: 6px; font-size: 13px; gap: 4px;">
-              <label style="min-width: 40px;">掉落加成:</label>
-              <input id="cb-drop-bonus" type="number" min="1" step="0.1" style="width: 70px; font-size: 13px; padding: 4px 6px;">
-              <label style="min-width: 70px;">刷新时间(分钟):</label>
-              <input id="cb-respawn-mins" type="number" min="1" step="1" style="width: 70px; font-size: 13px; padding: 4px 6px;">
-            </div>
-            <div class="row" style="margin-bottom: 6px; font-size: 13px; gap: 6px; align-items: center; justify-content: flex-start; flex-wrap: wrap;">
-              <label style="min-width: 40px;">区名:</label>
-              <select id="cb-kill-realm" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-                <option value="">加载中...</option>
-              </select>
-              <label style="min-width: 60px;">击杀次数:</label>
-              <input id="cb-kill-count" type="number" min="0" step="1" style="width: 60px; font-size: 13px; padding: 4px 6px;">
-            </div>
-            <div class="row" style="margin-bottom: 6px; font-size: 13px; gap: 6px; align-items: center; justify-content: flex-start; flex-wrap: wrap;">
+            <div class="row" style="margin-bottom: 6px; gap: 8px;">
               <button id="cb-kill-save-btn" class="btn-small">保存</button>
               <button id="cb-kill-reset-btn" class="btn-small">清零</button>
             </div>
@@ -466,25 +508,35 @@
           </div>
           <div class="block-body">
             <p style="color: #666; margin-bottom: 6px; font-size: 13px;">沙巴克攻城</p>
-            <div class="row" style="margin-bottom: 6px; font-size: 13px; gap: 6px; align-items: center; justify-content: flex-start; flex-wrap: wrap;">
-              <label style="min-width: 60px;">开始时间:</label>
-              <input id="sabak-time-start-hour" type="number" min="0" max="23" step="1" placeholder="20" style="width: 60px; font-size: 13px; padding: 4px 6px;">
-              <span>:</span>
-              <input id="sabak-time-start-minute" type="number" min="0" max="59" step="1" placeholder="00" style="width: 60px; font-size: 13px; padding: 4px 6px;">
-              <label style="min-width: 70px;">攻城时间:</label>
-              <input id="sabak-time-duration" type="number" min="1" step="1" placeholder="10" style="width: 70px; font-size: 13px; padding: 4px 6px;">
-              <span>分钟</span>
+            <div class="form-grid-compact" style="margin-bottom: 8px;">
+              <div class="form-field compact">
+                <label for="sabak-time-start-hour">开始小时</label>
+                <input id="sabak-time-start-hour" type="number" min="0" max="23" step="1" placeholder="20">
+              </div>
+              <div class="form-field compact">
+                <label for="sabak-time-start-minute">开始分钟</label>
+                <input id="sabak-time-start-minute" type="number" min="0" max="59" step="1" placeholder="00">
+              </div>
+              <div class="form-field compact">
+                <label for="sabak-time-duration">攻城时长(分钟)</label>
+                <input id="sabak-time-duration" type="number" min="1" step="1" placeholder="10">
+              </div>
             </div>
 
             <p style="color: #666; margin: 10px 0 6px; font-size: 13px;">跨服排位赛</p>
-            <div class="row" style="margin-bottom: 6px; font-size: 13px; gap: 6px; align-items: center; justify-content: flex-start; flex-wrap: wrap;">
-              <label style="min-width: 60px;">开始时间:</label>
-              <input id="cross-rank-start-hour" type="number" min="0" max="23" step="1" placeholder="19" style="width: 60px; font-size: 13px; padding: 4px 6px;">
-              <span>:</span>
-              <input id="cross-rank-start-minute" type="number" min="0" max="59" step="1" placeholder="00" style="width: 60px; font-size: 13px; padding: 4px 6px;">
-              <label style="min-width: 70px;">时长:</label>
-              <input id="cross-rank-duration" type="number" min="1" step="1" placeholder="10" style="width: 70px; font-size: 13px; padding: 4px 6px;">
-              <span>分钟</span>
+            <div class="form-grid-compact" style="margin-bottom: 8px;">
+              <div class="form-field compact">
+                <label for="cross-rank-start-hour">开始小时</label>
+                <input id="cross-rank-start-hour" type="number" min="0" max="23" step="1" placeholder="19">
+              </div>
+              <div class="form-field compact">
+                <label for="cross-rank-start-minute">开始分钟</label>
+                <input id="cross-rank-start-minute" type="number" min="0" max="59" step="1" placeholder="00">
+              </div>
+              <div class="form-field compact">
+                <label for="cross-rank-duration">时长(分钟)</label>
+                <input id="cross-rank-duration" type="number" min="1" step="1" placeholder="10">
+              </div>
             </div>
 
             <div class="row" style="margin-top: 8px;">
@@ -505,55 +557,75 @@
             </p>
 
             <h3 style="margin: 6px 0 6px;">VIP专属BOSS（洛奇）</h3>
-            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
-              <label style="min-width: 40px;">生命:</label>
-              <input id="pb-vip-hp" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-              <label style="min-width: 40px;">攻击:</label>
-              <input id="pb-vip-atk" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-            </div>
-            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
-              <label style="min-width: 40px;">防御:</label>
-              <input id="pb-vip-def" type="number" min="0" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-              <label style="min-width: 40px;">魔御:</label>
-              <input id="pb-vip-mdef" type="number" min="0" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-            </div>
-            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
-              <label style="min-width: 40px;">经验:</label>
-              <input id="pb-vip-exp" type="number" min="1" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-              <label style="min-width: 40px;">金币:</label>
-              <input id="pb-vip-gold" type="number" min="0" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-            </div>
-            <div class="row" style="margin-bottom: 8px; font-size: 13px; gap: 2px; flex-wrap: nowrap; align-items: center;">
-              <label style="min-width: 62px;">刷新(分钟):</label>
-              <input id="pb-vip-respawn-mins" type="number" min="1" step="1" style="width: 64px; font-size: 13px; padding: 4px 6px;">
-              <label style="min-width: 60px;">掉率倍率:</label>
-              <input id="pb-vip-drop-bonus" type="number" min="0" step="0.1" style="width: 64px; font-size: 13px; padding: 4px 6px;">
+            <div class="form-grid-compact" style="margin-bottom: 8px;">
+              <div class="form-field compact">
+                <label for="pb-vip-hp">生命</label>
+                <input id="pb-vip-hp" type="number" min="1">
+              </div>
+              <div class="form-field compact">
+                <label for="pb-vip-atk">攻击</label>
+                <input id="pb-vip-atk" type="number" min="1">
+              </div>
+              <div class="form-field compact">
+                <label for="pb-vip-def">防御</label>
+                <input id="pb-vip-def" type="number" min="0">
+              </div>
+              <div class="form-field compact">
+                <label for="pb-vip-mdef">魔御</label>
+                <input id="pb-vip-mdef" type="number" min="0">
+              </div>
+              <div class="form-field compact">
+                <label for="pb-vip-exp">经验</label>
+                <input id="pb-vip-exp" type="number" min="1" step="1">
+              </div>
+              <div class="form-field compact">
+                <label for="pb-vip-gold">金币</label>
+                <input id="pb-vip-gold" type="number" min="0" step="1">
+              </div>
+              <div class="form-field compact">
+                <label for="pb-vip-respawn-mins">刷新(分钟)</label>
+                <input id="pb-vip-respawn-mins" type="number" min="1" step="1">
+              </div>
+              <div class="form-field compact">
+                <label for="pb-vip-drop-bonus">掉率倍率</label>
+                <input id="pb-vip-drop-bonus" type="number" min="0" step="0.1">
+              </div>
             </div>
 
             <h3 style="margin: 6px 0 6px;">SVIP专属BOSS（菜芽）</h3>
-            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
-              <label style="min-width: 40px;">生命:</label>
-              <input id="pb-svip-hp" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-              <label style="min-width: 40px;">攻击:</label>
-              <input id="pb-svip-atk" type="number" min="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-            </div>
-            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
-              <label style="min-width: 40px;">防御:</label>
-              <input id="pb-svip-def" type="number" min="0" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-              <label style="min-width: 40px;">魔御:</label>
-              <input id="pb-svip-mdef" type="number" min="0" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-            </div>
-            <div class="row" style="margin-bottom: 4px; font-size: 13px; gap: 4px;">
-              <label style="min-width: 40px;">经验:</label>
-              <input id="pb-svip-exp" type="number" min="1" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-              <label style="min-width: 40px;">金币:</label>
-              <input id="pb-svip-gold" type="number" min="0" step="1" style="width: 90px; font-size: 13px; padding: 4px 6px;">
-            </div>
-            <div class="row" style="margin-bottom: 8px; font-size: 13px; gap: 2px; flex-wrap: nowrap; align-items: center;">
-              <label style="min-width: 62px;">刷新(分钟):</label>
-              <input id="pb-svip-respawn-mins" type="number" min="1" step="1" style="width: 64px; font-size: 13px; padding: 4px 6px;">
-              <label style="min-width: 60px;">掉率倍率:</label>
-              <input id="pb-svip-drop-bonus" type="number" min="0" step="0.1" style="width: 64px; font-size: 13px; padding: 4px 6px;">
+            <div class="form-grid-compact" style="margin-bottom: 8px;">
+              <div class="form-field compact">
+                <label for="pb-svip-hp">生命</label>
+                <input id="pb-svip-hp" type="number" min="1">
+              </div>
+              <div class="form-field compact">
+                <label for="pb-svip-atk">攻击</label>
+                <input id="pb-svip-atk" type="number" min="1">
+              </div>
+              <div class="form-field compact">
+                <label for="pb-svip-def">防御</label>
+                <input id="pb-svip-def" type="number" min="0">
+              </div>
+              <div class="form-field compact">
+                <label for="pb-svip-mdef">魔御</label>
+                <input id="pb-svip-mdef" type="number" min="0">
+              </div>
+              <div class="form-field compact">
+                <label for="pb-svip-exp">经验</label>
+                <input id="pb-svip-exp" type="number" min="1" step="1">
+              </div>
+              <div class="form-field compact">
+                <label for="pb-svip-gold">金币</label>
+                <input id="pb-svip-gold" type="number" min="0" step="1">
+              </div>
+              <div class="form-field compact">
+                <label for="pb-svip-respawn-mins">刷新(分钟)</label>
+                <input id="pb-svip-respawn-mins" type="number" min="1" step="1">
+              </div>
+              <div class="form-field compact">
+                <label for="pb-svip-drop-bonus">掉率倍率</label>
+                <input id="pb-svip-drop-bonus" type="number" min="0" step="0.1">
+              </div>
             </div>
 
             <div class="row" style="margin-top: 8px;">
@@ -645,10 +717,19 @@
               <button id="harvest-sign-add-btn" class="btn-small">+ 添加物品</button>
               <button id="harvest-sign-save-btn" class="btn-small">保存</button>
             </div>
-            <div class="row" style="margin-bottom: 8px; gap: 8px; flex-wrap: wrap;">
-              <input id="harvest-sign-title" type="text" placeholder="邮件标题" style="max-width: 240px;">
-              <input id="harvest-sign-points" type="number" min="0" placeholder="活动积分" style="max-width: 120px;">
-              <input id="harvest-sign-gold" type="number" min="0" placeholder="金币" style="max-width: 140px;">
+            <div class="form-grid" style="margin-bottom: 8px;">
+              <div class="form-field">
+                <label for="harvest-sign-title">邮件标题</label>
+                <input id="harvest-sign-title" type="text" placeholder="丰收签到奖励">
+              </div>
+              <div class="form-field">
+                <label for="harvest-sign-points">活动积分</label>
+                <input id="harvest-sign-points" type="number" min="0" placeholder="0">
+              </div>
+              <div class="form-field">
+                <label for="harvest-sign-gold">金币</label>
+                <input id="harvest-sign-gold" type="number" min="0" placeholder="0">
+              </div>
             </div>
             <div class="row" style="margin-bottom: 8px; gap: 8px;">
               <input id="harvest-sign-item-search" type="text" placeholder="搜索签到奖励物品名/ID/类型" style="max-width: 320px;">
@@ -824,9 +905,11 @@
               <button id="guild-building-load-btn" class="btn-small">加载</button>
               <button id="guild-building-save-btn" class="btn-small">保存</button>
             </div>
-            <div class="row" style="margin-bottom: 8px; gap: 6px; align-items: center; justify-content: flex-start;">
-              <label for="guild-building-duration-step" style="min-width: 140px;">升级每级增加秒数:</label>
-              <input id="guild-building-duration-step" type="number" min="1" step="1" style="width: 120px;">
+            <div class="form-grid-compact" style="margin-bottom: 8px;">
+              <div class="form-field compact">
+                <label for="guild-building-duration-step">升级每级增加秒数</label>
+                <input id="guild-building-duration-step" type="number" min="1" step="1">
+              </div>
             </div>
             <div id="guild-building-level-summary" style="margin-bottom: 8px; color:#999; font-size:12px;">点击加载</div>
             <table style="font-size: 12px; margin-top: 8px;">
@@ -1014,33 +1097,43 @@
                   <span class="admin-switch-slider" aria-hidden="true"></span>
                   <span class="admin-switch-label">赠送马年神兽</span>
                 </label>
-                <div class="input-with-unit">
-                  <input id="first-recharge-yuanbao" type="number" min="0" value="0">
-                  <span class="unit">额外元宝</span>
-                </div>
-                <div class="input-with-unit">
-                  <input id="first-recharge-gold" type="number" min="0" value="200000000">
-                  <span class="unit">额外金币</span>
-                </div>
-                <div class="input-with-unit">
-                  <input id="first-recharge-training-fruit" type="number" min="0" value="200">
-                  <span class="unit">修炼果</span>
-                </div>
-                <div class="input-with-unit">
-                  <input id="first-recharge-pet-training-fruit" type="number" min="0" value="200">
-                  <span class="unit">宠物修炼果</span>
-                </div>
-                <div class="input-with-unit">
-                  <input id="first-recharge-treasure-exp" type="number" min="0" value="200">
-                  <span class="unit">法宝经验丹</span>
+                <div class="form-grid" style="margin-bottom: 8px;">
+                  <div class="form-field">
+                    <label for="first-recharge-yuanbao">额外元宝</label>
+                    <input id="first-recharge-yuanbao" type="number" min="0" value="0">
+                  </div>
+                  <div class="form-field">
+                    <label for="first-recharge-gold">额外金币</label>
+                    <input id="first-recharge-gold" type="number" min="0" value="200000000">
+                  </div>
+                  <div class="form-field">
+                    <label for="first-recharge-training-fruit">修炼果</label>
+                    <input id="first-recharge-training-fruit" type="number" min="0" value="200">
+                  </div>
+                  <div class="form-field">
+                    <label for="first-recharge-pet-training-fruit">宠物修炼果</label>
+                    <input id="first-recharge-pet-training-fruit" type="number" min="0" value="200">
+                  </div>
+                  <div class="form-field">
+                    <label for="first-recharge-treasure-exp">法宝经验丹</label>
+                    <input id="first-recharge-treasure-exp" type="number" min="0" value="200">
+                  </div>
                 </div>
                 <div class="row" style="margin-top: 8px;">
                   <button id="first-recharge-load-btn" class="btn-small">加载首充配置</button>
                   <button id="first-recharge-save-btn" class="btn-small">保存首充配置</button>
                 </div>
-                <div class="row" style="margin-top: 10px; gap: 8px; align-items: center; flex-wrap: wrap;">
-                  <input id="first-recharge-reissue-char" type="text" placeholder="补发角色名" style="min-width: 180px;">
-                  <input id="first-recharge-reissue-realm" type="number" min="1" value="1" placeholder="区服" style="width: 90px;">
+                <div class="form-grid-compact" style="margin-top: 10px;">
+                  <div class="form-field compact">
+                    <label for="first-recharge-reissue-char">补发角色名</label>
+                    <input id="first-recharge-reissue-char" type="text" placeholder="补发角色名">
+                  </div>
+                  <div class="form-field compact">
+                    <label for="first-recharge-reissue-realm">区服</label>
+                    <input id="first-recharge-reissue-realm" type="number" min="1" value="1" placeholder="区服">
+                  </div>
+                </div>
+                <div class="row" style="margin-top: 8px; gap: 8px; align-items: center; flex-wrap: wrap;">
                   <button id="first-recharge-reissue-btn" class="btn-small">补发首充礼包</button>
                   <button id="first-recharge-reissue-divine-beast-btn" class="btn-small">补发马年神兽</button>
                   <button id="first-recharge-reissue-divine-beast-all-btn" class="btn-small">补发全部马年神兽</button>
@@ -1055,9 +1148,11 @@
                     <span class="admin-switch-slider" aria-hidden="true"></span>
                     <span class="admin-switch-label">启用邀请返利</span>
                   </label>
-                  <div class="input-with-unit">
-                    <input id="invite-reward-rate" type="number" min="0" max="100" step="0.1" value="20">
-                    <span class="unit">返利比例(%)</span>
+                  <div class="form-grid" style="margin-bottom: 8px;">
+                    <div class="form-field">
+                      <label for="invite-reward-rate">返利比例(%)</label>
+                      <input id="invite-reward-rate" type="number" min="0" max="100" step="0.1" value="20">
+                    </div>
                   </div>
                   <div class="row" style="margin-top: 8px;">
                     <button id="invite-reward-load-btn" class="btn-small">加载邀请配置</button>
@@ -1120,25 +1215,40 @@
               <span class="admin-switch-slider" aria-hidden="true"></span>
               <span class="admin-switch-label">缓存怪物血量（重启后恢复）</span>
             </label>
+            <div class="form-grid-compact" style="margin-top: 6px;">
+              <div class="form-field compact">
+                <label for="state-throttle-interval">保存秒数</label>
+                <input id="state-throttle-interval" type="number" min="1" value="10">
+              </div>
+            </div>
             <div class="row" style="margin-top: 6px;">
-              <input id="state-throttle-interval" type="number" min="1" value="10" style="max-width: 120px;">
-              <button id="state-throttle-save" class="btn-small">保存秒数</button>
+              <button id="state-throttle-save" class="btn-small">保存</button>
             </div>
-            <div class="row" style="margin-top: 10px; align-items: center; gap: 10px; flex-wrap: wrap;">
-              <label>保存防抖(ms)</label>
-              <input id="player-save-debounce" type="number" min="0" style="max-width: 120px;">
-              <label>在线间隔(ms)</label>
-              <input id="player-save-min-interval" type="number" min="0" style="max-width: 120px;">
-              <label>托管间隔(ms)</label>
-              <input id="player-save-managed-interval" type="number" min="0" style="max-width: 120px;">
-            </div>
-            <div class="row" style="margin-top: 8px; align-items: center; gap: 10px; flex-wrap: wrap;">
-              <label>离线托管(ms)</label>
-              <input id="player-save-detached-interval" type="number" min="0" style="max-width: 120px;">
-              <label>强制截止(ms)</label>
-              <input id="player-save-force-deadline" type="number" min="0" style="max-width: 120px;">
-              <label>批次写入上限</label>
-              <input id="player-save-max-writes" type="number" min="1" style="max-width: 120px;">
+            <div class="form-grid-compact" style="margin-top: 10px;">
+              <div class="form-field compact">
+                <label for="player-save-debounce">保存防抖(ms)</label>
+                <input id="player-save-debounce" type="number" min="0">
+              </div>
+              <div class="form-field compact">
+                <label for="player-save-min-interval">在线间隔(ms)</label>
+                <input id="player-save-min-interval" type="number" min="0">
+              </div>
+              <div class="form-field compact">
+                <label for="player-save-managed-interval">托管间隔(ms)</label>
+                <input id="player-save-managed-interval" type="number" min="0">
+              </div>
+              <div class="form-field compact">
+                <label for="player-save-detached-interval">离线托管(ms)</label>
+                <input id="player-save-detached-interval" type="number" min="0">
+              </div>
+              <div class="form-field compact">
+                <label for="player-save-force-deadline">强制截止(ms)</label>
+                <input id="player-save-force-deadline" type="number" min="0">
+              </div>
+              <div class="form-field compact">
+                <label for="player-save-max-writes">批次写入上限</label>
+                <input id="player-save-max-writes" type="number" min="1">
+              </div>
             </div>
             <div id="state-throttle-msg" class="msg"></div>
           </div>
@@ -1151,8 +1261,13 @@
           </div>
           <div class="block-body">
             <p>当前状态: <span id="room-variant-status">加载中...</span></p>
+            <div class="form-grid-compact" style="margin-top: 6px;">
+              <div class="form-field compact">
+                <label for="room-variant-count">变种数量</label>
+                <input id="room-variant-count" type="number" min="1" value="5">
+              </div>
+            </div>
             <div class="row" style="margin-top: 6px;">
-              <input id="room-variant-count" type="number" min="1" value="5" style="max-width: 120px;">
               <button id="room-variant-save" class="btn-small">保存数量</button>
             </div>
             <p class="muted" style="margin-top: 6px;">修改后立即生效；减少时仅影响分流选择</p>
@@ -1891,18 +2006,21 @@
                 </tbody>
               </table>
             </div>
-            <div class="row" style="margin-top: 8px; gap: 12px; flex-wrap: wrap;">
-              <label>二次掉落概率
-                <input id="pet-book-second-chance" type="number" min="0" max="1" step="0.001" style="width: 90px; margin-left: 6px;">
-              </label>
-              <label>二次掉落稀有度
-                <input id="pet-book-second-eligible" type="text" placeholder="supreme,ultimate" style="width: 200px; margin-left: 6px;">
-              </label>
-              <label>
-                <input id="pet-book-second-require-special" type="checkbox">
-                仅特殊BOSS触发二次掉落
-              </label>
+            <div class="form-grid-compact" style="margin-top: 8px;">
+              <div class="form-field compact">
+                <label for="pet-book-second-chance">二次掉落概率</label>
+                <input id="pet-book-second-chance" type="number" min="0" max="1" step="0.001">
+              </div>
+              <div class="form-field compact">
+                <label for="pet-book-second-eligible">二次掉落稀有度</label>
+                <input id="pet-book-second-eligible" type="text" placeholder="supreme,ultimate">
+              </div>
             </div>
+            <label class="admin-switch" style="margin-top: 6px;">
+              <input id="pet-book-second-require-special" type="checkbox">
+              <span class="admin-switch-slider" aria-hidden="true"></span>
+              <span class="admin-switch-label">仅特殊BOSS触发二次掉落</span>
+            </label>
 
             <h3 style="margin: 16px 0 8px; font-size: 13px;">成长范围</h3>
             <div class="table-container">
@@ -2021,13 +2139,15 @@
             <button class="btn-small block-toggle">折叠</button>
           </div>
           <div class="block-body">
-            <div style="margin-bottom: 12px;">
-              <label for="class-select" style="font-weight: bold;">选择职业:</label>
-              <select id="class-select" style="max-width: 150px; margin-left: 8px;">
-                <option value="warrior">战士</option>
-                <option value="mage">法师</option>
-                <option value="taoist">道士</option>
-              </select>
+            <div class="form-grid-compact" style="margin-bottom: 12px;">
+              <div class="form-field compact">
+                <label for="class-select">选择职业</label>
+                <select id="class-select">
+                  <option value="warrior">战士</option>
+                  <option value="mage">法师</option>
+                  <option value="taoist">道士</option>
+                </select>
+              </div>
             </div>
             <div class="table-container compact-config-table-container">
               <table class="compact-config-table compact-config-table-4col" style="font-size: 12px;">
@@ -2123,13 +2243,15 @@
           </div>
           <div class="block-body">
             <p style="color: #c00; margin-bottom: 8px;">⚠️ 合区会强制下线所有玩家，请谨慎操作！</p>
-            <div class="row" style="margin-bottom: 8px;">
-              <label for="merge-source-realm">源区服:</label>
-              <select id="merge-source-realm" style="max-width: 200px;"></select>
-            </div>
-            <div class="row" style="margin-bottom: 8px;">
-              <label for="merge-target-realm">目标区服:</label>
-              <select id="merge-target-realm" style="max-width: 200px;"></select>
+            <div class="form-grid-compact" style="margin-bottom: 8px;">
+              <div class="form-field compact">
+                <label for="merge-source-realm">源区服</label>
+                <select id="merge-source-realm"></select>
+              </div>
+              <div class="form-field compact">
+                <label for="merge-target-realm">目标区服</label>
+                <select id="merge-target-realm"></select>
+              </div>
             </div>
             <button id="merge-realms-btn" class="btn-small" style="background: #c00;">执行合区</button>
             <div id="merge-msg" class="msg"></div>
@@ -2266,13 +2388,17 @@
 
             <div class="row" style="margin-bottom: 10px; align-items: center;">
               <strong>房间覆盖</strong>
-              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                <label for="world-zone-select" style="font-size: 13px;">区域:</label>
-                <select id="world-zone-select" style="max-width: 180px;"></select>
-                <button id="world-rooms-refresh" class="btn-small">加载房间</button>
-                <button id="world-room-check" class="btn-small" style="background: #607d8b;">刷新覆盖状态</button>
-                <button id="world-room-create" class="btn-small" style="background: #2196F3;">+ 新增/覆盖房间</button>
+            </div>
+            <div class="form-grid-compact" style="margin-bottom: 8px;">
+              <div class="form-field compact">
+                <label for="world-zone-select">区域</label>
+                <select id="world-zone-select"></select>
               </div>
+            </div>
+            <div class="row" style="margin-bottom: 10px; gap: 8px; flex-wrap: wrap;">
+              <button id="world-rooms-refresh" class="btn-small">加载房间</button>
+              <button id="world-room-check" class="btn-small" style="background: #607d8b;">刷新覆盖状态</button>
+              <button id="world-room-create" class="btn-small" style="background: #2196F3;">+ 新增/覆盖房间</button>
             </div>
             <div class="table-container">
               <table id="world-rooms-table">
@@ -2562,9 +2688,11 @@
     <div class="modal-card" style="max-width: 900px;">
       <div class="modal-title" id="mob-edit-title">编辑怪物覆盖</div>
       <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-        <div class="row" style="align-items: center; gap: 10px; flex-wrap: wrap;">
-          <label style="min-width: 60px;">怪物ID:</label>
-          <input id="mob-edit-id" type="text" class="input-compact" style="max-width: 200px;">
+        <div class="form-grid-compact" style="margin-bottom: 8px;">
+          <div class="form-field compact">
+            <label for="mob-edit-id">怪物ID</label>
+            <input id="mob-edit-id" type="text" class="input-compact">
+          </div>
         </div>
         <div class="table-container" style="margin-top: 12px;">
           <table style="font-size: 13px;">
@@ -2667,9 +2795,11 @@
     <div class="modal-card" style="max-width: 900px;">
       <div class="modal-title" id="world-zone-edit-title">编辑区域覆盖</div>
       <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-        <div class="row" style="align-items: center; gap: 10px; flex-wrap: wrap;">
-          <label style="min-width: 60px;">区域ID:</label>
-          <input id="world-zone-edit-id" type="text" class="input-compact" style="max-width: 200px;">
+        <div class="form-grid-compact" style="margin-bottom: 8px;">
+          <div class="form-field compact">
+            <label for="world-zone-edit-id">区域ID</label>
+            <input id="world-zone-edit-id" type="text" class="input-compact">
+          </div>
         </div>
         <div class="table-container" style="margin-top: 12px;">
           <table style="font-size: 13px;">
@@ -2714,11 +2844,15 @@
     <div class="modal-card" style="max-width: 900px;">
       <div class="modal-title" id="world-room-edit-title">编辑房间覆盖</div>
       <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-        <div class="row" style="align-items: center; gap: 10px;">
-          <label style="min-width: 60px;">区域ID:</label>
-          <input id="world-room-edit-zone" type="text" class="input-compact" style="max-width: 200px;" readonly>
-          <label style="min-width: 60px;">房间ID:</label>
-          <input id="world-room-edit-id" type="text" class="input-compact" style="max-width: 200px;">
+        <div class="form-grid-compact" style="margin-bottom: 8px;">
+          <div class="form-field compact">
+            <label for="world-room-edit-zone">区域ID</label>
+            <input id="world-room-edit-zone" type="text" class="input-compact" readonly>
+          </div>
+          <div class="form-field compact">
+            <label for="world-room-edit-id">房间ID</label>
+            <input id="world-room-edit-id" type="text" class="input-compact">
+          </div>
         </div>
         <div class="table-container" style="margin-top: 12px;">
           <table style="font-size: 13px;">
