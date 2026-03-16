@@ -14,7 +14,7 @@
     "db:purge-normal-mob-respawns": "node src/db/purge_mob_respawns_normal.js"
   },
   "dependencies": {
-    "bcrypt": "^5.1.1",
+    "bcrypt": "^6.0.0",
     "express": "^4.19.2",
     "knex": "^3.1.0",
     "mysql2": "^3.11.0",
