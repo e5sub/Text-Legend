@@ -7941,11 +7941,11 @@ function dropLoot(mobTemplate, bonus = 1) {
   return loot;
 }
 
-const PLAYER_SAVE_DEBOUNCE_MS = 3000;  // 防抖延迟增加到3秒
-const PLAYER_SAVE_MIN_INTERVAL_MS = 2000;  // 在线玩家2秒
-const PLAYER_SAVE_MANAGED_MIN_INTERVAL_MS = 20000;  // 托管玩家20秒（大幅降低频率）
-const PLAYER_SAVE_DETACHED_MIN_INTERVAL_MS = 60000;  // 离线托管60秒
-const PLAYER_SAVE_FORCE_DEADLINE_MS = 30000;  // 脏标记最长延迟30秒必须保存（托管玩家不强制立即保存）
+const PLAYER_SAVE_DEBOUNCE_MS = 0;  // 立即保存
+const PLAYER_SAVE_MIN_INTERVAL_MS = 0;  // 在线玩家立即保存
+const PLAYER_SAVE_MANAGED_MIN_INTERVAL_MS = 0;  // 托管玩家立即保存
+const PLAYER_SAVE_DETACHED_MIN_INTERVAL_MS = 0;  // 离线托管立即保存
+const PLAYER_SAVE_FORCE_DEADLINE_MS = 0;  // 立即触发保存
 const PLAYER_SAVE_MAX_WRITES_PER_FLUSH = 80;  // 每批最多80个写入
 const pendingPlayerSaves = new Map();
 let pendingPlayerSaveTimer = null;
