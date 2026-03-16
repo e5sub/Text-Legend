@@ -1017,6 +1017,22 @@
               <input id="state-throttle-interval" type="number" min="1" value="10" style="max-width: 120px;">
               <button id="state-throttle-save" class="btn-small">保存秒数</button>
             </div>
+            <div class="row" style="margin-top: 10px; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <label>保存防抖(ms)</label>
+              <input id="player-save-debounce" type="number" min="0" style="max-width: 120px;">
+              <label>在线间隔(ms)</label>
+              <input id="player-save-min-interval" type="number" min="0" style="max-width: 120px;">
+              <label>托管间隔(ms)</label>
+              <input id="player-save-managed-interval" type="number" min="0" style="max-width: 120px;">
+            </div>
+            <div class="row" style="margin-top: 8px; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <label>离线托管(ms)</label>
+              <input id="player-save-detached-interval" type="number" min="0" style="max-width: 120px;">
+              <label>强制截止(ms)</label>
+              <input id="player-save-force-deadline" type="number" min="0" style="max-width: 120px;">
+              <label>批次写入上限</label>
+              <input id="player-save-max-writes" type="number" min="1" style="max-width: 120px;">
+            </div>
             <div id="state-throttle-msg" class="msg"></div>
           </div>
         </div>
@@ -2692,7 +2708,13 @@
           </div>
           <div style="margin-top: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
             <input id="world-room-exit-dir" type="text" class="input-compact" placeholder="方向(如 north)" style="max-width: 140px;">
-            <input id="world-room-exit-target" type="text" class="input-compact" placeholder="目标(如 mg_town:gate)" style="max-width: 220px;">
+            <select id="world-room-exit-zone" class="input-compact" style="max-width: 180px;">
+              <option value="">目标区域</option>
+            </select>
+            <select id="world-room-exit-room" class="input-compact" style="max-width: 200px;">
+              <option value="">目标房间</option>
+            </select>
+            <input id="world-room-exit-target" type="text" class="input-compact" placeholder="自定义目标(可选)" style="max-width: 200px;">
             <button id="world-room-exit-add" class="btn-small">添加出口</button>
           </div>
         </div>

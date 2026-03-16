@@ -22,7 +22,7 @@ import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from '.
 import { sendMail, listMail, listSentMail, markMailRead, markMailClaimed, deleteMail } from './db/mail.js';
 import { createVipCodes, listVipCodes, countVipCodes, useVipCode } from './db/vip.js';
 import { createRechargeCards, listRechargeCards, countRechargeCards, useRechargeCard, listUsedRechargeCharacters } from './db/recharge.js';
-import { getSetting, setSetting, loadSettingsCache, reloadSettingsCache, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getVipClaimLimitEnabled, setVipClaimLimitEnabled, getSvipPrices, setSvipPrices, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getCacheMonsterHealthEnabled, setCacheMonsterHealthEnabled, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingFruitDropEnabled as getTrainingFruitDropEnabledDb, setTrainingFruitDropEnabled as setTrainingFruitDropEnabledDb, getPetTrainingFruitDropRate as getPetTrainingFruitDropRateDb, setPetTrainingFruitDropRate as setPetTrainingFruitDropRateDb, getPetTrainingFruitDropEnabled as getPetTrainingFruitDropEnabledDb, setPetTrainingFruitDropEnabled as setPetTrainingFruitDropEnabledDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getPetSettings, setPetSettings, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb, getEquipSkillDropChance as getEquipSkillDropChanceDb, setEquipSkillDropChance as setEquipSkillDropChanceDb, getTreasureSlotCount as getTreasureSlotCountDb, setTreasureSlotCount as setTreasureSlotCountDb, getTreasureMaxLevel as getTreasureMaxLevelDb, setTreasureMaxLevel as setTreasureMaxLevelDb, getTreasureUpgradeConsume as getTreasureUpgradeConsumeDb, setTreasureUpgradeConsume as setTreasureUpgradeConsumeDb, getTreasureAdvanceConsume as getTreasureAdvanceConsumeDb, setTreasureAdvanceConsume as setTreasureAdvanceConsumeDb, getTreasureAdvancePerStage as getTreasureAdvancePerStageDb, setTreasureAdvancePerStage as setTreasureAdvancePerStageDb, getTreasureAdvanceEffectBonusPerStack as getTreasureAdvanceEffectBonusPerStackDb, setTreasureAdvanceEffectBonusPerStack as setTreasureAdvanceEffectBonusPerStackDb, getTreasureWorldBossDropMultiplier as getTreasureWorldBossDropMultiplierDb, setTreasureWorldBossDropMultiplier as setTreasureWorldBossDropMultiplierDb, getTreasureCrossWorldBossDropMultiplier as getTreasureCrossWorldBossDropMultiplierDb, setTreasureCrossWorldBossDropMultiplier as setTreasureCrossWorldBossDropMultiplierDb, getTreasureTowerXuanmingDropChance as getTreasureTowerXuanmingDropChanceDb, setTreasureTowerXuanmingDropChance as setTreasureTowerXuanmingDropChanceDb, getCmdRateLimits, setCmdRateLimits, getCmdCooldowns, setCmdCooldowns, getUltimateGrowthConfig as getUltimateGrowthConfigDb, setUltimateGrowthConfig as setUltimateGrowthConfigDb } from './db/settings.js';
+import { getSetting, setSetting, loadSettingsCache, reloadSettingsCache, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getVipClaimLimitEnabled, setVipClaimLimitEnabled, getSvipPrices, setSvipPrices, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getCacheMonsterHealthEnabled, setCacheMonsterHealthEnabled, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingFruitDropEnabled as getTrainingFruitDropEnabledDb, setTrainingFruitDropEnabled as setTrainingFruitDropEnabledDb, getPetTrainingFruitDropRate as getPetTrainingFruitDropRateDb, setPetTrainingFruitDropRate as setPetTrainingFruitDropRateDb, getPetTrainingFruitDropEnabled as getPetTrainingFruitDropEnabledDb, setPetTrainingFruitDropEnabled as setPetTrainingFruitDropEnabledDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getPetSettings, setPetSettings, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb, getEquipSkillDropChance as getEquipSkillDropChanceDb, setEquipSkillDropChance as setEquipSkillDropChanceDb, getTreasureSlotCount as getTreasureSlotCountDb, setTreasureSlotCount as setTreasureSlotCountDb, getTreasureMaxLevel as getTreasureMaxLevelDb, setTreasureMaxLevel as setTreasureMaxLevelDb, getTreasureUpgradeConsume as getTreasureUpgradeConsumeDb, setTreasureUpgradeConsume as setTreasureUpgradeConsumeDb, getTreasureAdvanceConsume as getTreasureAdvanceConsumeDb, setTreasureAdvanceConsume as setTreasureAdvanceConsumeDb, getTreasureAdvancePerStage as getTreasureAdvancePerStageDb, setTreasureAdvancePerStage as setTreasureAdvancePerStageDb, getTreasureAdvanceEffectBonusPerStack as getTreasureAdvanceEffectBonusPerStackDb, setTreasureAdvanceEffectBonusPerStack as setTreasureAdvanceEffectBonusPerStackDb, getTreasureWorldBossDropMultiplier as getTreasureWorldBossDropMultiplierDb, setTreasureWorldBossDropMultiplier as setTreasureWorldBossDropMultiplierDb, getTreasureCrossWorldBossDropMultiplier as getTreasureCrossWorldBossDropMultiplierDb, setTreasureCrossWorldBossDropMultiplier as setTreasureCrossWorldBossDropMultiplierDb, getTreasureTowerXuanmingDropChance as getTreasureTowerXuanmingDropChanceDb, setTreasureTowerXuanmingDropChance as setTreasureTowerXuanmingDropChanceDb, getCmdRateLimits, setCmdRateLimits, getCmdCooldowns, setCmdCooldowns, getUltimateGrowthConfig as getUltimateGrowthConfigDb, setUltimateGrowthConfig as setUltimateGrowthConfigDb, getPlayerSaveDebounceMs, setPlayerSaveDebounceMs, getPlayerSaveMinIntervalMs, setPlayerSaveMinIntervalMs, getPlayerSaveManagedMinIntervalMs, setPlayerSaveManagedMinIntervalMs, getPlayerSaveDetachedMinIntervalMs, setPlayerSaveDetachedMinIntervalMs, getPlayerSaveForceDeadlineMs, setPlayerSaveForceDeadlineMs, getPlayerSaveMaxWritesPerFlush, setPlayerSaveMaxWritesPerFlush } from './db/settings.js';
 import { listRealms, getRealmById, updateRealmName, createRealm } from './db/realms.js';
 import {
   listMobRespawnsPage,
@@ -2810,13 +2810,21 @@ app.get('/admin/state-throttle-status', async (req, res) => {
   const intervalSec = await getStateThrottleIntervalSec();
   const overrideServerAllowed = await getStateThrottleOverrideServerAllowed();
   const cacheMonsterHealth = await getCacheMonsterHealthEnabled();
-  res.json({ ok: true, enabled, intervalSec, overrideServerAllowed, cacheMonsterHealth });
+  const playerSave = {
+    debounceMs: await getPlayerSaveDebounceMs(),
+    minIntervalMs: await getPlayerSaveMinIntervalMs(),
+    managedMinIntervalMs: await getPlayerSaveManagedMinIntervalMs(),
+    detachedMinIntervalMs: await getPlayerSaveDetachedMinIntervalMs(),
+    forceDeadlineMs: await getPlayerSaveForceDeadlineMs(),
+    maxWritesPerFlush: await getPlayerSaveMaxWritesPerFlush()
+  };
+  res.json({ ok: true, enabled, intervalSec, overrideServerAllowed, cacheMonsterHealth, playerSave });
 });
 
 app.post('/admin/state-throttle-toggle', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
-  const { enabled, intervalSec, overrideServerAllowed, cacheMonsterHealth } = req.body || {};
+  const { enabled, intervalSec, overrideServerAllowed, cacheMonsterHealth, playerSave } = req.body || {};
   const nextEnabled = enabled === true;
   await setStateThrottleEnabled(nextEnabled);
   if (intervalSec !== undefined) {
@@ -2827,6 +2835,15 @@ app.post('/admin/state-throttle-toggle', async (req, res) => {
   }
   if (cacheMonsterHealth !== undefined) {
     await setCacheMonsterHealthEnabled(cacheMonsterHealth === true);
+  }
+  if (playerSave && typeof playerSave === 'object') {
+    if (playerSave.debounceMs !== undefined) await setPlayerSaveDebounceMs(playerSave.debounceMs);
+    if (playerSave.minIntervalMs !== undefined) await setPlayerSaveMinIntervalMs(playerSave.minIntervalMs);
+    if (playerSave.managedMinIntervalMs !== undefined) await setPlayerSaveManagedMinIntervalMs(playerSave.managedMinIntervalMs);
+    if (playerSave.detachedMinIntervalMs !== undefined) await setPlayerSaveDetachedMinIntervalMs(playerSave.detachedMinIntervalMs);
+    if (playerSave.forceDeadlineMs !== undefined) await setPlayerSaveForceDeadlineMs(playerSave.forceDeadlineMs);
+    if (playerSave.maxWritesPerFlush !== undefined) await setPlayerSaveMaxWritesPerFlush(playerSave.maxWritesPerFlush);
+    await applyPlayerSaveConfigFromDb();
   }
   // 同步更新内存缓存（供buildState快速读取）
   setStateThrottleConfig({
@@ -2840,7 +2857,15 @@ app.post('/admin/state-throttle-toggle', async (req, res) => {
   const intervalValue = await getStateThrottleIntervalSec();
   const overrideAllowed = await getStateThrottleOverrideServerAllowed();
   const cacheMonsterHealthValue = await getCacheMonsterHealthEnabled();
-  res.json({ ok: true, enabled: nextEnabled, intervalSec: intervalValue, overrideServerAllowed: overrideAllowed, cacheMonsterHealth: cacheMonsterHealthValue });
+  const playerSave = {
+    debounceMs: await getPlayerSaveDebounceMs(),
+    minIntervalMs: await getPlayerSaveMinIntervalMs(),
+    managedMinIntervalMs: await getPlayerSaveManagedMinIntervalMs(),
+    detachedMinIntervalMs: await getPlayerSaveDetachedMinIntervalMs(),
+    forceDeadlineMs: await getPlayerSaveForceDeadlineMs(),
+    maxWritesPerFlush: await getPlayerSaveMaxWritesPerFlush()
+  };
+  res.json({ ok: true, enabled: nextEnabled, intervalSec: intervalValue, overrideServerAllowed: overrideAllowed, cacheMonsterHealth: cacheMonsterHealthValue, playerSave });
 });
 
 // 缓存怪物血量开关独立接口（便于单独控制）
@@ -5199,6 +5224,25 @@ app.get('/admin/world/zones', async (req, res) => {
   }
 });
 
+// 世界地图全量（用于后台出口选择）
+app.get('/admin/world/all-rooms', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  try {
+    const zones = Object.values(WORLD || {}).map((zone) => ({
+      id: zone.id,
+      name: zone.name,
+      rooms: Object.values(zone.rooms || {}).map((room) => ({
+        id: room.id,
+        name: room.name
+      }))
+    })).sort((a, b) => a.id.localeCompare(b.id));
+    res.json({ ok: true, zones });
+  } catch (err) {
+    res.status(500).json({ error: '获取地图列表失败: ' + err.message });
+  }
+});
+
 app.get('/admin/world/zones/:zoneId', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
@@ -6012,6 +6056,15 @@ function applyTrainingFruitItemMode() {
   if (ITEM_TEMPLATES?.pet_training_fruit) {
     ITEM_TEMPLATES.pet_training_fruit.type = petEnabled ? 'consumable' : 'material';
   }
+}
+
+async function applyPlayerSaveConfigFromDb() {
+  PLAYER_SAVE_DEBOUNCE_MS = await getPlayerSaveDebounceMs();
+  PLAYER_SAVE_MIN_INTERVAL_MS = await getPlayerSaveMinIntervalMs();
+  PLAYER_SAVE_MANAGED_MIN_INTERVAL_MS = await getPlayerSaveManagedMinIntervalMs();
+  PLAYER_SAVE_DETACHED_MIN_INTERVAL_MS = await getPlayerSaveDetachedMinIntervalMs();
+  PLAYER_SAVE_FORCE_DEADLINE_MS = await getPlayerSaveForceDeadlineMs();
+  PLAYER_SAVE_MAX_WRITES_PER_FLUSH = await getPlayerSaveMaxWritesPerFlush();
 }
 
 const sabakConfig = {
@@ -7941,12 +7994,12 @@ function dropLoot(mobTemplate, bonus = 1) {
   return loot;
 }
 
-const PLAYER_SAVE_DEBOUNCE_MS = 0;  // 立即保存
-const PLAYER_SAVE_MIN_INTERVAL_MS = 0;  // 在线玩家立即保存
-const PLAYER_SAVE_MANAGED_MIN_INTERVAL_MS = 0;  // 托管玩家立即保存
-const PLAYER_SAVE_DETACHED_MIN_INTERVAL_MS = 0;  // 离线托管立即保存
-const PLAYER_SAVE_FORCE_DEADLINE_MS = 0;  // 立即触发保存
-const PLAYER_SAVE_MAX_WRITES_PER_FLUSH = 80;  // 每批最多80个写入
+let PLAYER_SAVE_DEBOUNCE_MS = 0;  // 立即保存
+let PLAYER_SAVE_MIN_INTERVAL_MS = 0;  // 在线玩家立即保存
+let PLAYER_SAVE_MANAGED_MIN_INTERVAL_MS = 0;  // 托管玩家立即保存
+let PLAYER_SAVE_DETACHED_MIN_INTERVAL_MS = 0;  // 离线托管立即保存
+let PLAYER_SAVE_FORCE_DEADLINE_MS = 0;  // 立即触发保存
+let PLAYER_SAVE_MAX_WRITES_PER_FLUSH = 80;  // 每批最多80个写入
 const pendingPlayerSaves = new Map();
 let pendingPlayerSaveTimer = null;
 let pendingPlayerSaveDueAt = 0;
@@ -21563,6 +21616,7 @@ async function start() {
   setTrainingFruitDropEnabledConfig(trainingFruitDropEnabled);
   setPetTrainingFruitDropEnabledConfig(petTrainingFruitDropEnabled);
   applyTrainingFruitItemMode();
+  await applyPlayerSaveConfigFromDb();
 
   // 加载修炼系统配置
   const trainingPerLevelConfig = await getTrainingPerLevelConfigDb();

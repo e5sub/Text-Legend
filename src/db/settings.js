@@ -972,6 +972,73 @@ export async function setCacheMonsterHealthEnabled(enabled) {
   await setSetting('cache_monster_health_enabled', enabled ? 'true' : 'false');
 }
 
+// 玩家保存频率配置
+export async function getPlayerSaveDebounceMs() {
+  const value = await getSetting('player_save_debounce_ms', '500');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 500;
+}
+
+export async function setPlayerSaveDebounceMs(value) {
+  const normalized = Math.max(0, Math.floor(Number(value) || 0));
+  await setSetting('player_save_debounce_ms', String(normalized));
+}
+
+export async function getPlayerSaveMinIntervalMs() {
+  const value = await getSetting('player_save_min_interval_ms', '500');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 500;
+}
+
+export async function setPlayerSaveMinIntervalMs(value) {
+  const normalized = Math.max(0, Math.floor(Number(value) || 0));
+  await setSetting('player_save_min_interval_ms', String(normalized));
+}
+
+export async function getPlayerSaveManagedMinIntervalMs() {
+  const value = await getSetting('player_save_managed_min_interval_ms', '20000');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 20000;
+}
+
+export async function setPlayerSaveManagedMinIntervalMs(value) {
+  const normalized = Math.max(0, Math.floor(Number(value) || 0));
+  await setSetting('player_save_managed_min_interval_ms', String(normalized));
+}
+
+export async function getPlayerSaveDetachedMinIntervalMs() {
+  const value = await getSetting('player_save_detached_min_interval_ms', '60000');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 60000;
+}
+
+export async function setPlayerSaveDetachedMinIntervalMs(value) {
+  const normalized = Math.max(0, Math.floor(Number(value) || 0));
+  await setSetting('player_save_detached_min_interval_ms', String(normalized));
+}
+
+export async function getPlayerSaveForceDeadlineMs() {
+  const value = await getSetting('player_save_force_deadline_ms', '30000');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 30000;
+}
+
+export async function setPlayerSaveForceDeadlineMs(value) {
+  const normalized = Math.max(0, Math.floor(Number(value) || 0));
+  await setSetting('player_save_force_deadline_ms', String(normalized));
+}
+
+export async function getPlayerSaveMaxWritesPerFlush() {
+  const value = await getSetting('player_save_max_writes_per_flush', '80');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : 80;
+}
+
+export async function setPlayerSaveMaxWritesPerFlush(value) {
+  const normalized = Math.max(1, Math.floor(Number(value) || 80));
+  await setSetting('player_save_max_writes_per_flush', String(normalized));
+}
+
 // 特效装备掉落配置
 export async function getEffectDropSingleChance() {
   const value = await getSetting('effect_drop_single_chance', '0.009');

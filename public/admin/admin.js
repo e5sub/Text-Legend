@@ -82,6 +82,12 @@ const stateThrottleIntervalInput = document.getElementById('state-throttle-inter
 const stateThrottleSaveBtn = document.getElementById('state-throttle-save');
 const stateThrottleStatus = document.getElementById('state-throttle-status');
 const stateThrottleMsg = document.getElementById('state-throttle-msg');
+const playerSaveDebounceInput = document.getElementById('player-save-debounce');
+const playerSaveMinIntervalInput = document.getElementById('player-save-min-interval');
+const playerSaveManagedIntervalInput = document.getElementById('player-save-managed-interval');
+const playerSaveDetachedIntervalInput = document.getElementById('player-save-detached-interval');
+const playerSaveForceDeadlineInput = document.getElementById('player-save-force-deadline');
+const playerSaveMaxWritesInput = document.getElementById('player-save-max-writes');
 const roomVariantStatus = document.getElementById('room-variant-status');
 const roomVariantMsg = document.getElementById('room-variant-msg');
 const roomVariantInput = document.getElementById('room-variant-count');
@@ -4608,6 +4614,14 @@ async function refreshStateThrottleStatus() {
     if (cacheMonsterHealthToggle) {
       cacheMonsterHealthToggle.checked = data.cacheMonsterHealth !== false;
     }
+    if (data.playerSave && typeof data.playerSave === 'object') {
+      if (playerSaveDebounceInput) playerSaveDebounceInput.value = data.playerSave.debounceMs ?? '';
+      if (playerSaveMinIntervalInput) playerSaveMinIntervalInput.value = data.playerSave.minIntervalMs ?? '';
+      if (playerSaveManagedIntervalInput) playerSaveManagedIntervalInput.value = data.playerSave.managedMinIntervalMs ?? '';
+      if (playerSaveDetachedIntervalInput) playerSaveDetachedIntervalInput.value = data.playerSave.detachedMinIntervalMs ?? '';
+      if (playerSaveForceDeadlineInput) playerSaveForceDeadlineInput.value = data.playerSave.forceDeadlineMs ?? '';
+      if (playerSaveMaxWritesInput) playerSaveMaxWritesInput.value = data.playerSave.maxWritesPerFlush ?? '';
+    }
   } catch (err) {
     stateThrottleStatus.textContent = '加载失败';
   }
@@ -4939,7 +4953,15 @@ async function toggleStateThrottle(enabled) {
     const intervalSec = stateThrottleIntervalInput ? Number(stateThrottleIntervalInput.value || 10) : undefined;
     const overrideServerAllowed = stateThrottleOverrideAllowedToggle ? stateThrottleOverrideAllowedToggle.checked : undefined;
     const cacheMonsterHealth = cacheMonsterHealthToggle ? cacheMonsterHealthToggle.checked : undefined;
-    await api('/admin/state-throttle-toggle', 'POST', { enabled, intervalSec, overrideServerAllowed, cacheMonsterHealth });
+    const playerSave = {
+      debounceMs: playerSaveDebounceInput ? Number(playerSaveDebounceInput.value || 0) : undefined,
+      minIntervalMs: playerSaveMinIntervalInput ? Number(playerSaveMinIntervalInput.value || 0) : undefined,
+      managedMinIntervalMs: playerSaveManagedIntervalInput ? Number(playerSaveManagedIntervalInput.value || 0) : undefined,
+      detachedMinIntervalMs: playerSaveDetachedIntervalInput ? Number(playerSaveDetachedIntervalInput.value || 0) : undefined,
+      forceDeadlineMs: playerSaveForceDeadlineInput ? Number(playerSaveForceDeadlineInput.value || 0) : undefined,
+      maxWritesPerFlush: playerSaveMaxWritesInput ? Number(playerSaveMaxWritesInput.value || 80) : undefined
+    };
+    await api('/admin/state-throttle-toggle', 'POST', { enabled, intervalSec, overrideServerAllowed, cacheMonsterHealth, playerSave });
     stateThrottleMsg.textContent = enabled ? '状态刷新节流已开启' : '状态刷新节流已关闭';
     await refreshStateThrottleStatus();
   } catch (err) {
@@ -5015,8 +5037,16 @@ async function saveStateThrottleInterval() {
     }
     const overrideServerAllowed = stateThrottleOverrideAllowedToggle ? stateThrottleOverrideAllowedToggle.checked : undefined;
     const cacheMonsterHealth = cacheMonsterHealthToggle ? cacheMonsterHealthToggle.checked : undefined;
-    await api('/admin/state-throttle-toggle', 'POST', { enabled: stateThrottleToggle?.checked === true, intervalSec, overrideServerAllowed, cacheMonsterHealth });
-    stateThrottleMsg.textContent = '节流秒数已保存';
+    const playerSave = {
+      debounceMs: playerSaveDebounceInput ? Number(playerSaveDebounceInput.value || 0) : undefined,
+      minIntervalMs: playerSaveMinIntervalInput ? Number(playerSaveMinIntervalInput.value || 0) : undefined,
+      managedMinIntervalMs: playerSaveManagedIntervalInput ? Number(playerSaveManagedIntervalInput.value || 0) : undefined,
+      detachedMinIntervalMs: playerSaveDetachedIntervalInput ? Number(playerSaveDetachedIntervalInput.value || 0) : undefined,
+      forceDeadlineMs: playerSaveForceDeadlineInput ? Number(playerSaveForceDeadlineInput.value || 0) : undefined,
+      maxWritesPerFlush: playerSaveMaxWritesInput ? Number(playerSaveMaxWritesInput.value || 80) : undefined
+    };
+    await api('/admin/state-throttle-toggle', 'POST', { enabled: stateThrottleToggle?.checked === true, intervalSec, overrideServerAllowed, cacheMonsterHealth, playerSave });
+    stateThrottleMsg.textContent = '节流与保存设置已保存';
     await refreshStateThrottleStatus();
   } catch (err) {
     stateThrottleMsg.textContent = err.message;
@@ -9241,6 +9271,8 @@ const worldRoomSpawnInput = document.getElementById('world-room-spawn-input');
 const worldRoomSpawnAddBtn = document.getElementById('world-room-spawn-add');
 const worldRoomExitsList = document.getElementById('world-room-exits-list');
 const worldRoomExitDirInput = document.getElementById('world-room-exit-dir');
+const worldRoomExitZoneSelect = document.getElementById('world-room-exit-zone');
+const worldRoomExitRoomSelect = document.getElementById('world-room-exit-room');
 const worldRoomExitTargetInput = document.getElementById('world-room-exit-target');
 const worldRoomExitAddBtn = document.getElementById('world-room-exit-add');
 const worldRoomNpcsList = document.getElementById('world-room-npcs-list');
@@ -9283,6 +9315,7 @@ let mobDropsCache = [];
 let worldRoomSpawnsCache = [];
 let worldRoomExitsCache = [];
 let worldRoomNpcsCache = [];
+let worldAllRoomsCache = [];
 
 function formatAdminTime(value) {
   if (!value) return '-';
@@ -9330,6 +9363,63 @@ function syncPersonalBossToggle() {
   } else {
     worldRoomEditPersonalOnlyInput.disabled = false;
   }
+}
+
+function getWorldZoneById(zoneId) {
+  return Array.isArray(worldAllRoomsCache)
+    ? worldAllRoomsCache.find((z) => String(z.id) === String(zoneId))
+    : null;
+}
+
+function getWorldRoomById(zoneId, roomId) {
+  const zone = getWorldZoneById(zoneId);
+  if (!zone || !Array.isArray(zone.rooms)) return null;
+  return zone.rooms.find((r) => String(r.id) === String(roomId));
+}
+
+async function loadWorldAllRooms() {
+  if (worldAllRoomsCache.length) return;
+  try {
+    const res = await api('/admin/world/all-rooms', 'GET');
+    worldAllRoomsCache = Array.isArray(res.zones) ? res.zones : [];
+  } catch {
+    worldAllRoomsCache = [];
+  }
+}
+
+function renderWorldExitZoneOptions() {
+  if (!worldRoomExitZoneSelect) return;
+  worldRoomExitZoneSelect.innerHTML = '<option value="">目标区域</option>';
+  const zones = Array.isArray(worldAllRoomsCache) ? worldAllRoomsCache : [];
+  zones.forEach((zone) => {
+    const option = document.createElement('option');
+    option.value = zone.id;
+    option.textContent = `${zone.name || zone.id} (${zone.id})`;
+    worldRoomExitZoneSelect.appendChild(option);
+  });
+}
+
+function renderWorldExitRoomOptions(zoneId) {
+  if (!worldRoomExitRoomSelect) return;
+  worldRoomExitRoomSelect.innerHTML = '<option value="">目标房间</option>';
+  const zone = getWorldZoneById(zoneId);
+  if (!zone || !Array.isArray(zone.rooms)) return;
+  zone.rooms.forEach((room) => {
+    const option = document.createElement('option');
+    option.value = room.id;
+    option.textContent = `${room.name || room.id} (${room.id})`;
+    worldRoomExitRoomSelect.appendChild(option);
+  });
+}
+
+function parseExitTarget(target, fallbackZoneId = '') {
+  const text = String(target || '').trim();
+  if (!text) return { zoneId: fallbackZoneId, roomId: '' };
+  if (text.includes(':')) {
+    const [zoneId, roomId] = text.split(':');
+    return { zoneId: zoneId || fallbackZoneId, roomId: roomId || '' };
+  }
+  return { zoneId: fallbackZoneId, roomId: text };
 }
 
 function getMobDisplayValue(mobId, override) {
@@ -9797,6 +9887,7 @@ async function openWorldRoomOverrideModal(zoneId, roomId, allowEditId = false) {
       // ignore
     }
   }
+  await loadWorldAllRooms();
   const res = await api(`/admin/world/rooms/${encodeURIComponent(zid)}/${encodeURIComponent(rid)}`, 'GET');
   const base = res.room || null;
   const override = res.override || null;
@@ -9822,6 +9913,11 @@ async function openWorldRoomOverrideModal(zoneId, roomId, allowEditId = false) {
   worldRoomExitsCache = editable.exits && typeof editable.exits === 'object' ? Object.entries(editable.exits) : [];
   syncPersonalBossToggle();
   renderWorldRoomSpawnOptions();
+  renderWorldExitZoneOptions();
+  if (worldRoomExitZoneSelect) {
+    worldRoomExitZoneSelect.value = zid;
+    renderWorldExitRoomOptions(zid);
+  }
   renderWorldRoomSpawns();
   renderWorldRoomExits();
   renderWorldRoomNpcs();
@@ -9870,9 +9966,17 @@ function renderWorldRoomExits() {
   }
   worldRoomExitsCache.forEach(([dir, target], index) => {
     const tr = document.createElement('tr');
+    const parsed = parseExitTarget(target, String(worldRoomEditZoneInput?.value || '').trim());
+    const zone = getWorldZoneById(parsed.zoneId);
+    const room = getWorldRoomById(parsed.zoneId, parsed.roomId);
+    const zoneName = zone?.name || parsed.zoneId || '';
+    const roomName = room?.name || parsed.roomId || '';
+    const display = zoneName || roomName
+      ? `${zoneName}${roomName ? ` / ${roomName}` : ''}<div class="muted" style="font-size: 11px;">${target}</div>`
+      : target;
     tr.innerHTML = `
       <td>${dir}</td>
-      <td>${target}</td>
+      <td>${display}</td>
       <td><button class="btn-small" style="background: #c00;" onclick="removeWorldRoomExit(${index})">删除</button></td>
     `;
     worldRoomExitsList.appendChild(tr);
@@ -9881,13 +9985,18 @@ function renderWorldRoomExits() {
 
 function addWorldRoomExit() {
   const dir = String(worldRoomExitDirInput?.value || '').trim();
-  const target = String(worldRoomExitTargetInput?.value || '').trim();
+  const customTarget = String(worldRoomExitTargetInput?.value || '').trim();
+  const zoneId = String(worldRoomExitZoneSelect?.value || '').trim();
+  const roomId = String(worldRoomExitRoomSelect?.value || '').trim();
+  const target = customTarget || (zoneId && roomId ? `${zoneId}:${roomId}` : '');
   if (!dir || !target) {
     customAlert('错误', '方向与目标不能为空');
     return;
   }
   worldRoomExitsCache.push([dir, target]);
   worldRoomExitDirInput.value = '';
+  if (worldRoomExitZoneSelect) worldRoomExitZoneSelect.value = '';
+  if (worldRoomExitRoomSelect) worldRoomExitRoomSelect.innerHTML = '<option value="">目标房间</option>';
   worldRoomExitTargetInput.value = '';
   renderWorldRoomExits();
 }
@@ -10111,6 +10220,13 @@ if (worldRoomSpawnAddBtn) {
 
 if (worldRoomExitAddBtn) {
   worldRoomExitAddBtn.addEventListener('click', addWorldRoomExit);
+}
+
+if (worldRoomExitZoneSelect) {
+  worldRoomExitZoneSelect.addEventListener('change', () => {
+    const zoneId = String(worldRoomExitZoneSelect.value || '').trim();
+    renderWorldExitRoomOptions(zoneId);
+  });
 }
 
 if (worldRoomEditNpcAddBtn) {
