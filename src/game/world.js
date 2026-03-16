@@ -2119,6 +2119,120 @@ export function shrinkRoomVariants(world, maxCount) {
 
 expandRoomVariants(WORLD);
 
+const BASE_WORLD = JSON.parse(JSON.stringify(WORLD));
+
+function cloneWorldEntry(entry) {
+  return JSON.parse(JSON.stringify(entry || {}));
+}
+
+function normalizeStringArray(value) {
+  if (!Array.isArray(value)) return null;
+  return value.map((v) => String(v || '').trim()).filter(Boolean);
+}
+
+function normalizeExits(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const exits = {};
+  Object.entries(value).forEach(([key, dest]) => {
+    const k = String(key || '').trim();
+    const v = String(dest || '').trim();
+    if (!k || !v) return;
+    exits[k] = v;
+  });
+  return exits;
+}
+
+function ensureZone(zoneId) {
+  const id = String(zoneId || '').trim();
+  if (!id) return null;
+  if (!WORLD[id]) {
+    WORLD[id] = { id, name: id, rooms: {} };
+  } else if (!WORLD[id].rooms) {
+    WORLD[id].rooms = {};
+  }
+  return WORLD[id];
+}
+
+export function applyWorldZoneOverride(zoneId, patch = {}) {
+  const id = String(zoneId || '').trim();
+  if (!id) return null;
+  const source = patch && typeof patch === 'object' ? patch : {};
+  const zone = ensureZone(id);
+  const base = zone ? zone : { id, name: id, rooms: {} };
+  const next = { ...base, ...source, id };
+  if (Object.prototype.hasOwnProperty.call(source, 'name')) {
+    next.name = String(source.name || '').trim() || id;
+  }
+  if (!next.rooms) next.rooms = base.rooms || {};
+  WORLD[id] = next;
+  if (source.rooms && typeof source.rooms === 'object' && !Array.isArray(source.rooms)) {
+    Object.entries(source.rooms).forEach(([roomId, roomPatch]) => {
+      applyWorldRoomOverride(id, roomId, roomPatch);
+    });
+  }
+  return WORLD[id];
+}
+
+export function applyWorldRoomOverride(zoneId, roomId, patch = {}) {
+  const zid = String(zoneId || '').trim();
+  const rid = String(roomId || '').trim();
+  if (!zid || !rid) return null;
+  const zone = ensureZone(zid);
+  if (!zone.rooms) zone.rooms = {};
+  const baseRoom = zone.rooms[rid]
+    || BASE_WORLD?.[zid]?.rooms?.[rid]
+    || { id: rid, name: rid, desc: '', exits: {}, spawns: [] };
+  const source = patch && typeof patch === 'object' ? patch : {};
+  const next = { ...baseRoom, ...source, id: rid };
+  if (Object.prototype.hasOwnProperty.call(source, 'name')) {
+    next.name = String(source.name || '').trim() || rid;
+  }
+  if (Object.prototype.hasOwnProperty.call(source, 'desc')) {
+    next.desc = String(source.desc || '').trim();
+  }
+  if (Object.prototype.hasOwnProperty.call(source, 'exits')) {
+    const exits = normalizeExits(source.exits);
+    if (exits) next.exits = exits;
+  }
+  if (Object.prototype.hasOwnProperty.call(source, 'spawns')) {
+    const spawns = normalizeStringArray(source.spawns);
+    if (spawns) next.spawns = spawns;
+  }
+  if (Object.prototype.hasOwnProperty.call(source, 'npcs')) {
+    const npcs = normalizeStringArray(source.npcs);
+    if (npcs) next.npcs = npcs;
+  }
+  zone.rooms[rid] = next;
+  return next;
+}
+
+export function removeWorldRoomOverride(zoneId, roomId) {
+  const zid = String(zoneId || '').trim();
+  const rid = String(roomId || '').trim();
+  if (!zid || !rid) return false;
+  const baseRoom = BASE_WORLD?.[zid]?.rooms?.[rid];
+  const zone = ensureZone(zid);
+  if (!zone?.rooms) return false;
+  if (baseRoom) {
+    zone.rooms[rid] = cloneWorldEntry(baseRoom);
+    return true;
+  }
+  delete zone.rooms[rid];
+  return true;
+}
+
+export function removeWorldZoneOverride(zoneId) {
+  const id = String(zoneId || '').trim();
+  if (!id) return false;
+  const baseZone = BASE_WORLD?.[id];
+  if (baseZone) {
+    WORLD[id] = cloneWorldEntry(baseZone);
+    return true;
+  }
+  delete WORLD[id];
+  return true;
+}
+
 export const NPCS = {
   guard: {
     id: 'guard',

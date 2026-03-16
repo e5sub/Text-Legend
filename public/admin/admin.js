@@ -129,6 +129,8 @@ const sponsorsNextPageBtn = document.getElementById('sponsors-next-page');
 const tfMsg = document.getElementById('tf-msg');
 const tfCoefficientInput = document.getElementById('tf-coefficient');
 const tfDropRateInput = document.getElementById('tf-drop-rate');
+const tfDropEnabledInput = document.getElementById('tf-drop-enabled');
+const tfPetDropEnabledInput = document.getElementById('tf-pet-drop-enabled');
 const tfSaveBtn = document.getElementById('tf-save-btn');
 
 // 修炼系统配置相关
@@ -6654,6 +6656,8 @@ async function loadTrainingFruitSettings() {
     const data = await api('/admin/training-fruit-settings', 'GET');
     tfCoefficientInput.value = data.coefficient !== undefined ? data.coefficient : '';
     tfDropRateInput.value = data.dropRate !== undefined ? data.dropRate : '';
+    if (tfDropEnabledInput) tfDropEnabledInput.checked = data.dropEnabled !== false;
+    if (tfPetDropEnabledInput) tfPetDropEnabledInput.checked = data.petDropEnabled !== false;
     tfMsg.textContent = '加载成功';
     tfMsg.style.color = 'green';
     setTimeout(() => {
@@ -6729,6 +6733,8 @@ async function saveTrainingFruitSettings() {
   try {
     const coefficient = tfCoefficientInput.value ? Number(tfCoefficientInput.value) : undefined;
     const dropRate = tfDropRateInput.value ? Number(tfDropRateInput.value) : undefined;
+    const dropEnabled = tfDropEnabledInput ? Boolean(tfDropEnabledInput.checked) : undefined;
+    const petDropEnabled = tfPetDropEnabledInput ? Boolean(tfPetDropEnabledInput.checked) : undefined;
 
     if (coefficient !== undefined && (isNaN(coefficient) || coefficient < 0)) {
       tfMsg.textContent = '系数必须为有效数字且不小于0';
@@ -6741,7 +6747,7 @@ async function saveTrainingFruitSettings() {
       return;
     }
 
-    await api('/admin/training-fruit-settings/update', 'POST', { coefficient, dropRate });
+    await api('/admin/training-fruit-settings/update', 'POST', { coefficient, dropRate, dropEnabled, petDropEnabled });
     tfMsg.textContent = '保存成功，立即生效';
     tfMsg.style.color = 'green';
     setTimeout(() => {
@@ -9154,6 +9160,871 @@ if (importSelectAll) {
     const checkboxes = document.querySelectorAll('.import-item-checkbox:not(:disabled)');
     checkboxes.forEach(cb => cb.checked = e.target.checked);
   });
+}
+
+// ==================== 怪物/地图管理（热更新） ====================
+
+const mobOverrideSearchInput = document.getElementById('mob-override-search');
+const mobOverrideRefreshBtn = document.getElementById('mob-override-refresh');
+const mobOverrideCreateBtn = document.getElementById('mob-override-create');
+const mobOverridesList = document.getElementById('mob-overrides-list');
+const mobOverrideMsg = document.getElementById('mob-override-msg');
+
+const mobEditModal = document.getElementById('mob-edit-modal');
+const mobEditTitle = document.getElementById('mob-edit-title');
+const mobEditIdInput = document.getElementById('mob-edit-id');
+const mobEditNameInput = document.getElementById('mob-edit-name');
+const mobEditLevelInput = document.getElementById('mob-edit-level');
+const mobEditHpInput = document.getElementById('mob-edit-hp');
+const mobEditAtkInput = document.getElementById('mob-edit-atk');
+const mobEditDefInput = document.getElementById('mob-edit-def');
+const mobEditMdefInput = document.getElementById('mob-edit-mdef');
+const mobEditExpInput = document.getElementById('mob-edit-exp');
+const mobEditDexInput = document.getElementById('mob-edit-dex');
+const mobEditRespawnInput = document.getElementById('mob-edit-respawn');
+const mobEditGoldMinInput = document.getElementById('mob-edit-gold-min');
+const mobEditGoldMaxInput = document.getElementById('mob-edit-gold-max');
+const mobEditWorldBossInput = document.getElementById('mob-edit-worldboss');
+const mobEditSpecialBossInput = document.getElementById('mob-edit-specialboss');
+const mobEditSabakBossInput = document.getElementById('mob-edit-sabakboss');
+const mobEditSummonedInput = document.getElementById('mob-edit-summoned');
+const mobDropsList = document.getElementById('mob-drops-list');
+const mobDropItemInput = document.getElementById('mob-drop-item-id');
+const mobDropChanceInput = document.getElementById('mob-drop-chance');
+const mobDropAddBtn = document.getElementById('mob-drop-add');
+const mobEditCancelBtn = document.getElementById('mob-edit-cancel');
+const mobEditSaveBtn = document.getElementById('mob-edit-save');
+
+const worldZonesList = document.getElementById('world-zones-list');
+const worldZonesRefreshBtn = document.getElementById('world-zones-refresh');
+const worldZoneCreateBtn = document.getElementById('world-zone-create');
+const worldZoneMsg = document.getElementById('world-zone-msg');
+const worldZoneSelect = document.getElementById('world-zone-select');
+const worldRoomsList = document.getElementById('world-rooms-list');
+const worldRoomsRefreshBtn = document.getElementById('world-rooms-refresh');
+const worldRoomCheckBtn = document.getElementById('world-room-check');
+const worldRoomCreateBtn = document.getElementById('world-room-create');
+const worldRoomMsg = document.getElementById('world-room-msg');
+
+const worldZoneEditModal = document.getElementById('world-zone-edit-modal');
+const worldZoneEditTitle = document.getElementById('world-zone-edit-title');
+const worldZoneEditIdInput = document.getElementById('world-zone-edit-id');
+const worldZoneEditNameInput = document.getElementById('world-zone-edit-name');
+const worldZoneEditDescInput = document.getElementById('world-zone-edit-desc');
+const worldZoneEditSafeInput = document.getElementById('world-zone-edit-safe');
+const worldZoneEditLevelLimitInput = document.getElementById('world-zone-edit-level-limit');
+const worldZoneEditCultivationOnlyInput = document.getElementById('world-zone-edit-cultivation-only');
+const worldZoneEditCancelBtn = document.getElementById('world-zone-edit-cancel');
+const worldZoneEditSaveBtn = document.getElementById('world-zone-edit-save');
+
+const worldRoomEditModal = document.getElementById('world-room-edit-modal');
+const worldRoomEditTitle = document.getElementById('world-room-edit-title');
+const worldRoomEditZoneInput = document.getElementById('world-room-edit-zone');
+const worldRoomEditIdInput = document.getElementById('world-room-edit-id');
+const worldRoomEditNameInput = document.getElementById('world-room-edit-name');
+const worldRoomEditDescInput = document.getElementById('world-room-edit-desc');
+const worldRoomEditCultivationInput = document.getElementById('world-room-edit-cultivation');
+const worldRoomEditTowerFloorInput = document.getElementById('world-room-edit-tower-floor');
+const worldRoomEditPersonalTierInput = document.getElementById('world-room-edit-personal-tier');
+const worldRoomEditNpcInput = document.getElementById('world-room-edit-npc-input');
+const worldRoomEditNpcAddBtn = document.getElementById('world-room-edit-npc-add');
+const worldRoomEditSabakInput = document.getElementById('world-room-edit-sabak');
+const worldRoomEditPersonalOnlyInput = document.getElementById('world-room-edit-personal-only');
+const worldRoomEditCrossRealmInput = document.getElementById('world-room-edit-cross-realm');
+const worldRoomSpawnsList = document.getElementById('world-room-spawns-list');
+const worldRoomSpawnInput = document.getElementById('world-room-spawn-input');
+const worldRoomSpawnAddBtn = document.getElementById('world-room-spawn-add');
+const worldRoomExitsList = document.getElementById('world-room-exits-list');
+const worldRoomExitDirInput = document.getElementById('world-room-exit-dir');
+const worldRoomExitTargetInput = document.getElementById('world-room-exit-target');
+const worldRoomExitAddBtn = document.getElementById('world-room-exit-add');
+const worldRoomNpcsList = document.getElementById('world-room-npcs-list');
+const worldRoomEditCancelBtn = document.getElementById('world-room-edit-cancel');
+const worldRoomEditSaveBtn = document.getElementById('world-room-edit-save');
+
+const DEFAULT_MOB_TEMPLATE = {
+  name: '新怪物',
+  level: 1,
+  hp: 100,
+  atk: 10,
+  def: 5,
+  mdef: 0,
+  exp: 10,
+  gold: [0, 0],
+  drops: []
+};
+
+const DEFAULT_ZONE_TEMPLATE = {
+  name: '新区域',
+  desc: '',
+  rooms: {}
+};
+
+const DEFAULT_ROOM_TEMPLATE = {
+  name: '新房间',
+  desc: '',
+  exits: {},
+  spawns: []
+};
+
+let mobOverridesCache = [];
+let worldZonesCache = [];
+let worldZoneOverridesCache = new Map();
+let worldRoomsCache = [];
+const worldRoomOverrideStatus = new Map();
+let mobDropsCache = [];
+let worldRoomSpawnsCache = [];
+let worldRoomExitsCache = [];
+let worldRoomNpcsCache = [];
+
+function formatAdminTime(value) {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString();
+}
+
+function toNumber(value, fallback = 0) {
+  const num = Number(value);
+  if (Number.isNaN(num)) return fallback;
+  return num;
+}
+
+function getMobDisplayValue(mobId, override) {
+  const base = mobsList.find(m => m.id === mobId);
+  const data = override?.data || {};
+  const name = data.name || base?.name || '-';
+  const level = data.level ?? base?.level ?? '-';
+  const exp = data.exp ?? base?.exp ?? '-';
+  const gold = data.gold ?? base?.gold;
+  const goldText = Array.isArray(gold) ? `${gold[0]}-${gold[1]}` : '-';
+  return { name, level, exp, goldText, fields: Object.keys(data).length };
+}
+
+function renderMobOverrides() {
+  if (!mobOverridesList) return;
+  mobOverridesList.innerHTML = '';
+  const keyword = String(mobOverrideSearchInput?.value || '').trim().toLowerCase();
+  const list = mobOverridesCache.filter((item) => {
+    if (!keyword) return true;
+    const id = String(item.templateId || '').toLowerCase();
+    const name = String(getMobDisplayValue(item.templateId, item).name || '').toLowerCase();
+    return id.includes(keyword) || name.includes(keyword);
+  });
+
+  if (list.length === 0) {
+    mobOverridesList.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #999;">暂无覆盖配置</td></tr>';
+    return;
+  }
+
+  list.forEach((item) => {
+    const { name, level, exp, goldText, fields } = getMobDisplayValue(item.templateId, item);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-size: 12px;">${item.templateId}</td>
+      <td style="font-size: 13px;">${name}</td>
+      <td style="font-size: 12px;">${level}</td>
+      <td style="font-size: 12px;">${exp}</td>
+      <td style="font-size: 12px;">${goldText}</td>
+      <td style="font-size: 12px;">${fields}</td>
+      <td style="font-size: 12px;">${formatAdminTime(item.updatedAt)}</td>
+      <td>
+        <button class="btn-small" onclick="editMobOverride('${item.templateId}')">编辑</button>
+        <button class="btn-small" style="background: #c00;" onclick="deleteMobOverride('${item.templateId}')">删除覆盖</button>
+      </td>
+    `;
+    mobOverridesList.appendChild(tr);
+  });
+}
+
+async function loadMobOverrides() {
+  if (!mobOverridesList) return;
+  mobOverrideMsg.textContent = '';
+  try {
+    if (mobsList.length === 0) {
+      await loadMobs();
+    }
+    const res = await api('/admin/mobs/overrides', 'GET');
+    mobOverridesCache = Array.isArray(res.overrides) ? res.overrides : [];
+    renderMobOverrides();
+  } catch (err) {
+    mobOverrideMsg.textContent = `加载失败: ${err.message}`;
+    mobOverrideMsg.style.color = 'red';
+  }
+}
+
+async function openMobOverrideModal(templateId, allowEditId = false) {
+  if (!mobEditModal) return;
+  const id = String(templateId || '').trim();
+  if (!id) return;
+  const res = await api(`/admin/mobs/${encodeURIComponent(id)}`, 'GET');
+  const base = res.template || null;
+  const override = res.override || null;
+  const effective = {
+    ...(base || {}),
+    ...(override || {})
+  };
+  const editable = Object.keys(effective).length ? effective : DEFAULT_MOB_TEMPLATE;
+  mobEditTitle.textContent = override ? '编辑怪物覆盖' : '新增怪物覆盖';
+  mobEditIdInput.value = id;
+  mobEditIdInput.disabled = !allowEditId;
+  mobEditNameInput.value = editable.name || '';
+  mobEditLevelInput.value = editable.level ?? '';
+  mobEditHpInput.value = editable.hp ?? '';
+  mobEditAtkInput.value = editable.atk ?? '';
+  mobEditDefInput.value = editable.def ?? '';
+  mobEditMdefInput.value = editable.mdef ?? '';
+  mobEditExpInput.value = editable.exp ?? '';
+  mobEditDexInput.value = editable.dex ?? '';
+  mobEditRespawnInput.value = editable.respawnMs ?? '';
+  if (Array.isArray(editable.gold)) {
+    mobEditGoldMinInput.value = editable.gold[0] ?? '';
+    mobEditGoldMaxInput.value = editable.gold[1] ?? '';
+  } else {
+    mobEditGoldMinInput.value = '';
+    mobEditGoldMaxInput.value = '';
+  }
+  mobEditWorldBossInput.checked = Boolean(editable.worldBoss);
+  mobEditSpecialBossInput.checked = Boolean(editable.specialBoss);
+  mobEditSabakBossInput.checked = Boolean(editable.sabakBoss);
+  mobEditSummonedInput.checked = Boolean(editable.summoned);
+  mobDropsCache = Array.isArray(editable.drops) ? editable.drops.map(drop => ({ id: drop.id, chance: drop.chance })) : [];
+  renderMobDrops();
+  mobEditModal.classList.remove('hidden');
+}
+
+function renderMobDrops() {
+  if (!mobDropsList) return;
+  mobDropsList.innerHTML = '';
+  if (!mobDropsCache.length) {
+    mobDropsList.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #999;">暂无掉落配置</td></tr>';
+    return;
+  }
+  mobDropsCache.forEach((drop, index) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${drop.id}</td>
+      <td>${Number(drop.chance).toFixed(4)}</td>
+      <td><button class="btn-small" style="background: #c00;" onclick="removeMobDrop(${index})">删除</button></td>
+    `;
+    mobDropsList.appendChild(tr);
+  });
+}
+
+function removeMobDrop(index) {
+  mobDropsCache.splice(index, 1);
+  renderMobDrops();
+}
+
+function addMobDrop() {
+  const itemId = String(mobDropItemInput?.value || '').trim();
+  const chance = Number(mobDropChanceInput?.value || 0);
+  if (!itemId) {
+    customAlert('错误', '道具ID不能为空');
+    return;
+  }
+  if (Number.isNaN(chance) || chance < 0 || chance > 1) {
+    customAlert('错误', '概率必须在0-1之间');
+    return;
+  }
+  mobDropsCache.push({ id: itemId, chance });
+  mobDropItemInput.value = '';
+  mobDropChanceInput.value = '';
+  renderMobDrops();
+}
+
+async function saveMobOverride() {
+  const templateId = String(mobEditIdInput?.value || '').trim();
+  if (!templateId) {
+    await customAlert('错误', '怪物ID不能为空');
+    return;
+  }
+  const name = String(mobEditNameInput?.value || '').trim();
+  const level = toNumber(mobEditLevelInput?.value, 0);
+  const hp = toNumber(mobEditHpInput?.value, 0);
+  const goldMin = toNumber(mobEditGoldMinInput?.value, 0);
+  const goldMax = toNumber(mobEditGoldMaxInput?.value, goldMin);
+
+  if (!name) {
+    await customAlert('错误', '怪物名称不能为空');
+    return;
+  }
+  if (level <= 0 || hp <= 0) {
+    await customAlert('错误', '等级与生命必须大于0');
+    return;
+  }
+  const payload = {
+    name,
+    level,
+    hp,
+    atk: toNumber(mobEditAtkInput?.value, 0),
+    def: toNumber(mobEditDefInput?.value, 0),
+    mdef: toNumber(mobEditMdefInput?.value, 0),
+    exp: toNumber(mobEditExpInput?.value, 0),
+    dex: toNumber(mobEditDexInput?.value, 0),
+    respawnMs: toNumber(mobEditRespawnInput?.value, 0),
+    worldBoss: mobEditWorldBossInput?.checked || false,
+    specialBoss: mobEditSpecialBossInput?.checked || false,
+    sabakBoss: mobEditSabakBossInput?.checked || false,
+    summoned: mobEditSummonedInput?.checked || false,
+    gold: [Math.max(0, Math.floor(goldMin)), Math.max(Math.floor(goldMin), Math.floor(goldMax))],
+    drops: mobDropsCache.map(drop => ({ id: drop.id, chance: drop.chance }))
+  };
+
+  const res = await api('/admin/mobs', 'POST', { templateId, data: payload });
+  if (!res.ok) {
+    await customAlert('保存失败', res.error || '保存怪物失败');
+    return;
+  }
+  mobEditModal.classList.add('hidden');
+  await loadMobOverrides();
+  await loadMobs();
+  await customAlert('保存成功', '怪物覆盖已保存并热更新。');
+}
+
+async function deleteMobOverride(templateId) {
+  const confirmed = await customConfirm('确认删除', `确定要删除怪物 ${templateId} 的覆盖配置吗？`);
+  if (!confirmed) return;
+  const res = await api(`/admin/mobs/${encodeURIComponent(templateId)}`, 'DELETE');
+  if (!res.ok) {
+    await customAlert('删除失败', res.error || '删除怪物覆盖失败');
+    return;
+  }
+  await loadMobOverrides();
+  await loadMobs();
+  await customAlert('删除成功', '怪物覆盖已删除，已恢复默认。');
+}
+
+function mergeZoneList(zones, overrides) {
+  const map = new Map();
+  zones.forEach(zone => {
+    map.set(zone.id, { ...zone });
+  });
+  overrides.forEach((item) => {
+    if (!map.has(item.zoneId)) {
+      map.set(item.zoneId, { id: item.zoneId, name: item.data?.name || item.zoneId, roomCount: 0 });
+    }
+  });
+  return Array.from(map.values()).sort((a, b) => String(a.id).localeCompare(String(b.id)));
+}
+
+function renderWorldZones() {
+  if (!worldZonesList) return;
+  worldZonesList.innerHTML = '';
+  const overrides = Array.from(worldZoneOverridesCache.values());
+  const merged = mergeZoneList(worldZonesCache, overrides);
+
+  if (merged.length === 0) {
+    worldZonesList.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #999;">暂无区域数据</td></tr>';
+    return;
+  }
+
+  merged.forEach(zone => {
+    const override = worldZoneOverridesCache.get(zone.id) || null;
+    const name = override?.data?.name || zone.name || zone.id;
+    const roomCount = zone.roomCount ?? (override?.data?.rooms ? Object.keys(override.data.rooms).length : 0);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-size: 12px;">${zone.id}</td>
+      <td style="font-size: 13px;">${name}</td>
+      <td style="font-size: 12px;">${roomCount}</td>
+      <td style="font-size: 12px;">${override ? '是' : '否'}</td>
+      <td style="font-size: 12px;">${override ? formatAdminTime(override.updatedAt) : '-'}</td>
+      <td>
+        <button class="btn-small" onclick="editWorldZoneOverride('${zone.id}')">编辑</button>
+        <button class="btn-small" style="background: #c00;" onclick="deleteWorldZoneOverride('${zone.id}')">删除覆盖</button>
+      </td>
+    `;
+    worldZonesList.appendChild(tr);
+  });
+}
+
+function updateWorldZoneSelect() {
+  if (!worldZoneSelect) return;
+  const current = worldZoneSelect.value;
+  const overrides = Array.from(worldZoneOverridesCache.values());
+  const merged = mergeZoneList(worldZonesCache, overrides);
+  worldZoneSelect.innerHTML = '';
+  merged.forEach(zone => {
+    const option = document.createElement('option');
+    option.value = zone.id;
+    option.textContent = `${zone.id} ${zone.name ? `- ${zone.name}` : ''}`.trim();
+    worldZoneSelect.appendChild(option);
+  });
+  if (current && merged.some(z => z.id === current)) {
+    worldZoneSelect.value = current;
+  }
+}
+
+async function loadWorldZones() {
+  if (!worldZonesList) return;
+  worldZoneMsg.textContent = '';
+  try {
+    const res = await api('/admin/world/zones', 'GET');
+    worldZonesCache = Array.isArray(res.zones) ? res.zones : [];
+    worldZoneOverridesCache = new Map(
+      (Array.isArray(res.overrides) ? res.overrides : []).map(item => [item.zoneId, item])
+    );
+    renderWorldZones();
+    updateWorldZoneSelect();
+  } catch (err) {
+    worldZoneMsg.textContent = `加载失败: ${err.message}`;
+    worldZoneMsg.style.color = 'red';
+  }
+}
+
+async function openWorldZoneOverrideModal(zoneId, allowEditId = false) {
+  if (!worldZoneEditModal) return;
+  const id = String(zoneId || '').trim();
+  if (!id) return;
+  const res = await api(`/admin/world/zones/${encodeURIComponent(id)}`, 'GET');
+  const base = res.zone || null;
+  const override = res.override || null;
+  const effective = {
+    ...(base || {}),
+    ...(override || {})
+  };
+  const editable = Object.keys(effective).length ? effective : DEFAULT_ZONE_TEMPLATE;
+  worldZoneEditTitle.textContent = override ? '编辑区域覆盖' : '新增区域覆盖';
+  worldZoneEditIdInput.value = id;
+  worldZoneEditIdInput.disabled = !allowEditId;
+  worldZoneEditNameInput.value = editable.name || '';
+  worldZoneEditDescInput.value = editable.desc || '';
+  worldZoneEditSafeInput.checked = Boolean(editable.safe);
+  worldZoneEditLevelLimitInput.value = editable.levelLimit ?? '';
+  worldZoneEditCultivationOnlyInput.checked = Boolean(editable.cultivationOnly);
+  worldZoneEditModal.classList.remove('hidden');
+}
+
+async function saveWorldZoneOverride() {
+  const zoneId = String(worldZoneEditIdInput?.value || '').trim();
+  if (!zoneId) {
+    await customAlert('错误', '区域ID不能为空');
+    return;
+  }
+  const payload = {
+    name: String(worldZoneEditNameInput?.value || '').trim(),
+    desc: String(worldZoneEditDescInput?.value || '').trim(),
+    safe: Boolean(worldZoneEditSafeInput?.checked),
+    cultivationOnly: Boolean(worldZoneEditCultivationOnlyInput?.checked)
+  };
+  const levelLimitRaw = String(worldZoneEditLevelLimitInput?.value ?? '').trim();
+  if (levelLimitRaw !== '') {
+    payload.levelLimit = toNumber(levelLimitRaw, 0);
+  }
+  if (!payload.name) {
+    await customAlert('错误', '区域名称不能为空');
+    return;
+  }
+  const res = await api('/admin/world/zones', 'POST', { zoneId, data: payload });
+  if (!res.ok) {
+    await customAlert('保存失败', res.error || '保存区域失败');
+    return;
+  }
+  worldZoneEditModal.classList.add('hidden');
+  await loadWorldZones();
+  await customAlert('保存成功', '区域覆盖已保存并热更新。');
+}
+
+async function deleteWorldZoneOverride(zoneId) {
+  const confirmed = await customConfirm('确认删除', `确定要删除区域 ${zoneId} 的覆盖配置吗？`);
+  if (!confirmed) return;
+  const res = await api(`/admin/world/zones/${encodeURIComponent(zoneId)}`, 'DELETE');
+  if (!res.ok) {
+    await customAlert('删除失败', res.error || '删除区域覆盖失败');
+    return;
+  }
+  await loadWorldZones();
+  await customAlert('删除成功', '区域覆盖已删除，已恢复默认。');
+}
+
+function worldRoomKey(zoneId, roomId) {
+  return `${zoneId}::${roomId}`;
+}
+
+function renderWorldRooms() {
+  if (!worldRoomsList) return;
+  worldRoomsList.innerHTML = '';
+  if (!worldRoomsCache.length) {
+    worldRoomsList.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #999;">暂无房间数据</td></tr>';
+    return;
+  }
+  const zoneId = String(worldZoneSelect?.value || '').trim();
+  worldRoomsCache.forEach(room => {
+    const key = worldRoomKey(zoneId, room.id);
+    const overrideStatus = worldRoomOverrideStatus.get(key);
+    const overrideText = overrideStatus === true ? '是' : overrideStatus === false ? '否' : '未知';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-size: 12px;">${room.id}</td>
+      <td style="font-size: 13px;">${room.name}</td>
+      <td style="font-size: 12px;">${room.hasSpawns ? '有' : '无'}</td>
+      <td style="font-size: 12px;">${overrideText}</td>
+      <td>
+        <button class="btn-small" onclick="editWorldRoomOverride('${zoneId}', '${room.id}')">编辑</button>
+        <button class="btn-small" style="background: #c00;" onclick="deleteWorldRoomOverride('${zoneId}', '${room.id}')">删除覆盖</button>
+      </td>
+    `;
+    worldRoomsList.appendChild(tr);
+  });
+}
+
+async function loadWorldRooms() {
+  if (!worldRoomsList || !worldZoneSelect) return;
+  const zoneId = String(worldZoneSelect.value || '').trim();
+  if (!zoneId) {
+    worldRoomMsg.textContent = '请先选择区域';
+    worldRoomMsg.style.color = 'red';
+    return;
+  }
+  worldRoomMsg.textContent = '';
+  try {
+    const res = await api(`/admin/world/rooms?zoneId=${encodeURIComponent(zoneId)}`, 'GET');
+    worldRoomsCache = Array.isArray(res.rooms) ? res.rooms : [];
+    renderWorldRooms();
+  } catch (err) {
+    worldRoomMsg.textContent = `加载失败: ${err.message}`;
+    worldRoomMsg.style.color = 'red';
+  }
+}
+
+async function refreshWorldRoomOverrideStatus() {
+  if (!worldRoomsCache.length || !worldZoneSelect) return;
+  const zoneId = String(worldZoneSelect.value || '').trim();
+  if (!zoneId) return;
+  worldRoomMsg.textContent = '正在刷新覆盖状态...';
+  worldRoomMsg.style.color = '#8d3f12';
+  for (const room of worldRoomsCache) {
+    try {
+      const res = await api(`/admin/world/rooms/${encodeURIComponent(zoneId)}/${encodeURIComponent(room.id)}`, 'GET');
+      const hasOverride = res.override && Object.keys(res.override).length > 0;
+      worldRoomOverrideStatus.set(worldRoomKey(zoneId, room.id), Boolean(hasOverride));
+    } catch (err) {
+      worldRoomOverrideStatus.set(worldRoomKey(zoneId, room.id), undefined);
+    }
+  }
+  renderWorldRooms();
+  worldRoomMsg.textContent = '覆盖状态已更新';
+  worldRoomMsg.style.color = 'green';
+}
+
+async function openWorldRoomOverrideModal(zoneId, roomId, allowEditId = false) {
+  if (!worldRoomEditModal) return;
+  const zid = String(zoneId || '').trim();
+  const rid = String(roomId || '').trim();
+  if (!zid || !rid) return;
+  const res = await api(`/admin/world/rooms/${encodeURIComponent(zid)}/${encodeURIComponent(rid)}`, 'GET');
+  const base = res.room || null;
+  const override = res.override || null;
+  const effective = {
+    ...(base || {}),
+    ...(override || {})
+  };
+  const editable = Object.keys(effective).length ? effective : DEFAULT_ROOM_TEMPLATE;
+  worldRoomEditTitle.textContent = override ? '编辑房间覆盖' : '新增房间覆盖';
+  worldRoomEditZoneInput.value = zid;
+  worldRoomEditIdInput.value = rid;
+  worldRoomEditIdInput.disabled = !allowEditId;
+  worldRoomEditNameInput.value = editable.name || '';
+  worldRoomEditDescInput.value = editable.desc || '';
+  worldRoomEditCultivationInput.value = editable.minCultivationLevel ?? '';
+  worldRoomEditTowerFloorInput.value = editable.towerFloor ?? '';
+  worldRoomEditPersonalTierInput.value = editable.personalBossTier || '';
+  worldRoomEditSabakInput.checked = Boolean(editable.sabakOnly);
+  worldRoomEditPersonalOnlyInput.checked = Boolean(editable.personalBossOnly);
+  worldRoomEditCrossRealmInput.checked = Boolean(editable.crossRealmOnly);
+  worldRoomSpawnsCache = Array.isArray(editable.spawns) ? editable.spawns.map(item => String(item)) : [];
+  worldRoomNpcsCache = Array.isArray(editable.npcs) ? editable.npcs.map(item => String(item)) : [];
+  worldRoomExitsCache = editable.exits && typeof editable.exits === 'object' ? Object.entries(editable.exits) : [];
+  renderWorldRoomSpawns();
+  renderWorldRoomExits();
+  renderWorldRoomNpcs();
+  worldRoomEditModal.classList.remove('hidden');
+}
+
+function renderWorldRoomSpawns() {
+  if (!worldRoomSpawnsList) return;
+  worldRoomSpawnsList.innerHTML = '';
+  if (!worldRoomSpawnsCache.length) {
+    worldRoomSpawnsList.innerHTML = '<tr><td colspan="2" style="text-align: center; color: #999;">暂无怪物</td></tr>';
+    return;
+  }
+  worldRoomSpawnsCache.forEach((spawn, index) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${spawn}</td>
+      <td><button class="btn-small" style="background: #c00;" onclick="removeWorldRoomSpawn(${index})">删除</button></td>
+    `;
+    worldRoomSpawnsList.appendChild(tr);
+  });
+}
+
+function addWorldRoomSpawn() {
+  const spawnId = String(worldRoomSpawnInput?.value || '').trim();
+  if (!spawnId) {
+    customAlert('错误', '怪物ID不能为空');
+    return;
+  }
+  worldRoomSpawnsCache.push(spawnId);
+  worldRoomSpawnInput.value = '';
+  renderWorldRoomSpawns();
+}
+
+function removeWorldRoomSpawn(index) {
+  worldRoomSpawnsCache.splice(index, 1);
+  renderWorldRoomSpawns();
+}
+
+function renderWorldRoomExits() {
+  if (!worldRoomExitsList) return;
+  worldRoomExitsList.innerHTML = '';
+  if (!worldRoomExitsCache.length) {
+    worldRoomExitsList.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #999;">暂无出口</td></tr>';
+    return;
+  }
+  worldRoomExitsCache.forEach(([dir, target], index) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${dir}</td>
+      <td>${target}</td>
+      <td><button class="btn-small" style="background: #c00;" onclick="removeWorldRoomExit(${index})">删除</button></td>
+    `;
+    worldRoomExitsList.appendChild(tr);
+  });
+}
+
+function addWorldRoomExit() {
+  const dir = String(worldRoomExitDirInput?.value || '').trim();
+  const target = String(worldRoomExitTargetInput?.value || '').trim();
+  if (!dir || !target) {
+    customAlert('错误', '方向与目标不能为空');
+    return;
+  }
+  worldRoomExitsCache.push([dir, target]);
+  worldRoomExitDirInput.value = '';
+  worldRoomExitTargetInput.value = '';
+  renderWorldRoomExits();
+}
+
+function removeWorldRoomExit(index) {
+  worldRoomExitsCache.splice(index, 1);
+  renderWorldRoomExits();
+}
+
+function renderWorldRoomNpcs() {
+  if (!worldRoomNpcsList) return;
+  worldRoomNpcsList.innerHTML = '';
+  if (!worldRoomNpcsCache.length) {
+    worldRoomNpcsList.innerHTML = '<tr><td colspan="2" style="text-align: center; color: #999;">暂无NPC</td></tr>';
+    return;
+  }
+  worldRoomNpcsCache.forEach((npc, index) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${npc}</td>
+      <td><button class="btn-small" style="background: #c00;" onclick="removeWorldRoomNpc(${index})">删除</button></td>
+    `;
+    worldRoomNpcsList.appendChild(tr);
+  });
+}
+
+function addWorldRoomNpc() {
+  const npcId = String(worldRoomEditNpcInput?.value || '').trim();
+  if (!npcId) {
+    customAlert('错误', 'NPC ID不能为空');
+    return;
+  }
+  worldRoomNpcsCache.push(npcId);
+  worldRoomEditNpcInput.value = '';
+  renderWorldRoomNpcs();
+}
+
+function removeWorldRoomNpc(index) {
+  worldRoomNpcsCache.splice(index, 1);
+  renderWorldRoomNpcs();
+}
+
+async function saveWorldRoomOverride() {
+  const zoneId = String(worldRoomEditZoneInput?.value || '').trim();
+  const roomId = String(worldRoomEditIdInput?.value || '').trim();
+  if (!zoneId || !roomId) {
+    await customAlert('错误', '区域ID与房间ID不能为空');
+    return;
+  }
+  const name = String(worldRoomEditNameInput?.value || '').trim();
+  if (!name) {
+    await customAlert('错误', '房间名称不能为空');
+    return;
+  }
+  const exits = {};
+  worldRoomExitsCache.forEach(([dir, target]) => {
+    if (!dir || !target) return;
+    exits[dir] = target;
+  });
+  const payload = {
+    name,
+    desc: String(worldRoomEditDescInput?.value || '').trim(),
+    personalBossTier: String(worldRoomEditPersonalTierInput?.value || '').trim(),
+    sabakOnly: Boolean(worldRoomEditSabakInput?.checked),
+    personalBossOnly: Boolean(worldRoomEditPersonalOnlyInput?.checked),
+    crossRealmOnly: Boolean(worldRoomEditCrossRealmInput?.checked),
+    spawns: worldRoomSpawnsCache.map(item => String(item)),
+    npcs: worldRoomNpcsCache.map(item => String(item)),
+    exits
+  };
+  const cultivationRaw = String(worldRoomEditCultivationInput?.value ?? '').trim();
+  if (cultivationRaw !== '') {
+    payload.minCultivationLevel = toNumber(cultivationRaw, 0);
+  }
+  const towerRaw = String(worldRoomEditTowerFloorInput?.value ?? '').trim();
+  if (towerRaw !== '') {
+    payload.towerFloor = toNumber(towerRaw, 0);
+  }
+
+  const res = await api('/admin/world/rooms', 'POST', { zoneId, roomId, data: payload });
+  if (!res.ok) {
+    await customAlert('保存失败', res.error || '保存房间失败');
+    return;
+  }
+  worldRoomEditModal.classList.add('hidden');
+  worldRoomOverrideStatus.set(worldRoomKey(zoneId, roomId), true);
+  await loadWorldRooms();
+  await customAlert('保存成功', '房间覆盖已保存并热更新。');
+}
+
+async function deleteWorldRoomOverride(zoneId, roomId) {
+  const confirmed = await customConfirm('确认删除', `确定要删除房间 ${roomId} 的覆盖配置吗？`);
+  if (!confirmed) return;
+  const res = await api(`/admin/world/rooms/${encodeURIComponent(zoneId)}/${encodeURIComponent(roomId)}`, 'DELETE');
+  if (!res.ok) {
+    await customAlert('删除失败', res.error || '删除房间覆盖失败');
+    return;
+  }
+  worldRoomOverrideStatus.set(worldRoomKey(zoneId, roomId), false);
+  await loadWorldRooms();
+  await customAlert('删除成功', '房间覆盖已删除，已恢复默认。');
+}
+
+async function editMobOverride(templateId) {
+  await openMobOverrideModal(templateId, false);
+}
+
+async function editWorldZoneOverride(zoneId) {
+  await openWorldZoneOverrideModal(zoneId, false);
+}
+
+async function editWorldRoomOverride(zoneId, roomId) {
+  await openWorldRoomOverrideModal(zoneId, roomId, false);
+}
+
+if (mobOverridesList) {
+  loadMobOverrides();
+}
+
+if (worldZonesList) {
+  loadWorldZones();
+}
+
+if (mobOverrideRefreshBtn) {
+  mobOverrideRefreshBtn.addEventListener('click', loadMobOverrides);
+}
+
+if (mobOverrideCreateBtn) {
+  mobOverrideCreateBtn.addEventListener('click', async () => {
+    const templateId = await customPrompt('新增怪物', '请输入怪物ID：');
+    const id = String(templateId || '').trim();
+    if (!id) return;
+    await openMobOverrideModal(id, true);
+  });
+}
+
+if (mobOverrideSearchInput) {
+  mobOverrideSearchInput.addEventListener('input', renderMobOverrides);
+}
+
+if (mobEditCancelBtn) {
+  mobEditCancelBtn.addEventListener('click', () => {
+    mobEditModal.classList.add('hidden');
+  });
+}
+
+if (mobEditSaveBtn) {
+  mobEditSaveBtn.addEventListener('click', saveMobOverride);
+}
+
+if (mobDropAddBtn) {
+  mobDropAddBtn.addEventListener('click', addMobDrop);
+}
+
+if (worldZonesRefreshBtn) {
+  worldZonesRefreshBtn.addEventListener('click', loadWorldZones);
+}
+
+if (worldZoneCreateBtn) {
+  worldZoneCreateBtn.addEventListener('click', async () => {
+    const zoneId = await customPrompt('新增区域', '请输入区域ID：');
+    const id = String(zoneId || '').trim();
+    if (!id) return;
+    await openWorldZoneOverrideModal(id, true);
+  });
+}
+
+if (worldZoneEditCancelBtn) {
+  worldZoneEditCancelBtn.addEventListener('click', () => {
+    worldZoneEditModal.classList.add('hidden');
+  });
+}
+
+if (worldZoneEditSaveBtn) {
+  worldZoneEditSaveBtn.addEventListener('click', saveWorldZoneOverride);
+}
+
+if (worldZoneSelect) {
+  worldZoneSelect.addEventListener('change', loadWorldRooms);
+}
+
+if (worldRoomsRefreshBtn) {
+  worldRoomsRefreshBtn.addEventListener('click', loadWorldRooms);
+}
+
+if (worldRoomCheckBtn) {
+  worldRoomCheckBtn.addEventListener('click', refreshWorldRoomOverrideStatus);
+}
+
+if (worldRoomCreateBtn) {
+  worldRoomCreateBtn.addEventListener('click', async () => {
+    const zoneId = String(worldZoneSelect?.value || '').trim();
+    if (!zoneId) {
+      await customAlert('提示', '请先选择区域');
+      return;
+    }
+    const roomId = await customPrompt('新增房间', '请输入房间ID：');
+    const id = String(roomId || '').trim();
+    if (!id) return;
+    await openWorldRoomOverrideModal(zoneId, id, true);
+  });
+}
+
+if (worldRoomEditCancelBtn) {
+  worldRoomEditCancelBtn.addEventListener('click', () => {
+    worldRoomEditModal.classList.add('hidden');
+  });
+}
+
+if (worldRoomEditSaveBtn) {
+  worldRoomEditSaveBtn.addEventListener('click', saveWorldRoomOverride);
+}
+
+if (worldRoomSpawnAddBtn) {
+  worldRoomSpawnAddBtn.addEventListener('click', addWorldRoomSpawn);
+}
+
+if (worldRoomExitAddBtn) {
+  worldRoomExitAddBtn.addEventListener('click', addWorldRoomExit);
+}
+
+if (worldRoomEditNpcAddBtn) {
+  worldRoomEditNpcAddBtn.addEventListener('click', addWorldRoomNpc);
 }
 
 

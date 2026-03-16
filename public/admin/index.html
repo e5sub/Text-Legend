@@ -1204,6 +1204,18 @@
                   </tbody>
                 </table>
               </div>
+              <div style="margin-top: 10px;">
+                <label class="admin-switch" style="margin-right: 16px;">
+                  <input id="tf-drop-enabled" type="checkbox">
+                  <span class="admin-switch-slider" aria-hidden="true"></span>
+                  <span class="admin-switch-label">怪物掉落修炼果</span>
+                </label>
+                <label class="admin-switch">
+                  <input id="tf-pet-drop-enabled" type="checkbox">
+                  <span class="admin-switch-slider" aria-hidden="true"></span>
+                  <span class="admin-switch-label">怪物掉落宠物修炼果</span>
+                </label>
+              </div>
             </div>
             <button id="tf-save-btn" class="btn-small">保存设置</button>
             <div id="tf-msg" class="msg"></div>
@@ -2053,6 +2065,113 @@
           </div>
         </div>
 
+        <div class="block full" data-collapsible>
+          <div class="block-title">
+            <h2>👾 怪物管理（热更新）</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <p class="muted" style="margin-bottom: 8px;">仅覆盖/新增怪物模板，保存后立即生效，删除覆盖会恢复默认。</p>
+            <div class="row" style="margin-bottom: 12px;">
+              <input id="mob-override-search" type="text" placeholder="搜索怪物ID或名称" style="max-width: 200px;">
+              <button id="mob-override-refresh" class="btn-small">刷新列表</button>
+              <button id="mob-override-create" class="btn-small" style="background: #2196F3;">+ 新增/覆盖怪物</button>
+            </div>
+            <div class="table-container">
+              <table id="mob-overrides-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>名称</th>
+                    <th>等级</th>
+                    <th>经验</th>
+                    <th>金币</th>
+                    <th>覆盖字段</th>
+                    <th>更新时间</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="mob-overrides-list">
+                  <tr>
+                    <td colspan="8" style="text-align: center; color: #999;">加载中...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div id="mob-override-msg" class="msg"></div>
+          </div>
+        </div>
+
+        <div class="block full" data-collapsible>
+          <div class="block-title">
+            <h2>🗺️ 地图管理（热更新）</h2>
+            <button class="btn-small block-toggle">折叠</button>
+          </div>
+          <div class="block-body">
+            <p class="muted" style="margin-bottom: 8px;">支持区域与房间覆盖配置，保存后立即生效。</p>
+
+            <div class="row" style="margin-bottom: 10px;">
+              <strong>区域覆盖</strong>
+              <div>
+                <button id="world-zones-refresh" class="btn-small">刷新区域</button>
+                <button id="world-zone-create" class="btn-small" style="background: #2196F3;">+ 新增/覆盖区域</button>
+              </div>
+            </div>
+            <div class="table-container">
+              <table id="world-zones-table">
+                <thead>
+                  <tr>
+                    <th>区域ID</th>
+                    <th>名称</th>
+                    <th>房间数</th>
+                    <th>覆盖</th>
+                    <th>更新时间</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="world-zones-list">
+                  <tr>
+                    <td colspan="6" style="text-align: center; color: #999;">加载中...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div id="world-zone-msg" class="msg"></div>
+
+            <div class="divider"></div>
+
+            <div class="row" style="margin-bottom: 10px; align-items: center;">
+              <strong>房间覆盖</strong>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <label for="world-zone-select" style="font-size: 13px;">区域:</label>
+                <select id="world-zone-select" style="max-width: 180px;"></select>
+                <button id="world-rooms-refresh" class="btn-small">加载房间</button>
+                <button id="world-room-check" class="btn-small" style="background: #607d8b;">刷新覆盖状态</button>
+                <button id="world-room-create" class="btn-small" style="background: #2196F3;">+ 新增/覆盖房间</button>
+              </div>
+            </div>
+            <div class="table-container">
+              <table id="world-rooms-table">
+                <thead>
+                  <tr>
+                    <th>房间ID</th>
+                    <th>名称</th>
+                    <th>怪物刷新</th>
+                    <th>覆盖</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="world-rooms-list">
+                  <tr>
+                    <td colspan="5" style="text-align: center; color: #999;">请选择区域并加载</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div id="world-room-msg" class="msg"></div>
+          </div>
+        </div>
+
         <div class="block" data-collapsible>
           <div class="block-title">
             <h2>💾 数据备份与导入</h2>
@@ -2310,6 +2429,290 @@
       <div class="modal-actions" style="flex-shrink: 0;">
         <button id="import-items-cancel" class="btn-small">取消</button>
         <button id="import-items-confirm" class="btn-small" style="background: #4CAF50;">导入选中装备</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 怪物覆盖编辑对话框 -->
+  <div id="mob-edit-modal" class="modal hidden">
+    <div class="modal-card" style="max-width: 900px;">
+      <div class="modal-title" id="mob-edit-title">编辑怪物覆盖</div>
+      <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+        <div class="row" style="align-items: center; gap: 10px; flex-wrap: wrap;">
+          <label style="min-width: 60px;">怪物ID:</label>
+          <input id="mob-edit-id" type="text" class="input-compact" style="max-width: 200px;">
+        </div>
+        <div class="table-container" style="margin-top: 12px;">
+          <table style="font-size: 13px;">
+            <tbody>
+              <tr>
+                <td style="width: 80px;"><strong>名称</strong></td>
+                <td><input id="mob-edit-name" type="text" class="input-compact"></td>
+                <td style="width: 80px;"><strong>等级</strong></td>
+                <td><input id="mob-edit-level" type="number" min="1" class="input-compact"></td>
+              </tr>
+              <tr>
+                <td><strong>生命</strong></td>
+                <td><input id="mob-edit-hp" type="number" min="1" class="input-compact"></td>
+                <td><strong>攻击</strong></td>
+                <td><input id="mob-edit-atk" type="number" min="0" class="input-compact"></td>
+              </tr>
+              <tr>
+                <td><strong>防御</strong></td>
+                <td><input id="mob-edit-def" type="number" min="0" class="input-compact"></td>
+                <td><strong>魔御</strong></td>
+                <td><input id="mob-edit-mdef" type="number" min="0" class="input-compact"></td>
+              </tr>
+              <tr>
+                <td><strong>经验</strong></td>
+                <td><input id="mob-edit-exp" type="number" min="0" class="input-compact"></td>
+                <td><strong>敏捷</strong></td>
+                <td><input id="mob-edit-dex" type="number" min="0" class="input-compact"></td>
+              </tr>
+              <tr>
+                <td><strong>刷新(ms)</strong></td>
+                <td><input id="mob-edit-respawn" type="number" min="0" class="input-compact"></td>
+                <td><strong>金币</strong></td>
+                <td style="display: flex; gap: 6px; align-items: center;">
+                  <input id="mob-edit-gold-min" type="number" min="0" class="input-compact" style="max-width: 90px;">
+                  <span style="font-size: 12px;">~</span>
+                  <input id="mob-edit-gold-max" type="number" min="0" class="input-compact" style="max-width: 90px;">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="margin-top: 12px;">
+          <label class="admin-switch" style="margin-right: 16px;">
+            <input id="mob-edit-worldboss" type="checkbox">
+            <span class="admin-switch-slider" aria-hidden="true"></span>
+            <span class="admin-switch-label">世界BOSS</span>
+          </label>
+          <label class="admin-switch" style="margin-right: 16px;">
+            <input id="mob-edit-specialboss" type="checkbox">
+            <span class="admin-switch-slider" aria-hidden="true"></span>
+            <span class="admin-switch-label">特殊BOSS</span>
+          </label>
+          <label class="admin-switch" style="margin-right: 16px;">
+            <input id="mob-edit-sabakboss" type="checkbox">
+            <span class="admin-switch-slider" aria-hidden="true"></span>
+            <span class="admin-switch-label">沙巴克BOSS</span>
+          </label>
+          <label class="admin-switch">
+            <input id="mob-edit-summoned" type="checkbox">
+            <span class="admin-switch-slider" aria-hidden="true"></span>
+            <span class="admin-switch-label">召唤怪</span>
+          </label>
+        </div>
+        <div style="margin-top: 16px; border-top: 1px solid #ddd; padding-top: 12px;">
+          <h3 style="margin-bottom: 8px;">掉落配置</h3>
+          <div class="table-container">
+            <table style="font-size: 12px;">
+              <thead>
+                <tr>
+                  <th style="padding: 6px 8px;">道具ID</th>
+                  <th style="padding: 6px 8px;">概率(0-1)</th>
+                  <th style="padding: 6px 8px;">操作</th>
+                </tr>
+              </thead>
+              <tbody id="mob-drops-list">
+                <tr>
+                  <td colspan="3" style="text-align: center; color: #999;">暂无掉落配置</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <input id="mob-drop-item-id" type="text" class="input-compact" placeholder="道具ID" style="max-width: 160px;">
+            <input id="mob-drop-chance" type="number" min="0" max="1" step="0.0001" class="input-compact" placeholder="概率(0-1)" style="max-width: 120px;">
+            <button id="mob-drop-add" class="btn-small">添加掉落</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="mob-edit-cancel" class="btn-small">取消</button>
+        <button id="mob-edit-save" class="btn-small">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 区域覆盖编辑对话框 -->
+  <div id="world-zone-edit-modal" class="modal hidden">
+    <div class="modal-card" style="max-width: 900px;">
+      <div class="modal-title" id="world-zone-edit-title">编辑区域覆盖</div>
+      <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+        <div class="row" style="align-items: center; gap: 10px; flex-wrap: wrap;">
+          <label style="min-width: 60px;">区域ID:</label>
+          <input id="world-zone-edit-id" type="text" class="input-compact" style="max-width: 200px;">
+        </div>
+        <div class="table-container" style="margin-top: 12px;">
+          <table style="font-size: 13px;">
+            <tbody>
+              <tr>
+                <td style="width: 80px;"><strong>名称</strong></td>
+                <td><input id="world-zone-edit-name" type="text" class="input-compact"></td>
+              </tr>
+              <tr>
+                <td><strong>描述</strong></td>
+                <td><input id="world-zone-edit-desc" type="text" class="input-compact"></td>
+              </tr>
+              <tr>
+                <td><strong>等级限制</strong></td>
+                <td><input id="world-zone-edit-level-limit" type="number" min="0" class="input-compact"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="margin-top: 12px;">
+          <label class="admin-switch" style="margin-right: 16px;">
+            <input id="world-zone-edit-safe" type="checkbox">
+            <span class="admin-switch-slider" aria-hidden="true"></span>
+            <span class="admin-switch-label">安全区</span>
+          </label>
+          <label class="admin-switch">
+            <input id="world-zone-edit-cultivation-only" type="checkbox">
+            <span class="admin-switch-slider" aria-hidden="true"></span>
+            <span class="admin-switch-label">仅修真可入</span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="world-zone-edit-cancel" class="btn-small">取消</button>
+        <button id="world-zone-edit-save" class="btn-small">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 房间覆盖编辑对话框 -->
+  <div id="world-room-edit-modal" class="modal hidden">
+    <div class="modal-card" style="max-width: 900px;">
+      <div class="modal-title" id="world-room-edit-title">编辑房间覆盖</div>
+      <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+        <div class="row" style="align-items: center; gap: 10px;">
+          <label style="min-width: 60px;">区域ID:</label>
+          <input id="world-room-edit-zone" type="text" class="input-compact" style="max-width: 200px;" readonly>
+          <label style="min-width: 60px;">房间ID:</label>
+          <input id="world-room-edit-id" type="text" class="input-compact" style="max-width: 200px;">
+        </div>
+        <div class="table-container" style="margin-top: 12px;">
+          <table style="font-size: 13px;">
+            <tbody>
+              <tr>
+                <td style="width: 80px;"><strong>名称</strong></td>
+                <td><input id="world-room-edit-name" type="text" class="input-compact"></td>
+                <td style="width: 80px;"><strong>描述</strong></td>
+                <td><input id="world-room-edit-desc" type="text" class="input-compact"></td>
+              </tr>
+              <tr>
+                <td><strong>修真等级</strong></td>
+                <td><input id="world-room-edit-cultivation" type="number" min="0" class="input-compact"></td>
+                <td><strong>塔层</strong></td>
+                <td><input id="world-room-edit-tower-floor" type="number" min="0" class="input-compact"></td>
+              </tr>
+              <tr>
+                <td><strong>个人专属</strong></td>
+                <td>
+                  <select id="world-room-edit-personal-tier" class="input-compact">
+                    <option value="">无</option>
+                    <option value="vip">VIP</option>
+                    <option value="svip">SVIP</option>
+                    <option value="svip_permanent">SVIP永久</option>
+                  </select>
+                </td>
+                <td><strong>NPC列表</strong></td>
+                <td>
+                  <input id="world-room-edit-npc-input" type="text" class="input-compact" placeholder="NPC ID">
+                  <button id="world-room-edit-npc-add" class="btn-small" style="margin-top: 6px;">添加NPC</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="margin-top: 12px;">
+          <label class="admin-switch" style="margin-right: 16px;">
+            <input id="world-room-edit-sabak" type="checkbox">
+            <span class="admin-switch-slider" aria-hidden="true"></span>
+            <span class="admin-switch-label">沙巴克专属</span>
+          </label>
+          <label class="admin-switch" style="margin-right: 16px;">
+            <input id="world-room-edit-personal-only" type="checkbox">
+            <span class="admin-switch-slider" aria-hidden="true"></span>
+            <span class="admin-switch-label">个人专属房</span>
+          </label>
+          <label class="admin-switch">
+            <input id="world-room-edit-cross-realm" type="checkbox">
+            <span class="admin-switch-slider" aria-hidden="true"></span>
+            <span class="admin-switch-label">跨服专属</span>
+          </label>
+        </div>
+        <div style="margin-top: 16px; border-top: 1px solid #ddd; padding-top: 12px;">
+          <h3 style="margin-bottom: 8px;">怪物刷新</h3>
+          <div class="table-container">
+            <table style="font-size: 12px;">
+              <thead>
+                <tr>
+                  <th style="padding: 6px 8px;">怪物ID</th>
+                  <th style="padding: 6px 8px;">操作</th>
+                </tr>
+              </thead>
+              <tbody id="world-room-spawns-list">
+                <tr>
+                  <td colspan="2" style="text-align: center; color: #999;">暂无怪物</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <input id="world-room-spawn-input" type="text" class="input-compact" placeholder="怪物ID" style="max-width: 180px;">
+            <button id="world-room-spawn-add" class="btn-small">添加怪物</button>
+          </div>
+        </div>
+        <div style="margin-top: 16px; border-top: 1px solid #ddd; padding-top: 12px;">
+          <h3 style="margin-bottom: 8px;">出口配置</h3>
+          <div class="table-container">
+            <table style="font-size: 12px;">
+              <thead>
+                <tr>
+                  <th style="padding: 6px 8px;">方向</th>
+                  <th style="padding: 6px 8px;">目标</th>
+                  <th style="padding: 6px 8px;">操作</th>
+                </tr>
+              </thead>
+              <tbody id="world-room-exits-list">
+                <tr>
+                  <td colspan="3" style="text-align: center; color: #999;">暂无出口</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <input id="world-room-exit-dir" type="text" class="input-compact" placeholder="方向(如 north)" style="max-width: 140px;">
+            <input id="world-room-exit-target" type="text" class="input-compact" placeholder="目标(如 mg_town:gate)" style="max-width: 220px;">
+            <button id="world-room-exit-add" class="btn-small">添加出口</button>
+          </div>
+        </div>
+        <div style="margin-top: 16px; border-top: 1px solid #ddd; padding-top: 12px;">
+          <h3 style="margin-bottom: 8px;">NPC 列表</h3>
+          <div class="table-container">
+            <table style="font-size: 12px;">
+              <thead>
+                <tr>
+                  <th style="padding: 6px 8px;">NPC ID</th>
+                  <th style="padding: 6px 8px;">操作</th>
+                </tr>
+              </thead>
+              <tbody id="world-room-npcs-list">
+                <tr>
+                  <td colspan="2" style="text-align: center; color: #999;">暂无NPC</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="world-room-edit-cancel" class="btn-small">取消</button>
+        <button id="world-room-edit-save" class="btn-small">保存</button>
       </div>
     </div>
   </div>

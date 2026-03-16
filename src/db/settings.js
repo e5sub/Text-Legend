@@ -928,6 +928,15 @@ export async function setTrainingFruitDropRate(rate) {
   await setSetting('training_fruit_drop_rate', String(normalized));
 }
 
+export async function getTrainingFruitDropEnabled() {
+  const value = await getSetting('training_fruit_drop_enabled', 'true');
+  return value === 'true' || value === '1';
+}
+
+export async function setTrainingFruitDropEnabled(enabled) {
+  await setSetting('training_fruit_drop_enabled', enabled ? 'true' : 'false');
+}
+
 export async function getPetTrainingFruitDropRate() {
   const value = await getSetting('pet_training_fruit_drop_rate', '0.01');
   const parsed = parseFloat(value);
@@ -937,6 +946,15 @@ export async function getPetTrainingFruitDropRate() {
 export async function setPetTrainingFruitDropRate(rate) {
   const normalized = Math.max(0, Math.min(1, Number(rate) || 0.01));
   await setSetting('pet_training_fruit_drop_rate', String(normalized));
+}
+
+export async function getPetTrainingFruitDropEnabled() {
+  const value = await getSetting('pet_training_fruit_drop_enabled', 'true');
+  return value === 'true' || value === '1';
+}
+
+export async function setPetTrainingFruitDropEnabled(enabled) {
+  await setSetting('pet_training_fruit_drop_enabled', enabled ? 'true' : 'false');
 }
 
 /**

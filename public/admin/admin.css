@@ -210,6 +210,36 @@ button:hover {
   color: #8d3f12;
 }
 
+.json-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.json-label {
+  font-size: 12px;
+  color: #8a6d4b;
+  margin-bottom: 4px;
+}
+
+.json-textarea {
+  min-height: 220px;
+  font-family: "Courier New", "Consolas", monospace;
+}
+
+.json-display {
+  background: #f7f0e4;
+  color: #6b4d2c;
+}
+
+.json-textarea[readonly] {
+  opacity: 0.9;
+}
+
+.muted {
+  color: #8a6d4b;
+}
+
 .admin-switch {
   display: inline-flex;
   align-items: center;
@@ -1455,5 +1485,11 @@ body.theme-dark thead {
   font-weight: 600;
   color: var(--accent);
   font-family: var(--font-display);
+}
+
+@media (max-width: 900px) {
+  .json-grid {
+    grid-template-columns: 1fr;
+  }
 }
 

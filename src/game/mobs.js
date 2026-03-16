@@ -2270,4 +2270,84 @@ function extendCultivationMobs() {
 
 extendCultivationMobs();
 
+const BASE_MOB_TEMPLATES = JSON.parse(JSON.stringify(MOB_TEMPLATES));
+
+function normalizeMobDrops(drops) {
+  if (!Array.isArray(drops)) return null;
+  return drops
+    .map((entry) => {
+      const id = String(entry?.id || '').trim();
+      if (!id) return null;
+      const chance = Number(entry?.chance ?? 0);
+      const normalizedChance = Number.isFinite(chance) ? Math.max(0, Math.min(1, chance)) : 0;
+      return { id, chance: normalizedChance };
+    })
+    .filter(Boolean);
+}
+
+function normalizeMobGold(gold) {
+  if (!Array.isArray(gold) || gold.length < 2) return null;
+  const min = Math.max(0, Math.floor(Number(gold[0] || 0)));
+  const max = Math.max(min, Math.floor(Number(gold[1] || 0)));
+  return [min, max];
+}
+
+function normalizeMobTemplatePatch(source, current) {
+  const next = { ...current };
+  if (Object.prototype.hasOwnProperty.call(source, 'name')) next.name = String(source.name || '').trim();
+  if (Object.prototype.hasOwnProperty.call(source, 'level')) next.level = Math.max(1, Math.floor(Number(source.level) || 1));
+  if (Object.prototype.hasOwnProperty.call(source, 'hp')) next.hp = Math.max(1, Math.floor(Number(source.hp) || 1));
+  if (Object.prototype.hasOwnProperty.call(source, 'atk')) next.atk = Math.max(0, Math.floor(Number(source.atk) || 0));
+  if (Object.prototype.hasOwnProperty.call(source, 'def')) next.def = Math.max(0, Math.floor(Number(source.def) || 0));
+  if (Object.prototype.hasOwnProperty.call(source, 'mdef')) next.mdef = Math.max(0, Math.floor(Number(source.mdef) || 0));
+  if (Object.prototype.hasOwnProperty.call(source, 'exp')) next.exp = Math.max(0, Math.floor(Number(source.exp) || 0));
+  if (Object.prototype.hasOwnProperty.call(source, 'dex')) next.dex = Math.max(0, Math.floor(Number(source.dex) || 0));
+  if (Object.prototype.hasOwnProperty.call(source, 'respawnMs')) next.respawnMs = Math.max(0, Math.floor(Number(source.respawnMs) || 0));
+  if (Object.prototype.hasOwnProperty.call(source, 'worldBoss')) next.worldBoss = Boolean(source.worldBoss);
+  if (Object.prototype.hasOwnProperty.call(source, 'specialBoss')) next.specialBoss = Boolean(source.specialBoss);
+  if (Object.prototype.hasOwnProperty.call(source, 'sabakBoss')) next.sabakBoss = Boolean(source.sabakBoss);
+  if (Object.prototype.hasOwnProperty.call(source, 'summoned')) next.summoned = Boolean(source.summoned);
+  if (Object.prototype.hasOwnProperty.call(source, 'gold')) {
+    const normalizedGold = normalizeMobGold(source.gold);
+    if (normalizedGold) next.gold = normalizedGold;
+  }
+  if (Object.prototype.hasOwnProperty.call(source, 'drops')) {
+    const normalizedDrops = normalizeMobDrops(source.drops);
+    if (normalizedDrops) next.drops = normalizedDrops;
+  }
+
+  const ignoredKeys = new Set(['id', 'name', 'level', 'hp', 'atk', 'def', 'mdef', 'exp', 'dex', 'respawnMs', 'worldBoss', 'specialBoss', 'sabakBoss', 'summoned', 'gold', 'drops']);
+  Object.keys(source || {}).forEach((key) => {
+    if (ignoredKeys.has(key)) return;
+    next[key] = source[key];
+  });
+  return next;
+}
+
+export function applyMobTemplateOverride(templateId, patch = {}) {
+  const id = String(templateId || '').trim();
+  if (!id) return null;
+  const source = patch && typeof patch === 'object' ? patch : {};
+  const current = MOB_TEMPLATES[id] || BASE_MOB_TEMPLATES[id] || { id };
+  const merged = normalizeMobTemplatePatch(source, { ...current, id });
+  MOB_TEMPLATES[id] = merged;
+  return merged;
+}
+
+export function removeMobTemplateOverride(templateId) {
+  const id = String(templateId || '').trim();
+  if (!id) return false;
+  const base = BASE_MOB_TEMPLATES[id];
+  if (!base) {
+    delete MOB_TEMPLATES[id];
+    return true;
+  }
+  const current = MOB_TEMPLATES[id] || base;
+  const preservedDrops = Array.isArray(current?.drops) ? current.drops : null;
+  const restored = JSON.parse(JSON.stringify(base));
+  if (preservedDrops) restored.drops = preservedDrops;
+  MOB_TEMPLATES[id] = restored;
+  return true;
+}
+
 

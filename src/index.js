@@ -22,7 +22,7 @@ import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from '.
 import { sendMail, listMail, listSentMail, markMailRead, markMailClaimed, deleteMail } from './db/mail.js';
 import { createVipCodes, listVipCodes, countVipCodes, useVipCode } from './db/vip.js';
 import { createRechargeCards, listRechargeCards, countRechargeCards, useRechargeCard, listUsedRechargeCharacters } from './db/recharge.js';
-import { getSetting, setSetting, loadSettingsCache, reloadSettingsCache, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getVipClaimLimitEnabled, setVipClaimLimitEnabled, getSvipPrices, setSvipPrices, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getCacheMonsterHealthEnabled, setCacheMonsterHealthEnabled, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getPetTrainingFruitDropRate as getPetTrainingFruitDropRateDb, setPetTrainingFruitDropRate as setPetTrainingFruitDropRateDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getPetSettings, setPetSettings, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb, getEquipSkillDropChance as getEquipSkillDropChanceDb, setEquipSkillDropChance as setEquipSkillDropChanceDb, getTreasureSlotCount as getTreasureSlotCountDb, setTreasureSlotCount as setTreasureSlotCountDb, getTreasureMaxLevel as getTreasureMaxLevelDb, setTreasureMaxLevel as setTreasureMaxLevelDb, getTreasureUpgradeConsume as getTreasureUpgradeConsumeDb, setTreasureUpgradeConsume as setTreasureUpgradeConsumeDb, getTreasureAdvanceConsume as getTreasureAdvanceConsumeDb, setTreasureAdvanceConsume as setTreasureAdvanceConsumeDb, getTreasureAdvancePerStage as getTreasureAdvancePerStageDb, setTreasureAdvancePerStage as setTreasureAdvancePerStageDb, getTreasureAdvanceEffectBonusPerStack as getTreasureAdvanceEffectBonusPerStackDb, setTreasureAdvanceEffectBonusPerStack as setTreasureAdvanceEffectBonusPerStackDb, getTreasureWorldBossDropMultiplier as getTreasureWorldBossDropMultiplierDb, setTreasureWorldBossDropMultiplier as setTreasureWorldBossDropMultiplierDb, getTreasureCrossWorldBossDropMultiplier as getTreasureCrossWorldBossDropMultiplierDb, setTreasureCrossWorldBossDropMultiplier as setTreasureCrossWorldBossDropMultiplierDb, getTreasureTowerXuanmingDropChance as getTreasureTowerXuanmingDropChanceDb, setTreasureTowerXuanmingDropChance as setTreasureTowerXuanmingDropChanceDb, getCmdRateLimits, setCmdRateLimits, getCmdCooldowns, setCmdCooldowns, getUltimateGrowthConfig as getUltimateGrowthConfigDb, setUltimateGrowthConfig as setUltimateGrowthConfigDb } from './db/settings.js';
+import { getSetting, setSetting, loadSettingsCache, reloadSettingsCache, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getVipClaimLimitEnabled, setVipClaimLimitEnabled, getSvipPrices, setSvipPrices, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getCacheMonsterHealthEnabled, setCacheMonsterHealthEnabled, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingFruitDropEnabled as getTrainingFruitDropEnabledDb, setTrainingFruitDropEnabled as setTrainingFruitDropEnabledDb, getPetTrainingFruitDropRate as getPetTrainingFruitDropRateDb, setPetTrainingFruitDropRate as setPetTrainingFruitDropRateDb, getPetTrainingFruitDropEnabled as getPetTrainingFruitDropEnabledDb, setPetTrainingFruitDropEnabled as setPetTrainingFruitDropEnabledDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getPetSettings, setPetSettings, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb, getEquipSkillDropChance as getEquipSkillDropChanceDb, setEquipSkillDropChance as setEquipSkillDropChanceDb, getTreasureSlotCount as getTreasureSlotCountDb, setTreasureSlotCount as setTreasureSlotCountDb, getTreasureMaxLevel as getTreasureMaxLevelDb, setTreasureMaxLevel as setTreasureMaxLevelDb, getTreasureUpgradeConsume as getTreasureUpgradeConsumeDb, setTreasureUpgradeConsume as setTreasureUpgradeConsumeDb, getTreasureAdvanceConsume as getTreasureAdvanceConsumeDb, setTreasureAdvanceConsume as setTreasureAdvanceConsumeDb, getTreasureAdvancePerStage as getTreasureAdvancePerStageDb, setTreasureAdvancePerStage as setTreasureAdvancePerStageDb, getTreasureAdvanceEffectBonusPerStack as getTreasureAdvanceEffectBonusPerStackDb, setTreasureAdvanceEffectBonusPerStack as setTreasureAdvanceEffectBonusPerStackDb, getTreasureWorldBossDropMultiplier as getTreasureWorldBossDropMultiplierDb, setTreasureWorldBossDropMultiplier as setTreasureWorldBossDropMultiplierDb, getTreasureCrossWorldBossDropMultiplier as getTreasureCrossWorldBossDropMultiplierDb, setTreasureCrossWorldBossDropMultiplier as setTreasureCrossWorldBossDropMultiplierDb, getTreasureTowerXuanmingDropChance as getTreasureTowerXuanmingDropChanceDb, setTreasureTowerXuanmingDropChance as setTreasureTowerXuanmingDropChanceDb, getCmdRateLimits, setCmdRateLimits, getCmdCooldowns, setCmdCooldowns, getUltimateGrowthConfig as getUltimateGrowthConfigDb, setUltimateGrowthConfig as setUltimateGrowthConfigDb } from './db/settings.js';
 import { listRealms, getRealmById, updateRealmName, createRealm } from './db/realms.js';
 import {
   listMobRespawnsPage,
@@ -98,6 +98,8 @@ import {
   syncItemsToTemplates,
   syncMobDropsToTemplates
 } from './db/items_admin.js';
+import { listMobTemplateOverrides, getMobTemplateOverride, upsertMobTemplateOverride, deleteMobTemplateOverride } from './db/mobs_admin.js';
+import { listWorldZoneOverrides, listWorldRoomOverrides, getWorldZoneOverride, getWorldRoomOverride, upsertWorldZoneOverride, upsertWorldRoomOverride, deleteWorldZoneOverride, deleteWorldRoomOverride } from './db/world_admin.js';
 import { runMigrations } from './db/migrate.js';
 import { getSmtpSettings, saveSmtpSettings, testSmtpConnection, sendPasswordResetEmail } from './db/smtp.js';
 import { newCharacter, computeDerived, gainExp, addItem, removeItem, getItemKey, normalizeInventory, normalizeEquipment, getDurabilityMax, getRepairCost, buildSpecializationPayload, SPECIALIZATION_DEFS } from './game/player.js';
@@ -158,10 +160,10 @@ import {
   ensurePlayerSkills,
   SKILL_MASTERY_LEVELS
 } from './game/skills.js';
-import { MOB_TEMPLATES } from './game/mobs.js';
+import { MOB_TEMPLATES, applyMobTemplateOverride, removeMobTemplateOverride } from './game/mobs.js';
 import { ITEM_TEMPLATES, SHOP_STOCKS } from './game/items.js';
-import { WORLD, expandRoomVariants, shrinkRoomVariants, ensureZhuxianTowerRoom, ensurePersonalBossRoom } from './game/world.js';
-import { getRoomMobs, getAliveMobs, spawnMobs, removeMob, seedRespawnCache, appendRespawnCache, setRespawnStore, getAllAliveMobs, getSpecialBossRooms, incrementWorldBossKills, setWorldBossKillCount as setWorldBossKillCountState, incrementSpecialBossKills, setSpecialBossKillCount as setSpecialBossKillCountState, incrementCultivationBossKills, setCultivationBossKillCount as setCultivationBossKillCountState } from './game/state.js';
+import { WORLD, expandRoomVariants, shrinkRoomVariants, ensureZhuxianTowerRoom, ensurePersonalBossRoom, applyWorldZoneOverride, applyWorldRoomOverride, removeWorldZoneOverride, removeWorldRoomOverride } from './game/world.js';
+import { getRoomMobs, getAliveMobs, spawnMobs, removeMob, seedRespawnCache, appendRespawnCache, setRespawnStore, getAllAliveMobs, getSpecialBossRooms, clearSpecialBossRooms, resetRoom, incrementWorldBossKills, setWorldBossKillCount as setWorldBossKillCountState, incrementSpecialBossKills, setSpecialBossKillCount as setSpecialBossKillCountState, incrementCultivationBossKills, setCultivationBossKillCount as setCultivationBossKillCountState } from './game/state.js';
 import { calcHitChance, calcDamage, applyDamage, applyHealing, applyPoison, tickStatus, getDefenseMultiplier, consumeFirestrikeCrit } from './game/combat.js';
 import { randInt, clamp } from './game/utils.js';
 import { expForLevel, ROOM_VARIANT_COUNT, setRoomVariantCount as applyRoomVariantCount } from './game/constants.js';
@@ -170,10 +172,14 @@ import {
   setClassLevelBonusConfig as setClassLevelBonusConfigMem,
   getTrainingFruitDropRate,
   getPetTrainingFruitDropRate,
+  getTrainingFruitDropEnabled,
+  getPetTrainingFruitDropEnabled,
   getTrainingPerLevelConfig,
   setTrainingFruitCoefficient,
   setTrainingFruitDropRate as setTrainingFruitDropRateConfig,
   setPetTrainingFruitDropRate as setPetTrainingFruitDropRateConfig,
+  setTrainingFruitDropEnabled as setTrainingFruitDropEnabledConfig,
+  setPetTrainingFruitDropEnabled as setPetTrainingFruitDropEnabledConfig,
   setTrainingPerLevelConfig as setTrainingPerLevelConfigMem,
   getUltimateGrowthConfig as getUltimateGrowthConfigMem,
   setUltimateGrowthConfig as setUltimateGrowthConfigMem
@@ -2883,6 +2889,7 @@ app.post('/admin/room-variant-update', async (req, res) => {
   applyRoomVariantCount(count);
   shrinkRoomVariants(WORLD, count);
   expandRoomVariants(WORLD);
+  await applyWorldOverridesFromDb();
   res.json({ ok: true, count });
 });
 
@@ -3245,7 +3252,9 @@ app.get('/admin/training-fruit-settings', async (req, res) => {
     const coefficient = await getTrainingFruitCoefficientDb();
     const dropRate = await getTrainingFruitDropRateDb();
     const petDropRate = await getPetTrainingFruitDropRateDb();
-    res.json({ ok: true, coefficient, dropRate, petDropRate });
+    const dropEnabled = await getTrainingFruitDropEnabledDb();
+    const petDropEnabled = await getPetTrainingFruitDropEnabledDb();
+    res.json({ ok: true, coefficient, dropRate, petDropRate, dropEnabled, petDropEnabled });
   } catch (err) {
     console.error('修炼果配置加载失败:', err);
     res.status(500).json({ error: err.message || '加载失败' });
@@ -3255,7 +3264,7 @@ app.get('/admin/training-fruit-settings', async (req, res) => {
 app.post('/admin/training-fruit-settings/update', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });
-  const { coefficient, dropRate, petDropRate } = req.body || {};
+  const { coefficient, dropRate, petDropRate, dropEnabled, petDropEnabled } = req.body || {};
   if (coefficient !== undefined) {
     const parsed = Number(coefficient);
     if (isNaN(parsed) || parsed < 0) {
@@ -3277,14 +3286,31 @@ app.post('/admin/training-fruit-settings/update', async (req, res) => {
     }
     await setPetTrainingFruitDropRateDb(parsed);
   }
+  if (dropEnabled !== undefined) {
+    await setTrainingFruitDropEnabledDb(Boolean(dropEnabled));
+  }
+  if (petDropEnabled !== undefined) {
+    await setPetTrainingFruitDropEnabledDb(Boolean(petDropEnabled));
+  }
   // 更新内存中的配置
   const newCoefficient = await getTrainingFruitCoefficientDb();
   const newDropRate = await getTrainingFruitDropRateDb();
   const newPetDropRate = await getPetTrainingFruitDropRateDb();
+  const newDropEnabled = await getTrainingFruitDropEnabledDb();
+  const newPetDropEnabled = await getPetTrainingFruitDropEnabledDb();
   setTrainingFruitCoefficient(newCoefficient);
   setTrainingFruitDropRateConfig(newDropRate);
   setPetTrainingFruitDropRateConfig(newPetDropRate);
-  res.json({ ok: true, coefficient: newCoefficient, dropRate: newDropRate, petDropRate: newPetDropRate });
+  setTrainingFruitDropEnabledConfig(newDropEnabled);
+  setPetTrainingFruitDropEnabledConfig(newPetDropEnabled);
+  res.json({
+    ok: true,
+    coefficient: newCoefficient,
+    dropRate: newDropRate,
+    petDropRate: newPetDropRate,
+    dropEnabled: newDropEnabled,
+    petDropEnabled: newPetDropEnabled
+  });
 });
 
 // 修炼系统配置
@@ -5074,6 +5100,240 @@ app.get('/admin/mobs', async (req, res) => {
   }
 });
 
+app.get('/admin/mobs/overrides', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  try {
+    const rows = await listMobTemplateOverrides();
+    const overrides = rows.map((row) => ({
+      templateId: row.template_id,
+      data: safeParseJson(row.data_json, {}),
+      updatedAt: row.updated_at || null
+    }));
+    res.json({ ok: true, overrides });
+  } catch (err) {
+    res.status(500).json({ error: '获取怪物覆盖配置失败: ' + err.message });
+  }
+});
+
+app.get('/admin/mobs/:id', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const templateId = String(req.params.id || '').trim();
+  if (!templateId) return res.status(400).json({ error: '缺少怪物ID' });
+  try {
+    const override = await getMobTemplateOverride(templateId);
+    res.json({
+      ok: true,
+      template: MOB_TEMPLATES[templateId] || null,
+      override: override ? safeParseJson(override.data_json, {}) : null
+    });
+  } catch (err) {
+    res.status(500).json({ error: '获取怪物失败: ' + err.message });
+  }
+});
+
+app.post('/admin/mobs', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const templateId = String(req.body?.templateId || req.body?.id || '').trim();
+  if (!templateId) return res.status(400).json({ error: '缺少怪物ID' });
+  const rawPayload = req.body?.data ?? req.body?.template ?? req.body;
+  const isNew = !MOB_TEMPLATES[templateId];
+  const normalized = normalizeMobTemplatePayload(rawPayload, { requireCore: isNew });
+  if (normalized.error) return res.status(400).json({ error: normalized.error });
+  try {
+    await upsertMobTemplateOverride(templateId, normalized.payload);
+    const applied = applyMobTemplateOverride(templateId, normalized.payload);
+    resetRoomsForTemplate(templateId);
+    res.json({ ok: true, template: applied });
+  } catch (err) {
+    res.status(500).json({ error: '保存怪物失败: ' + err.message });
+  }
+});
+
+app.delete('/admin/mobs/:id', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const templateId = String(req.params.id || '').trim();
+  if (!templateId) return res.status(400).json({ error: '缺少怪物ID' });
+  try {
+    await deleteMobTemplateOverride(templateId);
+    removeMobTemplateOverride(templateId);
+    resetRoomsForTemplate(templateId);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: '删除怪物覆盖失败: ' + err.message });
+  }
+});
+
+// 世界地图管理
+app.get('/admin/world/zones', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  try {
+    const zones = Object.values(WORLD || {}).map((zone) => ({
+      id: zone.id,
+      name: zone.name,
+      roomCount: Object.keys(zone.rooms || {}).length
+    })).sort((a, b) => a.id.localeCompare(b.id));
+    const overrides = (await listWorldZoneOverrides()).map((row) => ({
+      zoneId: row.zone_id,
+      data: safeParseJson(row.data_json, {}),
+      updatedAt: row.updated_at || null
+    }));
+    res.json({ ok: true, zones, overrides });
+  } catch (err) {
+    res.status(500).json({ error: '获取地图列表失败: ' + err.message });
+  }
+});
+
+app.get('/admin/world/zones/:zoneId', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const zoneId = String(req.params.zoneId || '').trim();
+  if (!zoneId) return res.status(400).json({ error: '缺少区域ID' });
+  try {
+    const override = await getWorldZoneOverride(zoneId);
+    res.json({
+      ok: true,
+      zone: WORLD[zoneId] || null,
+      override: override ? safeParseJson(override.data_json, {}) : null
+    });
+  } catch (err) {
+    res.status(500).json({ error: '获取区域失败: ' + err.message });
+  }
+});
+
+app.post('/admin/world/zones', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const zoneId = String(req.body?.zoneId || req.body?.id || '').trim();
+  if (!zoneId) return res.status(400).json({ error: '缺少区域ID' });
+  const rawPayload = req.body?.data ?? req.body?.zone ?? req.body;
+  const payload = normalizeWorldZonePayload(rawPayload, zoneId);
+  if (!payload.name && !WORLD[zoneId]) {
+    return res.status(400).json({ error: '缺少区域名称' });
+  }
+  if (payload.rooms && typeof payload.rooms === 'object') {
+    const errors = [];
+    Object.entries(payload.rooms).forEach(([roomId, roomPatch]) => {
+      const roomPayload = normalizeWorldRoomPayload(roomPatch);
+      if (roomPayload.spawns) {
+        const unknown = findUnknownMobIds(roomPayload.spawns);
+        if (unknown.length) {
+          errors.push(`${roomId}: ${unknown.join(', ')}`);
+        }
+      }
+    });
+    if (errors.length) {
+      return res.status(400).json({ error: `怪物ID不存在: ${errors.join(' | ')}` });
+    }
+  }
+  try {
+    await upsertWorldZoneOverride(zoneId, payload);
+    const applied = applyWorldZoneOverride(zoneId, payload);
+    if (payload.rooms && typeof payload.rooms === 'object') {
+      Object.keys(payload.rooms).forEach((roomId) => resetRoomForAllRealms(zoneId, roomId));
+    }
+    res.json({ ok: true, zone: applied });
+  } catch (err) {
+    res.status(500).json({ error: '保存区域失败: ' + err.message });
+  }
+});
+
+app.delete('/admin/world/zones/:zoneId', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const zoneId = String(req.params.zoneId || '').trim();
+  if (!zoneId) return res.status(400).json({ error: '缺少区域ID' });
+  try {
+    await deleteWorldZoneOverride(zoneId);
+    removeWorldZoneOverride(zoneId);
+    const rooms = WORLD[zoneId]?.rooms ? Object.keys(WORLD[zoneId].rooms) : [];
+    rooms.forEach((roomId) => resetRoomForAllRealms(zoneId, roomId));
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: '删除区域覆盖失败: ' + err.message });
+  }
+});
+
+app.get('/admin/world/rooms', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const zoneId = String(req.query?.zoneId || '').trim();
+  if (!zoneId) return res.status(400).json({ error: '缺少区域ID' });
+  const zone = WORLD[zoneId];
+  if (!zone || !zone.rooms) return res.json({ ok: true, rooms: [] });
+  const rooms = Object.values(zone.rooms).map((room) => ({
+    id: room.id,
+    name: room.name,
+    hasSpawns: Array.isArray(room.spawns) && room.spawns.length > 0
+  })).sort((a, b) => a.id.localeCompare(b.id));
+  res.json({ ok: true, rooms });
+});
+
+app.get('/admin/world/rooms/:zoneId/:roomId', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const zoneId = String(req.params.zoneId || '').trim();
+  const roomId = String(req.params.roomId || '').trim();
+  if (!zoneId || !roomId) return res.status(400).json({ error: '缺少房间ID' });
+  try {
+    const override = await getWorldRoomOverride(zoneId, roomId);
+    res.json({
+      ok: true,
+      room: WORLD[zoneId]?.rooms?.[roomId] || null,
+      override: override ? safeParseJson(override.data_json, {}) : null
+    });
+  } catch (err) {
+    res.status(500).json({ error: '获取房间失败: ' + err.message });
+  }
+});
+
+app.post('/admin/world/rooms', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const zoneId = String(req.body?.zoneId || req.body?.zone || '').trim();
+  const roomId = String(req.body?.roomId || req.body?.id || '').trim();
+  if (!zoneId || !roomId) return res.status(400).json({ error: '缺少房间ID' });
+  const rawPayload = req.body?.data ?? req.body?.room ?? req.body;
+  const payload = normalizeWorldRoomPayload(rawPayload);
+  if (!payload.name && !WORLD[zoneId]?.rooms?.[roomId]) {
+    return res.status(400).json({ error: '缺少房间名称' });
+  }
+  if (payload.spawns) {
+    const unknown = findUnknownMobIds(payload.spawns);
+    if (unknown.length) {
+      return res.status(400).json({ error: `怪物ID不存在: ${unknown.join(', ')}` });
+    }
+  }
+  try {
+    await upsertWorldRoomOverride(zoneId, roomId, payload);
+    const applied = applyWorldRoomOverride(zoneId, roomId, payload);
+    resetRoomForAllRealms(zoneId, roomId);
+    res.json({ ok: true, room: applied });
+  } catch (err) {
+    res.status(500).json({ error: '保存房间失败: ' + err.message });
+  }
+});
+
+app.delete('/admin/world/rooms/:zoneId/:roomId', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const zoneId = String(req.params.zoneId || '').trim();
+  const roomId = String(req.params.roomId || '').trim();
+  if (!zoneId || !roomId) return res.status(400).json({ error: '缺少房间ID' });
+  try {
+    await deleteWorldRoomOverride(zoneId, roomId);
+    removeWorldRoomOverride(zoneId, roomId);
+    resetRoomForAllRealms(zoneId, roomId);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: '删除房间覆盖失败: ' + err.message });
+  }
+});
+
 // 获取ITEM_TEMPLATES中的装备列表
 app.get('/admin/items/templates', async (req, res) => {
   const admin = await requireAdmin(req);
@@ -5558,6 +5818,178 @@ async function refreshRealmCache() {
 function getRealmIds() {
   const ids = realmCache.map((r) => r.id);
   return Array.from(new Set([0, 1, ...ids]));
+}
+
+function safeParseJson(raw, fallback = {}) {
+  if (raw == null) return fallback;
+  if (typeof raw === 'object') return raw;
+  try {
+    return JSON.parse(String(raw));
+  } catch {
+    return fallback;
+  }
+}
+
+function findRoomsByMobTemplate(templateId) {
+  const target = String(templateId || '').trim();
+  if (!target) return [];
+  const rooms = [];
+  Object.entries(WORLD).forEach(([zoneId, zone]) => {
+    if (!zone?.rooms) return;
+    Object.entries(zone.rooms).forEach(([roomId, room]) => {
+      const spawns = Array.isArray(room?.spawns) ? room.spawns : [];
+      if (spawns.includes(target)) {
+        rooms.push({ zoneId, roomId });
+      }
+    });
+  });
+  return rooms;
+}
+
+function resetRoomForAllRealms(zoneId, roomId) {
+  const realmIds = getRealmIds();
+  realmIds.forEach((realmId) => {
+    resetRoom(zoneId, roomId, realmId);
+    clearRoomStateCaches(realmId, zoneId, roomId);
+  });
+}
+
+function resetRoomsForTemplate(templateId) {
+  const rooms = findRoomsByMobTemplate(templateId);
+  rooms.forEach(({ zoneId, roomId }) => resetRoomForAllRealms(zoneId, roomId));
+  clearSpecialBossRooms();
+}
+
+async function applyMobTemplateOverridesFromDb() {
+  const rows = await listMobTemplateOverrides();
+  let applied = 0;
+  rows.forEach((row) => {
+    const id = String(row.template_id || '').trim();
+    if (!id) return;
+    const payload = safeParseJson(row.data_json, {});
+    applyMobTemplateOverride(id, payload);
+    applied += 1;
+  });
+  return applied;
+}
+
+async function applyWorldOverridesFromDb() {
+  const zoneRows = await listWorldZoneOverrides();
+  const roomRows = await listWorldRoomOverrides();
+  let appliedZones = 0;
+  let appliedRooms = 0;
+  zoneRows.forEach((row) => {
+    const id = String(row.zone_id || '').trim();
+    if (!id) return;
+    const payload = safeParseJson(row.data_json, {});
+    applyWorldZoneOverride(id, payload);
+    appliedZones += 1;
+  });
+  roomRows.forEach((row) => {
+    const zid = String(row.zone_id || '').trim();
+    const rid = String(row.room_id || '').trim();
+    if (!zid || !rid) return;
+    const payload = safeParseJson(row.data_json, {});
+    applyWorldRoomOverride(zid, rid, payload);
+    appliedRooms += 1;
+  });
+  return { zones: appliedZones, rooms: appliedRooms };
+}
+
+function normalizeMobTemplatePayload(raw, { requireCore = false } = {}) {
+  const source = raw && typeof raw === 'object' ? raw : {};
+  const payload = {};
+  if (Object.prototype.hasOwnProperty.call(source, 'name')) payload.name = String(source.name || '').trim();
+  if (Object.prototype.hasOwnProperty.call(source, 'level')) payload.level = Math.max(1, Math.floor(Number(source.level) || 1));
+  if (Object.prototype.hasOwnProperty.call(source, 'hp')) payload.hp = Math.max(1, Math.floor(Number(source.hp) || 1));
+  if (Object.prototype.hasOwnProperty.call(source, 'atk')) payload.atk = Math.max(0, Math.floor(Number(source.atk) || 0));
+  if (Object.prototype.hasOwnProperty.call(source, 'def')) payload.def = Math.max(0, Math.floor(Number(source.def) || 0));
+  if (Object.prototype.hasOwnProperty.call(source, 'mdef')) payload.mdef = Math.max(0, Math.floor(Number(source.mdef) || 0));
+  if (Object.prototype.hasOwnProperty.call(source, 'exp')) payload.exp = Math.max(0, Math.floor(Number(source.exp) || 0));
+  if (Object.prototype.hasOwnProperty.call(source, 'dex')) payload.dex = Math.max(0, Math.floor(Number(source.dex) || 0));
+  if (Object.prototype.hasOwnProperty.call(source, 'respawnMs')) payload.respawnMs = Math.max(0, Math.floor(Number(source.respawnMs) || 0));
+  if (Object.prototype.hasOwnProperty.call(source, 'worldBoss')) payload.worldBoss = Boolean(source.worldBoss);
+  if (Object.prototype.hasOwnProperty.call(source, 'specialBoss')) payload.specialBoss = Boolean(source.specialBoss);
+  if (Object.prototype.hasOwnProperty.call(source, 'sabakBoss')) payload.sabakBoss = Boolean(source.sabakBoss);
+  if (Object.prototype.hasOwnProperty.call(source, 'summoned')) payload.summoned = Boolean(source.summoned);
+  if (Object.prototype.hasOwnProperty.call(source, 'gold')) {
+    const gold = Array.isArray(source.gold) ? source.gold : null;
+    if (gold && gold.length >= 2) {
+      const min = Math.max(0, Math.floor(Number(gold[0] || 0)));
+      const max = Math.max(min, Math.floor(Number(gold[1] || 0)));
+      payload.gold = [min, max];
+    }
+  }
+  if (Object.prototype.hasOwnProperty.call(source, 'drops') && Array.isArray(source.drops)) {
+    payload.drops = source.drops
+      .map((entry) => {
+        const id = String(entry?.id || '').trim();
+        if (!id) return null;
+        const chance = Number(entry?.chance ?? 0);
+        return { id, chance: Number.isFinite(chance) ? Math.max(0, Math.min(1, chance)) : 0 };
+      })
+      .filter(Boolean);
+  }
+
+  const knownKeys = new Set(['name', 'level', 'hp', 'atk', 'def', 'mdef', 'exp', 'dex', 'respawnMs', 'worldBoss', 'specialBoss', 'sabakBoss', 'summoned', 'gold', 'drops']);
+  Object.keys(source).forEach((key) => {
+    if (key === 'id' || key === 'templateId') return;
+    if (knownKeys.has(key)) return;
+    payload[key] = source[key];
+  });
+
+  if (requireCore) {
+    if (!payload.name) return { error: '缺少怪物名称' };
+    if (!payload.level) return { error: '缺少怪物等级' };
+    if (!payload.hp) return { error: '缺少怪物生命' };
+    if (payload.atk == null) return { error: '缺少怪物攻击' };
+    if (payload.def == null) return { error: '缺少怪物防御' };
+    if (payload.exp == null) return { error: '缺少怪物经验' };
+    if (!Array.isArray(payload.gold)) return { error: '缺少金币区间' };
+  }
+  return { payload };
+}
+
+function normalizeWorldZonePayload(raw, zoneId) {
+  const source = raw && typeof raw === 'object' ? raw : {};
+  const payload = {};
+  if (Object.prototype.hasOwnProperty.call(source, 'name')) payload.name = String(source.name || '').trim() || String(zoneId || '').trim();
+  if (Object.prototype.hasOwnProperty.call(source, 'desc')) payload.desc = String(source.desc || '').trim();
+  const extraKeys = ['safe', 'levelLimit', 'cultivationOnly'];
+  extraKeys.forEach((key) => {
+    if (Object.prototype.hasOwnProperty.call(source, key)) payload[key] = source[key];
+  });
+  if (source.rooms && typeof source.rooms === 'object' && !Array.isArray(source.rooms)) {
+    payload.rooms = source.rooms;
+  }
+  return payload;
+}
+
+function normalizeWorldRoomPayload(raw) {
+  const source = raw && typeof raw === 'object' ? raw : {};
+  const payload = {};
+  if (Object.prototype.hasOwnProperty.call(source, 'name')) payload.name = String(source.name || '').trim();
+  if (Object.prototype.hasOwnProperty.call(source, 'desc')) payload.desc = String(source.desc || '').trim();
+  if (Object.prototype.hasOwnProperty.call(source, 'exits') && source.exits && typeof source.exits === 'object' && !Array.isArray(source.exits)) {
+    payload.exits = source.exits;
+  }
+  if (Object.prototype.hasOwnProperty.call(source, 'spawns') && Array.isArray(source.spawns)) {
+    payload.spawns = source.spawns.map((id) => String(id || '').trim()).filter(Boolean);
+  }
+  if (Object.prototype.hasOwnProperty.call(source, 'npcs') && Array.isArray(source.npcs)) {
+    payload.npcs = source.npcs.map((id) => String(id || '').trim()).filter(Boolean);
+  }
+
+  const passthroughKeys = ['minCultivationLevel', 'sabakOnly', 'towerFloor', 'personalBossOnly', 'crossRealmOnly', 'personalBossTier', 'personalBossOwnerKey'];
+  passthroughKeys.forEach((key) => {
+    if (Object.prototype.hasOwnProperty.call(source, key)) payload[key] = source[key];
+  });
+  return payload;
+}
+
+function findUnknownMobIds(spawns = []) {
+  if (!Array.isArray(spawns)) return [];
+  return spawns.filter((id) => id && !MOB_TEMPLATES[String(id)]);
 }
 
 const sabakConfig = {
@@ -7467,14 +7899,18 @@ function dropLoot(mobTemplate, bonus = 1) {
       }
     });
   }
-  // 全地图怪物都有概率掉落修炼果（爆率可从后台配置，VIP不加成）
-  const trainingChance = Math.min(1, getTrainingFruitDropRate());
-  if (Math.random() <= trainingChance) {
-    loot.push({ id: 'training_fruit', effects: null });
+  // 修炼果掉落（可后台开关）
+  if (getTrainingFruitDropEnabled()) {
+    const trainingChance = Math.min(1, getTrainingFruitDropRate());
+    if (Math.random() <= trainingChance) {
+      loot.push({ id: 'training_fruit', effects: null });
+    }
   }
-  const petTrainingChance = Math.min(1, getPetTrainingFruitDropRate());
-  if (Math.random() <= petTrainingChance) {
-    loot.push({ id: 'pet_training_fruit', effects: null });
+  if (getPetTrainingFruitDropEnabled()) {
+    const petTrainingChance = Math.min(1, getPetTrainingFruitDropRate());
+    if (Math.random() <= petTrainingChance) {
+      loot.push({ id: 'pet_training_fruit', effects: null });
+    }
   }
   const rarityDrop = rollRarityDrop(mobTemplate, finalBonus);
   if (rarityDrop) {
@@ -9023,21 +9459,25 @@ function distributeLootWithBonus(party, partyMembers, mobTemplate, bonusResolver
     });
   }
 
-  const trainingTarget = partyMembers[randInt(0, partyMembers.length - 1)];
-  const trainingChance = Math.min(1, getTrainingFruitDropRate());
-  if (Math.random() <= trainingChance) {
-    addItem(trainingTarget, 'training_fruit', 1, null);
-    logLoot(`[loot][party] ${trainingTarget.name} <- training_fruit`);
-    results.push({ id: 'training_fruit', effects: null, target: trainingTarget });
-    notifyParty(trainingTarget, 'training_fruit', null);
+  if (getTrainingFruitDropEnabled()) {
+    const trainingTarget = partyMembers[randInt(0, partyMembers.length - 1)];
+    const trainingChance = Math.min(1, getTrainingFruitDropRate());
+    if (Math.random() <= trainingChance) {
+      addItem(trainingTarget, 'training_fruit', 1, null);
+      logLoot(`[loot][party] ${trainingTarget.name} <- training_fruit`);
+      results.push({ id: 'training_fruit', effects: null, target: trainingTarget });
+      notifyParty(trainingTarget, 'training_fruit', null);
+    }
   }
-  const petTrainingTarget = partyMembers[randInt(0, partyMembers.length - 1)];
-  const petTrainingChance = Math.min(1, getPetTrainingFruitDropRate());
-  if (Math.random() <= petTrainingChance) {
-    addItem(petTrainingTarget, 'pet_training_fruit', 1, null);
-    logLoot(`[loot][party] ${petTrainingTarget.name} <- pet_training_fruit`);
-    results.push({ id: 'pet_training_fruit', effects: null, target: petTrainingTarget });
-    notifyParty(petTrainingTarget, 'pet_training_fruit', null);
+  if (getPetTrainingFruitDropEnabled()) {
+    const petTrainingTarget = partyMembers[randInt(0, partyMembers.length - 1)];
+    const petTrainingChance = Math.min(1, getPetTrainingFruitDropRate());
+    if (Math.random() <= petTrainingChance) {
+      addItem(petTrainingTarget, 'pet_training_fruit', 1, null);
+      logLoot(`[loot][party] ${petTrainingTarget.name} <- pet_training_fruit`);
+      results.push({ id: 'pet_training_fruit', effects: null, target: petTrainingTarget });
+      notifyParty(petTrainingTarget, 'pet_training_fruit', null);
+    }
   }
 
   const rarityTarget = partyMembers[randInt(0, partyMembers.length - 1)];
@@ -10784,8 +11224,10 @@ function applyOfflineRewards(player) {
   const goldGain = Math.floor(offlineMinutes * player.level * offlineMultiplier * goldRewardMult);
   let fruitGain = 0;
   let petFruitGain = 0;
-  const fruitDropRate = getTrainingFruitDropRate();
-  const petFruitDropRate = getPetTrainingFruitDropRate();
+  const fruitDropEnabled = getTrainingFruitDropEnabled();
+  const petFruitDropEnabled = getPetTrainingFruitDropEnabled();
+  const fruitDropRate = fruitDropEnabled ? getTrainingFruitDropRate() : 0;
+  const petFruitDropRate = petFruitDropEnabled ? getPetTrainingFruitDropRate() : 0;
   for (let i = 0; i < offlineMinutes; i += 1) {
     if (Math.random() <= fruitDropRate) {
       fruitGain += 1;
@@ -10797,20 +11239,20 @@ function applyOfflineRewards(player) {
   gainExp(player, expGain);
   const petExpResult = gainActivePetExp(player, expGain);
   player.gold += goldGain;
-  if (fruitGain > 0) {
+  if (fruitDropEnabled && fruitGain > 0) {
     addItem(player, 'training_fruit', fruitGain);
   }
-  if (petFruitGain > 0) {
+  if (petFruitDropEnabled && petFruitGain > 0) {
     addItem(player, 'pet_training_fruit', petFruitGain);
   }
   // 标记基础数据和背包脏（exp/gold/ inventory变化）
   markPlayerDirty(player, ['base', 'inventory']);
   player.flags.offlineAt = null;
   const offlineLabel = offlineSmartManaged ? '离线托管（智能挂机）收益' : '离线挂机收益';
-  if (fruitGain > 0 || petFruitGain > 0) {
+  if ((fruitDropEnabled && fruitGain > 0) || (petFruitDropEnabled && petFruitGain > 0)) {
     const extraParts = [];
-    if (fruitGain > 0) extraParts.push(`修炼果 x${fruitGain}`);
-    if (petFruitGain > 0) extraParts.push(`宠物修炼果 x${petFruitGain}`);
+    if (fruitDropEnabled && fruitGain > 0) extraParts.push(`修炼果 x${fruitGain}`);
+    if (petFruitDropEnabled && petFruitGain > 0) extraParts.push(`宠物修炼果 x${petFruitGain}`);
     player.send(`${offlineLabel}: ${expGain} 经验, ${goldGain} 金币, ${extraParts.join('，')}。`);
   } else {
     player.send(`${offlineLabel}: ${expGain} 经验, ${goldGain} 金币。`);
@@ -10847,6 +11289,14 @@ const roomStateCache = new Map();
 const roomStateDataCache = new Map();
 const roomStatePatchMetaCache = new Map();
 const ROOM_STATE_CACHE_MAX_SIZE = 2000; // LRU 限制：最多保留2000个房间状态
+
+function clearRoomStateCaches(realmId, zoneId, roomId) {
+  const key = `${realmId}:${zoneId}:${roomId}`;
+  roomStateCache.delete(key);
+  roomStateDataCache.delete(key);
+  roomStatePatchMetaCache.delete(key);
+  roomPlayersCache.delete(key);
+}
 
 // LRU 清理：当 Map 超过大小时，删除最老的条目
 function ensureMapSizeLimit(map, maxSize) {
@@ -20713,10 +21163,15 @@ async function start() {
   const syncedCount = await syncItemsToTemplates();
   console.log(`Synced ${syncedCount} items from database.`);
 
-  // 同步数据库中的掉落配置到 MOB_TEMPLATES
-  console.log('Syncing mob drops from database...');
-  const syncedDrops = await syncMobDropsToTemplates();
-  console.log(`Synced ${syncedDrops} mob drops from database.`);
+    // 同步数据库中的掉落配置到 MOB_TEMPLATES
+    console.log('Syncing mob drops from database...');
+    const syncedDrops = await syncMobDropsToTemplates();
+    console.log(`Synced ${syncedDrops} mob drops from database.`);
+
+    const mobOverrides = await applyMobTemplateOverridesFromDb();
+    console.log(`Applied ${mobOverrides} mob template overrides.`);
+    const worldOverrides = await applyWorldOverridesFromDb();
+    console.log(`Applied world overrides: zones=${worldOverrides.zones}, rooms=${worldOverrides.rooms}.`);
 
   // 启动自动备份定时任务
   await cleanupConsignmentHistory();
@@ -21072,6 +21527,7 @@ async function start() {
   applyRoomVariantCount(roomVariantCount);
   shrinkRoomVariants(WORLD, roomVariantCount);
   expandRoomVariants(WORLD);
+  await applyWorldOverridesFromDb();
 
   // 加载修炼果配置
   const trainingFruitCoefficient = await getTrainingFruitCoefficientDb();
@@ -21080,6 +21536,10 @@ async function start() {
   setTrainingFruitDropRateConfig(trainingFruitDropRate);
   const petTrainingFruitDropRate = await getPetTrainingFruitDropRateDb();
   setPetTrainingFruitDropRateConfig(petTrainingFruitDropRate);
+  const trainingFruitDropEnabled = await getTrainingFruitDropEnabledDb();
+  const petTrainingFruitDropEnabled = await getPetTrainingFruitDropEnabledDb();
+  setTrainingFruitDropEnabledConfig(trainingFruitDropEnabled);
+  setPetTrainingFruitDropEnabledConfig(petTrainingFruitDropEnabled);
 
   // 加载修炼系统配置
   const trainingPerLevelConfig = await getTrainingPerLevelConfigDb();
