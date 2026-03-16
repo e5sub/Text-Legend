@@ -38,6 +38,7 @@ import { applyDamage } from './combat.js';
 import {
   getTrainingPerLevelConfig,
   getTrainingFruitCoefficient,
+  getTrainingFruitDropEnabled,
   getRefineBaseSuccessRate,
   getRefineDecayRate,
   getRefineMaterialCount,
@@ -2857,6 +2858,9 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       }
       // 修炼果：随机增加属性（支持批量使用）
       if (item.id === 'training_fruit') {
+        if (!getTrainingFruitDropEnabled()) {
+          return send('修炼果已被设置为材料，无法使用。');
+        }
         // 解析数量参数，格式如 "修炼果 10" 或 "修炼果 5"
         // 如果没有指定数量，默认使用全部
         const parts = args.split(' ').filter(Boolean);

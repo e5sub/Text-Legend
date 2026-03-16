@@ -3304,6 +3304,7 @@ app.post('/admin/training-fruit-settings/update', async (req, res) => {
   setPetTrainingFruitDropRateConfig(newPetDropRate);
   setTrainingFruitDropEnabledConfig(newDropEnabled);
   setPetTrainingFruitDropEnabledConfig(newPetDropEnabled);
+  applyTrainingFruitItemMode();
   res.json({
     ok: true,
     coefficient: newCoefficient,
@@ -5991,6 +5992,17 @@ function normalizeWorldRoomPayload(raw) {
 function findUnknownMobIds(spawns = []) {
   if (!Array.isArray(spawns)) return [];
   return spawns.filter((id) => id && !MOB_TEMPLATES[String(id)]);
+}
+
+function applyTrainingFruitItemMode() {
+  const trainingEnabled = getTrainingFruitDropEnabled();
+  const petEnabled = getPetTrainingFruitDropEnabled();
+  if (ITEM_TEMPLATES?.training_fruit) {
+    ITEM_TEMPLATES.training_fruit.type = trainingEnabled ? 'consumable' : 'material';
+  }
+  if (ITEM_TEMPLATES?.pet_training_fruit) {
+    ITEM_TEMPLATES.pet_training_fruit.type = petEnabled ? 'consumable' : 'material';
+  }
 }
 
 const sabakConfig = {
@@ -21541,6 +21553,7 @@ async function start() {
   const petTrainingFruitDropEnabled = await getPetTrainingFruitDropEnabledDb();
   setTrainingFruitDropEnabledConfig(trainingFruitDropEnabled);
   setPetTrainingFruitDropEnabledConfig(petTrainingFruitDropEnabled);
+  applyTrainingFruitItemMode();
 
   // 加载修炼系统配置
   const trainingPerLevelConfig = await getTrainingPerLevelConfigDb();
