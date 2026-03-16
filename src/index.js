@@ -11061,7 +11061,10 @@ function findAliveBossTarget(player) {
   const playerCultivationLevel = getCultivationLevel(player);
   let best = null;
   for (const realmId of realmIds) {
-    const mobs = getAllAliveMobs(realmId);
+    const cachedBosses = aliveBossCache.get(realmId);
+    const mobs = Array.isArray(cachedBosses) && cachedBosses.length
+      ? cachedBosses
+      : getAllAliveMobs(realmId);
     for (const mob of mobs) {
       if (!mob || mob.hp <= 0) continue;
       const tpl = MOB_TEMPLATES[mob.templateId];
@@ -11208,6 +11211,33 @@ function tryAutoFullBossMove(player) {
   const canMoveForBoss = now - lastMoveAt >= AUTO_FULL_BOSS_MOVE_COOLDOWN_MS;
   if (!canMoveForBoss) return null;
   const bossTarget = findAliveBossTarget(player);
+  if (isManagedHostedPlayer(player)) {
+    const lastLogAt = Number(player._autoFullBossLogAt || 0);
+    if (now - lastLogAt >= 30000) {
+      player._autoFullBossLogAt = now;
+      const filter = getAutoFullBossFilterSet(player);
+      const filterInfo = filter == null ? 'all' : `filter=${filter.size}`;
+      const currentRoom = `${player.position?.zone || '-'}:${player.position?.room || '-'}`;
+      const cooldownLeft = Math.max(0, AUTO_FULL_BOSS_MOVE_COOLDOWN_MS - (now - lastMoveAt));
+      const crossCdLeft = Math.max(0, Number(player.flags?.autoFullCrossBossCooldownUntil || 0) - now);
+      const cachedBosses = aliveBossCache.get(player.realmId || 1);
+      const cachedCrossBosses = aliveBossCache.get(CROSS_REALM_REALM_ID);
+      const cacheInfo = `cache=${cachedBosses?.length || 0}/${cachedCrossBosses?.length || 0}`;
+      if (bossTarget) {
+        console.log(
+          `[managed][autoafk] ${player.name} room=${currentRoom} realm=${player.realmId || 1} ` +
+          `${filterInfo} cooldown=${cooldownLeft}ms crossCd=${crossCdLeft}ms ${cacheInfo} ` +
+          `target=${bossTarget.zoneId}:${bossTarget.roomId} tpl=${bossTarget.templateId} exp=${bossTarget.exp || 0}`
+        );
+      } else {
+        console.log(
+          `[managed][autoafk] ${player.name} room=${currentRoom} realm=${player.realmId || 1} ` +
+          `${filterInfo} cooldown=${cooldownLeft}ms crossCd=${crossCdLeft}ms ${cacheInfo} ` +
+          'target=none'
+        );
+      }
+    }
+  }
   if (bossTarget && movePlayerToRoom(player, bossTarget.zoneId, bossTarget.roomId)) {
     if (MOB_TEMPLATES[bossTarget.templateId] && isCultivationBoss(MOB_TEMPLATES[bossTarget.templateId])) {
       player.flags.autoFullCultivationBossResumeAt = null;
@@ -15878,11 +15908,13 @@ async function sendRoomState(zoneId, roomId, realmId = 1) {
 }
 
 const WORLD_BOSS_ROOM = { zoneId: 'wb', roomId: 'lair' };
+const aliveBossCache = new Map();
 const SUMMON_MAX_LEVEL = 8;
 const SUMMON_EXP_PER_LEVEL = 5;
 
 function checkMobRespawn(realmId = 1) {
   // 检查所有房间的怪物刷新（包括BOSS和普通怪物）
+  const aliveBosses = [];
   Object.keys(WORLD).forEach((zoneId) => {
     const zone = WORLD[zoneId];
     if (!zone?.rooms) return;
@@ -15896,6 +15928,20 @@ function checkMobRespawn(realmId = 1) {
       adjustWorldBossStatsByPlayerCount(zoneId, roomId, effectiveRealmId);
 
       const respawned = mobs.filter((m) => m.justRespawned);
+      mobs.forEach((mob) => {
+        const tpl = MOB_TEMPLATES[mob?.templateId];
+        if (!tpl || !isBossMob(tpl)) return;
+        if (mob.hp > 0) {
+          aliveBosses.push({
+            id: mob.id,
+            zoneId,
+            roomId,
+            templateId: tpl.id,
+            exp: Number(tpl.exp || 0),
+            hp: mob.hp
+          });
+        }
+      });
 
       if (respawned.length) {
         respawned.forEach((mob) => {
@@ -15925,6 +15971,7 @@ function checkMobRespawn(realmId = 1) {
       }
     });
   });
+  aliveBossCache.set(realmId, aliveBosses);
 }
 
 function recordMobDamage(mob, attackerName, dmg) {
