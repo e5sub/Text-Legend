@@ -669,6 +669,7 @@ async function loadActivityPointShopConfig() {
     activityPointShopRowsCache = (Array.isArray(config.items) ? config.items : []).map((item, index) => ({
       _id: String(item?.id || `aps_${index + 1}`),
       itemId: String(item?.itemId || '').trim(),
+      qty: Math.max(1, Math.floor(Number(item?.qty || 1))),
       cost: Math.max(1, Math.floor(Number(item?.cost || 1)))
     })).filter((row) => row.itemId);
     renderActivityPointShopRows();
@@ -685,6 +686,7 @@ function activityPointShopEmptyItem() {
   return {
     _id: `aps_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
     itemId: '',
+    qty: 1,
     cost: 1
   };
 }
@@ -724,7 +726,7 @@ function renderActivityPointShopRows() {
   const rows = Array.isArray(activityPointShopRowsCache) ? activityPointShopRowsCache : [];
   activityPointShopList.innerHTML = '';
   if (!rows.length) {
-    activityPointShopList.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#999;">暂无商品，点击“添加商品”</td></tr>';
+    activityPointShopList.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#999;">暂无商品，点击“添加商品”</td></tr>';
     return;
   }
   rows.forEach((item, index) => {
@@ -735,6 +737,7 @@ function renderActivityPointShopRows() {
       <td>
         ${buildActivityPointShopItemSelectHtml(item.itemId)}
       </td>
+      <td><input data-k="qty" type="number" min="1" value="${Math.max(1, Number(item.qty || 1))}"></td>
       <td><input data-k="cost" type="number" min="1" value="${Math.max(1, Number(item.cost || 1))}"></td>
       <td><button type="button" class="btn-small" data-act="del">删除</button></td>
     `;
@@ -753,6 +756,7 @@ function collectActivityPointShopConfigFromUi() {
     rows.push({
       id: shopId,
       itemId: rewardItemId,
+      qty: Math.max(1, Math.floor(Number(getVal('qty')?.value || 1))),
       cost: Math.max(1, Math.floor(Number(getVal('cost')?.value || 1)))
     });
   });
@@ -768,6 +772,7 @@ async function saveActivityPointShopConfig() {
     activityPointShopRowsCache = (Array.isArray(data?.config?.items) ? data.config.items : config.items).map((item, index) => ({
       _id: String(item?.id || `aps_${index + 1}`),
       itemId: String(item?.itemId || '').trim(),
+      qty: Math.max(1, Math.floor(Number(item?.qty || 1))),
       cost: Math.max(1, Math.floor(Number(item?.cost || 1)))
     })).filter((row) => row.itemId);
     renderActivityPointShopRows();

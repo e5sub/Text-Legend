@@ -1430,6 +1430,7 @@ function normalizeActivityPointShopConfig(raw) {
       id,
       cost: Math.max(1, Math.floor(Number(entry?.cost || 0))),
       itemId,
+      qty: Math.max(1, Math.floor(Number(entry?.qty || 1))),
       sort: Number.isFinite(Number(entry?.sort)) ? Number(entry.sort) : index
     };
   }).filter((it) => it && it.cost > 0 && it.itemId);
@@ -1457,7 +1458,7 @@ function expandActivityPointShopConfigForRuntime(simpleConfig) {
       needSvip: false,
       reward: {
         gold: 0,
-        items: [{ id: itemId, qty: 1 }]
+        items: [{ id: itemId, qty: Math.max(1, Math.floor(Number(entry?.qty || 1))) }]
       },
       sort: Number.isFinite(Number(entry?.sort)) ? Number(entry.sort) : index
     };
