@@ -8088,7 +8088,7 @@ function getPlayerSaveKey(player) {
   return `${Number(player?.userId || 0)}:${Number(player?.realmId || 1)}:${String(player?.name || '')}`;
 }
 
-function getPlayerSaveMinIntervalMs(player) {
+function getPlayerSaveMinIntervalMsForPlayer(player) {
   if (player?.flags?.offlineManagedAuto || player?.flags?.offlineManagedPending) {
     return PLAYER_SAVE_MANAGED_MIN_INTERVAL_MS;
   }
@@ -8173,7 +8173,7 @@ async function flushPendingPlayerSaves() {
     const forceDue = isPlayerForceSaveDue(queuedPlayer);
 
     const lastPersistAt = playerLastPersistAt.get(saveKey) || 0;
-    const minIntervalMs = getPlayerSaveMinIntervalMs(queuedPlayer);
+    const minIntervalMs = getPlayerSaveMinIntervalMsForPlayer(queuedPlayer);
     const remaining = minIntervalMs - (Date.now() - lastPersistAt);
 
     // 如果有脏标记但没到强制时间，且没到最小间隔，则延迟
