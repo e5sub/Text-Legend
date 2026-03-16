@@ -282,6 +282,10 @@ button:hover {
   gap: 12px;
 }
 
+.block-toggle {
+  display: none;
+}
+
 .block-body {
   margin-top: 6px;
 }

@@ -72,8 +72,8 @@ const svipMsg = document.getElementById('svip-msg');
 const usersPaginationInfo = document.getElementById('users-pagination-info');
 const backupMsg = document.getElementById('backup-msg');
 const importFileInput = document.getElementById('import-file');
-const themeToggleBtn = document.getElementById('theme-toggle');
-const collapseAllBtn = document.getElementById('collapse-all');
+const themeToggleBtn = null;
+const collapseAllBtn = null;
 const dashboardServer = document.getElementById('dashboard-server');
 const dashboardPlayers = document.getElementById('dashboard-players');
 const dashboardEconomy = document.getElementById('dashboard-economy');
@@ -2754,13 +2754,6 @@ async function saveTrainingSettings() {
   }
 }
 
-function applyTheme(theme) {
-  document.body.classList.toggle('theme-dark', theme === 'dark');
-  if (themeToggleBtn) {
-    themeToggleBtn.textContent = theme === 'dark' ? '切换亮色' : '切换暗色';
-  }
-}
-
 // 修炼系统配置
 async function loadTrainingSettings() {
   if (!trainingMsg) return;
@@ -2819,39 +2812,8 @@ async function saveTrainingSettings() {
   }
 }
 
-function toggleTheme() {
-  const current = localStorage.getItem('adminTheme') || 'light';
-  const next = current === 'dark' ? 'light' : 'dark';
-  localStorage.setItem('adminTheme', next);
-  applyTheme(next);
-}
-
 function initCollapsibleBlocks() {
-  const blocks = Array.from(document.querySelectorAll('.block[data-collapsible]'));
-  blocks.forEach((block) => {
-    const toggle = block.querySelector('.block-toggle');
-    if (!toggle) return;
-    toggle.textContent = '折叠';
-    toggle.addEventListener('click', () => {
-      block.classList.toggle('collapsed');
-      toggle.textContent = block.classList.contains('collapsed') ? '展开' : '折叠';
-    });
-  });
-  if (collapseAllBtn) {
-    collapseAllBtn.classList.remove('active');
-    collapseAllBtn.textContent = '折叠全部';
-    collapseAllBtn.addEventListener('click', () => {
-      const shouldCollapse = !collapseAllBtn.classList.contains('active');
-      collapseAllBtn.classList.toggle('active', shouldCollapse);
-      collapseAllBtn.textContent = shouldCollapse ? '展开全部' : '折叠全部';
-      blocks.forEach((block) => {
-        const toggle = block.querySelector('.block-toggle');
-        if (!toggle) return;
-        block.classList.toggle('collapsed', shouldCollapse);
-        toggle.textContent = shouldCollapse ? '展开' : '折叠';
-      });
-    });
-  }
+  return;
 }
 
 // 修炼系统配置
@@ -7745,7 +7707,6 @@ async function initDashboard() {
 }
 
 initDashboard();
-applyTheme(localStorage.getItem('adminTheme') || 'light');
 initCollapsibleBlocks();
 
 document.getElementById('admin-login-btn').addEventListener('click', login);
@@ -8281,7 +8242,6 @@ if (cmdRateSaveBtn) {
 }
 document.getElementById('backup-download').addEventListener('click', downloadBackup);
 document.getElementById('import-btn').addEventListener('click', importBackup);
-if (themeToggleBtn) themeToggleBtn.addEventListener('click', toggleTheme);
 
 // 区服管理事件
 if (document.getElementById('realm-create-btn')) {
@@ -9450,6 +9410,7 @@ function renderRecentLogins(target, items) {
     return `<div class="dashboard-list-item"><span>${name}</span><span class="dashboard-list-meta">${lastSeen}</span></div>`;
   }).join('');
 }
+
 
 function formatIdWithName(name, id) {
   const safeName = String(name || '').trim();

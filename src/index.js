@@ -1764,6 +1764,7 @@ app.get('/admin/dashboard-stats', async (req, res) => {
     return Number(row?.avg || 0);
   };
 
+
   const [
     users,
     newUsersToday,
