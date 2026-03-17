@@ -4368,7 +4368,7 @@ function renderGrowthModal() {
   growthUi.cost.textContent = `单次消耗: ${materialLabel}x${materialCost}${goldCost > 0 ? ` + 金币${goldCost}` : ''}（每${breakthroughEvery}级突破额外 ${breakthroughMaterialLabel}x${breakthroughMaterialCost}）`;
   if (growthUi.preview) growthUi.preview.textContent = '一键成长预估: --';
   if (growthUi.confirm) growthUi.confirm.disabled = true;
-  if (growthUi.batch) growthUi.batch.disabled = true;
+  if (growthUi.batch) growthUi.batch.disabled = false;
 
   if (!equippedUltimate.length) {
     const empty = document.createElement('div');
@@ -4408,7 +4408,7 @@ function renderGrowthModal() {
       growthUi.successRate.textContent = `下一级成功率: ${finalRate.toFixed(2)}% (基础${baseRate.toFixed(2)}%)`;
       growthUi.cost.textContent = `单次消耗: ${materialLabel}x${materialCost}${goldCost > 0 ? ` + 金币${goldCost}` : ''}${needBreakthroughMat ? ` + ${breakthroughMaterialLabel}x${breakthroughMaterialCost}` : ''}`;
       if (growthUi.confirm) growthUi.confirm.disabled = hasMaxLevel ? (currentLevel >= maxLevel) : false;
-      if (growthUi.batch) growthUi.batch.disabled = hasMaxLevel ? (currentLevel >= maxLevel) : false;
+      if (growthUi.batch) growthUi.batch.disabled = false;
       updateGrowthBatchPreview();
     });
     growthUi.list.appendChild(btn);
@@ -11962,7 +11962,19 @@ if (growthUi.confirm) {
 }
 if (growthUi.batch) {
   growthUi.batch.addEventListener('click', async () => {
-    if (!socket || !growthSelection?.slot) return;
+    if (!socket) {
+      showToast('连接未就绪，请稍后再试');
+      return;
+    }
+    if (!growthSelection?.slot) {
+      showToast('请先选择要成长的终极装备');
+      return;
+    }
+    const rtPrecheck = getGrowthRuntimeConfig();
+    if (rtPrecheck.hasMaxLevel && Number(growthSelection.growthLevel || 0) >= Number(rtPrecheck.maxLevel || 0)) {
+      showToast('该装备已达成长上限');
+      return;
+    }
     const input = await promptModal({
       title: '一键成长次数',
       text: '请输入要执行的成长次数（1-200）',
