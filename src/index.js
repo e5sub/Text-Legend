@@ -17786,21 +17786,45 @@ io.on('connection', (socket) => {
       const attrRaw = String(clean?.attr || clean?.slot || '').trim();
       const key = attrAliases[attrRaw] || attrAliases[attrRaw.toLowerCase?.() ? attrRaw.toLowerCase() : attrRaw];
       if (!key || !validKeys.includes(key)) return fail('无效修炼属性');
-      const reqCount = Math.max(1, Math.floor(Number(clean?.count ?? clean?.qty ?? 1)));
+      const rawCount = Math.floor(Number(clean?.count ?? clean?.qty ?? 1));
+      let reqCount = Math.max(1, Math.min(999, Number.isFinite(rawCount) ? rawCount : 1));
       pet.training = normalizePetTrainingRecord(pet.training);
       const curLv = Math.max(0, Math.floor(Number(pet.training[key] || 0)));
-      let totalCost = 0;
-      for (let i = 0; i < reqCount; i += 1) {
-        totalCost += Math.max(1, Math.floor(10000 + (curLv + i) * 2000));
-      }
+      const calcTrainCost = (lv) => Math.max(1, Math.floor(10000 + lv * 2000));
+      const calcTotalCost = (count) => {
+        let sum = 0;
+        for (let i = 0; i < count; i += 1) sum += calcTrainCost(curLv + i);
+        return sum;
+      };
       const ownedFruit = Math.max(0, Math.floor(Number((player.inventory || []).find((i) => i?.id === 'pet_training_fruit')?.qty || 0)));
-      if (ownedFruit < reqCount) return fail(`宠物修炼果不足，需要${reqCount}个`);
-      if (player.gold < totalCost) return fail(`金币不足，需要${totalCost}`);
+      if (ownedFruit < 1) return fail('宠物修炼果不足，需要至少1个');
+      const maxByFruit = Math.min(reqCount, ownedFruit);
+      let maxByGold = 0;
+      let runningCost = 0;
+      for (let i = 0; i < maxByFruit; i += 1) {
+        runningCost += calcTrainCost(curLv + i);
+        if (runningCost > player.gold) break;
+        maxByGold += 1;
+      }
+      if (maxByGold < 1) {
+        const firstCost = calcTrainCost(curLv);
+        return fail(`金币不足，至少需要${firstCost}`);
+      }
+      let adjusted = false;
+      if (reqCount > maxByGold) {
+        reqCount = maxByGold;
+        adjusted = true;
+      }
+      const totalCost = calcTotalCost(reqCount);
       if (!removeItem(player, 'pet_training_fruit', reqCount)) return fail('扣除宠物修炼果失败');
       player.gold -= totalCost;
       pet.training[key] = curLv + reqCount;
       dirty = true;
-      emitResult(true, reqCount > 1 ? `宠物修炼成功：${key} Lv${curLv}->Lv${pet.training[key]}` : `宠物修炼成功：${key} Lv${pet.training[key]}`);
+      const labelMap = { hp: '生命', mp: '魔法值', atk: '攻击', def: '防御', mag: '魔法', mdef: '魔御', dex: '敏捷' };
+      const label = labelMap[key] || key;
+      const prefix = adjusted ? `金币/宠物修炼果不足，已按可用次数修炼 ${reqCount} 次。` : '';
+      const detail = reqCount > 1 ? `宠物修炼成功：${label} Lv${curLv}->Lv${pet.training[key]}` : `宠物修炼成功：${label} Lv${pet.training[key]}`;
+      emitResult(true, `${prefix}${detail}`);
     } else if (action === 'divine_advance') {
       const pet = getPetById(clean?.petId);
       if (!pet) return fail('宠物不存在');

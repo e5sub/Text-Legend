@@ -2178,10 +2178,13 @@ function parseTradeItems(text) {
   }
 }
 
-function promptModal({ title, text, placeholder, value, extra, allowEmpty, type }) {
+function promptModal({ title, text, placeholder, value, extra, allowEmpty, type, onInput }) {
   if (!promptUi.modal || !promptUi.input) return Promise.resolve(null);
   return new Promise((resolve) => {
     const prevType = promptUi.input.type;
+    const handleInput = () => {
+      if (typeof onInput === 'function') onInput(promptUi.input.value, promptUi);
+    };
     const onCancel = () => {
       cleanup();
       resolve(null);
@@ -2207,6 +2210,7 @@ function promptModal({ title, text, placeholder, value, extra, allowEmpty, type 
       promptUi.ok.removeEventListener('click', onOk);
       promptUi.cancel.removeEventListener('click', onCancel);
       promptUi.input.removeEventListener('keydown', onKey);
+      promptUi.input.removeEventListener('input', handleInput);
       promptUi.modal.removeEventListener('click', onBackdrop);
       promptUi.modal.classList.add('hidden');
       promptUi.input.type = prevType || 'text';
@@ -2282,8 +2286,10 @@ function promptModal({ title, text, placeholder, value, extra, allowEmpty, type 
     promptUi.ok.addEventListener('click', onOk);
     promptUi.cancel.addEventListener('click', onCancel);
     promptUi.input.addEventListener('keydown', onKey);
+    promptUi.input.addEventListener('input', handleInput);
     promptUi.modal.addEventListener('click', onBackdrop);
     promptUi.modal.classList.remove('hidden');
+    handleInput();
     setTimeout(() => promptUi.input.focus(), 0);
   });
 }
@@ -3710,6 +3716,7 @@ async function openPetTrainDialog() {
     showToast('请先选择宠物');
     return;
   }
+  const pet = getPetByStateId(selectedPetId);
   const fruitQty = Math.max(
     0,
     Math.floor(
@@ -3737,12 +3744,23 @@ async function openPetTrainDialog() {
   });
   const attr = Array.isArray(selectedAttr) ? String(selectedAttr[0] || '').trim() : '';
   if (!attr) return;
+  const attrLabelMap = { hp: '生命', mp: '魔法值', atk: '攻击', def: '防御', mag: '魔法', mdef: '魔御', dex: '敏捷' };
+  const baseLevel = Math.max(0, Math.floor(Number(pet?.training?.[attr] || 0)));
+  const buildTrainPromptText = (countValue) => {
+    const count = Math.max(1, Math.min(999, Math.floor(Number(countValue) || 1)));
+    let totalCost = 0;
+    for (let i = 0; i < count; i += 1) totalCost += trainingCost(baseLevel + i);
+    return `请输入修炼次数（1-999）\n当前宠物修炼果：${fruitQty}\n当前${attrLabelMap[attr] || attr}：Lv${baseLevel}\n预计消耗：金币 ${totalCost} | 宠物修炼果 x${count}`;
+  };
   const count = await promptModal({
     title: '宠物修炼',
-    text: `请输入修炼次数（1-999）\n当前宠物修炼果：${fruitQty}`,
+    text: buildTrainPromptText(petUi.trainCount?.value || '1'),
     placeholder: '次数',
     value: String(petUi.trainCount?.value || '1'),
-    type: 'number'
+    type: 'number',
+    onInput: (value, ui) => {
+      if (ui?.text) ui.text.textContent = buildTrainPromptText(value);
+    }
   });
   if (!count) return;
   const safeCount = Math.max(1, Math.min(999, Math.floor(Number(count) || 1)));
