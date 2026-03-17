@@ -2306,6 +2306,7 @@ function normalizeMobTemplatePatch(source, current) {
   if (Object.prototype.hasOwnProperty.call(source, 'worldBoss')) next.worldBoss = Boolean(source.worldBoss);
   if (Object.prototype.hasOwnProperty.call(source, 'specialBoss')) next.specialBoss = Boolean(source.specialBoss);
   if (Object.prototype.hasOwnProperty.call(source, 'sabakBoss')) next.sabakBoss = Boolean(source.sabakBoss);
+  if (Object.prototype.hasOwnProperty.call(source, 'crossWorldBoss')) next.crossWorldBoss = Boolean(source.crossWorldBoss);
   if (Object.prototype.hasOwnProperty.call(source, 'summoned')) next.summoned = Boolean(source.summoned);
   if (Object.prototype.hasOwnProperty.call(source, 'gold')) {
     const normalizedGold = normalizeMobGold(source.gold);
@@ -2316,7 +2317,7 @@ function normalizeMobTemplatePatch(source, current) {
     if (normalizedDrops) next.drops = normalizedDrops;
   }
 
-  const ignoredKeys = new Set(['id', 'name', 'level', 'hp', 'atk', 'def', 'mdef', 'exp', 'dex', 'respawnMs', 'worldBoss', 'specialBoss', 'sabakBoss', 'summoned', 'gold', 'drops']);
+  const ignoredKeys = new Set(['id', 'name', 'level', 'hp', 'atk', 'def', 'mdef', 'exp', 'dex', 'respawnMs', 'worldBoss', 'specialBoss', 'sabakBoss', 'crossWorldBoss', 'summoned', 'gold', 'drops']);
   Object.keys(source || {}).forEach((key) => {
     if (ignoredKeys.has(key)) return;
     next[key] = source[key];

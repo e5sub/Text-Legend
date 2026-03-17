@@ -9331,6 +9331,7 @@ const mobEditGoldMaxInput = document.getElementById('mob-edit-gold-max');
 const mobEditWorldBossInput = document.getElementById('mob-edit-worldboss');
 const mobEditSpecialBossInput = document.getElementById('mob-edit-specialboss');
 const mobEditSabakBossInput = document.getElementById('mob-edit-sabakboss');
+const mobEditCrossBossInput = document.getElementById('mob-edit-crossboss');
 const mobEditSummonedInput = document.getElementById('mob-edit-summoned');
 const mobDropsList = document.getElementById('mob-drops-list');
 const mobDropItemInput = document.getElementById('mob-drop-item-id');
@@ -9658,6 +9659,18 @@ function syncPersonalBossToggle() {
   }
 }
 
+function syncCrossRealmToggle(zoneId) {
+  if (!worldRoomEditCrossRealmInput) return;
+  const zid = String(zoneId || '').trim().toLowerCase();
+  const isCross = zid === 'crb' || zid === 'crr';
+  if (isCross) {
+    worldRoomEditCrossRealmInput.checked = true;
+    worldRoomEditCrossRealmInput.disabled = true;
+  } else {
+    worldRoomEditCrossRealmInput.disabled = false;
+  }
+}
+
 function getWorldZoneById(zoneId) {
   return Array.isArray(worldAllRoomsCache)
     ? worldAllRoomsCache.find((z) => String(z.id) === String(zoneId))
@@ -9830,6 +9843,7 @@ async function openMobOverrideModal(templateId, allowEditId = false) {
   mobEditWorldBossInput.checked = Boolean(editable.worldBoss);
   mobEditSpecialBossInput.checked = Boolean(editable.specialBoss);
   mobEditSabakBossInput.checked = Boolean(editable.sabakBoss);
+  mobEditCrossBossInput.checked = Boolean(editable.crossWorldBoss);
   mobEditSummonedInput.checked = Boolean(editable.summoned);
   mobDropsCache = Array.isArray(editable.drops) ? editable.drops.map(drop => ({ id: drop.id, chance: drop.chance })) : [];
   renderMobDropOptions();
@@ -9926,6 +9940,7 @@ async function saveMobOverride() {
     worldBoss: mobEditWorldBossInput?.checked || false,
     specialBoss: mobEditSpecialBossInput?.checked || false,
     sabakBoss: mobEditSabakBossInput?.checked || false,
+    crossWorldBoss: mobEditCrossBossInput?.checked || false,
     summoned: mobEditSummonedInput?.checked || false,
     gold: [Math.max(0, Math.floor(goldMin)), Math.max(Math.floor(goldMin), Math.floor(goldMax))],
     drops: mobDropsCache.map(drop => ({ id: drop.id, chance: drop.chance }))
@@ -10205,6 +10220,7 @@ async function openWorldRoomOverrideModal(zoneId, roomId, allowEditId = false) {
   worldRoomNpcsCache = Array.isArray(editable.npcs) ? editable.npcs.map(item => String(item)) : [];
   worldRoomExitsCache = editable.exits && typeof editable.exits === 'object' ? Object.entries(editable.exits) : [];
   syncPersonalBossToggle();
+  syncCrossRealmToggle(zid);
   renderWorldRoomSpawnOptions();
   renderWorldExitZoneOptions();
   if (worldRoomExitZoneSelect) {
@@ -10264,11 +10280,12 @@ function renderWorldRoomExits() {
     const room = getWorldRoomById(parsed.zoneId, parsed.roomId);
     const zoneName = zone?.name || parsed.zoneId || '';
     const roomName = room?.name || parsed.roomId || '';
+    const displayDir = formatExitDirLabel(dir);
     const display = zoneName || roomName
       ? `${zoneName}${roomName ? ` / ${roomName}` : ''}<div class="muted" style="font-size: 11px;">${target}</div>`
       : target;
     tr.innerHTML = `
-      <td>${dir}</td>
+      <td>${displayDir}<div class="muted" style="font-size: 11px;">${dir}</div></td>
       <td>${display}</td>
       <td><button class="btn-small" style="background: #c00;" onclick="removeWorldRoomExit(${index})">删除</button></td>
     `;
@@ -10292,6 +10309,30 @@ function addWorldRoomExit() {
   if (worldRoomExitRoomSelect) worldRoomExitRoomSelect.innerHTML = '<option value="">目标房间</option>';
   worldRoomExitTargetInput.value = '';
   renderWorldRoomExits();
+}
+
+function formatExitDirLabel(dir) {
+  const text = String(dir || '');
+  const match = text.match(/^([a-z_]+)(\d*)$/i);
+  const base = match ? match[1].toLowerCase() : text.toLowerCase();
+  const suffix = match ? match[2] : '';
+  const map = {
+    north: '北',
+    south: '南',
+    east: '东',
+    west: '西',
+    northeast: '东北',
+    northwest: '西北',
+    southeast: '东南',
+    southwest: '西南',
+    up: '上',
+    down: '下',
+    vip: 'VIP',
+    tower: '塔',
+    cultivation: '修真'
+  };
+  if (map[base]) return `${map[base]}${suffix}`;
+  return text;
 }
 
 function removeWorldRoomExit(index) {
@@ -10506,6 +10547,14 @@ if (worldRoomEditSaveBtn) {
 if (worldRoomEditPersonalTierInput) {
   worldRoomEditPersonalTierInput.addEventListener('change', syncPersonalBossToggle);
 }
+if (worldRoomEditCrossRealmInput) {
+  worldRoomEditCrossRealmInput.addEventListener('change', () => {
+    if (worldRoomEditCrossRealmInput.checked) {
+      if (worldRoomEditZoneInput) worldRoomEditZoneInput.value = 'crb';
+      syncCrossRealmToggle('crb');
+    }
+  });
+}
 
 if (worldRoomSpawnAddBtn) {
   worldRoomSpawnAddBtn.addEventListener('click', addWorldRoomSpawn);
@@ -10521,6 +10570,7 @@ if (worldRoomExitZoneSelect) {
     renderWorldExitRoomOptions(zoneId);
   });
 }
+
 
 if (worldRoomEditNpcAddBtn) {
   worldRoomEditNpcAddBtn.addEventListener('click', addWorldRoomNpc);

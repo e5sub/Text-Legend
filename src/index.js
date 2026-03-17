@@ -6318,6 +6318,7 @@ function normalizeMobTemplatePayload(raw, { requireCore = false } = {}) {
   if (Object.prototype.hasOwnProperty.call(source, 'worldBoss')) payload.worldBoss = Boolean(source.worldBoss);
   if (Object.prototype.hasOwnProperty.call(source, 'specialBoss')) payload.specialBoss = Boolean(source.specialBoss);
   if (Object.prototype.hasOwnProperty.call(source, 'sabakBoss')) payload.sabakBoss = Boolean(source.sabakBoss);
+  if (Object.prototype.hasOwnProperty.call(source, 'crossWorldBoss')) payload.crossWorldBoss = Boolean(source.crossWorldBoss);
   if (Object.prototype.hasOwnProperty.call(source, 'summoned')) payload.summoned = Boolean(source.summoned);
   if (Object.prototype.hasOwnProperty.call(source, 'gold')) {
     const gold = Array.isArray(source.gold) ? source.gold : null;
@@ -6338,7 +6339,7 @@ function normalizeMobTemplatePayload(raw, { requireCore = false } = {}) {
       .filter(Boolean);
   }
 
-  const knownKeys = new Set(['name', 'level', 'hp', 'atk', 'def', 'mdef', 'exp', 'dex', 'respawnMs', 'worldBoss', 'specialBoss', 'sabakBoss', 'summoned', 'gold', 'drops']);
+  const knownKeys = new Set(['name', 'level', 'hp', 'atk', 'def', 'mdef', 'exp', 'dex', 'respawnMs', 'worldBoss', 'specialBoss', 'sabakBoss', 'crossWorldBoss', 'summoned', 'gold', 'drops']);
   Object.keys(source).forEach((key) => {
     if (key === 'id' || key === 'templateId') return;
     if (knownKeys.has(key)) return;
@@ -7880,6 +7881,7 @@ function isBossMob(mobTemplate) {
   const id = mobTemplate.id;
   return (
     mobTemplate.worldBoss ||
+    mobTemplate.crossWorldBoss ||
     id.includes('leader') ||
     id.includes('boss') ||
     id.includes('demon') ||
@@ -7896,12 +7898,12 @@ function isSpecialBoss(mobTemplate) {
 }
 
 function isWorldBossDropMob(mobTemplate) {
-  return Boolean(mobTemplate?.worldBoss || isCultivationBoss(mobTemplate));
+  return Boolean(mobTemplate?.worldBoss || mobTemplate?.crossWorldBoss || isCultivationBoss(mobTemplate));
 }
 
 function getTreasureDropMultiplierForMob(mobTemplate) {
   if (!mobTemplate) return 1;
-  if (mobTemplate.id === 'cross_world_boss') {
+  if (mobTemplate.id === 'cross_world_boss' || mobTemplate.crossWorldBoss) {
     return Math.max(0, Number(TREASURE_CROSS_WORLD_BOSS_DROP_MULTIPLIER || 1));
   }
   if (mobTemplate.worldBoss) {
@@ -7946,7 +7948,7 @@ function rollRarityDrop(mobTemplate, bonus = 1) {
   if (!isBossMob(mobTemplate)) return null;
   const table = RARITY_BOSS;
   const allowSet = true;
-  const allowUltimateDrop = Boolean(mobTemplate?.id === 'cross_world_boss' || mobTemplate?.allowUltimateDrop);
+  const allowUltimateDrop = Boolean(mobTemplate?.id === 'cross_world_boss' || mobTemplate?.crossWorldBoss || mobTemplate?.allowUltimateDrop);
   for (const rarity of RARITY_ORDER) {
     if (!isWorldBossDropMob(mobTemplate) && (rarity === 'supreme' || rarity === 'ultimate')) continue;
     if (rarity === 'ultimate' && !allowUltimateDrop) continue;
@@ -7974,7 +7976,7 @@ function rollRarityEquipmentDrop(mobTemplate, bonus = 1) {
   if (!isBossMob(mobTemplate)) return null;
   const table = RARITY_BOSS;
   const allowSet = true;
-  const allowUltimateDrop = Boolean(mobTemplate?.id === 'cross_world_boss' || mobTemplate?.allowUltimateDrop);
+  const allowUltimateDrop = Boolean(mobTemplate?.id === 'cross_world_boss' || mobTemplate?.crossWorldBoss || mobTemplate?.allowUltimateDrop);
   for (const rarity of RARITY_ORDER) {
     if (!isWorldBossDropMob(mobTemplate) && (rarity === 'supreme' || rarity === 'ultimate')) continue;
     if (rarity === 'ultimate' && !allowUltimateDrop) continue;
@@ -8330,7 +8332,7 @@ function getCultivationBossPlayerBonusConfigSync() {
 
 function dropLoot(mobTemplate, bonus = 1) {
   const loot = [];
-  const allowUltimateDrop = Boolean(mobTemplate?.id === 'cross_world_boss' || mobTemplate?.allowUltimateDrop);
+  const allowUltimateDrop = Boolean(mobTemplate?.id === 'cross_world_boss' || mobTemplate?.crossWorldBoss || mobTemplate?.allowUltimateDrop);
   const sabakBonus = mobTemplate.sabakBoss ? 3.0 : 1.0;
   const personalBossDropBonus = getPersonalBossDropBonusByTemplate(mobTemplate);
   let finalBonus = bonus * sabakBonus;
@@ -9898,7 +9900,7 @@ function distributeLoot(party, partyMembers, drops) {
 function distributeLootWithBonus(party, partyMembers, mobTemplate, bonusResolver, maxDropRarity = null) {
   if (!party || partyMembers.length === 0 || !mobTemplate) return [];
   const results = [];
-  const allowUltimateDrop = Boolean(mobTemplate?.id === 'cross_world_boss' || mobTemplate?.allowUltimateDrop);
+  const allowUltimateDrop = Boolean(mobTemplate?.id === 'cross_world_boss' || mobTemplate?.crossWorldBoss || mobTemplate?.allowUltimateDrop);
   const maxDropRank = maxDropRarity ? (RARITY_RANK[maxDropRarity] || 0) : 0;
   const exceedsMaxDropRarity = (itemId) => {
     if (!maxDropRank) return false;
@@ -14812,7 +14814,7 @@ function getPetDropMaxRarityForBoss(mobTemplate) {
   if (mobTemplate.id === 'vip_personal_boss') return 'excellent';
   if (mobTemplate.id === 'svip_personal_boss') return 'rare';
   if (mobTemplate.id && String(mobTemplate.id).startsWith('cultivation_boss_')) return 'rare';
-  if (mobTemplate.allowUltimateDrop || mobTemplate.id === 'cross_world_boss') return 'ultimate';
+  if (mobTemplate.allowUltimateDrop || mobTemplate.id === 'cross_world_boss' || mobTemplate.crossWorldBoss) return 'ultimate';
   if (mobTemplate.worldBoss) return 'supreme';
   if (mobTemplate.specialBoss) return 'legendary';
   return 'epic';

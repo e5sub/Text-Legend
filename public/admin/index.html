@@ -3000,6 +3000,11 @@
             <span class="admin-switch-slider" aria-hidden="true"></span>
             <span class="admin-switch-label">沙巴克BOSS</span>
           </label>
+          <label class="admin-switch" style="margin-right: 16px;">
+            <input id="mob-edit-crossboss" type="checkbox">
+            <span class="admin-switch-slider" aria-hidden="true"></span>
+            <span class="admin-switch-label">跨服BOSS</span>
+          </label>
           <label class="admin-switch">
             <input id="mob-edit-summoned" type="checkbox">
             <span class="admin-switch-slider" aria-hidden="true"></span>
@@ -3213,10 +3218,25 @@
             </table>
           </div>
           <div class="form-grid-compact" style="margin-top: 8px;">
-            <div class="form-field compact">
-              <label for="world-room-exit-dir">方向</label>
-              <input id="world-room-exit-dir" type="text" class="input-compact" placeholder="如 north">
-            </div>
+              <div class="form-field compact">
+                <label for="world-room-exit-dir">方向</label>
+                <select id="world-room-exit-dir" class="input-compact">
+                  <option value="">选择方向</option>
+                  <option value="north">北</option>
+                  <option value="south">南</option>
+                  <option value="east">东</option>
+                  <option value="west">西</option>
+                  <option value="northeast">东北</option>
+                  <option value="northwest">西北</option>
+                  <option value="southeast">东南</option>
+                  <option value="southwest">西南</option>
+                  <option value="up">上</option>
+                  <option value="down">下</option>
+                  <option value="vip">VIP</option>
+                  <option value="tower">塔</option>
+                  <option value="cultivation">修真</option>
+                </select>
+              </div>
             <div class="form-field compact">
               <label for="world-room-exit-zone">目标区域</label>
               <select id="world-room-exit-zone" class="input-compact">
