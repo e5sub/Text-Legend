@@ -18938,8 +18938,8 @@ io.on('connection', (socket) => {
         if (!player.flags) player.flags = {};
         const oldDeviceKey = player.deviceKey;
         const svipActive = Boolean(isSvipActive(player));
-        const shouldKeepManagedAuto = Boolean(svipActive && player.flags.autoFullEnabled);
-        const shouldKeepManagedPending = Boolean(svipActive && !player.flags.autoFullEnabled);
+        const shouldKeepManagedAuto = Boolean(svipActive);
+        const shouldKeepManagedPending = false; // SVIP下线立即托管，不走延迟
         if (!shouldKeepManagedAuto && !shouldKeepManagedPending) {
           player.flags.offlineAt = Date.now();
           if (player.flags.offlineManagedAuto) delete player.flags.offlineManagedAuto;
@@ -18949,15 +18949,14 @@ io.on('connection', (socket) => {
         } else {
           player.flags.offlineAt = null;
           if (shouldKeepManagedAuto) {
+            player.flags.autoFullEnabled = true;
+            player.flags.autoFullManualDowngraded = false;
+            player.flags.autoFullManualMoveAt = null;
+            player.flags.autoFullManualRestoreAt = null;
             player.flags.offlineManagedAuto = true;
             player.flags.offlineManagedAt = Date.now();
             if (player.flags.offlineManagedPending) delete player.flags.offlineManagedPending;
             if (player.flags.offlineManagedStartAt) delete player.flags.offlineManagedStartAt;
-          } else {
-            if (player.flags.offlineManagedAuto) delete player.flags.offlineManagedAuto;
-            player.flags.offlineManagedPending = true;
-            player.flags.offlineManagedStartAt = Date.now() + SVIP_AUTO_MANAGED_START_DELAY_MS;
-            if (player.flags.offlineManagedAt) delete player.flags.offlineManagedAt;
           }
           player.socket = null;
           player.deviceKey = null;
