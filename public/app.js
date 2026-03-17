@@ -1119,8 +1119,22 @@ function showToast(message, duration = 1600) {
 }
 
 async function refreshCaptcha(target) {
-  const img = target === 'login' ? captchaUi.loginImg : captchaUi.registerImg;
-  const input = target === 'login' ? captchaUi.loginInput : captchaUi.registerInput;
+  let img = null;
+  let input = null;
+  switch (target) {
+    case 'login':
+      img = captchaUi.loginImg;
+      input = captchaUi.loginInput;
+      break;
+    case 'reset':
+      img = captchaUi.resetImg;
+      input = captchaUi.resetInput;
+      break;
+    default:
+      img = captchaUi.registerImg;
+      input = captchaUi.registerInput;
+      break;
+  }
   if (!img || !input) return;
   try {
     const res = await fetch(buildApiUrl('/api/captcha'));
@@ -11374,17 +11388,24 @@ if (captchaUi.loginRefresh) {
 if (captchaUi.registerRefresh) {
   captchaUi.registerRefresh.addEventListener('click', () => refreshCaptcha('register'));
 }
+if (captchaUi.resetRefresh) {
+  captchaUi.resetRefresh.addEventListener('click', () => refreshCaptcha('reset'));
+}
 if (captchaUi.loginImg) {
   captchaUi.loginImg.addEventListener('click', () => refreshCaptcha('login'));
 }
 if (captchaUi.registerImg) {
   captchaUi.registerImg.addEventListener('click', () => refreshCaptcha('register'));
 }
+if (captchaUi.resetImg) {
+  captchaUi.resetImg.addEventListener('click', () => refreshCaptcha('reset'));
+}
 (async () => {
   await ensureRouteLinesLoaded();
   refreshRealmLineDisplay();
   refreshCaptcha('login');
   refreshCaptcha('register');
+  refreshCaptcha('reset');
 })();
 if (chat.sendBtn) {
   chat.sendBtn.addEventListener('click', sendChatMessage);
