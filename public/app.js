@@ -5147,7 +5147,7 @@ function renderTreasureModal() {
         title: '法宝升段次数',
         text: `请输入升段次数（1-${maxBySelected}）`,
         placeholder: '次数',
-        value: String(Math.min(10, maxBySelected)),
+        value: String(maxBySelected),
         type: 'number',
         allowEmpty: false
       });
