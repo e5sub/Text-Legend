@@ -91,7 +91,8 @@ const gmMailTitleInput = document.getElementById('gm-mail-title');
 const gmMailBodyInput = document.getElementById('gm-mail-body');
 const gmMailGoldInput = document.getElementById('gm-mail-gold');
 const gmMailYuanbaoInput = document.getElementById('gm-mail-yuanbao');
-const gmMailItemIdInput = document.getElementById('gm-mail-item-id');
+const gmMailItemSearchInput = document.getElementById('gm-mail-item-search');
+const gmMailItemSelect = document.getElementById('gm-mail-item-select');
 const gmMailItemQtyInput = document.getElementById('gm-mail-item-qty');
 const gmMailItemAddBtn = document.getElementById('gm-mail-item-add');
 const gmMailItemList = document.getElementById('gm-mail-item-list');
@@ -10493,6 +10494,56 @@ if (dashboardRefreshBtn) {
 
 let gmMailAttachments = [];
 
+async function ensureItemTemplatesLoadedForMail() {
+  if (itemTemplates && itemTemplates.length) return true;
+  try {
+    await loadItemTemplates();
+    return Boolean(itemTemplates && itemTemplates.length);
+  } catch {
+    return false;
+  }
+}
+
+function renderGmMailItemOptions(keyword = '') {
+  if (!gmMailItemSelect) return;
+  const query = String(keyword || '').trim().toLowerCase();
+  gmMailItemSelect.innerHTML = '';
+  if (!itemTemplates || itemTemplates.length === 0) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = '物品列表未加载';
+    gmMailItemSelect.appendChild(opt);
+    return;
+  }
+  const filtered = query
+    ? itemTemplates.filter(t =>
+      String(t.name || '').toLowerCase().includes(query) ||
+      String(t.item_id || '').toLowerCase().includes(query)
+    )
+    : itemTemplates;
+  if (!filtered.length) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = '未找到匹配物品';
+    gmMailItemSelect.appendChild(opt);
+    return;
+  }
+  const limited = filtered.slice(0, 200);
+  limited.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.item_id;
+    opt.textContent = `${t.name}（${t.item_id}）`;
+    opt.dataset.name = t.name || '';
+    gmMailItemSelect.appendChild(opt);
+  });
+  if (filtered.length > limited.length) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = `已显示前 ${limited.length} 条，请继续缩小关键词`;
+    gmMailItemSelect.appendChild(opt);
+  }
+}
+
 function renderGmMailAttachments() {
   if (!gmMailItemList) return;
   if (!gmMailAttachments.length) {
@@ -10505,8 +10556,9 @@ function renderGmMailAttachments() {
     row.className = 'row';
     row.style.justifyContent = 'space-between';
     row.style.gap = '8px';
+    const label = item.name ? `${item.name}（${item.id}）` : item.id;
     row.innerHTML = `
-      <span>${item.id} x${item.qty}</span>
+      <span>${label} x${item.qty}</span>
       <button class="btn-small" data-index="${index}" style="background:#6c757d;">移除</button>
     `;
     const btn = row.querySelector('button');
@@ -10521,20 +10573,50 @@ function renderGmMailAttachments() {
 }
 
 if (gmMailItemAddBtn) {
-  gmMailItemAddBtn.addEventListener('click', () => {
-    const id = String(gmMailItemIdInput?.value || '').trim();
+  gmMailItemAddBtn.addEventListener('click', async () => {
     const qty = Math.max(1, Math.floor(Number(gmMailItemQtyInput?.value || 1) || 1));
-    if (!id) {
+    if (!(await ensureItemTemplatesLoadedForMail())) {
       if (gmMailMsg) {
-        gmMailMsg.textContent = '请输入物品ID';
+        gmMailMsg.textContent = '物品数据未加载，请稍后再试';
         gmMailMsg.style.color = 'red';
       }
       return;
     }
-    gmMailAttachments.push({ id, qty });
-    if (gmMailItemIdInput) gmMailItemIdInput.value = '';
+    const selectedId = String(gmMailItemSelect?.value || '').trim();
+    if (!selectedId) {
+      if (gmMailMsg) {
+        gmMailMsg.textContent = '请选择物品';
+        gmMailMsg.style.color = 'red';
+      }
+      return;
+    }
+    const resolved = itemTemplates.find(t => String(t.item_id || '') === selectedId);
+    const name = resolved?.name || selectedId;
+    gmMailAttachments.push({ id: selectedId, name, qty });
+    if (gmMailItemSearchInput) gmMailItemSearchInput.value = '';
     if (gmMailItemQtyInput) gmMailItemQtyInput.value = '';
     renderGmMailAttachments();
+  });
+}
+
+if (gmMailItemSearchInput) {
+  gmMailItemSearchInput.addEventListener('input', async () => {
+    await ensureItemTemplatesLoadedForMail();
+    renderGmMailItemOptions(gmMailItemSearchInput.value);
+    // 若只剩唯一可选项，自动选中
+    if (gmMailItemSelect && gmMailItemSelect.options.length === 1) {
+      const only = gmMailItemSelect.options[0];
+      if (only && only.value) {
+        gmMailItemSelect.value = only.value;
+      }
+    }
+  });
+}
+
+if (gmMailItemSelect) {
+  gmMailItemSelect.addEventListener('focus', async () => {
+    await ensureItemTemplatesLoadedForMail();
+    renderGmMailItemOptions(gmMailItemSearchInput?.value || '');
   });
 }
 
