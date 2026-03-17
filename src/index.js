@@ -15455,6 +15455,7 @@ async function buildState(player, options = {}) {
   const effectResetTripleRate = snap.effectReset.tripleRate;
   const effectResetQuadrupleRate = snap.effectReset.quadrupleRate;
   const effectResetQuintupleRate = snap.effectReset.quintupleRate;
+  const ultimateGrowthConfig = withUltimateGrowthMaterialNames(getUltimateGrowthConfigMem());
   
   // 玩家相关的个性化配置
   const autoFullTrialInfo = getAutoFullTrialInfo(player);
@@ -15568,6 +15569,7 @@ async function buildState(player, options = {}) {
       gold_bonus_sources: bonusBreakdown.goldSources,
       exp_gold_bonus_pct: Math.max(bonusBreakdown.expPct, bonusBreakdown.goldPct)
     },
+    ultimate_growth_config: ultimateGrowthConfig,
     summon: summonPayloads[0] || null,
     summons: summonPayloads,
     equipment,
