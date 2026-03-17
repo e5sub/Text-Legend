@@ -11424,12 +11424,13 @@ if (captchaUi.resetImg) {
   captchaUi.resetImg.addEventListener('click', () => refreshCaptcha('reset'));
 }
 (async () => {
-  await ensureRouteLinesLoaded();
-  refreshRealmLineDisplay();
+  // 不要被线路加载阻塞验证码渲染
   refreshCaptcha('login');
   refreshCaptcha('register');
   refreshCaptcha('reset');
   updateRegisterInviteHint();
+  await ensureRouteLinesLoaded();
+  refreshRealmLineDisplay();
 })();
 if (chat.sendBtn) {
   chat.sendBtn.addEventListener('click', sendChatMessage);
