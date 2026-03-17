@@ -27,6 +27,26 @@ body.dark {
     radial-gradient(circle at top, #2a2420 0%, #1e1a16 45%, #161210 100%),
     repeating-linear-gradient(120deg, rgba(0, 0, 0, 0.03) 0 10px, rgba(0, 0, 0, 0.08) 10px 20px);
 }
+body.dark,
+body.dark * {
+  scrollbar-width: thin;
+  scrollbar-color: #5a4a3d #1f1915;
+}
+body.dark *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+body.dark *::-webkit-scrollbar-track {
+  background: #1f1915;
+}
+body.dark *::-webkit-scrollbar-thumb {
+  background: #5a4a3d;
+  border-radius: 8px;
+  border: 2px solid #1f1915;
+}
+body.dark *::-webkit-scrollbar-thumb:hover {
+  background: #6a5a4d;
+}
 
 body.dark::before {
   background:
