@@ -106,6 +106,7 @@ const stateThrottleIntervalInput = document.getElementById('state-throttle-inter
 const stateThrottleSaveBtn = document.getElementById('state-throttle-save');
 const stateThrottleStatus = document.getElementById('state-throttle-status');
 const stateThrottleMsg = document.getElementById('state-throttle-msg');
+const playerSaveForceFullToggle = document.getElementById('player-save-force-full-toggle');
 const playerSaveDebounceInput = document.getElementById('player-save-debounce');
 const playerSaveMinIntervalInput = document.getElementById('player-save-min-interval');
 const playerSaveManagedIntervalInput = document.getElementById('player-save-managed-interval');
@@ -4670,6 +4671,7 @@ async function refreshStateThrottleStatus() {
       cacheMonsterHealthToggle.checked = data.cacheMonsterHealth !== false;
     }
     if (data.playerSave && typeof data.playerSave === 'object') {
+      if (playerSaveForceFullToggle) playerSaveForceFullToggle.checked = data.playerSave.forceFullEnabled === true;
       if (playerSaveDebounceInput) playerSaveDebounceInput.value = data.playerSave.debounceMs ?? '';
       if (playerSaveMinIntervalInput) playerSaveMinIntervalInput.value = data.playerSave.minIntervalMs ?? '';
       if (playerSaveManagedIntervalInput) playerSaveManagedIntervalInput.value = data.playerSave.managedMinIntervalMs ?? '';
@@ -5010,6 +5012,7 @@ async function toggleStateThrottle(enabled) {
     const overrideServerAllowed = stateThrottleOverrideAllowedToggle ? stateThrottleOverrideAllowedToggle.checked : undefined;
     const cacheMonsterHealth = cacheMonsterHealthToggle ? cacheMonsterHealthToggle.checked : undefined;
     const playerSave = {
+      forceFullEnabled: playerSaveForceFullToggle ? playerSaveForceFullToggle.checked : undefined,
       debounceMs: playerSaveDebounceInput ? Number(playerSaveDebounceInput.value || 0) : undefined,
       minIntervalMs: playerSaveMinIntervalInput ? Number(playerSaveMinIntervalInput.value || 0) : undefined,
       managedMinIntervalMs: playerSaveManagedIntervalInput ? Number(playerSaveManagedIntervalInput.value || 0) : undefined,
@@ -5095,6 +5098,7 @@ async function saveStateThrottleInterval() {
     const overrideServerAllowed = stateThrottleOverrideAllowedToggle ? stateThrottleOverrideAllowedToggle.checked : undefined;
     const cacheMonsterHealth = cacheMonsterHealthToggle ? cacheMonsterHealthToggle.checked : undefined;
     const playerSave = {
+      forceFullEnabled: playerSaveForceFullToggle ? playerSaveForceFullToggle.checked : undefined,
       debounceMs: playerSaveDebounceInput ? Number(playerSaveDebounceInput.value || 0) : undefined,
       minIntervalMs: playerSaveMinIntervalInput ? Number(playerSaveMinIntervalInput.value || 0) : undefined,
       managedMinIntervalMs: playerSaveManagedIntervalInput ? Number(playerSaveManagedIntervalInput.value || 0) : undefined,
@@ -8270,6 +8274,11 @@ if (stateThrottleToggle) {
 }
 if (stateThrottleOverrideAllowedToggle) {
   stateThrottleOverrideAllowedToggle.addEventListener('change', () => {
+    toggleStateThrottle(stateThrottleToggle?.checked === true);
+  });
+}
+if (playerSaveForceFullToggle) {
+  playerSaveForceFullToggle.addEventListener('change', () => {
     toggleStateThrottle(stateThrottleToggle?.checked === true);
   });
 }

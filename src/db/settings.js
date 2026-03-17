@@ -1050,6 +1050,15 @@ export async function setPlayerSaveMaxWritesPerFlush(value) {
   await setSetting('player_save_max_writes_per_flush', String(normalized));
 }
 
+export async function getPlayerSaveForceFullEnabled() {
+  const enabled = await getSetting('player_save_force_full_enabled', 'true');
+  return enabled === 'true' || enabled === '1';
+}
+
+export async function setPlayerSaveForceFullEnabled(enabled) {
+  await setSetting('player_save_force_full_enabled', enabled ? 'true' : 'false');
+}
+
 // 特效装备掉落配置
 export async function getEffectDropSingleChance() {
   const value = await getSetting('effect_drop_single_chance', '0.009');
