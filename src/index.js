@@ -8670,6 +8670,14 @@ async function savePlayer(player, options = {}) {
     markPlayerDirty(player, options.dirty);
   }
 
+  // 强制全量保存开启时，忽略所有节流与防抖，直接落盘
+  if (PLAYER_SAVE_FORCE_FULL_ENABLED && !options?.immediate) {
+    markPlayerDirty(player, ['base', 'position', 'inventory', 'warehouse', 'equipment', 'flags']);
+    await savePlayerNow(player, { dirtyFirst: true, forceFull: true });
+    playerLastPersistAt.set(saveKey, Date.now());
+    return;
+  }
+
   if (options?.immediate) {
     pendingPlayerSaves.delete(saveKey);
     // 立即保存时标记所有脏字段

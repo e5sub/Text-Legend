@@ -114,6 +114,29 @@ const playerSaveManagedForceIntervalInput = document.getElementById('player-save
 const playerSaveDetachedIntervalInput = document.getElementById('player-save-detached-interval');
 const playerSaveForceDeadlineInput = document.getElementById('player-save-force-deadline');
 const playerSaveMaxWritesInput = document.getElementById('player-save-max-writes');
+
+const playerSaveInputs = [
+  playerSaveDebounceInput,
+  playerSaveMinIntervalInput,
+  playerSaveManagedIntervalInput,
+  playerSaveManagedForceIntervalInput,
+  playerSaveDetachedIntervalInput,
+  playerSaveForceDeadlineInput,
+  playerSaveMaxWritesInput
+].filter(Boolean);
+
+function setPlayerSaveInputsDisabled(disabled) {
+  playerSaveInputs.forEach((input) => {
+    input.disabled = disabled;
+    if (disabled) {
+      input.classList.add('is-disabled');
+      input.title = '强制全量保存已开启，参数已被覆盖';
+    } else {
+      input.classList.remove('is-disabled');
+      input.title = '';
+    }
+  });
+}
 const roomVariantStatus = document.getElementById('room-variant-status');
 const roomVariantMsg = document.getElementById('room-variant-msg');
 const roomVariantInput = document.getElementById('room-variant-count');
@@ -4672,6 +4695,7 @@ async function refreshStateThrottleStatus() {
     }
     if (data.playerSave && typeof data.playerSave === 'object') {
       if (playerSaveForceFullToggle) playerSaveForceFullToggle.checked = data.playerSave.forceFullEnabled === true;
+      setPlayerSaveInputsDisabled(data.playerSave.forceFullEnabled === true);
       if (playerSaveDebounceInput) playerSaveDebounceInput.value = data.playerSave.debounceMs ?? '';
       if (playerSaveMinIntervalInput) playerSaveMinIntervalInput.value = data.playerSave.minIntervalMs ?? '';
       if (playerSaveManagedIntervalInput) playerSaveManagedIntervalInput.value = data.playerSave.managedMinIntervalMs ?? '';
@@ -8279,6 +8303,7 @@ if (stateThrottleOverrideAllowedToggle) {
 }
 if (playerSaveForceFullToggle) {
   playerSaveForceFullToggle.addEventListener('change', () => {
+    setPlayerSaveInputsDisabled(playerSaveForceFullToggle.checked === true);
     toggleStateThrottle(stateThrottleToggle?.checked === true);
   });
 }
