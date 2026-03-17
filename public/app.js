@@ -1009,6 +1009,7 @@ const closeResetPasswordBtn = document.getElementById('close-reset-password-btn'
 const closeNewPasswordBtn = document.getElementById('close-new-password-btn');
 const resetPasswordBackdrop = document.getElementById('reset-password-overlay-backdrop');
 const newPasswordBackdrop = document.getElementById('new-password-overlay-backdrop');
+const registerInviteHint = document.getElementById('register-invite-hint');
 let lastSavedLevel = null;
 const CHAT_CACHE_LIMIT = 200;
 let realmList = [];
@@ -1163,6 +1164,7 @@ function openRegisterOverlay() {
   if (!registerOverlay) return;
   registerOverlay.style.display = 'flex';
   registerOverlay.classList.remove('hidden');
+  updateRegisterInviteHint();
   setTimeout(() => {
     const input = document.getElementById('register-username');
     input?.focus();
@@ -1174,6 +1176,16 @@ function closeRegisterOverlay() {
     registerOverlay.style.display = 'none';
   }
   registerOverlay?.classList.add('hidden');
+}
+
+function updateRegisterInviteHint() {
+  if (!registerInviteHint) return;
+  const code = String(registerInviteCode || '').trim();
+  if (code) {
+    registerInviteHint.textContent = `已检测到邀请码：${code}，注册后会自动绑定邀请关系。`;
+  } else {
+    registerInviteHint.textContent = '未检测到邀请码，可直接注册。若从邀请链接进入会自动绑定邀请关系。';
+  }
 }
 
 function openResetPasswordOverlay() {
@@ -10322,17 +10334,28 @@ async function register() {
   const username = document.getElementById('register-username').value.trim();
   const email = document.getElementById('register-email').value.trim();
   const password = document.getElementById('register-password').value.trim();
+  const passwordConfirm = document.getElementById('register-password-confirm').value.trim();
   const captchaCode = captchaUi.registerInput ? captchaUi.registerInput.value.trim() : '';
   const captchaToken = captchaUi.registerImg ? captchaUi.registerImg.dataset.token : '';
   authMsg.textContent = '';
   const registerBtn = document.getElementById('register-btn');
   registerBtn.classList.add('btn-loading');
   try {
+    if (!password || !passwordConfirm) {
+      throw new Error('请填写并确认密码。');
+    }
+    if (password !== passwordConfirm) {
+      throw new Error('两次输入的密码不一致。');
+    }
     await apiPost('/api/register', { username, email, password, captchaToken, captchaCode, inviteCode: registerInviteCode || undefined });
     authMsg.textContent = '注册成功，请登录。';
     if (registerInviteCode) authMsg.textContent += '（已绑定邀请码）';
     showToast('注册成功');
     closeRegisterOverlay();
+    await noticeModal({
+      title: '注册成功',
+      text: registerInviteCode ? '账号已创建并绑定邀请码，请使用新账号登录。' : '账号已创建，请使用新账号登录。'
+    });
     refreshCaptcha('register');
   } catch (err) {
     authMsg.textContent = err.message;
@@ -11406,6 +11429,7 @@ if (captchaUi.resetImg) {
   refreshCaptcha('login');
   refreshCaptcha('register');
   refreshCaptcha('reset');
+  updateRegisterInviteHint();
 })();
 if (chat.sendBtn) {
   chat.sendBtn.addEventListener('click', sendChatMessage);

@@ -1107,6 +1107,16 @@ header p {
   width: 100%;
 }
 
+.auth-hint {
+  margin-top: -4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(199, 139, 81, 0.08);
+  color: #8a6748;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
 .captcha-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 120px auto;
