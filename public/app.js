@@ -5143,8 +5143,22 @@ function renderTreasureModal() {
         showToast('所选法宝数量不足');
         return;
       }
+      const timesInput = await promptModal({
+        title: '法宝升段次数',
+        text: `请输入升段次数（1-${maxBySelected}）`,
+        placeholder: '次数',
+        value: String(Math.min(10, maxBySelected)),
+        type: 'number',
+        allowEmpty: false
+      });
+      if (timesInput == null) return;
+      const requestedTimes = Math.max(1, Math.min(maxBySelected, Math.floor(Number(String(timesInput).trim() || 1))));
+      if (!Number.isFinite(requestedTimes) || requestedTimes < 1) {
+        showToast('请输入有效次数');
+        return;
+      }
       socket.emit('cmd', {
-        text: `treasure advance ${selectedTreasureEntry.key}|${selectedIds.join(',')}|1`,
+        text: `treasure advance ${selectedTreasureEntry.key}|${selectedIds.join(',')}|${requestedTimes}`,
         source: 'ui'
       });
     });
