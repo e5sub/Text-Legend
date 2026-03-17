@@ -15398,10 +15398,14 @@ async function buildState(player, options = {}) {
 
   const t4ZhuxianStart = Date.now();
   const zhuxianTowerProgress = normalizeZhuxianTowerProgress(player);
-  // 只读缓存，不 await
-  const zhuxianTowerRankTop10 = (includeDynamicAux || forceSend)
-    ? zhuxianTowerRankCache.get(realmId)?.value || null
-    : null;
+  let zhuxianTowerRankTop10 = null;
+  if (includeDynamicAux || forceSend) {
+    try {
+      zhuxianTowerRankTop10 = await getZhuxianTowerRankTop10Cached(realmId);
+    } catch {
+      zhuxianTowerRankTop10 = null;
+    }
+  }
   t4Marks.zhuxian = Date.now() - t4ZhuxianStart;
 
   const t4TreasureStart = Date.now();
