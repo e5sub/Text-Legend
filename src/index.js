@@ -8490,12 +8490,21 @@ async function savePlayerNow(player, options = {}) {
   // 判断是否是托管玩家
   const isManaged = player?.flags?.offlineManagedAuto || player?.flags?.offlineManagedPending;
   const isConnected = Boolean(player?.socket?.emit);
+  const dirty = player?._saveState?.dirty || {};
+  const hasHeavyDirty = Boolean(
+    dirty.position
+    || dirty.inventory
+    || dirty.warehouse
+    || dirty.equipment
+    || dirty.flags
+    || dirty.heavy
+  );
   
   // 如果有脏标记且指定了 dirtyFirst，优先使用脏标记
   const dirtyFirst = options.dirtyFirst || hasPlayerDirty(player);
   
   // 托管玩家使用轻量保存（不保存 JSON 大字段），大幅降低数据库压力
-  if (isManaged && !isConnected && !options.force) {
+  if (isManaged && !isConnected && !options.force && !hasHeavyDirty) {
     await saveCharacterLight(player.userId, player, player.realmId || 1);
   } else {
     await saveCharacter(player.userId, player, player.realmId || 1, {
