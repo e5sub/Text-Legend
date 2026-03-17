@@ -370,7 +370,7 @@ button:hover {
 }
 
 .gm-mail-grid-attach {
-  grid-template-columns: 90px minmax(0, 1fr) minmax(0, 220px) minmax(120px, 160px);
+  grid-template-columns: 90px minmax(0, 1fr) minmax(0, 1.2fr) minmax(120px, 160px) auto;
 }
 
 .gm-mail-body label {
@@ -384,6 +384,14 @@ button:hover {
 .gm-mail-body textarea {
   width: 100%;
   max-width: none;
+}
+.gm-mail-body input[style],
+.gm-mail-body select[style],
+.gm-mail-body textarea[style] {
+  max-width: none !important;
+}
+.gm-mail-grid-attach button {
+  justify-self: start;
 }
 
 .gm-mail-textarea {
