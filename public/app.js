@@ -11650,18 +11650,8 @@ if (ui.recharge) {
     const code = await promptModal({
       title: '元宝充值',
       text: '请输入卡密（首次充值可获得首充福利）',
-      placeholder: '卡密',
-      extra: { text: '复制邀请链接' }
+      placeholder: '卡密'
     });
-    if (code === '__extra__') {
-      try {
-        const result = await copyInviteLink();
-        showToast(`邀请链接已复制 (${result.code || '邀请码'})`);
-      } catch (err) {
-        showToast(err?.message || '复制邀请链接失败');
-      }
-      return;
-    }
     if (!code) return;
     socket.emit('cmd', { text: `recharge ${code}` });
   });
