@@ -3763,7 +3763,13 @@ async function openPetTrainDialog() {
   const selectedAttr = await promptMultiSelectModal({
     title: '选择修炼属性',
     text: '请选择本次宠物修炼属性',
-    options: attrOptions.map((item) => ({ value: item.value, label: item.label })),
+    options: attrOptions.map((item) => {
+      const level = Math.max(0, Math.floor(Number(pet?.training?.[item.value] || 0)));
+      return {
+        value: item.value,
+        label: `${item.label} Lv${level}`
+      };
+    }),
     optionsClassName: 'pet-train-attr-options',
     selectedValues: [String(petUi.trainAttr?.value || 'atk')],
     singleSelect: true
