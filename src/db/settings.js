@@ -1006,6 +1006,17 @@ export async function setPlayerSaveManagedMinIntervalMs(value) {
   await setSetting('player_save_managed_min_interval_ms', String(normalized));
 }
 
+export async function getPlayerSaveManagedForceIntervalMs() {
+  const value = await getSetting('player_save_managed_force_interval_ms', '300000');
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(10000, parsed) : 300000;
+}
+
+export async function setPlayerSaveManagedForceIntervalMs(value) {
+  const normalized = Math.max(10000, Math.floor(Number(value) || 0));
+  await setSetting('player_save_managed_force_interval_ms', String(normalized));
+}
+
 export async function getPlayerSaveDetachedMinIntervalMs() {
   const value = await getSetting('player_save_detached_min_interval_ms', '60000');
   const parsed = parseInt(value, 10);

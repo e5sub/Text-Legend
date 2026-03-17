@@ -109,6 +109,7 @@ const stateThrottleMsg = document.getElementById('state-throttle-msg');
 const playerSaveDebounceInput = document.getElementById('player-save-debounce');
 const playerSaveMinIntervalInput = document.getElementById('player-save-min-interval');
 const playerSaveManagedIntervalInput = document.getElementById('player-save-managed-interval');
+const playerSaveManagedForceIntervalInput = document.getElementById('player-save-managed-force-interval');
 const playerSaveDetachedIntervalInput = document.getElementById('player-save-detached-interval');
 const playerSaveForceDeadlineInput = document.getElementById('player-save-force-deadline');
 const playerSaveMaxWritesInput = document.getElementById('player-save-max-writes');
@@ -4672,6 +4673,7 @@ async function refreshStateThrottleStatus() {
       if (playerSaveDebounceInput) playerSaveDebounceInput.value = data.playerSave.debounceMs ?? '';
       if (playerSaveMinIntervalInput) playerSaveMinIntervalInput.value = data.playerSave.minIntervalMs ?? '';
       if (playerSaveManagedIntervalInput) playerSaveManagedIntervalInput.value = data.playerSave.managedMinIntervalMs ?? '';
+      if (playerSaveManagedForceIntervalInput) playerSaveManagedForceIntervalInput.value = data.playerSave.managedForceIntervalMs ?? '';
       if (playerSaveDetachedIntervalInput) playerSaveDetachedIntervalInput.value = data.playerSave.detachedMinIntervalMs ?? '';
       if (playerSaveForceDeadlineInput) playerSaveForceDeadlineInput.value = data.playerSave.forceDeadlineMs ?? '';
       if (playerSaveMaxWritesInput) playerSaveMaxWritesInput.value = data.playerSave.maxWritesPerFlush ?? '';
@@ -5011,6 +5013,7 @@ async function toggleStateThrottle(enabled) {
       debounceMs: playerSaveDebounceInput ? Number(playerSaveDebounceInput.value || 0) : undefined,
       minIntervalMs: playerSaveMinIntervalInput ? Number(playerSaveMinIntervalInput.value || 0) : undefined,
       managedMinIntervalMs: playerSaveManagedIntervalInput ? Number(playerSaveManagedIntervalInput.value || 0) : undefined,
+      managedForceIntervalMs: playerSaveManagedForceIntervalInput ? Number(playerSaveManagedForceIntervalInput.value || 0) : undefined,
       detachedMinIntervalMs: playerSaveDetachedIntervalInput ? Number(playerSaveDetachedIntervalInput.value || 0) : undefined,
       forceDeadlineMs: playerSaveForceDeadlineInput ? Number(playerSaveForceDeadlineInput.value || 0) : undefined,
       maxWritesPerFlush: playerSaveMaxWritesInput ? Number(playerSaveMaxWritesInput.value || 80) : undefined
@@ -5095,6 +5098,7 @@ async function saveStateThrottleInterval() {
       debounceMs: playerSaveDebounceInput ? Number(playerSaveDebounceInput.value || 0) : undefined,
       minIntervalMs: playerSaveMinIntervalInput ? Number(playerSaveMinIntervalInput.value || 0) : undefined,
       managedMinIntervalMs: playerSaveManagedIntervalInput ? Number(playerSaveManagedIntervalInput.value || 0) : undefined,
+      managedForceIntervalMs: playerSaveManagedForceIntervalInput ? Number(playerSaveManagedForceIntervalInput.value || 0) : undefined,
       detachedMinIntervalMs: playerSaveDetachedIntervalInput ? Number(playerSaveDetachedIntervalInput.value || 0) : undefined,
       forceDeadlineMs: playerSaveForceDeadlineInput ? Number(playerSaveForceDeadlineInput.value || 0) : undefined,
       maxWritesPerFlush: playerSaveMaxWritesInput ? Number(playerSaveMaxWritesInput.value || 80) : undefined
