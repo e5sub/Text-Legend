@@ -5092,16 +5092,16 @@ export async function handleCommand({ player, players, allCharacters, playersByN
           return;
         }
       }
-      player.level -= costLevels;
-      if (player.level < 1) player.level = 1;
-      player.exp = Math.min(player.exp, expForLevel(player.level, player.flags?.cultivationLevel) - 1);
+      // 修真提升后等级重置为 1，避免卡级收益
+      player.level = 1;
+      player.exp = 0;
       player.flags.cultivationLevel = nextLevel;
       const nextInfo = getCultivationInfo(player.flags.cultivationLevel);
       computeDerived(player);
       player.forceStateRefresh = true;
       await savePlayer(player, { immediate: true, dirty: ['base', 'flags'] });
       const stoneText = requiresRebirthStone ? '、修真转生石 x1' : '';
-      send(`修真提升至 ${nextInfo.name} (+${nextInfo.bonus})，消耗等级 ${costLevels}${stoneText}，当前等级 ${player.level}。`);
+      send(`修真提升至 ${nextInfo.name} (+${nextInfo.bonus})，消耗等级 ${costLevels}${stoneText}，等级重置为1。`);
       return;
     }
     case 'party': {
