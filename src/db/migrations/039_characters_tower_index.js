@@ -1,8 +1,8 @@
-export async function up(knex) {
+﻿export async function up(knex) {
   const client = String(knex?.client?.config?.client || '').toLowerCase();
   const isMysql = client.includes('mysql');
 
-  // 为 characters 表添加生成列和索引，优化诛仙塔排行榜查询
+  // 为 characters 表添加生成列和索引，优化诛仙塔排行查询
   if (await knex.schema.hasTable('characters')) {
     try {
       // 检查是否已有该列
@@ -30,7 +30,7 @@ export async function up(knex) {
         }
       }
     } catch (err) {
-      console.error('[migration] 添加 has_tower_data 列失败:', err.message);
+      console.error('[migration] 添加 has_tower_data 列失败', err.message);
     }
 
     try {
@@ -51,7 +51,7 @@ export async function down(knex) {
   if (await knex.schema.hasTable('characters')) {
     try {
       if (isMysql) {
-        // MySQL: dropIndex 包含 flags_json（虽然实际上索引中没有，但保持一致）
+        // MySQL: dropIndex 包含 flags_json（虽然实际索引中没有，但保持一致）
         await knex.schema.alterTable('characters', (t) => {
           t.dropIndex(['realm_id', 'has_tower_data', 'name', 'class', 'level', 'flags_json'], 'idx_characters_tower_ranking');
         });
@@ -73,16 +73,7 @@ export async function down(knex) {
         });
       }
     } catch (err) {
-      console.error('[migration] 删除 has_tower_data 列失败:', err.message);
-    }
-  }
-}
-        await knex.schema.alterTable('characters', (t) => {
-          t.dropColumn('has_tower_data');
-        });
-      }
-    } catch {
-      // 忽略
+      console.error('[migration] 删除 has_tower_data 列失败', err.message);
     }
   }
 }
