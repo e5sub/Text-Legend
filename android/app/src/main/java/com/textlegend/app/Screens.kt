@@ -668,7 +668,12 @@ private fun RealmSelector(realms: List<RealmInfo>, selectedRealm: Int, onSelect:
 
 @Composable
 private fun ClassSelector(selected: String, onSelect: (String) -> Unit) {
-    val options = listOf("warrior" to "战士", "mage" to "法师", "taoist" to "道士")
+    val options = listOf(
+        "warrior" to "战士",
+        "mage" to "法师",
+        "taoist" to "道士",
+        "assassin" to "刺客"
+    )
     var expanded by remember { mutableStateOf(false) }
     val label = options.firstOrNull { it.first == selected }?.second ?: selected
     Box {
@@ -688,6 +693,7 @@ private fun classLabel(id: String): String = when (id) {
     "warrior" -> "战士"
     "mage" -> "法师"
     "taoist" -> "道士"
+    "assassin" -> "刺客"
     else -> id
 }
 
@@ -4576,7 +4582,8 @@ private fun ChangeClassDialog(vm: GameViewModel, onDismiss: () -> Unit) {
         val options = listOf(
             "warrior" to "战士",
             "mage" to "法师",
-            "taoist" to "道士"
+            "taoist" to "道士",
+            "assassin" to "刺客"
         )
         options.chunked(3).forEach { rowItems ->
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -4957,7 +4964,12 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
               vm.sendCmd("rank $lastClass")
           }
         Text("职业排行榜")
-        val tabItems = listOf("warrior" to "战士", "mage" to "法师", "taoist" to "道士")
+        val tabItems = listOf(
+            "warrior" to "战士",
+            "mage" to "法师",
+            "taoist" to "道士",
+            "assassin" to "刺客"
+        )
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             tabItems.forEach { (id, label) ->
                 val selected = lastClass == id
@@ -4996,6 +5008,7 @@ private fun TrainingDialog(vm: GameViewModel, onDismiss: () -> Unit) {
                 "warrior" -> "战士"
                 "mage" -> "法师"
                 "taoist" -> "道士"
+                "assassin" -> "刺客"
                 else -> lastClass
             }
             val latestLine = rankMessages.lastOrNull { it.startsWith("${title}排行榜:") }

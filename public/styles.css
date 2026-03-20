@@ -6932,45 +6932,126 @@ body.dark .shop-item.rarity-ultimate {
 
 .changeclass-options {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
 }
 
 .changeclass-options .chip {
-  color: var(--ink);
+  color: #efe0c8;
+  background:
+    linear-gradient(180deg, rgba(63, 45, 30, 0.92), rgba(34, 24, 16, 0.96));
+  border: 1px solid rgba(199, 153, 94, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 244, 220, 0.08),
+    0 10px 22px rgba(0, 0, 0, 0.25);
+  font-size: 0.9rem;
+  min-height: 44px;
 }
 
 .changeclass-options .chip.selected {
-  background: #c56b2a;
-  color: #fff7ea;
-  border-color: #b35a1a;
-  box-shadow: 0 0 0 2px rgba(197, 107, 42, 0.2);
+  background:
+    linear-gradient(180deg, rgba(231, 165, 79, 0.95), rgba(205, 118, 37, 0.95));
+  color: #2b1a0c;
+  border-color: rgba(255, 214, 150, 0.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 244, 220, 0.35),
+    0 10px 24px rgba(186, 102, 36, 0.35);
 }
 
 .changeclass-options .chip:disabled {
-  color: #4d3b2c;
-  opacity: 0.8;
+  color: rgba(255, 234, 204, 0.55);
+  background:
+    linear-gradient(180deg, rgba(62, 49, 38, 0.7), rgba(40, 30, 22, 0.75));
+  border-color: rgba(160, 120, 72, 0.25);
+  opacity: 0.85;
 }
 
 body.dark .changeclass-options .chip {
-  background: #3a3028;
-  color: #e0d0c0;
-  border-color: #4a3a30;
+  background:
+    linear-gradient(180deg, rgba(60, 46, 34, 0.95), rgba(32, 24, 18, 0.98));
+  color: #efe0c8;
+  border-color: rgba(199, 153, 94, 0.35);
 }
 
 body.dark .changeclass-options .chip.selected {
-  background: #a86028;
-  color: #fff7ea;
-  border-color: #c27a3d;
-  box-shadow: 0 0 0 2px rgba(168, 96, 40, 0.35);
+  background:
+    linear-gradient(180deg, rgba(231, 165, 79, 0.95), rgba(205, 118, 37, 0.95));
+  color: #2b1a0c;
+  border-color: rgba(255, 214, 150, 0.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 244, 220, 0.35),
+    0 10px 24px rgba(186, 102, 36, 0.35);
 }
 
 body.dark .changeclass-options .chip:disabled {
-  background: #2a2420;
-  color: #b8a898;
-  border-color: #3a2f28;
-  opacity: 0.75;
+  background:
+    linear-gradient(180deg, rgba(62, 49, 38, 0.7), rgba(40, 30, 22, 0.75));
+  color: rgba(255, 234, 204, 0.55);
+  border-color: rgba(160, 120, 72, 0.25);
+  opacity: 0.85;
+}
+
+#changeclass-modal .modal-card {
+  width: min(520px, 92vw);
+  padding: 18px;
+  border-radius: 20px;
+  background:
+    radial-gradient(120% 120% at 0% 0%, rgba(255, 208, 140, 0.12), rgba(0, 0, 0, 0) 55%),
+    linear-gradient(180deg, rgba(35, 24, 16, 0.98), rgba(22, 16, 11, 0.98));
+  border: 1px solid rgba(228, 176, 110, 0.22);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 244, 220, 0.08),
+    0 22px 50px rgba(0, 0, 0, 0.35);
+  color: #f1e0c6;
+}
+
+#changeclass-modal .modal-title {
+  font-size: 1.35rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #f5d6a3;
+}
+
+#changeclass-modal .modal-text {
+  color: rgba(239, 222, 199, 0.85);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 220, 160, 0.15);
+  border-radius: 12px;
+  padding: 10px 12px;
+  line-height: 1.5;
+}
+
+#changeclass-modal .modal-actions {
+  justify-content: center;
+  gap: 12px;
+}
+
+#changeclass-modal .modal-actions button {
+  min-width: 120px;
+  border-radius: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 10px 14px;
+}
+
+#changeclass-confirm {
+  background: linear-gradient(180deg, #f0b56b, #e39146);
+  border: 1px solid rgba(255, 214, 150, 0.7);
+  color: #2b1a0c;
+  box-shadow: 0 10px 20px rgba(186, 102, 36, 0.35);
+}
+
+#changeclass-close {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 214, 150, 0.25);
+  color: #f3e3cc;
+}
+
+@media (max-width: 520px) {
+  .changeclass-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .chip {
