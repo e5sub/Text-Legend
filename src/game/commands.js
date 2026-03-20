@@ -2139,6 +2139,9 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       } else if (raw === 'taoist' || raw === '道士') {
         classId = 'taoist';
         className = '道士';
+      } else if (raw === 'assassin' || raw === '刺客') {
+        classId = 'assassin';
+        className = '刺客';
       } else {
         return;
       }
@@ -5830,8 +5833,12 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         classId = 'taoist';
         className = '道士';
         attrName = '道术';
+      } else if (subCmd === 'assassin' || subCmd === '刺客') {
+        classId = 'assassin';
+        className = '刺客';
+        attrName = '敏捷';
       } else {
-        send('用法: rank <职业> (warrior/mage/taoist)');
+        send('用法: rank <职业> (warrior/mage/taoist/assassin)');
         return;
       }
 
@@ -5847,12 +5854,14 @@ export async function handleCommand({ player, players, allCharacters, playersByN
             level: p.level,
             atk: Math.floor(p.atk || 0),
             mag: Math.floor(p.mag || 0),
-            spirit: Math.floor(p.spirit || 0)
+            spirit: Math.floor(p.spirit || 0),
+            dex: Math.floor(p.dex || 0)
           };
         })
         .sort((a, b) => {
           if (classId === 'warrior') return b.atk - a.atk;
           if (classId === 'mage') return b.mag - a.mag;
+          if (classId === 'assassin') return b.dex - a.dex;
           return b.spirit - a.spirit;
         })
         .slice(0, 10);
@@ -5864,7 +5873,8 @@ export async function handleCommand({ player, players, allCharacters, playersByN
 
       const rankText = rankedPlayers.map((p, idx) => {
         const attrValue = classId === 'warrior' ? p.atk :
-                         classId === 'mage' ? p.mag : p.spirit;
+                         classId === 'mage' ? p.mag :
+                         classId === 'assassin' ? p.dex : p.spirit;
         return `${idx + 1}.${p.name}(${attrValue})`;
       }).join(' ');
 
@@ -5880,7 +5890,8 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       const classes = [
         { id: 'warrior', name: '战士' },
         { id: 'mage', name: '法师' },
-        { id: 'taoist', name: '道士' }
+        { id: 'taoist', name: '道士' },
+        { id: 'assassin', name: '刺客' }
       ];
 
       for (const cls of classes) {
@@ -5895,12 +5906,14 @@ export async function handleCommand({ player, players, allCharacters, playersByN
                 name: p.name,
                 atk: Math.floor(p.atk || 0),
                 mag: Math.floor(p.mag || 0),
-                spirit: Math.floor(p.spirit || 0)
+                spirit: Math.floor(p.spirit || 0),
+                dex: Math.floor(p.dex || 0)
               };
             })
             .sort((a, b) => {
               if (cls.id === 'warrior') return b.atk - a.atk;
               if (cls.id === 'mage') return b.mag - a.mag;
+              if (cls.id === 'assassin') return b.dex - a.dex;
               return b.spirit - a.spirit;
             });
 

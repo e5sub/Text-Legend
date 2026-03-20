@@ -6513,7 +6513,8 @@ const classBonusFields = {
 const defaultClassBonusConfig = {
   warrior: { hpPerLevel: 3, mpPerLevel: 10, atkPerLevel: 0.5, defPerLevel: 3, magPerLevel: 0, spiritPerLevel: 0, mdefPerLevel: 3, dexPerLevel: 0.6 },
   mage: { hpPerLevel: 5, mpPerLevel: 10, atkPerLevel: 0, defPerLevel: 2, magPerLevel: 2, spiritPerLevel: 0, mdefPerLevel: 1, dexPerLevel: 0.6 },
-  taoist: { hpPerLevel: 5, mpPerLevel: 10, atkPerLevel: 0, defPerLevel: 2, magPerLevel: 0, spiritPerLevel: 2, mdefPerLevel: 1, dexPerLevel: 0.8 }
+  taoist: { hpPerLevel: 5, mpPerLevel: 10, atkPerLevel: 0, defPerLevel: 2, magPerLevel: 0, spiritPerLevel: 2, mdefPerLevel: 1, dexPerLevel: 0.8 },
+  assassin: { hpPerLevel: 4, mpPerLevel: 8, atkPerLevel: 0.8, defPerLevel: 2.5, magPerLevel: 0, spiritPerLevel: 0, mdefPerLevel: 2, dexPerLevel: 1.0 }
 };
 
 async function loadClassBonusConfig() {

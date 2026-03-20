@@ -7,7 +7,8 @@ import { CLASS_LEVEL_BONUS as DEFAULT_CLASS_LEVEL_BONUS } from './constants.js';
 let classLevelBonusConfig = {
   warrior: null, // null 表示使用默认配置
   mage: null,
-  taoist: null
+  taoist: null,
+  assassin: null
 };
 
 // 修炼果系数配置（可由后台动态配置）
@@ -33,7 +34,7 @@ let trainingPerLevelConfig = {
 
 /**
  * 设置职业升级属性配置
- * @param {string} classId - 职业ID (warrior, mage, taoist)
+ * @param {string} classId - 职业ID (warrior, mage, taoist, assassin)
  * @param {object} config - 配置对象
  */
 export function setClassLevelBonusConfig(classId, config) {
@@ -58,13 +59,14 @@ export function getClassLevelBonusConfig(classId) {
 
 /**
  * 批量设置职业升级属性配置
- * @param {object} configs - 配置对象 { warrior: {...}, mage: {...}, taoist: {...} }
+ * @param {object} configs - 配置对象 { warrior: {...}, mage: {...}, taoist: {...}, assassin: {...} }
  */
 export function setAllClassLevelBonusConfigs(configs) {
   if (configs && typeof configs === 'object') {
     if (configs.warrior) classLevelBonusConfig.warrior = configs.warrior;
     if (configs.mage) classLevelBonusConfig.mage = configs.mage;
     if (configs.taoist) classLevelBonusConfig.taoist = configs.taoist;
+    if (configs.assassin) classLevelBonusConfig.assassin = configs.assassin;
   }
 }
 
@@ -79,7 +81,8 @@ export function resetClassLevelBonusConfig(classId = null) {
     classLevelBonusConfig = {
       warrior: null,
       mage: null,
-      taoist: null
+      taoist: null,
+      assassin: null
     };
   }
 }
@@ -467,7 +470,10 @@ function normalizeUltimateGrowthConfig(config = {}) {
     materialCost: 1,
     breakthroughEvery: Math.max(1, Math.floor(Number(src.breakthroughEvery ?? 20) || 20)),
     breakthroughMaterialId,
-    breakthroughMaterialCost: Math.max(1, Math.floor(Number(src.breakthroughMaterialCost ?? src.advanceMaterialCost ?? 1) || 1)),
+    breakthroughMaterialCost: Math.max(
+      1,
+      Math.floor(Number(src.breakthroughMaterialCost ?? src.advanceMaterialCost ?? 1) || 1)
+    ),
     goldCost: Math.max(0, Math.floor(Number(src.goldCost ?? 50000) || 50000)),
     successRateEarly: Math.max(0, Math.min(100, Number(src.successRateEarly ?? 100) || 100)),
     successRateMid: Math.max(0, Math.min(100, Number(src.successRateMid ?? 70) || 70)),
@@ -574,7 +580,3 @@ export function initRuntimeConfigs(configs) {
   if (configs.effectResetQuadrupleRate !== undefined) setEffectResetQuadrupleRate(configs.effectResetQuadrupleRate);
   if (configs.effectResetQuintupleRate !== undefined) setEffectResetQuintupleRate(configs.effectResetQuintupleRate);
 }
-
-
-
-

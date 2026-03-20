@@ -1,4 +1,4 @@
-export const CLASSES = {
+﻿export const CLASSES = {
   warrior: {
     name: '战士',
     base: { str: 12, dex: 7, int: 3, con: 10, spirit: 4 },
@@ -16,6 +16,12 @@ export const CLASSES = {
     base: { str: 7, dex: 8, int: 9, con: 8, spirit: 12 },
     hpPerLevel: 12,
     mpPerLevel: 10
+  },
+  assassin: {
+    name: '刺客',
+    base: { str: 9, dex: 12, int: 4, con: 7, spirit: 5 },
+    hpPerLevel: 14,
+    mpPerLevel: 6
   }
 };
 
@@ -42,6 +48,16 @@ export const CLASS_LEVEL_BONUS = {
     dexPerLevel: 0
   },
   taoist: {
+    hpPerLevel: 0,
+    mpPerLevel: 0,
+    atkPerLevel: 0,
+    defPerLevel: 0,
+    magPerLevel: 0,
+    mdefPerLevel: 0,
+    spiritPerLevel: 0,
+    dexPerLevel: 0
+  },
+  assassin: {
     hpPerLevel: 0,
     mpPerLevel: 0,
     atkPerLevel: 0,
@@ -125,3 +141,4 @@ export const START_POSITION = {
     return getStartPosition().room;
   }
 };
+

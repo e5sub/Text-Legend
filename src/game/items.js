@@ -92,6 +92,13 @@
   book_tao_summon: { id: 'book_tao_summon', name: '技能书: 召唤神兽', type: 'book', price: 12000, rarity: 'rare' },
   book_tao_white_tiger: { id: 'book_tao_white_tiger', name: '技能书: 召唤白虎', type: 'book', price: 15000, rarity: 'supreme', worldBossOnly: true },
   book_tao_moon_fairy: { id: 'book_tao_moon_fairy', name: '技能书: 召唤月仙', type: 'book', price: 20000, rarity: 'supreme', worldBossOnly: true },
+  book_assassin_shadow: { id: 'book_assassin_shadow', name: '技能书: 影袭', type: 'book', price: 1200, rarity: 'common' },
+  book_assassin_backstab: { id: 'book_assassin_backstab', name: '技能书: 残月连斩', type: 'book', price: 3800, rarity: 'uncommon' },
+  book_assassin_dual: { id: 'book_assassin_dual', name: '技能书: 影噬', type: 'book', price: 5200, rarity: 'uncommon' },
+  book_assassin_burst: { id: 'book_assassin_burst', name: '技能书: 断魂刃', type: 'book', price: 8200, rarity: 'rare' },
+  book_assassin_dance: { id: 'book_assassin_dance', name: '技能书: 烟雾步', type: 'book', price: 9800, rarity: 'rare' },
+  book_assassin_fury: { id: 'book_assassin_fury', name: '技能书: 影息', type: 'book', price: 20000, rarity: 'supreme', worldBossOnly: true },
+  book_assassin_rage: { id: 'book_assassin_rage', name: '技能书: 影怒', type: 'book', price: 26000, rarity: 'supreme', worldBossOnly: true },
 
   // Warrior weapons
   sword_wood: { id: 'sword_wood', name: '木剑', type: 'weapon', slot: 'weapon', atk: 2, price: 120, rarity: 'common' },

@@ -3574,7 +3574,8 @@ app.get('/admin/class-level-bonus', async (req, res) => {
   const configs = {
     warrior: await getClassLevelBonusConfig('warrior'),
     mage: await getClassLevelBonusConfig('mage'),
-    taoist: await getClassLevelBonusConfig('taoist')
+    taoist: await getClassLevelBonusConfig('taoist'),
+    assassin: await getClassLevelBonusConfig('assassin')
   };
   res.json({ ok: true, configs });
 });
@@ -3586,7 +3587,7 @@ app.post('/admin/class-level-bonus/update', async (req, res) => {
   if (!classId || !config) {
     return res.status(400).json({ error: '缺少必要参数' });
   }
-  if (!['warrior', 'mage', 'taoist'].includes(classId)) {
+  if (!['warrior', 'mage', 'taoist', 'assassin'].includes(classId)) {
     return res.status(400).json({ error: '无效的职业ID' });
   }
   // 验证配置格式 - 只验证前端实际发送的字段
@@ -5047,7 +5048,8 @@ async function updateRankTitles() {
   const classes = [
     { id: 'warrior', name: '战士' },
     { id: 'mage', name: '法师' },
-    { id: 'taoist', name: '道士' }
+    { id: 'taoist', name: '道士' },
+    { id: 'assassin', name: '刺客' }
   ];
 
   // 为每个服务器独立计算排行榜
@@ -5067,12 +5069,14 @@ async function updateRankTitles() {
               realmId: p.realmId || 1,
               atk: Math.floor(p.atk || 0),
               mag: Math.floor(p.mag || 0),
-              spirit: Math.floor(p.spirit || 0)
+              spirit: Math.floor(p.spirit || 0),
+              dex: Math.floor(p.dex || 0)
             };
           })
           .sort((a, b) => {
             if (cls.id === 'warrior') return b.atk - a.atk;
             if (cls.id === 'mage') return b.mag - a.mag;
+            if (cls.id === 'assassin') return b.dex - a.dex;
             return b.spirit - a.spirit;
           });
 
@@ -11716,6 +11720,112 @@ function applyDamageToSummon(target, dmg) {
   return dmg;
 }
 
+const SHADOW_SEAL_MAX_STACKS = 5;
+const SHADOW_SEAL_DURATION_MS = 12000;
+const SHADOW_SEAL_PER_STACK_POWER = 0.15;
+const SHADOW_SEAL_BASE_POWER = 1.2;
+const SHADOW_SEAL_BURST_MIN_STACKS = 3;
+const SHADOW_SEAL_BURST_STUN_TURNS = 1;
+const SHADOW_SMOKE_DURATION_MS = 3000;
+const SHADOW_SMOKE_EVADE_BONUS = 0.25;
+const SHADOW_SMOKE_DMG_REDUCTION = 0.2;
+const SHADOW_RAGE_BASE_POWER = 2.8;
+const SHADOW_RAGE_PER_STACK_POWER = 0.25;
+
+function getShadowSealState(target) {
+  const debuffs = target?.status?.debuffs;
+  if (!debuffs?.shadowSeal) return null;
+  if (debuffs.shadowSeal.expiresAt && debuffs.shadowSeal.expiresAt < Date.now()) {
+    delete debuffs.shadowSeal;
+    return null;
+  }
+  return debuffs.shadowSeal;
+}
+
+function getShadowSealStacks(target) {
+  const state = getShadowSealState(target);
+  return state ? Math.max(0, Math.floor(state.stacks || 0)) : 0;
+}
+
+function addShadowSeal(target, stacks = 1) {
+  if (!target) return 0;
+  if (!target.status) target.status = {};
+  if (!target.status.debuffs) target.status.debuffs = {};
+  const now = Date.now();
+  const current = getShadowSealStacks(target);
+  const next = Math.min(SHADOW_SEAL_MAX_STACKS, current + Math.max(0, Math.floor(stacks || 0)));
+  if (next <= 0) {
+    delete target.status.debuffs.shadowSeal;
+    return 0;
+  }
+  target.status.debuffs.shadowSeal = { stacks: next, expiresAt: now + SHADOW_SEAL_DURATION_MS };
+  return next;
+}
+
+function consumeShadowSeal(target, stacks = null) {
+  const current = getShadowSealStacks(target);
+  if (current <= 0) return 0;
+  const consume = stacks === null ? current : Math.max(0, Math.floor(stacks || 0));
+  const next = Math.max(0, current - consume);
+  if (!target?.status?.debuffs) return 0;
+  if (next <= 0) {
+    delete target.status.debuffs.shadowSeal;
+  } else {
+    target.status.debuffs.shadowSeal = {
+      stacks: next,
+      expiresAt: Date.now() + SHADOW_SEAL_DURATION_MS
+    };
+  }
+  return current - next;
+}
+
+function getSmokeStepBuff(target) {
+  const buff = target?.status?.buffs?.smokeStep;
+  if (!buff) return null;
+  if (buff.expiresAt && buff.expiresAt < Date.now()) {
+    delete target.status.buffs.smokeStep;
+    return null;
+  }
+  return buff;
+}
+
+function applySmokeStep(target) {
+  if (!target) return false;
+  if (!target.status) target.status = {};
+  if (!target.status.buffs) target.status.buffs = {};
+  target.status.buffs.smokeStep = {
+    expiresAt: Date.now() + SHADOW_SMOKE_DURATION_MS,
+    evadeBonus: SHADOW_SMOKE_EVADE_BONUS,
+    dmgReduction: SHADOW_SMOKE_DMG_REDUCTION
+  };
+  return true;
+}
+
+function getAssassinSecondHitCrit(attacker) {
+  const dex = Math.max(0, Number(attacker?.dex || 0));
+  const critChance = clamp(0.1 + dex * 0.001, 0.1, 0.25);
+  const crit = Math.random() <= critChance;
+  return { crit, multiplier: crit ? 1.5 : 1 };
+}
+
+function applyAssassinShadowBreathOnKill(attacker) {
+  if (!attacker || attacker.classId !== 'assassin') return false;
+  if (!hasSkill(attacker, 'shadow_fury')) return false;
+  if (!attacker.status) attacker.status = {};
+  const now = Date.now();
+  const lastAt = attacker.status.shadowBreathAt || 0;
+  if (now - lastAt < 6000) return false;
+  attacker.status.shadowBreathAt = now;
+  const hpGain = Math.max(1, Math.floor((attacker.max_hp || 1) * 0.08));
+  const mpGain = Math.max(1, Math.floor((attacker.max_mp || 1) * 0.04));
+  attacker.hp = clamp(attacker.hp + hpGain, 1, attacker.max_hp);
+  attacker.mp = clamp(attacker.mp + mpGain, 0, attacker.max_mp);
+  if (typeof attacker.send === 'function') {
+    attacker.send(`影息触发，回复 ${hpGain} 生命与 ${mpGain} 法力。`);
+  }
+  return true;
+}
+
 function applyDamageToPlayer(target, dmg) {
   if (isInvincible(target)) return 0;
   if (!target.status) target.status = {};
@@ -11744,6 +11854,10 @@ function applyDamageToPlayer(target, dmg) {
     } else {
       dmg = Math.floor(dmg * (1 - (buff.dmgReduction || 0)));
     }
+  }
+  const smokeBuff = getSmokeStepBuff(target);
+  if (smokeBuff) {
+    dmg = Math.floor(dmg * (1 - (smokeBuff.dmgReduction || 0)));
   }
   const guardMul = hasActivePetSkill(target, 'pet_guard_adv') ? PET_COMBAT_BALANCE.guardAdvDamageMul :
                   hasActivePetSkill(target, 'pet_guard') ? PET_COMBAT_BALANCE.guardDamageMul : 1;
@@ -16872,7 +16986,7 @@ function buildDamageRankMap(mob, damageByOverride = null) {
 }
 
 function buildBossClassRank(mob, entries, realmId = 1) {
-  const classBuckets = { warrior: [], mage: [], taoist: [] };
+  const classBuckets = { warrior: [], mage: [], taoist: [], assassin: [] };
   const online = listOnlinePlayers(realmId);
   const nameToClass = new Map(online.map((p) => [p.name, p.classId]));
   entries.forEach(([name, damage]) => {
@@ -19289,7 +19403,8 @@ function tryAutoBuff(player) {
     skill.type === 'buff_shield' ||
     skill.type === 'buff_magic_shield_group' ||
     skill.type === 'buff_tiangang' ||
-    skill.type === 'stealth_group'
+    skill.type === 'stealth_group' ||
+    skill.type === 'buff_smoke'
   );
   if (!learnedBuffs.length) return false;
 
@@ -19334,6 +19449,19 @@ function tryAutoBuff(player) {
         player.status.skillCooldowns[buffSkill.id] = Date.now();
       }
       player.send(`自动施放 ${buffSkill.name}，持续 ${duration} 秒。`);
+      return true;
+    }
+    if (buffSkill.type === 'buff_smoke') {
+      const smoke = getSmokeStepBuff(player);
+      if (smoke && (!smoke.expiresAt || smoke.expiresAt >= now + 1000)) continue;
+      player.mp = clamp(player.mp - buffSkill.mp, 0, player.max_mp);
+      applySmokeStep(player);
+      if (!player.status) player.status = {};
+      if (!player.status.skillCooldowns) player.status.skillCooldowns = {};
+      if (buffSkill.cooldown) {
+        player.status.skillCooldowns[buffSkill.id] = Date.now();
+      }
+      player.send(`自动施放 ${buffSkill.name}，持续 ${Math.floor(SHADOW_SMOKE_DURATION_MS / 1000)} 秒。`);
       return true;
     }
 
@@ -19926,11 +20054,12 @@ async function processMobDeath(player, mob, online) {
         rewardState = new Set();
         bossClassFirstDamageRewardGiven.set(rewardKey, rewardState);
       }
-      const classLabels = [
-        { id: 'warrior', name: '战士' },
-        { id: 'mage', name: '法师' },
-        { id: 'taoist', name: '道士' }
-      ];
+  const classLabels = [
+    { id: 'warrior', name: '战士' },
+    { id: 'mage', name: '法师' },
+    { id: 'taoist', name: '道士' },
+    { id: 'assassin', name: '刺客' }
+  ];
       classLabels.forEach((cls) => {
         if (rewardState.has(cls.id)) return;
         const topEntry = classRanks?.[cls.id]?.[0];
@@ -20701,7 +20830,12 @@ async function combatTick() {
       0.98
     );
     if (Math.random() <= hitChance) {
-      const targetEvadeChance = clamp((target.evadeChance || 0) + getPetEvadeChanceBonus(target), 0, 0.85);
+      const smokeBuff = getSmokeStepBuff(target);
+      const targetEvadeChance = clamp(
+        (target.evadeChance || 0) + getPetEvadeChanceBonus(target) + (smokeBuff?.evadeBonus || 0),
+        0,
+        0.85
+      );
       if (targetEvadeChance > 0 && Math.random() <= targetEvadeChance) {
         const skillName = skill?.id === 'slash' ? null : skill?.name;
         if (skillName) {
@@ -20712,9 +20846,19 @@ async function combatTick() {
       }
       let dmg = 0;
       let skillPower = 1;
+      let shadowDevourStacks = 0;
+      let shadowRageStacks = 0;
         if (skill && (skill.type === 'attack' || skill.type === 'spell' || skill.type === 'cleave' || skill.type === 'dot' || skill.type === 'aoe')) {
           const skillLevel = getSkillLevel(player, skill.id);
           skillPower = scaledSkillPower(skill, skillLevel);
+          if (skill.id === 'dual_slash') {
+            shadowDevourStacks = getShadowSealStacks(target);
+            skillPower = (SHADOW_SEAL_BASE_POWER + shadowDevourStacks * SHADOW_SEAL_PER_STACK_POWER) * (1 + (skillLevel - 1) * 0.1);
+          }
+          if (skill.id === 'shadow_rage') {
+            shadowRageStacks = getShadowSealStacks(target);
+            skillPower = (SHADOW_RAGE_BASE_POWER + shadowRageStacks * SHADOW_RAGE_PER_STACK_POWER) * (1 + (skillLevel - 1) * 0.1);
+          }
         if (skill.type === 'spell' || skill.type === 'aoe') {
           if (skill.powerStat === 'atk') {
             dmg = calcDamage(player, target, skillPower);
@@ -20779,21 +20923,60 @@ async function combatTick() {
         player.send('宠物技能【会心】触发，造成暴击伤害！');
       }
 
-        const damageDealt = applyDamageToPlayer(target, dmg);
+        let totalDealt = 0;
+        if (skill?.id === 'backstab') {
+          const firstDealt = applyDamageToPlayer(target, dmg);
+          totalDealt += firstDealt;
+          if (target.hp > 0) {
+            let secondDmg = dmg;
+            const critResult = getAssassinSecondHitCrit(player);
+            if (critResult.crit) {
+              secondDmg = Math.max(1, Math.floor(secondDmg * critResult.multiplier));
+              addShadowSeal(target, 1);
+              player.send('残月连斩第二击暴击！影印+1。');
+              target.send('你受到残月连斩暴击。');
+            }
+            const secondDealt = applyDamageToPlayer(target, secondDmg);
+            totalDealt += secondDealt;
+          }
+        } else {
+          totalDealt = applyDamageToPlayer(target, dmg);
+        }
+        if (skill?.id === 'shadow_strike') {
+          addShadowSeal(target, 1);
+        }
+        if (skill?.id === 'dual_slash' && shadowDevourStacks > 0) {
+          consumeShadowSeal(target, null);
+          player.send(`影噬吞噬了 ${shadowDevourStacks} 层影印。`);
+        }
+        if (skill?.id === 'shadow_burst') {
+          const stacks = getShadowSealStacks(target);
+          if (stacks >= SHADOW_SEAL_BURST_MIN_STACKS) {
+            consumeShadowSeal(target, SHADOW_SEAL_BURST_MIN_STACKS);
+            if (!target.status) target.status = {};
+            target.status.stunTurns = Math.max(target.status.stunTurns || 0, SHADOW_SEAL_BURST_STUN_TURNS);
+            player.send(`${target.name} 被断魂刃定身。`);
+            target.send('你被定身，无法行动。');
+          }
+        }
+        if (skill?.id === 'shadow_rage' && shadowRageStacks > 0) {
+          consumeShadowSeal(target, null);
+          player.send(`影怒吞噬了 ${shadowRageStacks} 层影印。`);
+        }
         target.flags.lastCombatAt = Date.now();
-        player.send(`你对 ${target.name} 造成 ${damageDealt} 点伤害。`);
-        target.send(`${player.name} 对你造成 ${damageDealt} 点伤害。`);
+        player.send(`你对 ${target.name} 造成 ${totalDealt} 点伤害。`);
+        target.send(`${player.name} 对你造成 ${totalDealt} 点伤害。`);
         const counterChance = hasActivePetSkill(target, 'pet_counter_adv') ? PET_COMBAT_BALANCE.counterAdvChance :
                              hasActivePetSkill(target, 'pet_counter') ? PET_COMBAT_BALANCE.counterChance : 0;
         if (counterChance > 0 && Math.random() <= counterChance && player.hp > 0) {
           const counterRatio = hasActivePetSkill(target, 'pet_counter_adv') ? PET_COMBAT_BALANCE.counterAdvDamageRatio :
                               hasActivePetSkill(target, 'pet_counter') ? PET_COMBAT_BALANCE.counterDamageRatio : 0;
-          const counterDmg = Math.max(1, Math.floor(Math.max(1, damageDealt) * counterRatio));
+          const counterDmg = Math.max(1, Math.floor(Math.max(1, totalDealt) * counterRatio));
           const counterDealt = applyDamageToPlayer(player, counterDmg);
           target.send(`宠物技能【反击】触发，对 ${player.name} 反弹 ${counterDealt} 点伤害。`);
           player.send(`${target.name} 的宠物反击造成 ${counterDealt} 点伤害。`);
         }
-        applyPetLifesteal(player, damageDealt);
+        applyPetLifesteal(player, totalDealt);
         if (tryApplyPetMagicBreak(player, target)) {
           player.send(`宠物技能【破魔】触发，${target.name} 魔御降低。`);
         }
@@ -20919,6 +21102,7 @@ async function combatTick() {
             }
             recordCrossRankKill(player, extraTarget);
             applyPetKillSoulOnKill(player);
+            applyAssassinShadowBreathOnKill(player);
             handleDeath(extraTarget);
           }
         }
@@ -21006,6 +21190,7 @@ async function combatTick() {
         }
         recordCrossRankKill(player, target);
         applyPetKillSoulOnKill(player);
+        applyAssassinShadowBreathOnKill(player);
         handleDeath(target);
       }
       markStateDirty(player);
@@ -21054,9 +21239,19 @@ async function combatTick() {
       const mobImmuneToDebuffs = enforceSpecialBossDebuffImmunity(mob, roomRealmId);
       let dmg = 0;
       let skillPower = 1;
+      let shadowDevourStacks = 0;
+      let shadowRageStacks = 0;
       if (skill && (skill.type === 'attack' || skill.type === 'spell' || skill.type === 'cleave' || skill.type === 'dot' || skill.type === 'aoe')) {
         const skillLevel = getSkillLevel(player, skill.id);
         skillPower = scaledSkillPower(skill, skillLevel);
+        if (skill.id === 'dual_slash') {
+          shadowDevourStacks = getShadowSealStacks(mob);
+          skillPower = (SHADOW_SEAL_BASE_POWER + shadowDevourStacks * SHADOW_SEAL_PER_STACK_POWER) * (1 + (skillLevel - 1) * 0.1);
+        }
+        if (skill.id === 'shadow_rage') {
+          shadowRageStacks = getShadowSealStacks(mob);
+          skillPower = (SHADOW_RAGE_BASE_POWER + shadowRageStacks * SHADOW_RAGE_PER_STACK_POWER) * (1 + (skillLevel - 1) * 0.1);
+        }
         if (skill.type === 'spell' || skill.type === 'aoe') {
           if (skill.powerStat === 'atk') {
             dmg = calcDamage(player, mob, skillPower);
@@ -21137,6 +21332,7 @@ async function combatTick() {
         if (deadTargetsAfterPet.length) {
           for (const target of deadTargetsAfterPet) {
             applyPetKillSoulOnKill(player);
+            applyAssassinShadowBreathOnKill(player);
             await processMobDeath(player, target, online);
           }
           if (deadTargetsAfterPet.some((target) => target.id === mob.id)) {
@@ -21157,15 +21353,54 @@ async function combatTick() {
         if (petCritResult.crit) {
           player.send('宠物技能【会心】触发，造成暴击伤害！');
         }
-        const result = applyDamageToMob(mob, dmg, player.name, roomRealmId);
-        if (result?.damageTaken) {
-          player.send(`你对 ${mob.name} 造成 ${dmg} 点伤害。`);
-          applyPetLifesteal(player, result.damageTaken);
+        let totalDealt = 0;
+        if (skill?.id === 'backstab') {
+          const firstResult = applyDamageToMob(mob, dmg, player.name, roomRealmId);
+          const firstDealt = Number(firstResult?.damageTaken || 0);
+          totalDealt += firstDealt;
+          if (mob.hp > 0) {
+            let secondDmg = dmg;
+            const critResult = getAssassinSecondHitCrit(player);
+            if (critResult.crit) {
+              secondDmg = Math.max(1, Math.floor(secondDmg * critResult.multiplier));
+              if (!mobImmuneToDebuffs) addShadowSeal(mob, 1);
+              player.send(`残月连斩第二击暴击！影印+1。`);
+            }
+            const secondResult = applyDamageToMob(mob, secondDmg, player.name, roomRealmId);
+            totalDealt += Number(secondResult?.damageTaken || 0);
+          }
+        } else {
+          const result = applyDamageToMob(mob, dmg, player.name, roomRealmId);
+          totalDealt = Number(result?.damageTaken || 0);
+        }
+        if (totalDealt > 0) {
+          if (skill?.id === 'shadow_strike' && !mobImmuneToDebuffs) {
+            addShadowSeal(mob, 1);
+          }
+          if (skill?.id === 'dual_slash' && shadowDevourStacks > 0) {
+            consumeShadowSeal(mob, null);
+            player.send(`影噬吞噬了 ${shadowDevourStacks} 层影印。`);
+          }
+          if (skill?.id === 'shadow_burst' && !mobImmuneToDebuffs) {
+            const stacks = getShadowSealStacks(mob);
+            if (stacks >= SHADOW_SEAL_BURST_MIN_STACKS) {
+              consumeShadowSeal(mob, SHADOW_SEAL_BURST_MIN_STACKS);
+              mob.status = mob.status || {};
+              mob.status.stunTurns = Math.max(mob.status.stunTurns || 0, SHADOW_SEAL_BURST_STUN_TURNS);
+              player.send(`${mob.name} 被断魂刃定身。`);
+            }
+          }
+          if (skill?.id === 'shadow_rage' && shadowRageStacks > 0 && !mobImmuneToDebuffs) {
+            consumeShadowSeal(mob, null);
+            player.send(`影怒吞噬了 ${shadowRageStacks} 层影印。`);
+          }
+          player.send(`你对 ${mob.name} 造成 ${totalDealt} 点伤害。`);
+          applyPetLifesteal(player, totalDealt);
           tryApplyPetMagicBreak(player, mob);
           if (tryTriggerPetArcaneEcho(player, skill) && mob.hp > 0) {
             const echoRatio = hasActivePetSkill(player, 'pet_arcane_echo_adv') ? PET_COMBAT_BALANCE.arcaneEchoAdvDamageRatio :
                               hasActivePetSkill(player, 'pet_arcane_echo') ? PET_COMBAT_BALANCE.arcaneEchoDamageRatio : 0;
-            const echoBase = Math.max(1, Math.floor(result.damageTaken * echoRatio));
+            const echoBase = Math.max(1, Math.floor(totalDealt * echoRatio));
             const echoResult = applyDamageToMob(mob, echoBase, player.name, roomRealmId);
             const echoDealt = Number(echoResult?.damageTaken || 0);
             if (echoDealt > 0) {
@@ -21215,6 +21450,7 @@ async function combatTick() {
             }
             if (extraTarget.hp <= 0) {
               applyPetKillSoulOnKill(player);
+              applyAssassinShadowBreathOnKill(player);
               await processMobDeath(player, extraTarget, online);
             }
           }
@@ -21360,6 +21596,7 @@ async function combatTick() {
 
     if (mob.hp <= 0) {
       applyPetKillSoulOnKill(player);
+      applyAssassinShadowBreathOnKill(player);
       await processMobDeath(player, mob, online);
       player.combat = null;
       sendRoomState(player.position.zone, player.position.room, roomRealmId);
@@ -21423,8 +21660,9 @@ async function combatTick() {
       const isWorldBoss = Boolean(mobTemplate?.worldBoss);
       const isSpecialBoss = Boolean(mobTemplate?.specialBoss);
       const enragedMultiplier = isSpecialBossEnraged(mob) ? 2 : 1;
+      const smokeBuff = getSmokeStepBuff(mobTarget);
       const mobTargetEvadeChance = mobTarget?.userId
-        ? clamp((mobTarget.evadeChance || 0) + getPetEvadeChanceBonus(mobTarget), 0, 0.85)
+        ? clamp((mobTarget.evadeChance || 0) + getPetEvadeChanceBonus(mobTarget) + (smokeBuff?.evadeBonus || 0), 0, 0.85)
         : (mobTarget?.evadeChance || 0);
       if (!isBoss && !isWorldBoss && !isSpecialBoss && mobTarget && mobTargetEvadeChance && Math.random() <= mobTargetEvadeChance) {
         if (mobTarget.userId) {
@@ -22337,7 +22575,8 @@ async function start() {
   const classLevelConfigs = {
     warrior: await getClassLevelBonusConfig('warrior'),
     mage: await getClassLevelBonusConfig('mage'),
-    taoist: await getClassLevelBonusConfig('taoist')
+    taoist: await getClassLevelBonusConfig('taoist'),
+    assassin: await getClassLevelBonusConfig('assassin')
   };
   setAllClassLevelBonusConfigs(classLevelConfigs);
 

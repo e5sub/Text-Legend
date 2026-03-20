@@ -1,7 +1,7 @@
 ﻿let token = null;
 let socket = null;
 let activeChar = null;
-const classNames = { warrior: '战士', mage: '法师', taoist: '道士' };
+const classNames = { warrior: '战士', mage: '法师', taoist: '道士', assassin: '刺客' };
 let selectedMob = null;
 let selectedSummonId = null;
 let mailCache = [];
@@ -9701,9 +9701,10 @@ function renderState(state) {
         resetBossRespawn();
         if (ui.worldBossRank) ui.worldBossRank.innerHTML = '';
         const classLabels = [
-          { id: 'warrior', name: '战士' },
-          { id: 'mage', name: '法师' },
-          { id: 'taoist', name: '道士' }
+        { id: 'warrior', name: '战士' },
+        { id: 'mage', name: '法师' },
+        { id: 'taoist', name: '道士' },
+        { id: 'assassin', name: '刺客' }
         ];
         classLabels.forEach((cls) => {
           const list = classRanks[cls.id] || [];
