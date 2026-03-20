@@ -110,6 +110,10 @@ let deviceId = null;
 let deviceFingerprint = null;
 let pendingRenameFallbackTimer = null;
 let pendingRenameFallbackName = '';
+let sponsorAutoScrollInterval = null;
+let sponsorModalBound = false;
+let dropsModalBound = false;
+let sponsorTitleModalBound = false;
 const localHpCache = {
   players: new Map(),
   mobs: new Map()
@@ -1012,6 +1016,8 @@ const newPasswordBackdrop = document.getElementById('new-password-overlay-backdr
 const registerInviteHint = document.getElementById('register-invite-hint');
 let lastSavedLevel = null;
 const CHAT_CACHE_LIMIT = 200;
+const CHAT_DOM_LIMIT = 300;
+const LOG_DOM_LIMIT = 500;
 let realmList = [];
 let currentRealmId = 1;
 let realmInitPromise = null;
@@ -1584,6 +1590,15 @@ function buildLine(payload) {
   return p;
 }
 
+function trimLogContainer(container, limit) {
+  if (!container || !limit) return;
+  let extra = container.childElementCount - limit;
+  while (extra > 0 && container.firstElementChild) {
+    container.removeChild(container.firstElementChild);
+    extra -= 1;
+  }
+}
+
 function addPlayerTitle(line, playerName, rankTitleFromServer = null) {
   // 查找玩家名按钮并添加称号
   const nameBtns = line.querySelectorAll('.chat-name-btn');
@@ -1782,6 +1797,7 @@ function appendLine(payload) {
 
   const p = buildLine(normalizedPayload);
   log.appendChild(p);
+  trimLogContainer(log, LOG_DOM_LIMIT);
   log.scrollTop = log.scrollHeight;
   applyAnnounceMarquee(p);
 }
@@ -1864,6 +1880,7 @@ function appendChatLine(payload) {
     p.appendChild(btn);
   }
   chat.log.appendChild(p);
+  trimLogContainer(chat.log, CHAT_DOM_LIMIT);
   chat.log.scrollTop = chat.log.scrollHeight;
   if (activeChar) cacheChatLine(activeChar, payload);
   applyAnnounceMarquee(p);
@@ -7504,20 +7521,32 @@ function showDropsModal() {
   renderDropsContent('shengzhan');
   dropsUi.modal.classList.remove('hidden');
   
-  // 绑定tab点击事件
-  dropsUi.tabs.forEach((tab) => {
-    tab.addEventListener('click', () => {
-      dropsUi.tabs.forEach((t) => t.classList.remove('active'));
-      tab.classList.add('active');
-      const setId = tab.dataset.set;
-      renderDropsContent(setId);
+  if (!dropsModalBound) {
+    dropsModalBound = true;
+    // 绑定tab点击事件
+    dropsUi.tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        dropsUi.tabs.forEach((t) => t.classList.remove('active'));
+        tab.classList.add('active');
+        const setId = tab.dataset.set;
+        renderDropsContent(setId);
+      });
     });
-  });
-  
-  // 绑定关闭按钮
-  dropsUi.closeBtn.addEventListener('click', () => {
-    dropsUi.modal.classList.add('hidden');
-  });
+    
+    // 绑定关闭按钮
+    if (dropsUi.closeBtn) {
+      dropsUi.closeBtn.addEventListener('click', () => {
+        dropsUi.modal.classList.add('hidden');
+      });
+    }
+  }
+}
+
+function stopSponsorAutoScroll() {
+  if (sponsorAutoScrollInterval) {
+    clearInterval(sponsorAutoScrollInterval);
+    sponsorAutoScrollInterval = null;
+  }
 }
 
 async function showSponsorModal() {
@@ -7526,24 +7555,30 @@ async function showSponsorModal() {
   await renderSponsorContent();
   sponsorUi.modal.classList.remove('hidden');
 
-  // 绑定关闭按钮
-  sponsorUi.close.addEventListener('click', () => {
-    sponsorUi.modal.classList.add('hidden');
-  });
-if (sponsorUi.modal) {
-  sponsorUi.modal.addEventListener('click', (e) => {
-    if (e.target === sponsorUi.modal) {
-      sponsorUi.modal.classList.add('hidden');
+  if (!sponsorModalBound) {
+    sponsorModalBound = true;
+    if (sponsorUi.close) {
+      sponsorUi.close.addEventListener('click', () => {
+        stopSponsorAutoScroll();
+        sponsorUi.modal.classList.add('hidden');
+      });
     }
-  });
-}
-if (sponsorTitleUi.modal) {
-  sponsorTitleUi.modal.addEventListener('click', (e) => {
-    if (e.target === sponsorTitleUi.modal) {
-      sponsorTitleUi.modal.classList.add('hidden');
+    if (sponsorUi.modal) {
+      sponsorUi.modal.addEventListener('click', (e) => {
+        if (e.target === sponsorUi.modal) {
+          stopSponsorAutoScroll();
+          sponsorUi.modal.classList.add('hidden');
+        }
+      });
     }
-  });
-}
+    if (sponsorTitleUi.modal) {
+      sponsorTitleUi.modal.addEventListener('click', (e) => {
+        if (e.target === sponsorTitleUi.modal) {
+          sponsorTitleUi.modal.classList.add('hidden');
+        }
+      });
+    }
+  }
 }
 
 function parseMarkdown(markdown) {
@@ -7701,8 +7736,9 @@ async function renderSponsorContent() {
   if (hasMoreSponsors) {
     const scrollContainer = sponsorUi.content.querySelector('.sponsor-list-scroll');
     if (scrollContainer && sponsorList.length > 5) {
+      stopSponsorAutoScroll();
       let scrollDirection = 1;
-      let autoScrollInterval = setInterval(() => {
+      sponsorAutoScrollInterval = setInterval(() => {
         const maxScroll = scrollContainer.scrollHeight - scrollContainer.clientHeight;
         const currentScroll = scrollContainer.scrollTop;
 
@@ -7717,12 +7753,12 @@ async function renderSponsorContent() {
 
       // 鼠标悬停时暂停滚动
       scrollContainer.addEventListener('mouseenter', () => {
-        clearInterval(autoScrollInterval);
+        stopSponsorAutoScroll();
       });
 
       // 鼠标离开时恢复滚动
       scrollContainer.addEventListener('mouseleave', () => {
-        autoScrollInterval = setInterval(() => {
+        sponsorAutoScrollInterval = setInterval(() => {
           const maxScroll = scrollContainer.scrollHeight - scrollContainer.clientHeight;
           const currentScroll = scrollContainer.scrollTop;
 
@@ -7828,54 +7864,66 @@ async function showSponsorTitleModal() {
   sponsorTitleUi.msg.textContent = '';
   sponsorTitleUi.modal.classList.remove('hidden');
 
-  // 绑定取消按钮
-  sponsorTitleUi.cancelBtn.onclick = () => {
-    sponsorTitleUi.modal.classList.add('hidden');
-  };
-
-  // 绑定保存按钮
-  sponsorTitleUi.saveBtn.onclick = async () => {
-    const customTitle = sponsorTitleUi.input.value.trim();
-    if (customTitle.length > 10) {
-      sponsorTitleUi.msg.textContent = '称号长度不能超过10个字！';
-      sponsorTitleUi.msg.style.color = '#e74c3c';
-      return;
-    }
-    // 过滤特殊字符
-    const invalidChars = /[<>"'&\\/]/;
-    if (invalidChars.test(customTitle)) {
-      sponsorTitleUi.msg.textContent = '称号包含非法字符！';
-      sponsorTitleUi.msg.style.color = '#e74c3c';
-      return;
-    }
-    try {
-      sponsorTitleUi.msg.textContent = '保存中...';
-      sponsorTitleUi.msg.style.color = '#999';
-      const res = await fetch(buildApiUrl('/api/sponsors/custom-title'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, customTitle, characterName: currentPlayerName })
+  if (!sponsorTitleModalBound) {
+    sponsorTitleModalBound = true;
+    // 绑定取消按钮
+    if (sponsorTitleUi.cancelBtn) {
+      sponsorTitleUi.cancelBtn.addEventListener('click', () => {
+        sponsorTitleUi.modal.classList.add('hidden');
       });
-      const data = await res.json();
-      if (data.ok) {
-        sponsorTitleUi.msg.textContent = '保存成功！';
-        sponsorTitleUi.msg.style.color = '#27ae60';
-        // 重新加载赞助名单以更新显示
-        await loadSponsors();
-        // 延迟关闭模态框
-        setTimeout(() => {
-          sponsorTitleUi.modal.classList.add('hidden');
-        }, 500);
-      } else {
-        sponsorTitleUi.msg.textContent = data.error || '保存失败！';
-        sponsorTitleUi.msg.style.color = '#e74c3c';
-      }
-    } catch (err) {
-      console.error('保存称号失败:', err);
-      sponsorTitleUi.msg.textContent = '保存失败，请重试！';
-      sponsorTitleUi.msg.style.color = '#e74c3c';
     }
-  };
+
+    // 绑定保存按钮
+    if (sponsorTitleUi.saveBtn) {
+      sponsorTitleUi.saveBtn.addEventListener('click', async () => {
+        const playerName = lastState?.player?.name;
+        if (!playerName) {
+          showToast('请先登录游戏');
+          return;
+        }
+        const customTitle = sponsorTitleUi.input.value.trim();
+        if (customTitle.length > 10) {
+          sponsorTitleUi.msg.textContent = '称号长度不能超过10个字！';
+          sponsorTitleUi.msg.style.color = '#e74c3c';
+          return;
+        }
+        // 过滤特殊字符
+        const invalidChars = /[<>"'&\\/]/;
+        if (invalidChars.test(customTitle)) {
+          sponsorTitleUi.msg.textContent = '称号包含非法字符！';
+          sponsorTitleUi.msg.style.color = '#e74c3c';
+          return;
+        }
+        try {
+          sponsorTitleUi.msg.textContent = '保存中...';
+          sponsorTitleUi.msg.style.color = '#999';
+          const res = await fetch(buildApiUrl('/api/sponsors/custom-title'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, customTitle, characterName: playerName })
+          });
+          const data = await res.json();
+          if (data.ok) {
+            sponsorTitleUi.msg.textContent = '保存成功！';
+            sponsorTitleUi.msg.style.color = '#27ae60';
+            // 重新加载赞助名单以更新显示
+            await loadSponsors();
+            // 延迟关闭模态框
+            setTimeout(() => {
+              sponsorTitleUi.modal.classList.add('hidden');
+            }, 500);
+          } else {
+            sponsorTitleUi.msg.textContent = data.error || '保存失败！';
+            sponsorTitleUi.msg.style.color = '#e74c3c';
+          }
+        } catch (err) {
+          console.error('保存称号失败:', err);
+          sponsorTitleUi.msg.textContent = '保存失败，请重试！';
+          sponsorTitleUi.msg.style.color = '#e74c3c';
+        }
+      });
+    }
+  }
 }
 
 const ITEM_TYPE_LABELS = {
