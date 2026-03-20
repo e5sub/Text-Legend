@@ -8315,12 +8315,36 @@ function renderGuildModal() {
       const branchBtn = document.createElement('button');
       branchBtn.type = 'button';
       branchBtn.textContent = branch.upgrading ? '升级中' : `升级${branch.label}`;
-      branchBtn.disabled = !canManageBuild || Boolean(guildBuildingState.upgrading) || !branch.readyToUpgrade;
-      branchBtn.addEventListener('click', () => {
+      branchBtn.disabled = !canManageBuild;
+      branchBtn.addEventListener('click', async () => {
+        if (!canManageBuild) {
+          await confirmModal({ title: '无法升级', text: '只有会长或副会长可以升级行会建筑。' });
+          return;
+        }
         if (!socket) return showToast('未连接服务器');
+        if (guildBuildingState.upgrading) {
+          await confirmModal({ title: '升级中', text: '当前已有建筑升级中，请等待完成后再试。' });
+          return;
+        }
+        if (branch.upgrading) {
+          await confirmModal({ title: '升级中', text: '该建筑正在升级中，请稍后再试。' });
+          return;
+        }
+        if (!branch.readyToUpgrade) {
+          let reason = '尚未满足升级条件。';
+          if (branch.nextThreshold == null) {
+            reason = '该建筑已达上限。';
+          } else if (Number(branch.nextNeed || 0) > 0) {
+            reason = `建设值不足，还差 ${Number(branch.nextNeed || 0)}。`;
+          }
+          await confirmModal({ title: '条件不足', text: reason });
+          return;
+        }
         socket.emit('guild_build_upgrade', { branchId: branch.id });
       });
-      branchCard.appendChild(branchBtn);
+      if (canManageBuild) {
+        branchCard.appendChild(branchBtn);
+      }
       branchWrap.appendChild(branchCard);
     });
     buildCard.appendChild(branchWrap);
