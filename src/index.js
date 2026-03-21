@@ -209,7 +209,7 @@ import { MOB_TEMPLATES, applyMobTemplateOverride, removeMobTemplateOverride } fr
 import { ITEM_TEMPLATES, SHOP_STOCKS } from './game/items.js';
 import { WORLD, expandRoomVariants, shrinkRoomVariants, ensureZhuxianTowerRoom, ensurePersonalBossRoom, applyWorldZoneOverride, applyWorldRoomOverride, removeWorldZoneOverride, removeWorldRoomOverride } from './game/world.js';
 import { getRoomMobs, getAliveMobs, spawnMobs, removeMob, seedRespawnCache, appendRespawnCache, setRespawnStore, getAllAliveMobs, getSpecialBossRooms, clearSpecialBossRooms, resetRoom, incrementWorldBossKills, setWorldBossKillCount as setWorldBossKillCountState, incrementSpecialBossKills, setSpecialBossKillCount as setSpecialBossKillCountState, incrementCultivationBossKills, setCultivationBossKillCount as setCultivationBossKillCountState } from './game/state.js';
-import { calcHitChance, calcDamage, applyDamage, applyHealing, applyPoison, tickStatus, getDefenseMultiplier, consumeFirestrikeCrit } from './game/combat.js';
+import { calcHitChance, calcDamage, applyDamage, applyHealing, applyPoison, applyPoisonEffect, tickStatus, getDefenseMultiplier, consumeFirestrikeCrit } from './game/combat.js';
 import { randInt, clamp } from './game/utils.js';
 import { expForLevel, ROOM_VARIANT_COUNT, setRoomVariantCount as applyRoomVariantCount } from './game/constants.js';
 import {
@@ -16948,7 +16948,7 @@ function calcPoisonTickDamage(target) {
 
 function calcPoisonEffectTickDamage(target) {
   const maxHp = Math.max(1, target.max_hp || 1);
-  const total = Math.max(1, Math.floor(maxHp * 0.05));
+  const total = Math.max(1, Math.floor(maxHp * 0.01));
   return Math.max(1, Math.floor(total / 10));
 }
 
@@ -16956,6 +16956,8 @@ function tryApplyPoisonEffect(attacker, target) {
   if (!attacker || !target) return false;
   if (!attacker?.flags?.hasPoisonEffect) return false;
   if (Math.random() > 0.1) return false;
+  if (!target.status) target.status = {};
+  applyPoisonEffect(target, 10, calcPoisonEffectTickDamage(target), attacker.name);
   applyPoisonEffectDebuff(target);
   return true;
 }

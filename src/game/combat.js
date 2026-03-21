@@ -128,6 +128,21 @@ export function applyPoison(target, turns, tickDamage, sourceName = null) {
   return true;
 }
 
+// 施加毒特效（独立于施毒术）
+export function applyPoisonEffect(target, turns, tickDamage, sourceName = null) {
+  if (!target) return false;
+  if (!target.status) target.status = {};
+  const cappedDamage = Math.min(1000, Math.max(1, Math.floor(tickDamage || 0)));
+  if (target.status.poisonEffect) {
+    target.status.poisonEffect.turns = Math.max(1, Math.floor(Number(turns || 1)));
+    target.status.poisonEffect.tickDamage = cappedDamage;
+    target.status.poisonEffect.sourceName = sourceName;
+    return false;
+  }
+  target.status.poisonEffect = { turns, tickDamage: cappedDamage, sourceName };
+  return true;
+}
+
 // 状态Tick：处理中毒、无敌等持续效果
 export function tickStatus(target) {
   const now = Date.now();
@@ -140,12 +155,18 @@ export function tickStatus(target) {
     if (target.status.poison) {
       delete target.status.poison;
     }
+    if (target.status.poisonEffect) {
+      delete target.status.poisonEffect;
+    }
     if (target.status.debuffs) {
       delete target.status.debuffs.poison;
       delete target.status.debuffs.poisonEffect;
     }
     return null;
   }
+
+  let totalDamage = 0;
+  const damageBySource = {};
 
   // 多层毒（特殊BOSS）
   if (target.status.activePoisons && target.status.activePoisons.length > 0) {
@@ -154,9 +175,8 @@ export function tickStatus(target) {
       MOB_TEMPLATES[target.templateId]?.specialBoss
     );
 
-    let totalDamage = 0;
     const remainingPoisons = [];
-    const damageBySource = {}; // 记录每个玩家造成的伤害
+    // 记录每个玩家造成的伤害
 
     // 按来源汇总，用于单来源伤害上限
     const totalDamageBySource = {};
@@ -199,8 +219,6 @@ export function tickStatus(target) {
     if (target.status.activePoisons.length === 0) {
       delete target.status.activePoisons;
     }
-
-    return { type: 'poison', dmg: totalDamage, damageBySource };
   }
 
   // 单层毒（普通目标）
@@ -212,11 +230,25 @@ export function tickStatus(target) {
     if (target.status.poison.turns <= 0) {
       delete target.status.poison;
     }
-    return {
-      type: 'poison',
-      dmg: damage,
-      damageBySource: sourceName ? { [sourceName]: damage } : {}
-    };
+    totalDamage += damage;
+    if (sourceName) {
+      damageBySource[sourceName] = (damageBySource[sourceName] || 0) + damage;
+    }
+  }
+
+  // 毒特效伤害（独立于施毒）
+  if (target.status.poisonEffect && target.status.poisonEffect.turns > 0) {
+    const damage = Math.min(1000, target.status.poisonEffect.tickDamage);
+    const sourceName = target.status.poisonEffect.sourceName;
+    applyDamage(target, damage);
+    target.status.poisonEffect.turns -= 1;
+    if (target.status.poisonEffect.turns <= 0) {
+      delete target.status.poisonEffect;
+    }
+    totalDamage += damage;
+    if (sourceName) {
+      damageBySource[sourceName] = (damageBySource[sourceName] || 0) + damage;
+    }
   }
 
   // 清理毒冷却记录
@@ -231,5 +263,12 @@ export function tickStatus(target) {
     }
   }
 
+  if (totalDamage > 0) {
+    return {
+      type: 'poison',
+      dmg: totalDamage,
+      damageBySource: Object.keys(damageBySource).length ? damageBySource : {}
+    };
+  }
   return null;
 }
