@@ -63,6 +63,32 @@ function shouldRenderUiSection(key, minIntervalMs = 0) {
   return true;
 }
 
+function clearSabakStatusTimer() {
+  if (sabakStatusTimer) {
+    clearInterval(sabakStatusTimer);
+    sabakStatusTimer = null;
+  }
+}
+
+function clearLocalHpCache() {
+  localHpCache.players.clear();
+  localHpCache.mobs.clear();
+}
+
+function pruneLocalHpCache(type, allowedNames) {
+  const cache = localHpCache[type];
+  if (!cache) return;
+  if (!allowedNames || allowedNames.size === 0) {
+    cache.clear();
+    return;
+  }
+  // Avoid frequent churn; only prune when cache is meaningfully larger.
+  if (cache.size <= allowedNames.size * 2 + 20) return;
+  cache.forEach((_val, key) => {
+    if (!allowedNames.has(key)) cache.delete(key);
+  });
+}
+
 async function signCmdWeb(key, seq, text) {
   try {
     const encoder = new TextEncoder();
@@ -104,6 +130,7 @@ let crossRankTimer = null;
 let crossRankTimerTarget = null;
 let crossRankTimerEl = null;
 let crossRankTimerLabel = null;
+let sabakStatusTimer = null;
 const tradeInviteCooldown = new Map();
 let trainingConfig = null; // 修炼配置
 let deviceId = null;
@@ -1290,6 +1317,8 @@ function exitGame() {
     clearInterval(serverTimeTimer);
     serverTimeTimer = null;
   }
+  clearSabakStatusTimer();
+  clearLocalHpCache();
   serverTimeBase = null;
   serverTimeLocal = null;
   serverTimeOffsetTarget = null;
@@ -1314,6 +1343,8 @@ async function switchCharacter() {
     clearInterval(serverTimeTimer);
     serverTimeTimer = null;
   }
+  clearSabakStatusTimer();
+  clearLocalHpCache();
   serverTimeBase = null;
   serverTimeLocal = null;
   serverTimeOffsetTarget = null;
@@ -9373,6 +9404,7 @@ function renderState(state) {
   renderChips(ui.players, players, (p) => showPlayerModal(p.raw));
 
   const battlePlayers = [];
+  const livePlayerNames = new Set();
   if (state.player && state.stats) {
     battlePlayers.push({
       type: 'player',
@@ -9382,6 +9414,7 @@ function renderState(state) {
       maxHp: state.stats.max_hp,
       className: ''
     });
+    livePlayerNames.add(state.player.name);
     setLocalHpCache('players', state.player.name, state.stats.hp, state.stats.max_hp);
   }
   (state.players || [])
@@ -9398,8 +9431,10 @@ function renderState(state) {
         className: isCrossEnemy ? 'player-red-name' : (isCrossAlly ? 'player-friendly' : ''),
         badgeLabel: isCrossEnemy ? '跨服' : ''
       });
+      livePlayerNames.add(p.name);
       setLocalHpCache('players', p.name, p.hp || 0, p.max_hp || 0);
     });
+  pruneLocalHpCache('players', livePlayerNames);
   renderBattleList(battleUi.players, battlePlayers, (p) => {
     if (!p || !p.name) return;
     const target = (state.players || []).find((other) => other.name === p.name) ||
@@ -9410,6 +9445,7 @@ function renderState(state) {
   });
 
   const aliveMobsState = (state.mobs || []).filter((m) => Number(m?.hp || 0) > 0);
+  const liveMobNames = new Set();
   const mobs = aliveMobsState.map((m) => ({ id: m.id, label: `${m.name}(${m.hp})`, raw: m }));
   renderChips(ui.mobs, mobs, (m) => {
     selectedMob = m.raw;
@@ -9425,8 +9461,10 @@ function renderState(state) {
     maxHp: m.max_hp || 0
   }));
   aliveMobsState.forEach((m) => {
+    if (m.name) liveMobNames.add(m.name);
     setLocalHpCache('mobs', m.name, m.hp || 0, m.max_hp || 0);
   });
+  pruneLocalHpCache('mobs', liveMobNames);
   renderBattleList(battleUi.mobs, battleMobs, (m) => {
     if (!m || !m.name) return;
     const mob = aliveMobsState.find((entry) => entry.name === m.name && entry.id === m.id) ||
@@ -9842,9 +9880,11 @@ function renderState(state) {
 
     if (!inSabakPalace) {
       if (palaceStatsBlock) palaceStatsBlock.classList.add('hidden');
+      clearSabakStatusTimer();
     } else {
       if (palaceStatsBlock) palaceStatsBlock.classList.remove('hidden');
       sabakPalaceStatsUi.list.innerHTML = '';
+      clearSabakStatusTimer();
 
       // 添加攻城战状态信息
       if (state.sabak && state.sabak.active) {
@@ -9867,7 +9907,7 @@ function renderState(state) {
           </div>`;
 
           // 更新倒计时
-          const timerInterval = setInterval(() => {
+          sabakStatusTimer = setInterval(() => {
             const now = Date.now();
             const remaining = Math.max(0, state.sabak.siegeEndsAt - now);
             const timerEl = sabakPalaceStatsUi.list.querySelector('.sabak-status');
@@ -9882,7 +9922,7 @@ function renderState(state) {
                 </div>`;
               }
             } else {
-              clearInterval(timerInterval);
+              clearSabakStatusTimer();
             }
           }, 1000);
         } else {
