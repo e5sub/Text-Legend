@@ -8773,7 +8773,7 @@ function applyRarityClass(el, item) {
   if (!rarityKey) return;
   el.classList.add(`rarity-${rarityKey}`);
   if (rarityKey === 'ultimate') {
-    el.classList.add('highlight-marquee', 'ultimate-text');
+    el.classList.add('ultimate-text');
   }
 }
 
