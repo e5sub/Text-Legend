@@ -6356,9 +6356,6 @@ function renderChips(container, items, onClick, activeId) {
     if (item.className) {
       item.className.split(' ').filter(Boolean).forEach((name) => btn.classList.add(name));
     }
-    if (item.highlight) {
-      btn.classList.add('highlight-marquee');
-    }
     btn.textContent = item.label;
     if (item.badgeLabel) {
       const badge = document.createElement('span');
@@ -10106,7 +10103,7 @@ function renderState(state) {
     afkLabel = '\u505c\u6b62\u6302\u673a';
   }
   actions.push({ id: 'afk', label: afkLabel });
-  actions.push({ id: 'sponsor', label: '\u8d5e\u52a9\u4f5c\u8005', highlight: true });
+  actions.push({ id: 'sponsor', label: '\u8d5e\u52a9\u4f5c\u8005' });
   renderChips(ui.actions, actions, async (a) => {
     if (socket && isStateThrottleActive()) {
       socket.emit('state_request', { reason: `action:${a.id}` });
