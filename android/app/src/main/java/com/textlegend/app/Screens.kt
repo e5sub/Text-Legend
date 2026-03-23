@@ -621,11 +621,11 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
             composable("consign") { ConsignDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
             composable("sabak") { SabakDialog(vm = vm, onDismiss = { innerNav.popBackStack() }) }
             composable("shop") { ShopDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
-            composable("forge") { ForgeDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
-            composable("refine") { RefineDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
-            composable("growth") { GrowthDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
+            composable("forge") { ForgeDialog(vm = vm, onDismiss = { innerNav.popBackStack() }) }
+            composable("refine") { RefineDialog(vm = vm, onDismiss = { innerNav.popBackStack() }) }
+            composable("growth") { GrowthDialog(vm = vm, onDismiss = { innerNav.popBackStack() }) }
             composable("highrecycle") { HighTierRecycleDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
-            composable("effect") { EffectDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
+            composable("effect") { EffectDialog(vm = vm, onDismiss = { innerNav.popBackStack() }) }
             composable("repair") { RepairDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
             composable("changeclass") { ChangeClassDialog(vm = vm, onDismiss = { innerNav.popBackStack() }) }
             composable("pet") { PetDialog(vm = vm, state = state, onDismiss = { innerNav.popBackStack() }) }
@@ -3881,7 +3881,8 @@ private fun ShopDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Un
 }
 
 @Composable
-  private fun ForgeDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Unit) {
+  private fun ForgeDialog(vm: GameViewModel, onDismiss: () -> Unit) {
+      val state by vm.gameState.collectAsState()
       var mainSelection by remember { mutableStateOf("") }
       var secondarySelection by remember { mutableStateOf("") }
 
@@ -3889,6 +3890,10 @@ private fun ShopDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Un
       val secondaryOptions = buildForgeSecondaryOptions(state, mainSelection)
 
     ScreenScaffold(title = "装备合成", onBack = onDismiss) {
+        if (mainSelection.isNotBlank() && mainOptions.none { it.first == mainSelection }) {
+            mainSelection = ""
+            secondarySelection = ""
+        }
         if (secondarySelection.isNotBlank() && secondaryOptions.none { it.first == secondarySelection }) {
             secondarySelection = ""
         }
@@ -3918,7 +3923,8 @@ private fun ShopDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Un
 }
 
 @Composable
-  private fun RefineDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Unit) {
+  private fun RefineDialog(vm: GameViewModel, onDismiss: () -> Unit) {
+      val state by vm.gameState.collectAsState()
       var selection by remember { mutableStateOf("") }
       var bulkTarget by remember { mutableStateOf("10") }
       val options = buildEquippedOptions(state)
@@ -3929,6 +3935,9 @@ private fun ShopDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Un
         calcRefineSuccessRate(refineLevel, refineConfig)
     } else null
       ScreenScaffold(title = "装备锻造", onBack = onDismiss) {
+          if (selection.isNotBlank() && options.none { it.first == selection }) {
+              selection = ""
+          }
           Text("已穿戴装备（仅查看）")
           if (options.isEmpty()) {
               Text("暂无已穿戴装备", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -3974,7 +3983,8 @@ private fun ShopDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Un
   }
 
 @Composable
-private fun GrowthDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Unit) {
+private fun GrowthDialog(vm: GameViewModel, onDismiss: () -> Unit) {
+    val state by vm.gameState.collectAsState()
     var selection by remember { mutableStateOf("") }
     var showBatchInput by remember { mutableStateOf(false) }
     var showBatchConfirm by remember { mutableStateOf(false) }
@@ -4084,6 +4094,9 @@ private fun GrowthDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> 
     }
 
     ScreenScaffold(title = "装备成长", onBack = onDismiss) {
+        if (selection.isNotBlank() && options.none { it.first == selection }) {
+            selection = ""
+        }
         Text("已穿戴终极装备")
         if (options.isEmpty()) {
             Text("暂无可成长装备", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -4261,7 +4274,8 @@ private fun HighTierRecycleDialog(vm: GameViewModel, state: GameState?, onDismis
 }
 
 @Composable
-private fun EffectDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Unit) {
+private fun EffectDialog(vm: GameViewModel, onDismiss: () -> Unit) {
+    val state by vm.gameState.collectAsState()
     var mainSelection by remember { mutableStateOf("") }
     var secondarySelection by remember { mutableStateOf("") }
       val equipOptions = buildEffectMainOptions(state)
@@ -4269,6 +4283,11 @@ private fun EffectDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> 
     val effectConfig = state?.effect_reset_config
     var showConfirm by remember { mutableStateOf(false) }
     ScreenScaffold(title = "特效重置", onBack = onDismiss) {
+        if (mainSelection.isNotBlank() && equipOptions.none { it.first == mainSelection }) {
+            mainSelection = ""
+            secondarySelection = ""
+            showConfirm = false
+        }
         if (secondarySelection.isNotBlank() && inventoryOptions.none { it.first == secondarySelection }) {
             secondarySelection = ""
         }

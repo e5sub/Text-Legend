@@ -4070,6 +4070,7 @@ function hasSpecialEffects(effects) {
 
 function renderForgeModal() {
   if (!forgeUi.list || !forgeUi.secondaryList || !forgeUi.main || !forgeUi.secondary || !forgeUi.confirm) return;
+  const preferredMainSlot = forgeSelection?.mainSlot || '';
   const equipped = (lastState?.equipment || [])
     .filter((entry) => entry.item && ['legendary', 'supreme', 'ultimate'].includes(entry.item.rarity));
   forgeUi.list.innerHTML = '';
@@ -4110,6 +4111,9 @@ function renderForgeModal() {
       renderForgeSecondaryList(item);
     });
     forgeUi.list.appendChild(btn);
+    if (preferredMainSlot && entry.slot === preferredMainSlot) {
+      btn.click();
+    }
   });
 }
 
@@ -4122,6 +4126,7 @@ function showForgeModal() {
 
 function renderRefineModal() {
   if (!refineUi.list || !refineUi.main || !refineUi.level || !refineUi.successRate) return;
+  const preferredSlot = refineSelection?.slot || '';
 
   const allEquipment = [];
   // 只获取已装备的装备
@@ -4175,8 +4180,11 @@ function renderRefineModal() {
       refineUi.batch.disabled = materials < refineMaterialCount;
     });
     refineUi.list.appendChild(btn);
+    if (preferredSlot && (entry.slotName || entry.key) === preferredSlot) {
+      btn.click();
+    }
   });
-  refineUi.confirm.disabled = true;
+  if (!preferredSlot) refineUi.confirm.disabled = true;
 
   // 初始显示副件装备列表
   renderRefineSecondaryList();
@@ -4449,6 +4457,7 @@ function updateGrowthBatchPreview() {
 
 function renderGrowthModal() {
   if (!growthUi.list || !growthUi.main || !growthUi.level || !growthUi.successRate || !growthUi.cost) return;
+  const preferredSlot = growthSelection?.slot || '';
 
   const rt = getGrowthRuntimeConfig();
   const { cfg, hasMaxLevel, maxLevel, materialCost, materialLabel, breakthroughEvery, breakthroughMaterialCost, breakthroughMaterialId, breakthroughMaterialLabel, goldCost } = rt;
@@ -4510,6 +4519,9 @@ function renderGrowthModal() {
       updateGrowthBatchPreview();
     });
     growthUi.list.appendChild(btn);
+    if (preferredSlot && entry.slot === preferredSlot) {
+      btn.click();
+    }
   });
 }
 
@@ -4743,6 +4755,7 @@ function showHighTierRecycleModal() {
 
 function renderEffectModal() {
   if (!effectUi.list) return;
+  const preferredSlot = effectSelection?.slot || '';
 
   // 从后台读取并显示特效重置概率
   const config = lastState?.effect_reset_config || {};
@@ -4765,6 +4778,7 @@ function renderEffectModal() {
   });
 
   effectUi.list.innerHTML = '';
+  effectSelection = null;
   equippedWithEffect.forEach(e => {
     const btn = document.createElement('div');
     btn.className = 'forge-item';
@@ -4777,12 +4791,17 @@ function renderEffectModal() {
       updateEffectSelection(effectSelection);
     });
     effectUi.list.appendChild(btn);
+    if (preferredSlot && e.slot === preferredSlot) {
+      btn.click();
+    }
   });
 
   // 重置选择状态
-  effectUi.main.textContent = '主件: 未选择';
-  effectUi.secondary.textContent = '副件: 等待匹配';
-  effectUi.confirm.disabled = true;
+  if (!effectSelection) {
+    effectUi.main.textContent = '主件: 未选择';
+    effectUi.secondary.textContent = '副件: 等待匹配';
+    effectUi.confirm.disabled = true;
+  }
 }
 
 function stopEffectBatchTask() {
@@ -10019,6 +10038,18 @@ function renderState(state) {
   }
   if (repairUi.modal && !repairUi.modal.classList.contains('hidden')) {
     if (shouldRenderUiSection('modal.repair', 180)) renderRepairList(state.equipment || []);
+  }
+  if (forgeUi.modal && !forgeUi.modal.classList.contains('hidden')) {
+    if (shouldRenderUiSection('modal.forge', 180)) renderForgeModal();
+  }
+  if (refineUi.modal && !refineUi.modal.classList.contains('hidden')) {
+    if (shouldRenderUiSection('modal.refine', 180)) renderRefineModal();
+  }
+  if (growthUi.modal && !growthUi.modal.classList.contains('hidden')) {
+    if (shouldRenderUiSection('modal.growth', 180)) renderGrowthModal();
+  }
+  if (effectUi.modal && !effectUi.modal.classList.contains('hidden')) {
+    if (shouldRenderUiSection('modal.effect', 180)) renderEffectModal();
   }
   if (petUi.modal && !petUi.modal.classList.contains('hidden')) {
     if (shouldRenderUiSection('modal.pet', 500)) {
