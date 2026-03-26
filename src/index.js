@@ -1198,7 +1198,8 @@ app.post('/api/register', async (req, res) => {
   if (!verifyCaptcha(captchaToken, captchaCode)) {
     return res.status(400).json({ error: '验证码错误。' });
   }
-  const exists = await knex('users').where({ username }).first();
+  const trimmedUsername = String(username || '').trim();
+  const exists = await getUserByName(trimmedUsername);
   if (exists) return res.status(400).json({ error: '账号已存在。' });
   if (email && email.trim()) {
     const emailExists = await knex('users').where({ email: email.trim() }).first();
@@ -1211,7 +1212,7 @@ app.post('/api/register', async (req, res) => {
     inviterUser = await knex('users').where({ id: parsedInviteUserId }).first();
     if (!inviterUser) return res.status(400).json({ error: '邀请人不存在。' });
   }
-  const newUserId = await createUser(username, password, email || null);
+  const newUserId = await createUser(trimmedUsername, password, email || null);
   if (inviterUser && inviterUser.id !== newUserId) {
     await bindInviteForUser(newUserId, inviterUser.id, {
       inviterUsername: inviterUser.username || '',

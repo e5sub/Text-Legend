@@ -3,14 +3,32 @@ import { v4 as uuidv4 } from 'uuid';
 import knex from './index.js';
 import config from '../config.js';
 
+function normalizeUsernameLookup(username) {
+  return String(username || '').trim().toLowerCase();
+}
+
+function queryUserByUsername(username) {
+  const normalized = normalizeUsernameLookup(username);
+  if (!normalized) return knex('users').whereRaw('1 = 0');
+  return knex('users').whereRaw('LOWER(username) = ?', [normalized]);
+}
+
 export async function createUser(username, password, email = null) {
+  const trimmedUsername = String(username || '').trim();
+  if (!trimmedUsername) {
+    throw new Error('账号不能为空。');
+  }
+  const exists = await queryUserByUsername(trimmedUsername).first();
+  if (exists) {
+    throw new Error('账号已存在。');
+  }
   const hash = await bcrypt.hash(password, 10);
-  const [id] = await knex('users').insert({ username, password_hash: hash, email });
+  const [id] = await knex('users').insert({ username: trimmedUsername, password_hash: hash, email });
   return id;
 }
 
 export async function verifyUser(username, password) {
-  const user = await knex('users').where({ username }).first();
+  const user = await queryUserByUsername(username).first();
   if (!user) return null;
   const ok = await bcrypt.compare(password, user.password_hash);
   if (!ok) return null;
@@ -44,7 +62,7 @@ export async function setAdminFlag(userId, isAdmin) {
 }
 
 export async function getUserByName(username) {
-  return knex('users').where({ username }).first();
+  return queryUserByUsername(username).first();
 }
 
 export async function verifyUserPassword(userId, password) {
