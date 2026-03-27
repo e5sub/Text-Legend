@@ -1745,17 +1745,6 @@ body.log-collapsed .game-layout {
   min-width: 0;
 }
 
-.status-grid-3 .status-row.lucky-row .inline-gold {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-}
-
-.status-grid-3 .status-row.lucky-row .inline-gold strong {
-  text-align: right;
-}
-
 .status-row strong {
   font-weight: 600;
 }
@@ -6793,6 +6782,8 @@ body.dark .sabak-empty {
 body.dark .bag-item.ultimate-text,
 .shop-item.ultimate-text,
 body.dark .shop-item.ultimate-text,
+.shop-sell-item.ultimate-text,
+body.dark .shop-sell-item.ultimate-text,
 .mail-attach-item.ultimate-text,
 body.dark .mail-attach-item.ultimate-text,
 .forge-item.ultimate-text,
