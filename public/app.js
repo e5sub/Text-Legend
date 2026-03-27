@@ -5830,14 +5830,17 @@ function openPlayerActions(name) {
 function renderShopSellList(items) {
   if (!shopUi.sellList) return;
   shopUi.sellList.innerHTML = '';
-  if (!items || !items.length) {
+  const sellableItems = (items || [])
+    .filter((item) => item && item.type !== 'currency')
+    .slice()
+    .sort(sortByRarityDesc);
+  if (!sellableItems.length) {
     const empty = document.createElement('div');
     empty.textContent = '\u80cc\u5305\u7a7a\u7a7a';
     shopUi.sellList.appendChild(empty);
     return;
   }
-  items.forEach((item) => {
-    if (item.type === 'currency') return;
+  sellableItems.forEach((item) => {
     const btn = document.createElement('div');
     btn.className = 'shop-sell-item';
     applyRarityClass(btn, item);
@@ -8761,6 +8764,7 @@ function showGuildModal() {
 
 function formatItemName(item) {
   if (!item) return '';
+  const baseName = String(item.name || item.id || item.key || '未知物品').trim();
   const skillLabel = getEffectSkillLabel(item);
   const tags = [];
   if (item.effects && item.effects.combo) tags.push('\u8fde\u51fb');
@@ -8773,7 +8777,7 @@ function formatItemName(item) {
   if (skillLabel) tags.push(`附加技能:${skillLabel}`);
   if (item.effects && item.effects.elementAtk) tags.push(`\u5143\u7d20+${Math.floor(item.effects.elementAtk)}`);
   if (item.refine_level && item.refine_level > 0) tags.push(`锻造+${item.refine_level}`);
-  return tags.length ? `${item.name}\u00b7${tags.join('\u00b7')}` : item.name;
+  return tags.length ? `${baseName}\u00b7${tags.join('\u00b7')}` : baseName;
 }
 
 function getEffectSkillLabel(item) {
