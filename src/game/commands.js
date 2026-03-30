@@ -5054,7 +5054,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         const owned = Number((player.inventory || []).find((i) => i && i.id === needItemId)?.qty || 0);
         if (owned < rebirthStoneCost) {
           const nextInfoPreview = getCultivationInfo(nextLevel);
-          send(`突破至 ${nextInfoPreview.name} 需要 修真转生石 x${rebirthStoneCost}（跨服BOSS掉落）。`);
+          send(`突破至 ${nextInfoPreview.name} 需要 修真转生石 x${rebirthStoneCost}。`);
           return;
         }
       }

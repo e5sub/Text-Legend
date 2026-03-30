@@ -895,7 +895,6 @@ export const MOB_TEMPLATES = {
     specialBoss: true,
     respawnMs: 1 * 60 * 60 * 1000,
     drops: [
-      { id: 'cultivation_rebirth_stone', chance: 0.08 },
       { id: 'kaitian', chance: 0.015 },
       { id: 'zhentian', chance: 0.015 },
       { id: 'xuantian', chance: 0.015 },
