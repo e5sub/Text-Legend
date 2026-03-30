@@ -1654,7 +1654,13 @@ const EXTRA_CULTIVATION_TIERS = [
   { slug: 'shengwen', name: '声闻', minLevel: 12 },
   { slug: 'yuanjue', name: '缘觉', minLevel: 13 },
   { slug: 'pusa', name: '菩萨', minLevel: 14 },
-  { slug: 'fo', name: '佛', minLevel: 15 }
+  { slug: 'fo', name: '佛', minLevel: 15 },
+  { slug: 'luohan', name: '罗汉', minLevel: 16 },
+  { slug: 'jinshen', name: '金身', minLevel: 17 },
+  { slug: 'zunzhe', name: '尊者', minLevel: 18 },
+  { slug: 'shengwang', name: '圣王', minLevel: 19 },
+  { slug: 'daozu', name: '道祖', minLevel: 20 },
+  { slug: 'hunyuan', name: '混元', minLevel: 21 }
 ];
 
 function cloneRoom(room) {
