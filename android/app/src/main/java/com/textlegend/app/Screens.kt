@@ -1764,31 +1764,6 @@ private fun formatRate(raw: Double): String {
     return "${if (trimmed.isBlank()) "0" else trimmed}%"
 }
 
-private val CULTIVATION_RANKS = listOf(
-    "筑基",
-    "灵虚",
-    "和合",
-    "元婴",
-    "空冥",
-    "履霜",
-    "渡劫",
-    "寂灭",
-    "大乘",
-    "上仙",
-    "真仙",
-    "天仙",
-    "声闻",
-    "缘觉",
-    "菩萨",
-    "佛"
-)
-
-private fun cultivationNameByLevel(levelValue: Int): String {
-    if (levelValue < 0) return "无"
-    val idx = levelValue.coerceIn(0, CULTIVATION_RANKS.size - 1)
-    return CULTIVATION_RANKS[idx]
-}
-
 private fun partyMembersText(party: PartyInfo): String {
     val names = party.members.map {
         val status = if (it.managed) "托管" else if (it.online) "在线" else "离线"
@@ -2635,9 +2610,9 @@ private fun SettingsScreen(vm: GameViewModel, onDismiss: () -> Unit) {
                       }
 
                       val cultivationLevel = stats.cultivation_level
-                      val cultivationName = cultivationNameByLevel(cultivationLevel)
+                      val cultivationName = stats.cultivation_name.ifBlank { if (cultivationLevel >= 0) "未知" else "无" }
                       val cultivationBonus = stats.cultivation_bonus
-                      val isMaxCultivation = cultivationLevel >= CULTIVATION_RANKS.size - 1
+                      val isMaxCultivation = stats.cultivation_is_max
                       val playerLevel = state?.player?.level ?: 0
                       val canUpgradeCultivation = playerLevel > 200 && !isMaxCultivation
                       Row(

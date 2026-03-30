@@ -212,7 +212,7 @@ import { getRoomMobs, getAliveMobs, spawnMobs, removeMob, seedRespawnCache, appe
 import { calcHitChance, calcDamage, applyDamage, applyHealing, applyPoison, applyPoisonEffect, tickStatus, getDefenseMultiplier, consumeFirestrikeCrit } from './game/combat.js';
 import { randInt, clamp } from './game/utils.js';
 import { expForLevel, ROOM_VARIANT_COUNT, setRoomVariantCount as applyRoomVariantCount } from './game/constants.js';
-import { getCultivationInfo, getCultivationRewardMultiplier } from './game/cultivation.js';
+import { CULTIVATION_RANKS, getCultivationInfo, getCultivationRewardMultiplier } from './game/cultivation.js';
 import {
   setAllClassLevelBonusConfigs,
   setClassLevelBonusConfig as setClassLevelBonusConfigMem,
@@ -15704,6 +15704,8 @@ async function buildState(player, options = {}) {
       dodge: Math.round((player.evadeChance || 0) * 100),
       cultivation_level: Math.floor(Number(player.flags?.cultivationLevel ?? -1)),
       cultivation_bonus: getCultivationInfo(player.flags?.cultivationLevel).bonus,
+      cultivation_name: getCultivationInfo(player.flags?.cultivationLevel).name,
+      cultivation_is_max: getCultivationInfo(player.flags?.cultivationLevel).idx >= (CULTIVATION_RANKS.length - 1),
       autoSkillId: player.flags?.autoSkillId || null,
       autoFullEnabled: Boolean(player.flags?.autoFullEnabled),
       autoFullTrialAvailable: Boolean(autoFullTrialInfo.available),

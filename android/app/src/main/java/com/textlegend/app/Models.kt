@@ -380,6 +380,8 @@ data class StatsInfo(
     val dodge: Int = 0,
     val cultivation_level: Int = -1,
     val cultivation_bonus: Int = 0,
+    val cultivation_name: String = "",
+    val cultivation_is_max: Boolean = false,
     val autoSkillId: JsonElement? = null,
     val autoFullEnabled: Boolean = false,
     val autoFullTrialAvailable: Boolean = false,
