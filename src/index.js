@@ -212,6 +212,7 @@ import { getRoomMobs, getAliveMobs, spawnMobs, removeMob, seedRespawnCache, appe
 import { calcHitChance, calcDamage, applyDamage, applyHealing, applyPoison, applyPoisonEffect, tickStatus, getDefenseMultiplier, consumeFirestrikeCrit } from './game/combat.js';
 import { randInt, clamp } from './game/utils.js';
 import { expForLevel, ROOM_VARIANT_COUNT, setRoomVariantCount as applyRoomVariantCount } from './game/constants.js';
+import { getCultivationInfo, getCultivationRewardMultiplier } from './game/cultivation.js';
 import {
   setAllClassLevelBonusConfigs,
   setClassLevelBonusConfig as setClassLevelBonusConfigMem,
@@ -7066,8 +7067,7 @@ function startRuntimeHealthLogging() {
 
 function cultivationRewardMultiplier(player) {
   const level = Math.floor(Number(player?.flags?.cultivationLevel ?? -1));
-  if (Number.isNaN(level) || level < 0) return 1;
-  return 1 + (level + 1) * 0.1;
+  return getCultivationRewardMultiplier(level);
 }
 
 function getExpCardMultiplier(player, now = Date.now()) {
@@ -15703,9 +15703,7 @@ async function buildState(player, options = {}) {
       svip_expires_at: player.flags?.svipExpiresAt || null,
       dodge: Math.round((player.evadeChance || 0) * 100),
       cultivation_level: Math.floor(Number(player.flags?.cultivationLevel ?? -1)),
-      cultivation_bonus: Math.floor(Number(player.flags?.cultivationLevel ?? -1)) >= 0
-        ? (Math.floor(Number(player.flags?.cultivationLevel ?? -1)) + 1) * 100
-        : 0,
+      cultivation_bonus: getCultivationInfo(player.flags?.cultivationLevel).bonus,
       autoSkillId: player.flags?.autoSkillId || null,
       autoFullEnabled: Boolean(player.flags?.autoFullEnabled),
       autoFullTrialAvailable: Boolean(autoFullTrialInfo.available),

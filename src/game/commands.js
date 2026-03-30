@@ -15,6 +15,7 @@ import {
 } from './skills.js';
 import { addItem, addItemToList, removeItem, removeItemFromList, equipItem, unequipItem, bagLimit, gainExp, computeDerived, getDurabilityMax, getRepairCost, getItemKey, sameEffects } from './player.js';
 import { CLASSES, expForLevel, getStartPosition, ROOM_VARIANT_COUNT } from './constants.js';
+import { CULTIVATION_RANKS, getCultivationInfo, getCultivationBreakthroughCost, formatCultivationEffectSummary } from './cultivation.js';
 import { getRoom, getAliveMobs, spawnMobs } from './state.js';
 import {
   getActivityChatLines,
@@ -579,34 +580,6 @@ function getAutoFullTrialInfo(player, now = Date.now()) {
     return { available: true, remainingMs: Math.max(0, expiresAt - now) };
   }
   return { available: false, remainingMs: 0 };
-}
-
-const CULTIVATION_RANKS = [
-  '筑基',
-  '灵虚',
-  '和合',
-  '元婴',
-  '空冥',
-  '履霜',
-  '渡劫',
-  '寂灭',
-  '大乘',
-  '上仙',
-  '真仙',
-  '天仙',
-  '声闻',
-  '缘觉',
-  '菩萨',
-  '佛'
-];
-
-function getCultivationInfo(levelValue) {
-  const level = Math.floor(Number(levelValue ?? -1));
-  if (Number.isNaN(level) || level < 0) return { name: '无', bonus: 0, idx: -1 };
-  const idx = Math.min(CULTIVATION_RANKS.length - 1, level);
-  const name = CULTIVATION_RANKS[idx] || CULTIVATION_RANKS[0];
-  const bonus = (idx + 1) * 100;
-  return { name, bonus, idx };
 }
 
 function generateRandomEffects(count, options = {}) {
@@ -1286,7 +1259,7 @@ function formatStats(player, partyApi) {
     `攻击: ${Math.floor(player.atk)} 防御: ${Math.floor(player.def)} 魔法: ${Math.floor(player.mag)}`,
     `金币: ${player.gold}`,
     cultivationInfo.bonus > 0
-      ? `修真: ${cultivationInfo.name}（所有属性+${cultivationInfo.bonus}）`
+      ? `修真: ${cultivationInfo.name}（${formatCultivationEffectSummary(cultivationLevel)}）`
       : '修真: 无',
     `PK值: ${pkValue} (${isRedName(player) ? '红名' : '正常'})`,
     `VIP: ${vip}`,
@@ -5068,19 +5041,20 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       const current = Math.floor(Number(player.flags.cultivationLevel ?? -1));
       const currentInfo = getCultivationInfo(current);
       const maxLevel = CULTIVATION_RANKS.length - 1;
-      const costLevels = 200;
       const nextLevel = current + 1;
-      const requiresRebirthStone = nextLevel >= 12; // 声闻、缘觉、菩萨、佛
+      const nextCost = getCultivationBreakthroughCost(nextLevel);
+      const costLevels = nextCost.levelCost;
+      const rebirthStoneCost = nextCost.rebirthStoneCost;
       if (current >= maxLevel) {
-        send(`修真已达最高：${currentInfo.name} (+${currentInfo.bonus})。`);
+        send(`修真已达最高：${currentInfo.name}（${formatCultivationEffectSummary(current)}）。`);
         return;
       }
-      if (requiresRebirthStone) {
+      if (rebirthStoneCost > 0) {
         const needItemId = 'cultivation_rebirth_stone';
         const owned = Number((player.inventory || []).find((i) => i && i.id === needItemId)?.qty || 0);
-        if (owned < 1) {
+        if (owned < rebirthStoneCost) {
           const nextInfoPreview = getCultivationInfo(nextLevel);
-          send(`突破至 ${nextInfoPreview.name} 需要 修真转生石 x1（跨服BOSS掉落）。`);
+          send(`突破至 ${nextInfoPreview.name} 需要 修真转生石 x${rebirthStoneCost}（跨服BOSS掉落）。`);
           return;
         }
       }
@@ -5088,10 +5062,10 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         send(`等级不足。提升修真需要扣除 ${costLevels} 级，当前等级 ${player.level}。`);
         return;
       }
-      if (requiresRebirthStone) {
-        const removed = removeItem(player, 'cultivation_rebirth_stone', 1);
+      if (rebirthStoneCost > 0) {
+        const removed = removeItem(player, 'cultivation_rebirth_stone', rebirthStoneCost);
         if (!removed) {
-          send('缺少修真转生石 x1。');
+          send(`缺少修真转生石 x${rebirthStoneCost}。`);
           return;
         }
       }
@@ -5103,8 +5077,8 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       computeDerived(player);
       player.forceStateRefresh = true;
       await savePlayer(player, { immediate: true, dirty: ['base', 'flags'] });
-      const stoneText = requiresRebirthStone ? '、修真转生石 x1' : '';
-      send(`修真提升至 ${nextInfo.name} (+${nextInfo.bonus})，消耗等级 ${costLevels}${stoneText}，等级重置为1。`);
+      const stoneText = rebirthStoneCost > 0 ? `、修真转生石 x${rebirthStoneCost}` : '';
+      send(`修真提升至 ${nextInfo.name}（${formatCultivationEffectSummary(player.flags.cultivationLevel)}），消耗等级 ${costLevels}${stoneText}，等级重置为1。`);
       return;
     }
     case 'party': {

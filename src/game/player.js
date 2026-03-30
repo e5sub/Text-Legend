@@ -8,6 +8,7 @@ import {
   calcUltimateGrowthBonusPct
 } from './settings.js';
 import { getTreasureBonus, getTreasureRandomAttrBonus, normalizeTreasureState } from './treasure.js';
+import { getCultivationInfo } from './cultivation.js';
 
 const EQUIP_BASE_ROLL_MIN_PCT = 100;
 const EQUIP_BASE_ROLL_MAX_PCT = 200;
@@ -682,7 +683,8 @@ export function computeDerived(player) {
 
   const stats = { ...base };
   const cultivationLevel = Math.floor(Number(player.flags?.cultivationLevel ?? -1));
-  const cultivationBonus = cultivationLevel >= 0 ? (cultivationLevel + 1) * 100 : 0;
+  const cultivationInfo = getCultivationInfo(cultivationLevel);
+  const cultivationBonus = cultivationInfo.bonus;
   if (cultivationBonus > 0) {
     stats.str += cultivationBonus;
     stats.dex += cultivationBonus;
@@ -1081,6 +1083,9 @@ export function computeDerived(player) {
     spirit: 0,
     mdef: 0
   };
+  if (cultivationInfo.maxHpPct > 0) {
+    baseDerivedStats.max_hp += Math.floor(baseDerivedStats.max_hp * cultivationInfo.maxHpPct);
+  }
   const bonusDex = levelBonus.dexPerLevel * levelUp;
   baseDerivedStats.dex = stats.dex + bonusDex;
   baseDerivedStats.mag = stats.int + bonusMag;

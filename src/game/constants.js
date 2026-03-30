@@ -25,6 +25,8 @@
   }
 };
 
+import { getCultivationLevelExpMultiplier } from './cultivation.js';
+
 // 职业升级属性配置（默认值）
 export const CLASS_LEVEL_BONUS = {
   warrior: {
@@ -107,14 +109,7 @@ export function expForLevel(level, cultivationLevel = null) {
 }
 
 function applyCultivationExpMult(exp, cultivationLevel) {
-  const level = Math.floor(Number(cultivationLevel ?? -1));
-  if (Number.isNaN(level) || level < 0) return exp;
-  let mult = 1 + (level + 1) * 0.5;
-  // 最后一档修真（天仙）大幅提高升级所需经验
-  if (level >= 11) {
-    mult *= 100;
-  }
-  return exp * mult;
+  return exp * getCultivationLevelExpMultiplier(cultivationLevel);
 }
 
 export function maxBagSlots(level) {
