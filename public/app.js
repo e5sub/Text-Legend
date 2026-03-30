@@ -437,31 +437,13 @@ const SKILL_NAME_OVERRIDES = {
   thunderstorm: '雷霆万钧'
 };
 
-const CULTIVATION_RANKS = [
-  '筑基',
-  '灵虚',
-  '和合',
-  '元婴',
-  '空冥',
-  '履霜',
-  '渡劫',
-  '寂灭',
-  '大乘',
-  '上仙',
-  '真仙',
-  '天仙',
-  '声闻',
-  '缘觉',
-  '菩萨',
-  '佛'
-];
-
 function getCultivationInfo(levelValue) {
   const level = Math.floor(Number(levelValue ?? -1));
-  if (Number.isNaN(level) || level < 0) return { name: '无', bonus: 0 };
-  const idx = Math.min(CULTIVATION_RANKS.length - 1, level);
-  const name = CULTIVATION_RANKS[idx] || CULTIVATION_RANKS[0];
-  const bonus = (idx + 1) * 100;
+  const stats = lastState?.stats || {};
+  if (Number.isNaN(level) || level < 0) return { name: '无', bonus: 0, isMax: false };
+  const name = String(stats.cultivation_name || '').trim() || '未知';
+  const bonus = Math.max(0, Math.floor(Number(stats.cultivation_bonus || 0)));
+  const isMax = Boolean(stats.cultivation_is_max);
   return { name, bonus };
 }
 
@@ -9170,7 +9152,8 @@ function renderState(state) {
     }
     if (ui.cultivationUpgrade) {
       const cultivationLevel = Math.floor(Number(state.stats?.cultivation_level ?? -1));
-      const canUpgrade = (state.player?.level || 0) > 200 && cultivationLevel < CULTIVATION_RANKS.length - 1;
+      const isMaxCultivation = Boolean(state.stats?.cultivation_is_max);
+      const canUpgrade = (state.player?.level || 0) > 200 && cultivationLevel >= 0 && !isMaxCultivation;
       ui.cultivationUpgrade.classList.toggle('hidden', !canUpgrade);
       if (canUpgrade) {
         ui.cultivationUpgrade.title = `消耗 200 级，当前等级 ${state.player?.level || 0}`;
