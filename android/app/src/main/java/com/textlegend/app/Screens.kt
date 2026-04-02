@@ -3911,8 +3911,8 @@ private fun ShopDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Un
       var mainSelection by remember { mutableStateOf("") }
       var secondarySelection by remember { mutableStateOf("") }
 
-      val playerOptions = buildPlayerEquippedOptions(state) { _, item -> isLegendaryOrAbove(item.rarity) }
-      val petOptions = buildPetEquippedOptions(state) { _, item -> isLegendaryOrAbove(item.rarity) }
+      val playerOptions = buildPlayerEquippedOptions(state, filter = { _, item -> isLegendaryOrAbove(item.rarity) })
+      val petOptions = buildPetEquippedOptions(state, filter = { _, item -> isLegendaryOrAbove(item.rarity) })
       val mainOptions = playerOptions + petOptions
       val optionGroups = buildEquippedOptionGroups(
           state,
@@ -3956,12 +3956,12 @@ private fun ShopDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Un
       val state by vm.gameState.collectAsState()
       var selection by remember { mutableStateOf("") }
       var bulkTarget by remember { mutableStateOf("10") }
-      val playerOptions = buildPlayerEquippedOptions(state) { _, item ->
+      val playerOptions = buildPlayerEquippedOptions(state, filter = { _, item ->
           item.type == "weapon" || item.type == "armor" || item.type == "accessory"
-      }
-      val petOptions = buildPetEquippedOptions(state) { _, item ->
+      })
+      val petOptions = buildPetEquippedOptions(state, filter = { _, item ->
           item.slot?.isNotBlank() == true
-      }
+      })
       val options = playerOptions + petOptions
       val optionGroups = buildEquippedOptionGroups(
           state,
@@ -4333,8 +4333,8 @@ private fun EffectDialog(vm: GameViewModel, onDismiss: () -> Unit) {
     val state by vm.gameState.collectAsState()
     var mainSelection by remember { mutableStateOf("") }
     var secondarySelection by remember { mutableStateOf("") }
-    val playerOptions = buildPlayerEquippedOptions(state) { _, item -> hasSpecialEffects(item.effects) }
-    val petOptions = buildPetEquippedOptions(state) { _, item -> hasSpecialEffects(item.effects) }
+    val playerOptions = buildPlayerEquippedOptions(state, filter = { _, item -> hasSpecialEffects(item.effects) })
+    val petOptions = buildPetEquippedOptions(state, filter = { _, item -> hasSpecialEffects(item.effects) })
     val equipOptions = playerOptions + petOptions
     val optionGroups = buildEquippedOptionGroups(
         state,
