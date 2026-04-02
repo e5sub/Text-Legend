@@ -3521,6 +3521,10 @@ body.dark #high-tier-recycle-slot {
     min-width: 100%;
   }
 
+  .equip-parallel-items {
+    grid-template-columns: 1fr;
+  }
+
   .item-tooltip {
     max-width: 200px;
     font-size: 0.85rem;
@@ -5215,6 +5219,7 @@ body.dark #mail-modal .modal-actions {
 
 .equip-parallel-items {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -5226,6 +5231,22 @@ body.dark #mail-modal .modal-actions {
   text-align: center;
   font-size: 0.8rem;
   color: #8a5a2d;
+}
+
+#forge-modal .modal-card,
+#refine-modal .modal-card,
+#effect-modal .modal-card,
+#growth-modal .modal-card {
+  width: min(760px, 94vw);
+  max-height: 88vh;
+}
+
+#forge-modal .modal-list-wrapper,
+#refine-modal .modal-list-wrapper,
+#effect-modal .modal-list-wrapper,
+#growth-modal .modal-list-wrapper {
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .treasure-actions {
