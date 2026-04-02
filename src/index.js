@@ -14010,17 +14010,16 @@ function calcPetAssistDamage(player, mob) {
   const pet = getActivePet(player);
   if (!pet || !mob || Number(mob.hp || 0) <= 0) return null;
   const aptitude = pet.aptitude || {};
-  const equipStats = getPetEquipmentCombatStats(pet);
-  const petTrainingBonus = getPetTrainingBonus(pet);
+  const battleStats = getPetBattleStatInputs(pet);
   const growth = Math.max(0.8, Number(pet.growth || 1));
   const level = Math.max(1, Math.floor(Number(pet.level || 1)));
   const battleType = normalizePetBattleType(pet, aptitude);
   const mobDef = Math.max(0, Number(mob.def || 0));
   const mobMdef = Math.max(0, Number(mob.mdef || 0));
-  const petAtk = Number(aptitude.atk || 0) + Number(equipStats.atk || 0) + Number(petTrainingBonus.atk || 0) + Number(petTrainingBonus.dex || 0);
-  const petMag = Number(aptitude.mag || 0) + Number(equipStats.mag || 0) + Number(equipStats.spirit || 0) + Number(petTrainingBonus.mag || 0);
-  const petHp = Number(aptitude.hp || 0) + Number(equipStats.hp || 0) + Number(petTrainingBonus.hp || 0);
-  const petDef = Number(aptitude.def || 0) + Number(equipStats.def || 0) + Number(petTrainingBonus.def || 0);
+  const petAtk = Number(battleStats.atk || 0);
+  const petMag = Number(battleStats.mag || 0);
+  const petHp = Number(battleStats.hp || 0);
+  const petDef = Number(battleStats.def || 0);
 
   let base = 0;
   const typeMods = {
@@ -14321,17 +14320,16 @@ function calcPetAssistDamageToPlayer(attacker, target) {
   const pet = getActivePet(attacker);
   if (!pet || !target || Number(target.hp || 0) <= 0) return null;
   const aptitude = pet.aptitude || {};
-  const equipStats = getPetEquipmentCombatStats(pet);
-  const petTrainingBonus = getPetTrainingBonus(pet);
+  const battleStats = getPetBattleStatInputs(pet);
   const growth = Math.max(0.8, Number(pet.growth || 1));
   const level = Math.max(1, Math.floor(Number(pet.level || 1)));
   const battleType = normalizePetBattleType(pet, aptitude);
   const targetDef = Math.max(0, Number(target.def || 0));
   const targetMdef = Math.max(0, Number(target.mdef || 0));
-  const petAtk = Number(aptitude.atk || 0) + Number(equipStats.atk || 0) + Number(petTrainingBonus.atk || 0) + Number(petTrainingBonus.dex || 0);
-  const petMag = Number(aptitude.mag || 0) + Number(equipStats.mag || 0) + Number(equipStats.spirit || 0) + Number(petTrainingBonus.mag || 0);
-  const petHp = Number(aptitude.hp || 0) + Number(equipStats.hp || 0) + Number(petTrainingBonus.hp || 0);
-  const petDef = Number(aptitude.def || 0) + Number(equipStats.def || 0) + Number(petTrainingBonus.def || 0);
+  const petAtk = Number(battleStats.atk || 0);
+  const petMag = Number(battleStats.mag || 0);
+  const petHp = Number(battleStats.hp || 0);
+  const petDef = Number(battleStats.def || 0);
 
   let base = 0;
   const typeMods = {
@@ -14695,12 +14693,14 @@ function resolvePetEquipSlotForItem(pet, itemTpl) {
 function calcPetPower(pet) {
   if (!pet) return 0;
   const aptitude = pet.aptitude || {};
+  const equipStats = getPetEquipmentCombatStats(pet);
+  const trainingBonus = getPetTrainingBonus(pet);
   const level = Math.max(1, Math.floor(Number(pet.level || 1)));
   const base =
-    Number(aptitude.hp || 0) * PET_POWER_WEIGHTS.hp +
-    Number(aptitude.atk || 0) * PET_POWER_WEIGHTS.atk +
-    Number(aptitude.def || 0) * PET_POWER_WEIGHTS.def +
-    Number(aptitude.mag || 0) * PET_POWER_WEIGHTS.mag +
+    (Number(aptitude.hp || 0) + Number(equipStats.hp || 0) + Number(trainingBonus.hp || 0)) * PET_POWER_WEIGHTS.hp +
+    (Number(aptitude.atk || 0) + Number(equipStats.atk || 0) + Number(equipStats.dex || 0) + Number(trainingBonus.atk || 0) + Number(trainingBonus.dex || 0)) * PET_POWER_WEIGHTS.atk +
+    (Number(aptitude.def || 0) + Number(equipStats.def || 0) + Number(trainingBonus.def || 0) + Number(equipStats.mdef || 0) + Number(trainingBonus.mdef || 0)) * PET_POWER_WEIGHTS.def +
+    (Number(aptitude.mag || 0) + Number(equipStats.mag || 0) + Number(equipStats.spirit || 0) + Number(trainingBonus.mag || 0)) * PET_POWER_WEIGHTS.mag +
     Number(aptitude.agility || 0) * PET_POWER_WEIGHTS.agility;
   const growth = Number(pet.growth || 1);
   const slots = Number(pet.skillSlots || PET_BASE_SKILL_SLOTS);
@@ -14739,23 +14739,50 @@ function getPetTrainingBonus(pet) {
   };
 }
 
+function getPetBattleStatInputs(pet) {
+  const aptitude = pet?.aptitude || {};
+  const equipStats = getPetEquipmentCombatStats(pet);
+  const trainingBonus = getPetTrainingBonus(pet);
+  const atk = Number(aptitude.atk || 0)
+    + Number(equipStats.atk || 0)
+    + Number(equipStats.dex || 0)
+    + Number(trainingBonus.atk || 0)
+    + Number(trainingBonus.dex || 0);
+  const mag = Number(aptitude.mag || 0)
+    + Number(equipStats.mag || 0)
+    + Number(equipStats.spirit || 0)
+    + Number(trainingBonus.mag || 0);
+  const hp = Number(aptitude.hp || 0)
+    + Number(equipStats.hp || 0)
+    + Number(trainingBonus.hp || 0);
+  const def = Number(aptitude.def || 0)
+    + Number(equipStats.def || 0)
+    + Number(trainingBonus.def || 0);
+  const mdef = Number(equipStats.mdef || 0) + Number(trainingBonus.mdef || 0);
+  const mp = Number(equipStats.mag || 0)
+    + Number(equipStats.spirit || 0)
+    + Number(trainingBonus.mag || 0)
+    + Number(trainingBonus.mp || 0);
+  return { hp, mp, atk, def, mag, mdef };
+}
+
 function calcPetBattlePanelDerivedStats(pet) {
   if (!pet) return { maxHp: 1, maxMp: 1, atk: 1, def: 0, mdef: 0 };
   const apt = pet.aptitude || {};
   const level = Math.max(1, Number(pet.level || 1));
   const growth = Math.max(0.8, Number(pet.growth || 1));
-  const trainingBonus = getPetTrainingBonus(pet);
+  const battleStats = getPetBattleStatInputs(pet);
   const battleType = String(pet.battleType || normalizePetBattleType(pet, apt));
   const typeMul = battleType === 'magic'
     ? { hp: 0.95, mp: 1.2, atk: 0.8, def: 0.95, mdef: 1.15 }
     : battleType === 'tank'
       ? { hp: 1.2, mp: 0.8, atk: 0.8, def: 1.2, mdef: 1.0 }
       : { hp: 1.0, mp: 0.9, atk: 1.2, def: 1.0, mdef: 0.9 };
-  const maxHp = Math.max(1, Math.floor((((Number(apt.hp || 0) + Number(trainingBonus.hp || 0)) * 3.8) + ((Number(apt.def || 0) + Number(trainingBonus.def || 0)) * 1.2) + level * 38) * growth * typeMul.hp));
-  const maxMp = Math.max(1, Math.floor((((Number(apt.mag || 0) + Number(trainingBonus.mag || 0)) * 2.8) + level * 22) * Math.max(0.9, growth) * typeMul.mp + Number(trainingBonus.mp || 0)));
-  const atk = Math.max(1, Math.floor((((Number(apt.atk || 0) + Number(trainingBonus.atk || 0) + Number(trainingBonus.dex || 0)) * 1.35) + level * 5) * growth * typeMul.atk));
-  const def = Math.max(0, Math.floor((((Number(apt.def || 0) + Number(trainingBonus.def || 0)) * 1.2) + level * 4) * growth * typeMul.def));
-  const mdef = Math.max(0, Math.floor(((((Number(apt.mag || 0) + Number(trainingBonus.mag || 0)) * 0.75) + ((Number(apt.def || 0) + Number(trainingBonus.def || 0)) * 0.65)) + level * 4) * growth * typeMul.mdef + Number(trainingBonus.mdef || 0)));
+  const maxHp = Math.max(1, Math.floor(((Number(battleStats.hp || 0) * 3.8) + (Number(battleStats.def || 0) * 1.2) + level * 38) * growth * typeMul.hp));
+  const maxMp = Math.max(1, Math.floor(((Number(battleStats.mag || 0) * 2.8) + level * 22) * Math.max(0.9, growth) * typeMul.mp + Number(battleStats.mp || 0)));
+  const atk = Math.max(1, Math.floor(((Number(battleStats.atk || 0) * 1.35) + level * 5) * growth * typeMul.atk));
+  const def = Math.max(0, Math.floor(((Number(battleStats.def || 0) * 1.2) + level * 4) * growth * typeMul.def));
+  const mdef = Math.max(0, Math.floor((((Number(battleStats.mag || 0) * 0.75) + (Number(battleStats.def || 0) * 0.65)) + level * 4) * growth * typeMul.mdef + Number(battleStats.mdef || 0)));
   return { maxHp, maxMp, atk, def, mdef };
 }
 
