@@ -4556,7 +4556,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       if (source !== 'ui') return;
       const cfg = getUltimateGrowthConfig();
       if (!cfg?.enabled) return send('终极装备成长系统未开启。');
-      if (!args) return send('用法：growth <装备Key|equip:部位> [次数]');
+      if (!args) return send('用法：growth <装备Key|equip:部位|petequip:宠物ID:部位> [次数]');
       const parts = String(args || '').trim().split(/\s+/).filter(Boolean);
       const targetRaw = parts[0];
       const timesRaw = parts[1];
@@ -4573,11 +4573,18 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       let targetItem = null;
       let fromEquip = false;
       let equipSlotName = null;
+      let petEquipResolved = null;
       if (targetRaw.startsWith('equip:')) {
         equipSlotName = targetRaw.slice('equip:'.length).trim();
         targetSlot = player.equipment?.[equipSlotName] || null;
         if (!targetSlot || !targetSlot.id) return send('身上没有该装备。');
         targetItem = ITEM_TEMPLATES[targetSlot.id] || null;
+        fromEquip = true;
+      } else if (targetRaw.startsWith('petequip:')) {
+        petEquipResolved = resolvePetEquippedItem(player, targetRaw);
+        if (!petEquipResolved || petEquipResolved.error) return send(petEquipResolved?.error || '宠物装备无效。');
+        targetSlot = petEquipResolved.slot;
+        targetItem = petEquipResolved.item;
         fromEquip = true;
       } else {
         const resolved = resolveInventoryItem(player, targetRaw);
@@ -4671,7 +4678,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
 
       targetSlot.growth_level = currentLevel;
       targetSlot.growth_fail_stack = failStack;
-      if (fromEquip) computeDerived(player);
+      if (fromEquip || petEquipResolved) computeDerived(player);
       player.forceStateRefresh = true;
       const previewLevel = hasMaxLevel ? Math.min(currentLevel + 1, maxLevel) : (currentLevel + 1);
       const rateText = Math.max(0, Math.min(100, Number(getUltimateGrowthRateByLevel(previewLevel) || 0)));

@@ -4050,53 +4050,169 @@ function hasSpecialEffects(effects) {
   return effects && Object.keys(effects).length > 0;
 }
 
+const PET_EQUIP_SLOT_LABELS = {
+  weapon: '武器',
+  chest: '衣服',
+  head: '头盔',
+  waist: '腰带',
+  feet: '鞋子',
+  neck: '项链',
+  ring_left: '左戒指',
+  ring_right: '右戒指',
+  bracelet_left: '左手镯',
+  bracelet_right: '右手镯'
+};
+
+function getPetEquipSlotLabel(item) {
+  const slotKey = String(item?.slot || '').trim().toLowerCase();
+  if (slotKey && PET_EQUIP_SLOT_LABELS[slotKey]) return PET_EQUIP_SLOT_LABELS[slotKey];
+  if (slotKey === 'ring') return '戒指';
+  if (slotKey === 'bracelet') return '手镯';
+  if (slotKey && ITEM_SLOT_LABELS[slotKey]) return ITEM_SLOT_LABELS[slotKey];
+  const fallbackLabel = String(item?.slotLabel || '').trim();
+  if (fallbackLabel && !/^[a-z_]+$/i.test(fallbackLabel)) return fallbackLabel;
+  return '装备';
+}
+
+function buildEquippedOperationEntries({ includePlayer = true, includePets = true, filter = null, mapMeta = null } = {}) {
+  const heroEntries = [];
+  const petEntries = [];
+  if (includePlayer) {
+    (lastState?.equipment || []).forEach((entry) => {
+      if (!entry?.item) return;
+      if (filter && !filter(entry.item, entry, 'player')) return;
+      heroEntries.push({
+        source: 'player',
+        key: `equip:${entry.slot}`,
+        slot: entry.slot,
+        item: entry.item,
+        label: `${ITEM_SLOT_LABELS[entry.slot] || entry.slot}: ${formatItemName(entry.item)}`,
+        meta: typeof mapMeta === 'function' ? mapMeta(entry.item, entry, 'player') : ''
+      });
+    });
+  }
+  if (includePets) {
+    const pets = Array.isArray(lastState?.pet?.pets) ? lastState.pet.pets : [];
+    pets.forEach((pet) => {
+      const equippedItems = Array.isArray(pet?.equippedItems) ? pet.equippedItems : [];
+      equippedItems.forEach((item) => {
+        if (!item?.slot) return;
+        if (filter && !filter(item, { pet, item, slot: item.slot }, 'pet')) return;
+        petEntries.push({
+          source: 'pet',
+          key: `petequip:${pet.id}:${item.slot}`,
+          slot: item.slot,
+          petId: pet.id,
+          petName: pet.name,
+          item,
+          label: `${getPetEquipSlotLabel(item)}: ${formatItemName(item)}`,
+          meta: typeof mapMeta === 'function' ? mapMeta(item, { pet, item, slot: item.slot }, 'pet') : (pet.name || '宠物')
+        });
+      });
+    });
+  }
+  return { heroEntries, petEntries };
+}
+
+function renderEquippedParallelList(container, {
+  heroEntries = [],
+  petEntries = [],
+  preferredKey = '',
+  onSelect = null,
+  heroEmptyText = '暂无人物已穿戴装备',
+  petEmptyText = '暂无宠物已穿戴装备'
+} = {}) {
+  if (!container) return false;
+  container.innerHTML = '';
+  const createSection = (title, entries, emptyText) => {
+    const section = document.createElement('div');
+    section.className = 'equip-parallel-section';
+    const titleEl = document.createElement('div');
+    titleEl.className = 'equip-parallel-title';
+    titleEl.textContent = title;
+    section.appendChild(titleEl);
+    const listEl = document.createElement('div');
+    listEl.className = 'equip-parallel-items';
+    if (!entries.length) {
+      const empty = document.createElement('div');
+      empty.className = 'equip-parallel-empty';
+      empty.textContent = emptyText;
+      listEl.appendChild(empty);
+    } else {
+      entries.forEach((entry) => {
+        const btn = document.createElement('div');
+        btn.className = 'forge-item';
+        btn.dataset.selectKey = entry.key;
+        applyRarityClass(btn, entry.item);
+        btn.innerHTML = `<div>${entry.label}</div>${entry.meta ? `<div class="forge-item-meta">${entry.meta}</div>` : ''}`;
+        btn.addEventListener('click', () => {
+          Array.from(container.querySelectorAll('.forge-item')).forEach((node) => node.classList.remove('selected'));
+          btn.classList.add('selected');
+          if (typeof onSelect === 'function') onSelect(entry);
+        });
+        listEl.appendChild(btn);
+      });
+    }
+    section.appendChild(listEl);
+    return section;
+  };
+  container.appendChild(createSection('人物穿戴装备', heroEntries, heroEmptyText));
+  container.appendChild(createSection('宠物穿戴装备', petEntries, petEmptyText));
+  if (preferredKey) {
+    const preferred = container.querySelector(`.forge-item[data-select-key="${preferredKey}"]`);
+    if (preferred) {
+      preferred.click();
+      return true;
+    }
+  }
+  return false;
+}
+
 function renderForgeModal() {
   if (!forgeUi.list || !forgeUi.secondaryList || !forgeUi.main || !forgeUi.secondary || !forgeUi.confirm) return;
-  const preferredMainSlot = forgeSelection?.mainSlot || '';
-  const equipped = (lastState?.equipment || [])
-    .filter((entry) => entry.item && ['legendary', 'supreme', 'ultimate'].includes(entry.item.rarity));
+  const preferredMainKey = forgeSelection?.mainKey || '';
+  const { heroEntries, petEntries } = buildEquippedOperationEntries({
+    filter: (item) => ['legendary', 'supreme', 'ultimate'].includes(normalizeRarityKey(item?.rarity))
+  });
   forgeUi.list.innerHTML = '';
   forgeUi.secondaryList.innerHTML = '';
   forgeSelection = null;
   forgeUi.main.textContent = '主件: 未选择';
   forgeUi.secondary.textContent = '副件: 等待选择';
   forgeUi.confirm.disabled = true;
-  if (!equipped.length) {
-    const empty = document.createElement('div');
-    empty.textContent = '暂无已穿戴的传说及以上装备';
-    forgeUi.list.appendChild(empty);
+  if (!heroEntries.length && !petEntries.length) {
+    renderEquippedParallelList(forgeUi.list, {
+      heroEntries,
+      petEntries,
+      heroEmptyText: '暂无人物已穿戴的传说及以上装备',
+      petEmptyText: '暂无宠物已穿戴的传说及以上装备'
+    });
     const subEmpty = document.createElement('div');
     subEmpty.textContent = '请先选择主件';
     forgeUi.secondaryList.appendChild(subEmpty);
     return;
   }
-  equipped.forEach((entry) => {
-    const item = entry.item;
-    const btn = document.createElement('div');
-    btn.className = 'forge-item';
-    applyRarityClass(btn, item);
-    btn.innerHTML = `
-      <div>${formatItemName(item)}</div>
-    `;
-    btn.addEventListener('click', () => {
-      Array.from(forgeUi.list.querySelectorAll('.forge-item')).forEach((node) =>
-        node.classList.remove('selected')
-      );
-      btn.classList.add('selected');
+  const restored = renderEquippedParallelList(forgeUi.list, {
+    heroEntries,
+    petEntries,
+    preferredKey: preferredMainKey,
+    heroEmptyText: '暂无人物已穿戴的传说及以上装备',
+    petEmptyText: '暂无宠物已穿戴的传说及以上装备',
+    onSelect: (entry) => {
       forgeSelection = {
-        main: item,
-        mainSlot: entry.slot,
+        main: entry.item,
+        mainKey: entry.key,
         secondary: null,
         secondaryKey: null
       };
-      forgeUi.main.textContent = `主件: ${formatItemName(item)}`;
-      renderForgeSecondaryList(item);
-    });
-    forgeUi.list.appendChild(btn);
-    if (preferredMainSlot && entry.slot === preferredMainSlot) {
-      btn.click();
+      forgeUi.main.textContent = `主件: ${formatItemName(entry.item)}`;
+      renderForgeSecondaryList(entry.item);
     }
   });
+  if (!restored) {
+    const firstBtn = forgeUi.list.querySelector('.forge-item');
+    if (firstBtn) firstBtn.click();
+  }
 }
 
 function showForgeModal() {
@@ -4108,17 +4224,11 @@ function showForgeModal() {
 
 function renderRefineModal() {
   if (!refineUi.list || !refineUi.main || !refineUi.level || !refineUi.successRate) return;
-  const preferredSlot = refineSelection?.slot || '';
-
-  const allEquipment = [];
-  // 只获取已装备的装备
-  if (lastState?.equipment) {
-    lastState.equipment.forEach((equipped) => {
-      if (equipped && equipped.item && ['weapon', 'armor', 'accessory'].includes(equipped.item.type)) {
-        allEquipment.push({ ...equipped, slotName: equipped.slot, fromEquip: true });
-      }
-    });
-  }
+  const preferredKey = refineSelection?.mainKey || '';
+  const { heroEntries, petEntries } = buildEquippedOperationEntries({
+    filter: (item) => ['weapon', 'armor', 'accessory'].includes(item?.type),
+    mapMeta: (item, entry) => `锻造等级: +${Math.max(0, Number(entry?.refine_level ?? item?.refine_level ?? 0))}`
+  });
 
   refineUi.list.innerHTML = '';
   refineSelection = null;
@@ -4126,27 +4236,27 @@ function renderRefineModal() {
   refineUi.level.textContent = '当前锻造等级: +0';
   refineUi.successRate.textContent = '成功率: 100%';
 
-  if (!allEquipment.length) {
-    const empty = document.createElement('div');
-    empty.textContent = '身上暂无装备';
-    refineUi.list.appendChild(empty);
+  if (!heroEntries.length && !petEntries.length) {
+    renderEquippedParallelList(refineUi.list, {
+      heroEntries,
+      petEntries,
+      heroEmptyText: '人物身上暂无装备',
+      petEmptyText: '宠物身上暂无装备'
+    });
     refineUi.confirm.disabled = true;
     return;
   }
 
-  allEquipment.forEach((entry) => {
-    const item = entry.item;
-    const btn = document.createElement('div');
-    btn.className = 'forge-item';
-    applyRarityClass(btn, item);
-    const refineLevel = entry.refine_level || 0;
-    btn.innerHTML = `
-      <div>${formatItemName(item)}</div>
-      <div class="item-detail">锻造等级: +${refineLevel}</div>
-    `;
-    btn.addEventListener('click', () => {
-      refineSelection = { slot: entry.slotName || entry.key, item, refineLevel, fromEquip: entry.fromEquip };
-      refineUi.main.textContent = `主件: ${formatItemName(item)}`;
+  const restored = renderEquippedParallelList(refineUi.list, {
+    heroEntries,
+    petEntries,
+    preferredKey,
+    heroEmptyText: '人物身上暂无装备',
+    petEmptyText: '宠物身上暂无装备',
+    onSelect: (entry) => {
+      const refineLevel = Math.max(0, Number(entry?.item?.refine_level ?? 0));
+      refineSelection = { mainKey: entry.key, item: entry.item, refineLevel };
+      refineUi.main.textContent = `主件: ${formatItemName(entry.item)}`;
       refineUi.level.textContent = `当前锻造等级: +${refineLevel}`;
       const nextLevel = refineLevel + 1;
       const successRate = calculateRefineSuccessRate(nextLevel);
@@ -4160,13 +4270,9 @@ function renderRefineModal() {
       refineUi.secondaryCount.textContent = `副件: 需要${refineMaterialCount}件史诗（不含）以下装备 (可用: ${materials}件)`;
       refineUi.confirm.disabled = materials < refineMaterialCount;
       refineUi.batch.disabled = materials < refineMaterialCount;
-    });
-    refineUi.list.appendChild(btn);
-    if (preferredSlot && (entry.slotName || entry.key) === preferredSlot) {
-      btn.click();
     }
   });
-  if (!preferredSlot) refineUi.confirm.disabled = true;
+  if (!restored) refineUi.confirm.disabled = true;
 
   // 初始显示副件装备列表
   renderRefineSecondaryList();
@@ -4295,7 +4401,7 @@ function getBagItemQty(itemId) {
 function calcGrowthBatchPreview(selection, requestedCount) {
   const rt = getGrowthRuntimeConfig();
   const triesRequested = Math.max(1, Math.min(200, Math.floor(Number(requestedCount || 1))));
-  if (!selection?.slot) {
+  if (!selection?.mainKey) {
     return {
       triesRequested,
       triesAffordable: 0,
@@ -4422,7 +4528,7 @@ function calcGrowthBatchPreview(selection, requestedCount) {
 function updateGrowthBatchPreview() {
   if (!growthUi.preview) return;
   const count = 1;
-  if (!growthSelection?.slot) {
+  if (!growthSelection?.mainKey) {
     growthUi.preview.textContent = '一键成长预估: 请选择主件后可预估';
     return;
   }
@@ -4439,13 +4545,17 @@ function updateGrowthBatchPreview() {
 
 function renderGrowthModal() {
   if (!growthUi.list || !growthUi.main || !growthUi.level || !growthUi.successRate || !growthUi.cost) return;
-  const preferredSlot = growthSelection?.slot || '';
+  const preferredKey = growthSelection?.mainKey || '';
 
   const rt = getGrowthRuntimeConfig();
   const { cfg, hasMaxLevel, maxLevel, materialCost, materialLabel, breakthroughEvery, breakthroughMaterialCost, breakthroughMaterialId, breakthroughMaterialLabel, goldCost } = rt;
-  const equippedUltimate = (lastState?.equipment || []).filter((entry) => {
-    if (!entry?.item) return false;
-    return normalizeRarityKey(entry.item.rarity) === 'ultimate';
+  const { heroEntries, petEntries } = buildEquippedOperationEntries({
+    filter: (item) => normalizeRarityKey(item?.rarity) === 'ultimate',
+    mapMeta: (item, entry) => {
+      const currentLevel = Math.max(0, Math.floor(Number(entry?.growth_level ?? item?.growth_level ?? 0)));
+      const failStack = Math.max(0, Math.floor(Number(entry?.growth_fail_stack ?? item?.growth_fail_stack ?? 0)));
+      return `成长Lv${currentLevel}/${hasMaxLevel ? maxLevel : '∞'} | 保底层数:${failStack}`;
+    }
   });
 
   growthUi.list.innerHTML = '';
@@ -4459,27 +4569,28 @@ function renderGrowthModal() {
   if (growthUi.confirm) growthUi.confirm.disabled = true;
   if (growthUi.batch) growthUi.batch.disabled = false;
 
-  if (!equippedUltimate.length) {
-    const empty = document.createElement('div');
-    empty.textContent = '身上暂无终极装备';
-    growthUi.list.appendChild(empty);
+  if (!heroEntries.length && !petEntries.length) {
+    renderEquippedParallelList(growthUi.list, {
+      heroEntries,
+      petEntries,
+      heroEmptyText: '人物身上暂无终极装备',
+      petEmptyText: '宠物身上暂无终极装备'
+    });
     return;
   }
 
-  equippedUltimate.forEach((entry) => {
-    const item = entry.item;
-    const currentLevel = Math.max(0, Math.floor(Number(entry.growth_level ?? item.growth_level ?? 0)));
-    const failStack = Math.max(0, Math.floor(Number(entry.growth_fail_stack ?? item.growth_fail_stack ?? 0)));
-    const btn = document.createElement('div');
-    btn.className = 'forge-item';
-    applyRarityClass(btn, item);
-    btn.innerHTML = `
-      <div>${formatItemName(item)}</div>
-      <div class="item-detail">成长Lv${currentLevel}/${hasMaxLevel ? maxLevel : '∞'} | 保底层数:${failStack}</div>
-    `;
-    btn.addEventListener('click', () => {
+  renderEquippedParallelList(growthUi.list, {
+    heroEntries,
+    petEntries,
+    preferredKey,
+    heroEmptyText: '人物身上暂无终极装备',
+    petEmptyText: '宠物身上暂无终极装备',
+    onSelect: (entry) => {
+      const item = entry.item;
+      const currentLevel = Math.max(0, Math.floor(Number(item?.growth_level ?? 0)));
+      const failStack = Math.max(0, Math.floor(Number(item?.growth_fail_stack ?? 0)));
       growthSelection = {
-        slot: entry.slot,
+        mainKey: entry.key,
         item,
         growthLevel: currentLevel,
         failStack
@@ -4499,10 +4610,6 @@ function renderGrowthModal() {
       if (growthUi.confirm) growthUi.confirm.disabled = hasMaxLevel ? (currentLevel >= maxLevel) : false;
       if (growthUi.batch) growthUi.batch.disabled = false;
       updateGrowthBatchPreview();
-    });
-    growthUi.list.appendChild(btn);
-    if (preferredSlot && entry.slot === preferredSlot) {
-      btn.click();
     }
   });
 }
@@ -4737,7 +4844,7 @@ function showHighTierRecycleModal() {
 
 function renderEffectModal() {
   if (!effectUi.list) return;
-  const preferredSlot = effectSelection?.slot || '';
+  const preferredKey = effectSelection?.mainKey || '';
 
   // 从后台读取并显示特效重置概率
   const config = lastState?.effect_reset_config || {};
@@ -4754,27 +4861,21 @@ function renderEffectModal() {
   effectUi.quintupleRate.textContent = `5特效概率：${quintupleRate}%`;
 
   // 主件列表：只显示已穿戴的装备（必须有特效）
-  const equippedWithEffect = (lastState?.equipment || []).filter(entry => {
-    if (!entry.item || !entry.item.effects) return false;
-    return Object.keys(entry.item.effects).length > 0;
+  const { heroEntries, petEntries } = buildEquippedOperationEntries({
+    filter: (item) => item?.effects && Object.keys(item.effects).length > 0
   });
 
   effectUi.list.innerHTML = '';
   effectSelection = null;
-  equippedWithEffect.forEach(e => {
-    const btn = document.createElement('div');
-    btn.className = 'forge-item';
-    applyRarityClass(btn, e.item);
-    btn.innerHTML = `
-      <div>${formatItemName(e.item)}</div>
-    `;
-    btn.addEventListener('click', () => {
-      effectSelection = { ...e, equipped: true, raw: { id: e.item.id, slot: e.slot } };
+  renderEquippedParallelList(effectUi.list, {
+    heroEntries,
+    petEntries,
+    preferredKey,
+    heroEmptyText: '暂无人物已穿戴的特效装备',
+    petEmptyText: '暂无宠物已穿戴的特效装备',
+    onSelect: (entry) => {
+      effectSelection = { mainKey: entry.key, item: entry.item };
       updateEffectSelection(effectSelection);
-    });
-    effectUi.list.appendChild(btn);
-    if (preferredSlot && e.slot === preferredSlot) {
-      btn.click();
     }
   });
 
@@ -4807,7 +4908,7 @@ function dispatchNextEffectBatchCommand() {
     return;
   }
   effectBatchTask.inFlight = true;
-  socket.emit('cmd', { text: `effect equip:${effectBatchTask.mainSlot} ${nextSecondaryKey}` });
+  socket.emit('cmd', { text: `effect ${effectBatchTask.mainSlot} ${nextSecondaryKey}` });
   effectBatchTask.timer = setTimeout(() => {
     if (!effectBatchTask.active) return;
     effectBatchTask.inFlight = false;
@@ -4845,7 +4946,7 @@ function updateEffectSelection(selected) {
     effectUi.batch.disabled = inventoryWithEffect.length < 1;
 
     effectUi.confirm.onclick = () => {
-      const command = `effect equip:${selected.slot} ${secondary.key}`;
+      const command = `effect ${selected.mainKey} ${secondary.key}`;
       socket.emit('cmd', { text: command });
       // 不自动关闭窗口
     };
@@ -4855,7 +4956,7 @@ function updateEffectSelection(selected) {
       if (!socket || !selected) return;
       if (effectBatchTask.active) return;
       effectBatchTask.active = true;
-      effectBatchTask.mainSlot = selected.slot;
+      effectBatchTask.mainSlot = selected.mainKey;
       effectBatchTask.queue = inventoryWithEffect.map((slot) => slot.key).filter(Boolean);
       effectBatchTask.inFlight = false;
       if (effectBatchTask.timer) {
@@ -12087,9 +12188,9 @@ if (forgeUi.modal) {
 }
 if (forgeUi.confirm) {
   forgeUi.confirm.addEventListener('click', () => {
-    if (!socket || !forgeSelection || !forgeSelection.mainSlot || !forgeSelection.secondaryKey) return;
+    if (!socket || !forgeSelection || !forgeSelection.mainKey || !forgeSelection.secondaryKey) return;
     socket.emit('cmd', {
-      text: `forge equip:${forgeSelection.mainSlot} | ${forgeSelection.secondaryKey}`,
+      text: `forge ${forgeSelection.mainKey} | ${forgeSelection.secondaryKey}`,
       source: 'ui'
     });
     forgeUi.modal.classList.add('hidden');
@@ -12097,8 +12198,8 @@ if (forgeUi.confirm) {
 }
 if (refineUi.confirm) {
   refineUi.confirm.addEventListener('click', () => {
-    if (!socket || !refineSelection || !refineSelection.slot) return;
-    const mainItem = refineSelection.fromEquip ? `equip:${refineSelection.slot}` : refineSelection.slot;
+    if (!socket || !refineSelection || !refineSelection.mainKey) return;
+    const mainItem = refineSelection.mainKey;
     socket.emit('cmd', {
       text: `refine ${mainItem}`,
       source: 'ui'
@@ -12108,8 +12209,8 @@ if (refineUi.confirm) {
 }
 if (refineUi.batch) {
   refineUi.batch.addEventListener('click', async () => {
-    if (!socket || !refineSelection || !refineSelection.slot) return;
-    const mainItem = refineSelection.fromEquip ? `equip:${refineSelection.slot}` : refineSelection.slot;
+    if (!socket || !refineSelection || !refineSelection.mainKey) return;
+    const mainItem = refineSelection.mainKey;
     const materials = countRefineMaterials();
     const batches = Math.floor(materials / refineMaterialCount);
     if (batches <= 0) return;
@@ -12155,9 +12256,9 @@ if (growthUi.modal) {
 }
 if (growthUi.confirm) {
   growthUi.confirm.addEventListener('click', () => {
-    if (!socket || !growthSelection?.slot) return;
+    if (!socket || !growthSelection?.mainKey) return;
     socket.emit('cmd', {
-      text: `growth equip:${growthSelection.slot} 1`,
+      text: `growth ${growthSelection.mainKey} 1`,
       source: 'ui'
     });
   });
@@ -12168,7 +12269,7 @@ if (growthUi.batch) {
       showToast('连接未就绪，请稍后再试');
       return;
     }
-    if (!growthSelection?.slot) {
+    if (!growthSelection?.mainKey) {
       showToast('请先选择要成长的终极装备');
       return;
     }
@@ -12211,7 +12312,7 @@ if (growthUi.batch) {
     });
     if (!confirm) return;
     socket.emit('cmd', {
-      text: `growth equip:${growthSelection.slot} ${p.triesAffordable}`,
+      text: `growth ${growthSelection.mainKey} ${p.triesAffordable}`,
       source: 'ui'
     });
   });

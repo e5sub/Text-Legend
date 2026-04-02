@@ -5199,6 +5199,35 @@ body.dark #mail-modal .modal-actions {
   gap: 4px;
 }
 
+.equip-parallel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.equip-parallel-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #7a4b1d;
+  text-align: center;
+}
+
+.equip-parallel-items {
+  display: grid;
+  gap: 8px;
+}
+
+.equip-parallel-empty {
+  border-radius: 12px;
+  border: 1px dashed rgba(118, 70, 22, 0.22);
+  background: rgba(247, 226, 198, 0.45);
+  padding: 12px 10px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #8a5a2d;
+}
+
 .treasure-actions {
   margin-top: 6px;
   display: flex;

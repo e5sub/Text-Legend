@@ -3079,6 +3079,56 @@ private fun SettingsScreen(vm: GameViewModel, onDismiss: () -> Unit) {
     }
 }
 
+private data class EquippedOptionGroup(
+    val title: String,
+    val options: List<Pair<String, String>>,
+    val emptyText: String
+)
+
+@Composable
+private fun ParallelEquippedOptionGroups(
+    groups: List<EquippedOptionGroup>,
+    selected: String,
+    onSelect: (String) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        groups.forEach { group ->
+            Column(modifier = Modifier.weight(1f)) {
+                Text(group.title, style = MaterialTheme.typography.titleSmall)
+                Spacer(modifier = Modifier.height(6.dp))
+                if (group.options.isEmpty()) {
+                    Text(group.emptyText, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                } else {
+                    group.options.forEach { (value, label) ->
+                        val isSelected = selected == value
+                        val bg = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant
+                        val border = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.7f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                                .clickable { onSelect(value) },
+                            shape = RoundedCornerShape(8.dp),
+                            color = bg,
+                            border = BorderStroke(1.dp, border),
+                            tonalElevation = if (isSelected) 2.dp else 0.dp
+                        ) {
+                            Text(
+                                text = label,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun GuildBuildingPanel(
     building: GuildBuildingInfo,
@@ -3861,7 +3911,16 @@ private fun ShopDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Un
       var mainSelection by remember { mutableStateOf("") }
       var secondarySelection by remember { mutableStateOf("") }
 
-      val mainOptions = buildForgeMainOptions(state)
+      val playerOptions = buildPlayerEquippedOptions(state) { _, item -> isLegendaryOrAbove(item.rarity) }
+      val petOptions = buildPetEquippedOptions(state) { _, item -> isLegendaryOrAbove(item.rarity) }
+      val mainOptions = playerOptions + petOptions
+      val optionGroups = buildEquippedOptionGroups(
+          state,
+          playerOptions,
+          petOptions,
+          playerEmptyText = "暂无人物已穿戴的传说及以上装备",
+          petEmptyText = "暂无宠物已穿戴的传说及以上装备"
+      )
       val secondaryOptions = buildForgeSecondaryOptions(state, mainSelection)
 
     ScreenScaffold(title = "装备合成", onBack = onDismiss) {
@@ -3872,12 +3931,7 @@ private fun ShopDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Un
         if (secondarySelection.isNotBlank() && secondaryOptions.none { it.first == secondarySelection }) {
             secondarySelection = ""
         }
-        Text("主件(已穿戴)")
-        if (mainOptions.isEmpty()) {
-            Text("暂无已穿戴装备", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        } else {
-            OptionGrid(options = mainOptions, selected = mainSelection, onSelect = { mainSelection = it })
-        }
+        ParallelEquippedOptionGroups(optionGroups, selected = mainSelection, onSelect = { mainSelection = it })
         Spacer(modifier = Modifier.height(8.dp))
         Text("副件(背包匹配)")
         if (mainSelection.isBlank()) {
@@ -3902,7 +3956,20 @@ private fun ShopDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Un
       val state by vm.gameState.collectAsState()
       var selection by remember { mutableStateOf("") }
       var bulkTarget by remember { mutableStateOf("10") }
-      val options = buildEquippedOptions(state)
+      val playerOptions = buildPlayerEquippedOptions(state) { _, item ->
+          item.type == "weapon" || item.type == "armor" || item.type == "accessory"
+      }
+      val petOptions = buildPetEquippedOptions(state) { _, item ->
+          item.slot?.isNotBlank() == true
+      }
+      val options = playerOptions + petOptions
+      val optionGroups = buildEquippedOptionGroups(
+          state,
+          playerOptions,
+          petOptions,
+          playerEmptyText = "暂无人物已穿戴装备",
+          petEmptyText = "暂无宠物已穿戴装备"
+      )
       val materialOptions = buildRefineMaterialOptions(state)
     val refineConfig = state?.refine_config
     val refineLevel = resolveRefineLevel(state, selection)
@@ -3913,14 +3980,7 @@ private fun ShopDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Un
           if (selection.isNotBlank() && options.none { it.first == selection }) {
               selection = ""
           }
-          Text("已穿戴装备（仅查看）")
-          if (options.isEmpty()) {
-              Text("暂无已穿戴装备", color = MaterialTheme.colorScheme.onSurfaceVariant)
-          } else {
-              OptionGrid(options = options, selected = selection, onSelect = {
-                  selection = it
-              })
-          }
+          ParallelEquippedOptionGroups(optionGroups, selected = selection, onSelect = { selection = it })
         if (refineLevel != null && refineConfig != null && successRate != null) {
             Text("当前等级: +$refineLevel → +${refineLevel + 1}")
             Text("成功率: ${"%.1f".format(successRate)}%")
@@ -3964,7 +4024,32 @@ private fun GrowthDialog(vm: GameViewModel, onDismiss: () -> Unit) {
     var showBatchInput by remember { mutableStateOf(false) }
     var showBatchConfirm by remember { mutableStateOf(false) }
     var batchInput by remember { mutableStateOf("1") }
-    val options = buildUltimateGrowthEquippedOptions(state)
+    val playerOptions = buildPlayerEquippedOptions(
+        state,
+        filter = { _, item -> normalizeRarityKey(item.rarity) == "ultimate" },
+        labelBuilder = { eq, item ->
+            val growthLevel = (eq.growth_level.takeIf { it > 0 } ?: item.growth_level).coerceAtLeast(0)
+            val failStack = (eq.growth_fail_stack.takeIf { it > 0 } ?: item.growth_fail_stack).coerceAtLeast(0)
+            "${equipSlotLabel(eq.slot)}: ${item.name} (Lv$growthLevel 保底$failStack)"
+        }
+    )
+    val petOptions = buildPetEquippedOptions(
+        state,
+        filter = { _, item -> normalizeRarityKey(item.rarity) == "ultimate" },
+        labelBuilder = { pet, item ->
+            val growthLevel = item.growth_level.coerceAtLeast(0)
+            val failStack = item.growth_fail_stack.coerceAtLeast(0)
+            "${petEquipSlotLabelLocal(item.slot)}: ${item.name} (Lv$growthLevel 保底$failStack / ${pet.name})"
+        }
+    )
+    val options = playerOptions + petOptions
+    val optionGroups = buildEquippedOptionGroups(
+        state,
+        playerOptions,
+        petOptions,
+        playerEmptyText = "暂无人物终极装备",
+        petEmptyText = "暂无宠物终极装备"
+    )
     val growthConfig = state?.ultimate_growth_config
     val runtime = remember(growthConfig) { toGrowthRuntimeConfig(growthConfig) }
     val currentLevel = resolveGrowthLevel(state, selection)
@@ -4072,12 +4157,7 @@ private fun GrowthDialog(vm: GameViewModel, onDismiss: () -> Unit) {
         if (selection.isNotBlank() && options.none { it.first == selection }) {
             selection = ""
         }
-        Text("已穿戴终极装备")
-        if (options.isEmpty()) {
-            Text("暂无可成长装备", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        } else {
-            OptionGrid(options = options, selected = selection, onSelect = { selection = it })
-        }
+        ParallelEquippedOptionGroups(optionGroups, selected = selection, onSelect = { selection = it })
 
         Spacer(modifier = Modifier.height(8.dp))
         if (currentLevel != null && failStack != null) {
@@ -4253,7 +4333,16 @@ private fun EffectDialog(vm: GameViewModel, onDismiss: () -> Unit) {
     val state by vm.gameState.collectAsState()
     var mainSelection by remember { mutableStateOf("") }
     var secondarySelection by remember { mutableStateOf("") }
-      val equipOptions = buildEffectMainOptions(state)
+    val playerOptions = buildPlayerEquippedOptions(state) { _, item -> hasSpecialEffects(item.effects) }
+    val petOptions = buildPetEquippedOptions(state) { _, item -> hasSpecialEffects(item.effects) }
+    val equipOptions = playerOptions + petOptions
+    val optionGroups = buildEquippedOptionGroups(
+        state,
+        playerOptions,
+        petOptions,
+        playerEmptyText = "暂无人物已穿戴的特效装备",
+        petEmptyText = "暂无宠物已穿戴的特效装备"
+    )
     val inventoryOptions = buildEffectSecondaryOptions(state, mainSelection)
     val effectConfig = state?.effect_reset_config
     var showConfirm by remember { mutableStateOf(false) }
@@ -4295,12 +4384,7 @@ private fun EffectDialog(vm: GameViewModel, onDismiss: () -> Unit) {
             )
         }
 
-        Text("主件(已穿戴)")
-        if (equipOptions.isEmpty()) {
-            Text("暂无已穿戴装备", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        } else {
-            OptionGrid(options = equipOptions, selected = mainSelection, onSelect = { mainSelection = it })
-        }
+        ParallelEquippedOptionGroups(optionGroups, selected = mainSelection, onSelect = { mainSelection = it })
         Spacer(modifier = Modifier.height(8.dp))
         Text("副件(背包匹配)")
         if (mainSelection.isBlank()) {
@@ -5634,25 +5718,49 @@ private fun buildInventoryOptions(state: GameState?): List<Pair<String, String>>
     }
 }
 
-  private fun buildEquippedOptions(state: GameState?): List<Pair<String, String>> {
-      val list = state?.equipment.orEmpty()
-      return list.mapNotNull { eq ->
-          val item = eq.item ?: return@mapNotNull null
-          val label = "${equipSlotLabel(eq.slot)}: ${item.name}"
-          "equip:${eq.slot}" to label
-      }
-  }
+private fun petEquippedSelectionKey(petId: String, slot: String?): String {
+    return "petequip:$petId:${slot?.trim().orEmpty()}"
+}
 
-private fun buildUltimateGrowthEquippedOptions(state: GameState?): List<Pair<String, String>> {
-    val list = state?.equipment.orEmpty()
-    return list.mapNotNull { eq ->
+private fun buildPlayerEquippedOptions(
+    state: GameState?,
+    filter: (EquipmentInfo, ItemInfo) -> Boolean = { _, _ -> true },
+    labelBuilder: (EquipmentInfo, ItemInfo) -> String = { eq, item -> "${equipSlotLabel(eq.slot)}: ${item.name}" }
+): List<Pair<String, String>> {
+    return state?.equipment.orEmpty().mapNotNull { eq ->
         val item = eq.item ?: return@mapNotNull null
-        if (normalizeRarityKey(item.rarity) != "ultimate") return@mapNotNull null
-        val growthLevel = (eq.growth_level.takeIf { it > 0 } ?: item.growth_level).coerceAtLeast(0)
-        val failStack = (eq.growth_fail_stack.takeIf { it > 0 } ?: item.growth_fail_stack).coerceAtLeast(0)
-        val label = "${equipSlotLabel(eq.slot)}: ${item.name} (Lv$growthLevel 保底$failStack)"
-        "equip:${eq.slot}" to label
+        if (!filter(eq, item)) return@mapNotNull null
+        "equip:${eq.slot}" to labelBuilder(eq, item)
     }
+}
+
+private fun buildPetEquippedOptions(
+    state: GameState?,
+    filter: (PetInfo, PetEquippedItem) -> Boolean = { _, _ -> true },
+    labelBuilder: (PetInfo, PetEquippedItem) -> String = { pet, item -> "${petEquipSlotLabelLocal(item.slot)}: ${item.name} (${pet.name})" }
+): List<Pair<String, String>> {
+    val pets = state?.pet?.pets.orEmpty()
+    return pets.flatMap { pet ->
+        pet.equippedItems.mapNotNull { item ->
+            val slot = item.slot?.trim().orEmpty()
+            if (slot.isBlank()) return@mapNotNull null
+            if (!filter(pet, item)) return@mapNotNull null
+            petEquippedSelectionKey(pet.id, slot) to labelBuilder(pet, item)
+        }
+    }
+}
+
+private fun buildEquippedOptionGroups(
+    state: GameState?,
+    playerOptions: List<Pair<String, String>>,
+    petOptions: List<Pair<String, String>>,
+    playerEmptyText: String = "暂无人物已穿戴装备",
+    petEmptyText: String = "暂无宠物已穿戴装备"
+): List<EquippedOptionGroup> {
+    return listOf(
+        EquippedOptionGroup("人物穿戴装备", playerOptions, playerEmptyText),
+        EquippedOptionGroup("宠物穿戴装备", petOptions, petEmptyText)
+    )
 }
 
   private fun equipSlotLabel(slot: String): String = when (slot) {
@@ -5664,6 +5772,20 @@ private fun buildUltimateGrowthEquippedOptions(state: GameState?): List<Pair<Str
     "head" -> "头盔"
       else -> slot
   }
+
+private fun petEquipSlotLabelLocal(slot: String?): String = when (slot) {
+    "weapon" -> "武器"
+    "chest" -> "衣服"
+    "head" -> "头盔"
+    "waist" -> "腰带"
+    "feet" -> "鞋子"
+    "neck" -> "项链"
+    "ring_left" -> "左戒指"
+    "ring_right" -> "右戒指"
+    "bracelet_left" -> "左手镯"
+    "bracelet_right" -> "右手镯"
+    else -> slot?.ifBlank { "装备" } ?: "装备"
+}
 
   private fun isLegendaryOrAbove(rarity: String?): Boolean {
       return rarityRank(rarity) >= 4
@@ -5713,10 +5835,29 @@ private fun hasSpecialEffects(effects: JsonObject?): Boolean {
 }
 
   private fun buildEffectSecondaryOptions(state: GameState?, mainSelection: String): List<Pair<String, String>> {
-      if (state == null || mainSelection.isBlank() || !mainSelection.startsWith("equip:")) return emptyList()
-      val slot = mainSelection.removePrefix("equip:").trim()
-      val mainEq = state.equipment.firstOrNull { it.slot == slot } ?: return emptyList()
-      if (mainEq.item?.id.isNullOrBlank()) return emptyList()
+      if (state == null || mainSelection.isBlank()) return emptyList()
+      val mainExists = when {
+          mainSelection.startsWith("equip:") -> {
+              val slot = mainSelection.removePrefix("equip:").trim()
+              state.equipment.firstOrNull { it.slot == slot }?.item?.id?.isNotBlank() == true
+          }
+          mainSelection.startsWith("petequip:") -> {
+              val body = mainSelection.removePrefix("petequip:")
+              val split = body.indexOf(':')
+              if (split <= 0) false else {
+                  val petId = body.substring(0, split).trim()
+                  val slot = body.substring(split + 1).trim()
+                  state.pet?.pets.orEmpty()
+                      .firstOrNull { it.id == petId }
+                      ?.equippedItems
+                      ?.firstOrNull { it.slot == slot }
+                      ?.id
+                      ?.isNotBlank() == true
+              }
+          }
+          else -> false
+      }
+      if (!mainExists) return emptyList()
       return state.items.orEmpty()
           .filter { item ->
               val isEquip = !item.slot.isNullOrBlank() || item.type == "weapon" || item.type == "armor" || item.type == "accessory"
@@ -5732,10 +5873,27 @@ private fun hasSpecialEffects(effects: JsonObject?): Boolean {
   }
 
   private fun buildForgeSecondaryOptions(state: GameState?, mainSelection: String): List<Pair<String, String>> {
-      if (state == null || mainSelection.isBlank() || !mainSelection.startsWith("equip:")) return emptyList()
-      val slot = mainSelection.removePrefix("equip:").trim()
-      val mainEq = state.equipment.firstOrNull { it.slot == slot } ?: return emptyList()
-      val mainRarity = mainEq.item?.rarity ?: return emptyList()
+      if (state == null || mainSelection.isBlank()) return emptyList()
+      val mainRarity = when {
+          mainSelection.startsWith("equip:") -> {
+              val slot = mainSelection.removePrefix("equip:").trim()
+              state.equipment.firstOrNull { it.slot == slot }?.item?.rarity
+          }
+          mainSelection.startsWith("petequip:") -> {
+              val body = mainSelection.removePrefix("petequip:")
+              val split = body.indexOf(':')
+              if (split <= 0) null else {
+                  val petId = body.substring(0, split).trim()
+                  val slot = body.substring(split + 1).trim()
+                  state.pet?.pets.orEmpty()
+                      .firstOrNull { it.id == petId }
+                      ?.equippedItems
+                      ?.firstOrNull { it.slot == slot }
+                      ?.rarity
+              }
+          }
+          else -> null
+      } ?: return emptyList()
       val mainRarityRank = rarityRank(mainRarity)
       if (mainRarityRank < 4) return emptyList()
       return state.items.orEmpty()
@@ -5759,6 +5917,18 @@ private fun resolveRefineLevel(state: GameState?, selection: String): Int? {
         val eq = state.equipment.firstOrNull { it.slot == slot }
         return eq?.refine_level ?: 0
     }
+    if (selection.startsWith("petequip:")) {
+        val body = selection.removePrefix("petequip:")
+        val split = body.indexOf(':')
+        if (split <= 0) return 0
+        val petId = body.substring(0, split).trim()
+        val slot = body.substring(split + 1).trim()
+        return state.pet?.pets.orEmpty()
+            .firstOrNull { it.id == petId }
+            ?.equippedItems
+            ?.firstOrNull { it.slot == slot }
+            ?.refine_level ?: 0
+    }
     val key = selection.trim()
     val item = state.items.firstOrNull { it.key == key || it.id == key }
     return item?.refine_level ?: 0
@@ -5766,22 +5936,50 @@ private fun resolveRefineLevel(state: GameState?, selection: String): Int? {
 
 private fun resolveGrowthLevel(state: GameState?, selection: String): Int? {
     if (selection.isBlank() || state == null) return null
-    if (!selection.startsWith("equip:")) return 0
-    val slot = selection.removePrefix("equip:").trim()
-    val eq = state.equipment.firstOrNull { it.slot == slot } ?: return 0
-    val fromEq = eq.growth_level
-    if (fromEq > 0) return fromEq
-    return eq.item?.growth_level ?: 0
+    if (selection.startsWith("equip:")) {
+        val slot = selection.removePrefix("equip:").trim()
+        val eq = state.equipment.firstOrNull { it.slot == slot } ?: return 0
+        val fromEq = eq.growth_level
+        if (fromEq > 0) return fromEq
+        return eq.item?.growth_level ?: 0
+    }
+    if (selection.startsWith("petequip:")) {
+        val body = selection.removePrefix("petequip:")
+        val split = body.indexOf(':')
+        if (split <= 0) return 0
+        val petId = body.substring(0, split).trim()
+        val slot = body.substring(split + 1).trim()
+        val eq = state.pet?.pets.orEmpty()
+            .firstOrNull { it.id == petId }
+            ?.equippedItems
+            ?.firstOrNull { it.slot == slot } ?: return 0
+        return eq.growth_level
+    }
+    return 0
 }
 
 private fun resolveGrowthFailStack(state: GameState?, selection: String): Int? {
     if (selection.isBlank() || state == null) return null
-    if (!selection.startsWith("equip:")) return 0
-    val slot = selection.removePrefix("equip:").trim()
-    val eq = state.equipment.firstOrNull { it.slot == slot } ?: return 0
-    val fromEq = eq.growth_fail_stack
-    if (fromEq > 0) return fromEq
-    return eq.item?.growth_fail_stack ?: 0
+    if (selection.startsWith("equip:")) {
+        val slot = selection.removePrefix("equip:").trim()
+        val eq = state.equipment.firstOrNull { it.slot == slot } ?: return 0
+        val fromEq = eq.growth_fail_stack
+        if (fromEq > 0) return fromEq
+        return eq.item?.growth_fail_stack ?: 0
+    }
+    if (selection.startsWith("petequip:")) {
+        val body = selection.removePrefix("petequip:")
+        val split = body.indexOf(':')
+        if (split <= 0) return 0
+        val petId = body.substring(0, split).trim()
+        val slot = body.substring(split + 1).trim()
+        val eq = state.pet?.pets.orEmpty()
+            .firstOrNull { it.id == petId }
+            ?.equippedItems
+            ?.firstOrNull { it.slot == slot } ?: return 0
+        return eq.growth_fail_stack
+    }
+    return 0
 }
 
 private fun calcRefineSuccessRate(currentLevel: Int, config: RefineConfig): Double {

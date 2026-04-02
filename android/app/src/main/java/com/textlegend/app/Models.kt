@@ -767,7 +767,9 @@ data class PetEquippedItem(
     val effects: JsonObject? = null,
     val durability: Int? = null,
     val max_durability: Int? = null,
-    val base_roll_pct: Int? = null
+    val base_roll_pct: Int? = null,
+    val growth_level: Int = 0,
+    val growth_fail_stack: Int = 0
 )
 
 @Serializable
