@@ -9252,12 +9252,13 @@ function renderState(state) {
         : info.name;
     }
     if (ui.cultivationUpgrade) {
-      const cultivationLevel = Math.floor(Number(state.stats?.cultivation_level ?? -1));
       const isMaxCultivation = Boolean(state.stats?.cultivation_is_max);
-      const canUpgrade = (state.player?.level || 0) > 200 && cultivationLevel >= 0 && !isMaxCultivation;
+      const canUpgrade = (state.player?.level || 0) > 200 && !isMaxCultivation;
       ui.cultivationUpgrade.classList.toggle('hidden', !canUpgrade);
       if (canUpgrade) {
         ui.cultivationUpgrade.title = `消耗 200 级，当前等级 ${state.player?.level || 0}`;
+      } else {
+        ui.cultivationUpgrade.title = '';
       }
     }
     if (ui.hpValue) ui.hpValue.textContent = `${Math.round(state.stats.hp)}/${Math.round(state.stats.max_hp)}`;
