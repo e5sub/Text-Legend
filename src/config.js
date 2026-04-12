@@ -23,6 +23,7 @@ const config = {
   },
   sessionTtlMin: Number(process.env.SESSION_TTL_MIN || 120),
   consignmentHistoryRetentionDays: Math.max(1, Number(process.env.CONSIGNMENT_HISTORY_RETENTION_DAYS || 90)),
+  publicBaseUrl: String(process.env.PUBLIC_BASE_URL || process.env.APP_BASE_URL || '').trim(),
   adminPath: process.env.ADMIN_PATH || 'admin',
   adminBootstrapSecret: process.env.ADMIN_BOOTSTRAP_SECRET || '',
   adminBootstrapUser: process.env.ADMIN_BOOTSTRAP_USER || ''

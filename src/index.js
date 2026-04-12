@@ -987,6 +987,7 @@ function grantFirstRechargeWelfareToPlayer(player, config = null) {
 }
 
 const app = express();
+app.set('trust proxy', true);
 const server = http.createServer(app);
 const io = new Server(server, {
   pingInterval: 25000,
@@ -1000,11 +1001,23 @@ const io = new Server(server, {
 });
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const publicDir = path.join(__dirname, '..', 'public');
+const publicIndexPath = path.join(publicDir, 'index.html');
 const ADMIN_BASE = (() => {
   const raw = String(config.adminPath || 'admin').trim();
   const cleaned = raw.replace(/^\/+|\/+$/g, '');
   return cleaned ? `/${cleaned}` : '/admin';
 })();
+const PUBLIC_BASE_URL = String(config.publicBaseUrl || '').replace(/\/+$/g, '');
+
+function getPublicBaseUrl(req) {
+  if (PUBLIC_BASE_URL) return PUBLIC_BASE_URL;
+  const forwardedProto = String(req.get('x-forwarded-proto') || '').split(',')[0].trim();
+  const forwardedHost = String(req.get('x-forwarded-host') || '').split(',')[0].trim();
+  const protocol = forwardedProto || req.protocol;
+  const host = forwardedHost || req.get('host');
+  return `${protocol}://${host}`;
+}
 
 if (ADMIN_BASE !== '/admin') {
   app.use((req, res, next) => {
@@ -1016,9 +1029,12 @@ if (ADMIN_BASE !== '/admin') {
   });
 }
 app.use(express.json({ limit: '100mb' }));
-app.use(express.static(path.join(__dirname, '..', 'public')));
+app.use(express.static(publicDir));
 app.use(ADMIN_BASE, express.static(path.join(__dirname, '..', 'public', 'admin')));
 app.use('/img', express.static(path.join(__dirname, '..', 'img')));
+app.get(['/reset-password', '/reset-password/'], (req, res) => {
+  res.sendFile(publicIndexPath);
+});
 if (ADMIN_BASE !== '/admin') {
   app.use((req, res, next) => {
     if (req.url.startsWith(`${ADMIN_BASE}/`)) {
@@ -1290,9 +1306,7 @@ app.post('/api/password-reset/request', async (req, res) => {
   const resetToken = await createPasswordResetToken(user.id);
   
   // 构建重置URL
-  const protocol = req.protocol;
-  const host = req.get('host');
-  const resetUrl = `${protocol}://${host}/reset-password?token=${resetToken}`;
+  const resetUrl = `${getPublicBaseUrl(req)}/reset-password?token=${encodeURIComponent(resetToken)}`;
   
   try {
     await sendPasswordResetEmail(user.email, resetUrl);

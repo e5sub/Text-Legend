@@ -90,6 +90,7 @@ node src/index.js
 ### 服务与后台
 
 - `PORT`：服务端口（默认 `3000`）
+- `PUBLIC_BASE_URL`：站点对外访问地址，例如 `https://example.com`，用于邮件中的找回密码链接
 - `ADMIN_PATH`：后台路径（默认 `admin`）
 - `ADMIN_BOOTSTRAP_SECRET`：初始化 GM 密钥
 - `ADMIN_BOOTSTRAP_USER`：首次自动提升为 GM 的账号名
