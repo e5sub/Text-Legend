@@ -989,6 +989,17 @@ function grantFirstRechargeWelfareToPlayer(player, config = null) {
 const app = express();
 app.set('trust proxy', true);
 const server = http.createServer(app);
+server.on('error', (err) => {
+  console.error('[server] error:', err);
+});
+server.on('clientError', (err, socket) => {
+  console.warn('[server] clientError:', err?.message || err);
+  try {
+    socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
+  } catch {
+    // ignore socket close failures
+  }
+});
 const io = new Server(server, {
   pingInterval: 25000,
   pingTimeout: 90000,
@@ -1009,6 +1020,8 @@ const ADMIN_BASE = (() => {
   return cleaned ? `/${cleaned}` : '/admin';
 })();
 const PUBLIC_BASE_URL = String(config.publicBaseUrl || '').replace(/\/+$/g, '');
+const REQUEST_LOG_ALL = Boolean(config.requestLogAll);
+const REQUEST_LOG_SLOW_MS = Math.max(0, Number(config.requestLogSlowMs || 1500));
 
 function getPublicBaseUrl(req) {
   if (PUBLIC_BASE_URL) return PUBLIC_BASE_URL;
@@ -1017,6 +1030,16 @@ function getPublicBaseUrl(req) {
   const protocol = forwardedProto || req.protocol;
   const host = forwardedHost || req.get('host');
   return `${protocol}://${host}`;
+}
+
+function shouldLogRequest(req, statusCode, durationMs) {
+  const pathValue = String(req.path || req.url || '');
+  if (pathValue.startsWith('/socket.io/')) return false;
+  if (REQUEST_LOG_ALL) return true;
+  if (statusCode >= 500) return true;
+  if (durationMs >= REQUEST_LOG_SLOW_MS) return true;
+  if (pathValue.startsWith('/api/')) return true;
+  return false;
 }
 
 if (ADMIN_BASE !== '/admin') {
@@ -1029,9 +1052,41 @@ if (ADMIN_BASE !== '/admin') {
   });
 }
 app.use(express.json({ limit: '100mb' }));
+app.use((req, res, next) => {
+  const startedAt = Date.now();
+  const requestId = crypto.randomUUID().slice(0, 8);
+  req.requestId = requestId;
+  res.setHeader('X-Request-Id', requestId);
+  res.on('finish', () => {
+    const durationMs = Date.now() - startedAt;
+    if (!shouldLogRequest(req, res.statusCode, durationMs)) return;
+    const forwardedFor = String(req.get('x-forwarded-for') || '').split(',')[0].trim();
+    const remoteIp = forwardedFor || req.socket?.remoteAddress || '-';
+    console.log(
+      `[req] id=${requestId} ip=${remoteIp} ${req.method} ${req.originalUrl || req.url} `
+      + `status=${res.statusCode} dur=${durationMs}ms`
+    );
+  });
+  next();
+});
 app.use(express.static(publicDir));
 app.use(ADMIN_BASE, express.static(path.join(__dirname, '..', 'public', 'admin')));
 app.use('/img', express.static(path.join(__dirname, '..', 'img')));
+app.get('/api/healthz', (req, res) => {
+  res.json({
+    ok: true,
+    uptimeSec: Math.floor(process.uptime()),
+    pid: process.pid,
+    timestamp: Date.now()
+  });
+});
+app.get('/api/readyz', (req, res) => {
+  res.json({
+    ok: true,
+    listening: server.listening,
+    shuttingDown
+  });
+});
 app.get(['/reset-password', '/reset-password/'], (req, res) => {
   res.sendFile(publicIndexPath);
 });
