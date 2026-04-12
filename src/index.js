@@ -8693,10 +8693,6 @@ async function flushPendingPlayerSaves() {
   if (pendingPlayerSaves.size > 0) {
     schedulePendingPlayerSaveFlush(nextDelayMs || PLAYER_SAVE_DEBOUNCE_MS);
   }
-  const elapsed = Date.now() - t0;
-  if (elapsed > 50) {
-    console.log(`[perf] flushPendingPlayerSaves ${elapsed}ms writes=${writes} dirtyWrites=${dirtyWrites}`);
-  }
 }
 
 async function runMobRespawnCleanupSweep(options = {}) {
@@ -15739,26 +15735,6 @@ async function buildState(player, options = {}) {
 
   tMarks.p4_extra = Date.now() - t4Start;
 
-  const elapsed = Date.now() - t0;
-  if (elapsed > 50) {
-    console.log(
-      `[perf] buildState ${elapsed}ms ` +
-      `p1_base=${tMarks.p1_base}ms ` +
-      `p2_room=${tMarks.p2_room}ms ` +
-      `p3_bag=${tMarks.p3_bag}ms ` +
-      `p4_extra=${tMarks.p4_extra}ms ` +
-      `| extra_party=${t4Marks.party ?? 0}ms ` +
-      `extra_activity=${t4Marks.activity ?? 0}ms ` +
-      `extra_zhuxian=${t4Marks.zhuxian ?? 0}ms ` +
-      `extra_treasure=${t4Marks.treasure ?? 0}ms ` +
-      `extra_vip=${t4Marks.vip ?? 0}ms ` +
-      `extra_settings=${t4Marks.settings ?? 0}ms ` +
-      `extra_guild=${t4Marks.guild ?? 0}ms ` +
-      `extra_bonus=${t4Marks.bonus ?? 0}ms ` +
-      `${player?.name || 'unknown'}`
-    );
-  }
-
   return {
     player: {
       name: player.name,
@@ -16101,10 +16077,6 @@ async function sendState(player) {
     }
   }
   CURRENT_PHASE = 'state_emit';
-  const elapsed = Date.now() - t0;
-  if (elapsed > 50) {
-    console.log(`[perf] sendState ${elapsed}ms build=${tBuildElapsed}ms hash=${tHashElapsed}ms ${player?.name || 'unknown'}`);
-  }
 }
 
 function buildRoomStatePayload(zoneId, roomId, realmId = 1) {
@@ -20644,17 +20616,7 @@ function shouldProcessManagedPlayerThisTick(player, shardIndex, shardCount = COM
 let CURRENT_PHASE = 'idle';
 
 async function combatTick() {
-  const tickStart = Date.now();
   CURRENT_PHASE = 'combatTick_start';
-  
-  const perfLog = (label, startTime, extra = {}) => {
-    const elapsed = Date.now() - startTime;
-    if (elapsed > 50) {
-      console.log(`[perf] ${label} ${elapsed}ms`, extra.phase ? `[phase:${extra.phase}]` : '', extra.managed ? `[managed:${extra.managed}]` : '');
-    }
-  };
-  
-
 
   const markStateDirty = (player) => {
     if (!player) return;
@@ -20680,15 +20642,11 @@ async function combatTick() {
   // 特殊BOSS人数缩放改为低频执行，避免每秒全图扫描
   if (tickNow - combatLastBossScaleAt >= bossScaleIntervalMs) {
     CURRENT_PHASE = 'boss_scale';
-    const t0 = Date.now();
     updateSpecialBossStatsBasedOnPlayers();
-    perfLog('updateSpecialBossStatsBasedOnPlayers', t0);
     combatLastBossScaleAt = tickNow;
   }
 
   CURRENT_PHASE = 'player_loop';
-  const managedTickStats = { total: 0, count: 0 };
-  const normalTickStats = { total: 0, count: 0 };
   
   for (const player of online) {
     const now = Date.now();
@@ -20696,7 +20654,6 @@ async function combatTick() {
     if (isManagedPlayer && !shouldProcessManagedPlayerThisTick(player, managedShardIndex, managedShardCount)) {
       continue;
     }
-    const tickPlayerStart = Date.now();
     if (!player?.socket && player?.flags?.offlineManagedPending) {
       const startAt = Number(player.flags.offlineManagedStartAt || 0);
       if (!isSvipActive(player)) {
@@ -20788,9 +20745,7 @@ async function combatTick() {
       }
 
     if (player.flags?.autoFullEnabled) {
-      const tAutoFull0 = Date.now();
       const bossMove = tryAutoFullBossMove(player);
-      perfLog('tryAutoFullBossMove', tAutoFull0);
       if (bossMove === 'moved') {
         player.combat = null;
         continue;
@@ -20819,9 +20774,7 @@ async function combatTick() {
         }
       }
       if (!player.combat && player.flags?.autoFullEnabled) {
-        const tAutoFull1 = Date.now();
         const autoFullResult = tryAutoFullAction(player, roomMobs);
-        perfLog('tryAutoFullAction', tAutoFull1);
         if (autoFullResult === 'moved') {
           continue;
         }
@@ -22060,37 +22013,12 @@ async function combatTick() {
     if (now - lastSave >= 30000) {
       // 检查是否有脏标记需要保存
       if (hasPlayerDirty(player)) {
-        const tSave = Date.now();
-        savePlayer(player, { dirtyFirst: true }).then(() => {
-          const elapsed = Date.now() - tSave;
-          if (elapsed > 50) {
-            console.log(`[perf] savePlayer ${elapsed}ms ${player?.name || 'unknown'}`);
-          }
-        }).catch(() => {});
+        savePlayer(player, { dirtyFirst: true }).catch(() => {});
       }
       getRealmState(player.realmId || 1).lastSaveTime.set(player.name, now);
     }
-    
-    // 统计玩家处理耗时
-    const playerElapsed = Date.now() - tickPlayerStart;
-    if (isManagedPlayer) {
-      managedTickStats.total += playerElapsed;
-      managedTickStats.count++;
-    } else {
-      normalTickStats.total += playerElapsed;
-      normalTickStats.count++;
-    }
   }
 
-  // 打印托管玩家统计
-  if (managedTickStats.count > 0 && managedTickStats.total > 50) {
-    console.log(`[perf][managed] combatTick_player ${managedTickStats.total}ms count=${managedTickStats.count} avg=${Math.round(managedTickStats.total/managedTickStats.count)}ms`);
-  }
-  
-  const tickTotalElapsed = Date.now() - tickStart;
-  if (tickTotalElapsed > 100) {
-    console.log(`[perf][lag] combatTick_total ${tickTotalElapsed}ms [phase:${CURRENT_PHASE}] managed=${managedTickStats.count} normal=${normalTickStats.count}`);
-  }
   CURRENT_PHASE = 'idle';
 }
 
@@ -22098,30 +22026,17 @@ setInterval(combatTick, 1000);
 
 // 高频状态刷新tick，每3秒检查一次需要刷新的玩家状态
 async function stateFlushTick() {
-  const tickStart = Date.now();
   const online = listOnlinePlayers();
-  let sendCount = 0;
-  let skipManaged = 0;
-  let skipNoRefresh = 0;
   
   for (const player of online) {
     // 托管玩家没有真实socket，不做UI state生成
     if (isManagedHostedPlayer(player)) {
-      skipManaged++;
       continue;
     }
     // 只处理有socket连接且标记了强制刷新的玩家
     if (player.socket && player.forceStateRefresh) {
       await sendState(player).catch(() => {});
-      sendCount++;
-    } else {
-      skipNoRefresh++;
     }
-  }
-  
-  const elapsed = Date.now() - tickStart;
-  if (elapsed > 50) {
-    console.log(`[perf] stateFlushTick ${elapsed}ms send=${sendCount} skipManaged=${skipManaged} skipNoRefresh=${skipNoRefresh}`);
   }
 }
 
