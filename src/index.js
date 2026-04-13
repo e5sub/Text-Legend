@@ -1082,11 +1082,42 @@ app.get('/api/healthz', (req, res) => {
   });
 });
 app.get('/api/readyz', (req, res) => {
-  res.json({
-    ok: true,
+  const now = Date.now();
+  const snapshotAgeMs = runtimeHealthSnapshot.at > 0 ? Math.max(0, now - runtimeHealthSnapshot.at) : null;
+  const ready = Boolean(
+    server.listening
+    && !shuttingDown
+    && (snapshotAgeMs == null || snapshotAgeMs < READYZ_HEALTH_STALE_MS)
+    && runtimeHealthSnapshot.loopLagMs < READYZ_LOOP_LAG_FAIL_MS
+    && runtimeHealthSnapshot.heapRatio < READYZ_HEAP_FAIL_RATIO
+  );
+  const degraded = Boolean(
+    !shuttingDown
+    && (
+      runtimeHealthSnapshot.guardMode === 'aggressive'
+      || runtimeHealthSnapshot.loopLagMs >= RUNTIME_LAG_CRITICAL_MS
+      || runtimeHealthSnapshot.heapRatio >= RUNTIME_HEAP_CRITICAL_RATIO
+    )
+  );
+  const payload = {
+    ok: ready,
     listening: server.listening,
-    shuttingDown
-  });
+    shuttingDown,
+    degraded,
+    uptimeSec: Math.floor(process.uptime()),
+    pid: process.pid,
+    runtime: {
+      lastHealthAt: runtimeHealthSnapshot.at || null,
+      snapshotAgeMs,
+      loopLagMs: runtimeHealthSnapshot.loopLagMs,
+      heapRatio: Number(runtimeHealthSnapshot.heapRatio.toFixed(4)),
+      guardMode: runtimeHealthSnapshot.guardMode,
+      pendingPlayerSaves: runtimeHealthSnapshot.pendingPlayerSaves,
+      mobStateCacheSize: runtimeHealthSnapshot.mobStateCacheSize,
+      onlineCount: runtimeHealthSnapshot.onlineCount
+    }
+  };
+  res.status(ready ? 200 : 503).json(payload);
 });
 app.get(['/reset-password', '/reset-password/'], (req, res) => {
   res.sendFile(publicIndexPath);
@@ -6203,6 +6234,9 @@ const RUNTIME_HEAP_WARN_RATIO = 0.80;
 const RUNTIME_HEAP_CRITICAL_RATIO = 0.88;
 const RUNTIME_LAG_WARN_MS = 100;
 const RUNTIME_LAG_CRITICAL_MS = 200;
+const READYZ_HEALTH_STALE_MS = Math.max(3 * RUNTIME_HEALTH_INTERVAL_MS, 180 * 1000);
+const READYZ_LOOP_LAG_FAIL_MS = 1500;
+const READYZ_HEAP_FAIL_RATIO = 0.98;
 const RUNTIME_MOB_ROWS_SAMPLE_INTERVAL_MS = 5 * 60 * 1000;
 const RUNTIME_GUARD_HOLD_NORMAL_MS = 2 * 60 * 1000;
 const RUNTIME_GUARD_HOLD_AGGRESSIVE_MS = 4 * 60 * 1000;
@@ -6211,6 +6245,15 @@ let runtimeHealthExpectedAt = 0;
 let runtimeCacheCleanupLastAt = 0;
 let runtimeGuardMode = 'off';
 let runtimeGuardUntilAt = 0;
+let runtimeHealthSnapshot = {
+  at: 0,
+  loopLagMs: 0,
+  heapRatio: 0,
+  guardMode: 'off',
+  pendingPlayerSaves: 0,
+  mobStateCacheSize: 0,
+  onlineCount: 0
+};
 
 function activateRuntimeGuard(mode, holdMs, now = Date.now()) {
   const normalizedMode = mode === 'aggressive' ? 'aggressive' : 'normal';
@@ -7013,6 +7056,32 @@ function getPlayerHealthBreakdown() {
   return summary;
 }
 
+function captureRuntimeHealthSnapshot(details = {}) {
+  runtimeHealthSnapshot = {
+    at: Date.now(),
+    loopLagMs: Math.max(0, Number(details.loopLagMs || 0)),
+    heapRatio: Math.max(0, Number(details.heapRatio || 0)),
+    guardMode: details.guardMode === 'aggressive' ? 'aggressive' : (details.guardMode === 'normal' ? 'normal' : 'off'),
+    pendingPlayerSaves: Math.max(0, Math.floor(Number(details.pendingPlayerSaves || 0))),
+    mobStateCacheSize: Math.max(0, Math.floor(Number(details.mobStateCacheSize || 0))),
+    onlineCount: Math.max(0, Math.floor(Number(details.onlineCount || 0)))
+  };
+}
+
+function logProcessFault(kind, err) {
+  const memory = process.memoryUsage();
+  const rssMb = (memory.rss / (1024 * 1024)).toFixed(1);
+  const heapUsedMb = (memory.heapUsed / (1024 * 1024)).toFixed(1);
+  const heapTotalMb = (memory.heapTotal / (1024 * 1024)).toFixed(1);
+  console.error(
+    `[process] ${kind} uptime=${Math.floor(process.uptime())}s rss=${rssMb}MB heap=${heapUsedMb}/${heapTotalMb}MB `
+    + `shuttingDown=${shuttingDown} listening=${server.listening}`
+  );
+  if (err !== undefined) {
+    console.error(err);
+  }
+}
+
 async function logRuntimeHealth(expectedAt = Date.now()) {
   const now = Date.now();
   const loopLagMs = Math.max(0, now - expectedAt);
@@ -7062,6 +7131,14 @@ async function logRuntimeHealth(expectedAt = Date.now()) {
   const playerHealth = getPlayerHealthBreakdown();
   const realmStateCount = realmStates.size;
   const guardMode = getRuntimeGuardMode(now);
+  captureRuntimeHealthSnapshot({
+    loopLagMs,
+    heapRatio,
+    guardMode,
+    pendingPlayerSaves: pendingPlayerSaves.size,
+    mobStateCacheSize: mobStatePersistCache.size,
+    onlineCount
+  });
   const guardTag = guardMode === 'off'
     ? ''
     : ` guard=${guardMode === 'aggressive' ? 'aggr' : 'normal'}`;
@@ -22818,12 +22895,12 @@ process.on('SIGTERM', () => {
 });
 
 process.on('uncaughtException', (err) => {
-  console.error(err);
+  logProcessFault('uncaughtException', err);
   void gracefulShutdown('uncaughtException', 1);
 });
 
 process.on('unhandledRejection', (err) => {
-  console.error(err);
+  logProcessFault('unhandledRejection', err);
   if (EXIT_ON_UNHANDLED_REJECTION) {
     void gracefulShutdown('unhandledRejection', 1);
     return;
@@ -22832,7 +22909,7 @@ process.on('unhandledRejection', (err) => {
 });
 
 start().catch((err) => {
-  console.error(err);
+  logProcessFault('start-failed', err);
   void gracefulShutdown('start-failed', 1);
 });
 
