@@ -5100,7 +5100,7 @@ async function cleanupSameDayBackups(dateStr, currentFileName) {
 
 function scheduleAutoBackup() {
   // 每天凌晨0点执行
-  cron.schedule('0 0 * * *', async () => {
+  scheduleSafeCron('0 0 * * *', 'auto-backup', async () => {
     await cleanupConsignmentHistory();
     await performAutoBackup();
   });
@@ -5313,7 +5313,7 @@ async function refreshDailyLucky() {
 
 // 设置排行榜自动更新
 function setupRankUpdate() {
-  cron.schedule('0 0 * * *', async () => {
+  scheduleSafeCron('0 0 * * *', 'rank-title-refresh', async () => {
     await updateRankTitles();
   });
   console.log('[Rank] 已设置每日0点自动更新排行榜称号');
@@ -5325,7 +5325,7 @@ function setupRankUpdate() {
 }
 
 function setupDailyLucky() {
-  cron.schedule('0 0 * * *', async () => {
+  scheduleSafeCron('0 0 * * *', 'daily-lucky-refresh', async () => {
     await refreshDailyLucky();
   });
   console.log('[DailyLucky] 已设置每日0点抽取幸运玩家');
@@ -7133,6 +7133,41 @@ function startRuntimeHealthLogging() {
       console.warn('[health] logger failed:', err?.message || err);
     });
   }, RUNTIME_HEALTH_INTERVAL_MS);
+}
+
+function logAsyncTaskError(taskName, err) {
+  console.warn(`[timer] ${taskName} failed:`, err);
+}
+
+function guardAsyncTask(taskName, task) {
+  return async (...args) => {
+    try {
+      await task(...args);
+    } catch (err) {
+      logAsyncTaskError(taskName, err);
+    }
+  };
+}
+
+function setSafeInterval(taskName, task, intervalMs) {
+  const guardedTask = guardAsyncTask(taskName, task);
+  return setInterval(() => {
+    void guardedTask();
+  }, intervalMs);
+}
+
+function setSafeTimeout(taskName, task, delayMs) {
+  const guardedTask = guardAsyncTask(taskName, task);
+  return setTimeout(() => {
+    void guardedTask();
+  }, delayMs);
+}
+
+function scheduleSafeCron(expression, taskName, task, options) {
+  const guardedTask = guardAsyncTask(taskName, task);
+  return cron.schedule(expression, () => {
+    void guardedTask();
+  }, options);
 }
 
 function cultivationRewardMultiplier(player) {
@@ -22041,7 +22076,7 @@ async function stateFlushTick() {
   }
 }
 
-setInterval(stateFlushTick, 3000);
+setSafeInterval('state-flush', stateFlushTick, 3000);
 
 // 托管玩家定时重存，避免背包等重字段遗漏导致回档
 function managedForceSaveTick() {
@@ -22203,12 +22238,8 @@ async function start() {
   });
 
   // 活动排行榜结算（每日/每周）自动发奖（邮件）
-  setInterval(async () => {
-    try {
-      await runActivityRankingSettlements();
-    } catch (err) {
-      console.warn('[activity-ranking] settlement tick failed:', err?.message || err);
-    }
+  setSafeInterval('activity-ranking-settlement', async () => {
+    await runActivityRankingSettlements();
   }, 60 * 1000);
   await runActivityRankingSettlements();
 
@@ -22298,7 +22329,7 @@ async function start() {
     }
   }
   respawnPersistTimer = true; // 标记为运行中
-  void startRespawnPersistLoop();
+  void guardAsyncTask('respawn-persist-loop', startRespawnPersistLoop)();
 
   // 立即刷新函数（用于服务器关闭时）
   async function immediateFlushRespawnQueue() {
@@ -22412,70 +22443,62 @@ async function start() {
   }
   
   // 定期保存怪物血量状态（每60秒）
-  setInterval(async () => {
-    try {
-      // 检查缓存怪物血量开关
-      const cacheEnabled = await getCacheMonsterHealthEnabled();
-      if (!cacheEnabled) {
-        // 如果关闭缓存，清理已有的缓存记录
-        if (mobStatePersistCache.size > 0) {
-          for (const key of mobStatePersistCache.keys()) {
-            mobStatePersistCache.delete(key);
-          }
-        }
-        return;
-      }
-      const realmIds = getRealmIds();
-      const activeMobKeys = new Set();
-      for (const realmId of realmIds) {
-        const aliveMobs = getAllAliveMobs(realmId);
-        for (const mob of aliveMobs) {
-          const cacheKey = getMobPersistCacheKey(mob);
-          activeMobKeys.add(cacheKey);
-          if (!shouldPersistMobState(mob)) {
-            if (mobStatePersistCache.has(cacheKey)) {
-              await clearMobRespawn(realmId, mob.zoneId, mob.roomId, mob.slotIndex);
-              mobStatePersistCache.delete(cacheKey);
-            }
-            continue;
-          }
-          const nextSnapshot = getMobPersistSnapshot(mob);
-          if (mobStatePersistCache.get(cacheKey) === nextSnapshot) continue;
-          await saveMobState(
-            realmId,
-            mob.zoneId,
-            mob.roomId,
-            mob.slotIndex,
-            mob.templateId,
-            mob.currentHp,
-            mob.status
-          );
-          mobStatePersistCache.set(cacheKey, nextSnapshot);
-        }
-      }
-      for (const key of mobStatePersistCache.keys()) {
-        if (!activeMobKeys.has(key)) {
+  setSafeInterval('mob-state-persist', async () => {
+    // 检查缓存怪物血量开关
+    const cacheEnabled = await getCacheMonsterHealthEnabled();
+    if (!cacheEnabled) {
+      // 如果关闭缓存，清理已有的缓存记录
+      if (mobStatePersistCache.size > 0) {
+        for (const key of mobStatePersistCache.keys()) {
           mobStatePersistCache.delete(key);
         }
       }
-    } catch (err) {
-      console.warn('Failed to save mob states:', err);
+      return;
+    }
+    const realmIds = getRealmIds();
+    const activeMobKeys = new Set();
+    for (const realmId of realmIds) {
+      const aliveMobs = getAllAliveMobs(realmId);
+      for (const mob of aliveMobs) {
+        const cacheKey = getMobPersistCacheKey(mob);
+        activeMobKeys.add(cacheKey);
+        if (!shouldPersistMobState(mob)) {
+          if (mobStatePersistCache.has(cacheKey)) {
+            await clearMobRespawn(realmId, mob.zoneId, mob.roomId, mob.slotIndex);
+            mobStatePersistCache.delete(cacheKey);
+          }
+          continue;
+        }
+        const nextSnapshot = getMobPersistSnapshot(mob);
+        if (mobStatePersistCache.get(cacheKey) === nextSnapshot) continue;
+        await saveMobState(
+          realmId,
+          mob.zoneId,
+          mob.roomId,
+          mob.slotIndex,
+          mob.templateId,
+          mob.currentHp,
+          mob.status
+        );
+        mobStatePersistCache.set(cacheKey, nextSnapshot);
+      }
+    }
+    for (const key of mobStatePersistCache.keys()) {
+      if (!activeMobKeys.has(key)) {
+        mobStatePersistCache.delete(key);
+      }
     }
   }, 60000);
 
   // 定期分批清理 mob_respawns 中已过期且无血量快照的无效记录，避免大事务长时间锁表
-  setInterval(async () => {
-    try {
-      const deleted = await runMobRespawnCleanupSweep({
-        batchSize: MOB_RESPAWN_CLEANUP_BATCH_SIZE,
-        maxRounds: MOB_RESPAWN_CLEANUP_MAX_ROUNDS,
-        delayMs: 20
-      });
-      if (Number(deleted || 0) > 0) {
-        console.log(`[mob_respawns] cleaned expired rows: ${deleted}`);
-      }
-    } catch (err) {
-      console.warn('Failed to cleanup expired mob respawns:', err);
+  setSafeInterval('mob-respawn-cleanup', async () => {
+    const deleted = await runMobRespawnCleanupSweep({
+      batchSize: MOB_RESPAWN_CLEANUP_BATCH_SIZE,
+      maxRounds: MOB_RESPAWN_CLEANUP_MAX_ROUNDS,
+      delayMs: 20
+    });
+    if (Number(deleted || 0) > 0) {
+      console.log(`[mob_respawns] cleaned expired rows: ${deleted}`);
     }
   }, MOB_RESPAWN_CLEANUP_INTERVAL_MS);
   try {
@@ -22490,21 +22513,15 @@ async function start() {
   } catch (err) {
     console.warn('Failed to cleanup expired mob respawns on startup:', err);
   }
-  setTimeout(() => {
-    runStartupMobRespawnCleanup().catch((err) => {
-      console.warn('Failed to run startup background mob respawn cleanup:', err);
-    });
+  setSafeTimeout('startup-mob-respawn-cleanup', async () => {
+    await runStartupMobRespawnCleanup();
   }, 5000);
 
   // 寄售到期自动下架（每10分钟）
-  setInterval(async () => {
-    try {
-      const realmIds = getRealmIds();
-      for (const realmId of realmIds) {
-        await cleanupExpiredConsignments(realmId);
-      }
-    } catch (err) {
-      console.warn('Failed to cleanup expired consignments:', err);
+  setSafeInterval('expired-consignment-cleanup', async () => {
+    const realmIds = getRealmIds();
+    for (const realmId of realmIds) {
+      await cleanupExpiredConsignments(realmId);
     }
   }, CONSIGN_CLEANUP_INTERVAL_MS);
 
