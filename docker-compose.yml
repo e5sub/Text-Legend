@@ -19,7 +19,13 @@ services:
       - ADMIN_BOOTSTRAP_USER=admin_account
       - ADMIN_PATH=admin
       - UPDATE_RESTART_CMD=kill -TERM 1
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
     volumes:
       - ./data:/app/data
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    healthcheck:
+      test: ["CMD", "node", "-e", "const http=require('node:http');const req=http.get('http://127.0.0.1:3000/api/readyz',res=>process.exit(res.statusCode===200?0:1));req.on('error',()=>process.exit(1));req.setTimeout(3000,()=>{req.destroy();process.exit(1);});"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s

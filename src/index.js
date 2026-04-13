@@ -55,6 +55,7 @@ const BUILD_VERSION_INFO = (() => {
 let updateInProgress = false;
 const UPDATE_GIT_CMD = String(process.env.UPDATE_GIT_CMD || 'git pull --ff-only').trim();
 const UPDATE_RESTART_CMD = String(process.env.UPDATE_RESTART_CMD || '').trim();
+const EXIT_ON_UNHANDLED_REJECTION = process.env.EXIT_ON_UNHANDLED_REJECTION === 'true';
 
 import config from './config.js';
 import { validatePlayerName } from './game/validator.js';
@@ -22203,7 +22204,11 @@ async function start() {
 
   // 活动排行榜结算（每日/每周）自动发奖（邮件）
   setInterval(async () => {
-    await runActivityRankingSettlements();
+    try {
+      await runActivityRankingSettlements();
+    } catch (err) {
+      console.warn('[activity-ranking] settlement tick failed:', err?.message || err);
+    }
   }, 60 * 1000);
   await runActivityRankingSettlements();
 
@@ -22802,7 +22807,11 @@ process.on('uncaughtException', (err) => {
 
 process.on('unhandledRejection', (err) => {
   console.error(err);
-  void gracefulShutdown('unhandledRejection', 1);
+  if (EXIT_ON_UNHANDLED_REJECTION) {
+    void gracefulShutdown('unhandledRejection', 1);
+    return;
+  }
+  console.warn('[process] unhandledRejection captured; process kept alive. Set EXIT_ON_UNHANDLED_REJECTION=true to restore fail-fast behavior.');
 });
 
 start().catch((err) => {
