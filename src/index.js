@@ -17341,13 +17341,6 @@ io.on('connection', (socket) => {
       socket.disconnect();
       return;
     }
-    const existingDeviceSocketId = deviceOnlineMap.get(deviceKey);
-    if (existingDeviceSocketId && existingDeviceSocketId !== socket.id) {
-      socket.emit('auth_error', { error: '该设备已在线。' });
-      socket.disconnect();
-      return;
-    }
-
     let realmInfo = await resolveRealmId(rawRealmId);
     // 如果请求的区服不存在（合区后可能发生），使用第一个可用的区服
     if (realmInfo.error) {
