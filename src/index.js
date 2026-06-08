@@ -1072,13 +1072,29 @@ app.use((req, res, next) => {
   next();
 });
 
-function normalizePemKey(rawKey, type) {
+function normalizePemKey(rawKey, type, labelOverride = '') {
   const value = String(rawKey || '').replace(/\\n/g, '\n').trim();
   if (!value) return '';
   if (value.includes('-----BEGIN')) return value;
-  const label = type === 'public' ? 'PUBLIC KEY' : 'PRIVATE KEY';
+  const label = labelOverride || (type === 'public' ? 'PUBLIC KEY' : 'PRIVATE KEY');
   const body = value.replace(/\s+/g, '').match(/.{1,64}/g)?.join('\n') || value;
   return `-----BEGIN ${label}-----\n${body}\n-----END ${label}-----`;
+}
+
+function getPemKeyCandidates(rawKey, type) {
+  const value = String(rawKey || '').replace(/\\n/g, '\n').trim();
+  if (!value) return [];
+  if (value.includes('-----BEGIN')) return [value];
+  if (type === 'private') {
+    return [
+      normalizePemKey(value, 'private', 'PRIVATE KEY'),
+      normalizePemKey(value, 'private', 'RSA PRIVATE KEY')
+    ];
+  }
+  return [
+    normalizePemKey(value, 'public', 'PUBLIC KEY'),
+    normalizePemKey(value, 'public', 'RSA PUBLIC KEY')
+  ];
 }
 
 function normalizeAlipaySettings(source = {}) {
@@ -1154,10 +1170,20 @@ function buildAlipaySignContent(params) {
 
 function signAlipayParams(params) {
   const alipay = getAlipaySettingsSnapshot();
-  const signer = crypto.createSign('RSA-SHA256');
-  signer.update(buildAlipaySignContent(params), 'utf8');
-  signer.end();
-  return signer.sign(normalizePemKey(alipay.privateKey, 'private'), 'base64');
+  const signContent = buildAlipaySignContent(params);
+  const candidates = getPemKeyCandidates(alipay.privateKey, 'private');
+  let lastError = null;
+  for (const key of candidates) {
+    try {
+      const signer = crypto.createSign('RSA-SHA256');
+      signer.update(signContent, 'utf8');
+      signer.end();
+      return signer.sign(key, 'base64');
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError || new Error('支付宝应用私钥无效。');
 }
 
 function verifyAlipayNotify(params) {
@@ -1165,10 +1191,19 @@ function verifyAlipayNotify(params) {
   const sign = String(params?.sign || '');
   if (!sign) return false;
   const alipay = getAlipaySettingsSnapshot();
-  const verifier = crypto.createVerify('RSA-SHA256');
-  verifier.update(buildAlipaySignContent(params), 'utf8');
-  verifier.end();
-  return verifier.verify(normalizePemKey(alipay.publicKey, 'public'), sign, 'base64');
+  const signContent = buildAlipaySignContent(params);
+  const candidates = getPemKeyCandidates(alipay.publicKey, 'public');
+  for (const key of candidates) {
+    try {
+      const verifier = crypto.createVerify('RSA-SHA256');
+      verifier.update(signContent, 'utf8');
+      verifier.end();
+      if (verifier.verify(key, sign, 'base64')) return true;
+    } catch {
+      // try the next key wrapper
+    }
+  }
+  return false;
 }
 
 function getAlipayNotifyUrl(req) {
@@ -1209,6 +1244,14 @@ async function callAlipay(method, bizContent, req = null) {
   const rootKey = `${method.replace(/\./g, '_')}_response`;
   const root = data[rootKey];
   if (!root || root.code !== '10000') {
+    console.warn('[alipay] gateway error:', {
+      method,
+      code: root?.code,
+      msg: root?.msg,
+      subCode: root?.sub_code,
+      subMsg: root?.sub_msg,
+      outTradeNo: bizContent?.out_trade_no || ''
+    });
     throw new Error(root?.sub_msg || root?.msg || '支付宝接口返回失败。');
   }
   return root;
