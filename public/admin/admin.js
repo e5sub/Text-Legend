@@ -1058,34 +1058,12 @@ function renderHarvestRewardRows() {
     tr.dataset.index = String(index);
     tr.dataset.rewardId = String(item?._id || '');
     tr.innerHTML = `
-      <td colspan="6" class="harvest-reward-cell">
-        <div class="harvest-reward-grid">
-          <div class="harvest-reward-field harvest-reward-field-threshold">
-            <span class="harvest-reward-label">分钟</span>
-            <input class="harvest-threshold-input" data-k="threshold" type="number" min="1" value="${Math.max(1, Number(item.threshold || 1))}">
-          </div>
-          <div class="harvest-reward-field harvest-reward-field-title">
-            <span class="harvest-reward-label">标题</span>
-            <input class="harvest-title-input" data-k="title" type="text" value="${String(item.title || '丰收挂机奖励')}">
-          </div>
-          <div class="harvest-reward-field harvest-reward-field-gold">
-            <span class="harvest-reward-label">金币</span>
-            <input class="harvest-gold-input" data-k="gold" type="number" min="0" value="${Math.max(0, Number(item.gold || 0))}">
-          </div>
-          <div class="harvest-reward-field harvest-reward-field-item">
-            <span class="harvest-reward-label">附加物品</span>
-            ${buildHarvestRewardItemSelectHtml(item.itemId)}
-          </div>
-          <div class="harvest-reward-field harvest-reward-field-qty">
-            <span class="harvest-reward-label">数量</span>
-            <input class="harvest-qty-input" data-k="itemQty" type="number" min="1" value="${Math.max(1, Number(item.itemQty || 1))}">
-          </div>
-          <div class="harvest-reward-field harvest-reward-field-action">
-            <span class="harvest-reward-label">操作</span>
-            <button type="button" class="btn-small" data-act="del">删除</button>
-          </div>
-        </div>
-      </td>
+      <td><input class="harvest-threshold-input" data-k="threshold" type="number" min="1" value="${Math.max(1, Number(item.threshold || 1))}"></td>
+      <td><input class="harvest-title-input" data-k="title" type="text" value="${String(item.title || '丰收挂机奖励')}"></td>
+      <td><input class="harvest-gold-input" data-k="gold" type="number" min="0" value="${Math.max(0, Number(item.gold || 0))}"></td>
+      <td>${buildHarvestRewardItemSelectHtml(item.itemId)}</td>
+      <td><input class="harvest-qty-input" data-k="itemQty" type="number" min="1" value="${Math.max(1, Number(item.itemQty || 1))}"></td>
+      <td><button type="button" class="btn-small" data-act="del">删除</button></td>
     `;
     harvestRewardList.appendChild(tr);
   });

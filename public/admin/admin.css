@@ -2221,3 +2221,73 @@ body.theme-dark input[type='number']::-webkit-outer-spin-button {
   opacity: 1;
   filter: invert(0.82) sepia(0.18) saturate(1.4) hue-rotate(350deg) brightness(0.92);
 }
+
+.harvest-season-reward-container {
+  overflow-x: auto;
+}
+
+.compact-config-table-container table.harvest-season-reward-table {
+  min-width: 760px;
+  table-layout: fixed;
+}
+
+.compact-config-table-container table.harvest-season-reward-table th,
+.compact-config-table-container table.harvest-season-reward-table td {
+  padding: 6px 8px;
+  vertical-align: middle;
+}
+
+.compact-config-table-container table.harvest-season-reward-table th:nth-child(1),
+.compact-config-table-container table.harvest-season-reward-table td:nth-child(1) {
+  width: 88px;
+}
+
+.compact-config-table-container table.harvest-season-reward-table th:nth-child(2),
+.compact-config-table-container table.harvest-season-reward-table td:nth-child(2) {
+  width: 24%;
+}
+
+.compact-config-table-container table.harvest-season-reward-table th:nth-child(3),
+.compact-config-table-container table.harvest-season-reward-table td:nth-child(3) {
+  width: 120px;
+}
+
+.compact-config-table-container table.harvest-season-reward-table th:nth-child(4),
+.compact-config-table-container table.harvest-season-reward-table td:nth-child(4) {
+  width: 34%;
+}
+
+.compact-config-table-container table.harvest-season-reward-table th:nth-child(5),
+.compact-config-table-container table.harvest-season-reward-table td:nth-child(5) {
+  width: 76px;
+}
+
+.compact-config-table-container table.harvest-season-reward-table th:nth-child(6),
+.compact-config-table-container table.harvest-season-reward-table td:nth-child(6) {
+  width: 72px;
+  text-align: center;
+}
+
+.compact-config-table-container table.harvest-season-reward-table input,
+.compact-config-table-container table.harvest-season-reward-table select {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 5px 8px;
+}
+
+.compact-config-table-container table.harvest-season-reward-table .harvest-threshold-input,
+.compact-config-table-container table.harvest-season-reward-table .harvest-qty-input {
+  text-align: center;
+}
+
+.compact-config-table-container table.harvest-season-reward-table .btn-small {
+  margin: 0;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .compact-config-table-container table.harvest-season-reward-table {
+    min-width: 680px;
+  }
+}
