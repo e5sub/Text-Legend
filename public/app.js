@@ -10467,13 +10467,24 @@ closeRegisterOverlay();
   }
 })();
 
+async function readApiJson(res) {
+  const text = await res.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    const fallback = res.ok ? '服务器返回了无效数据。' : '请求失败，服务器返回了无效数据。';
+    throw new Error(fallback);
+  }
+}
+
 async function apiPost(path, body) {
   const res = await fetch(buildApiUrl(path), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
-  const data = await res.json();
+  const data = await readApiJson(res);
   if (!res.ok) throw new Error(data.error || '请求失败');
   return data;
 }
@@ -10484,7 +10495,7 @@ async function apiGet(path, withAuth = false) {
     headers.Authorization = `Bearer ${token}`;
   }
   const res = await fetch(buildApiUrl(path), { headers });
-  const data = await res.json();
+  const data = await readApiJson(res);
   if (!res.ok) throw new Error(data.error || '请求失败');
   return data;
 }

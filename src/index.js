@@ -1497,34 +1497,42 @@ app.get('/api/invite/stats', async (req, res) => {
 });
 
 app.post('/api/register', async (req, res) => {
-  const { username, password, email, captchaToken, captchaCode, inviteCode } = req.body || {};
-  if (!username || !password) return res.status(400).json({ error: '账号或密码缺失。' });
-  if (!verifyCaptcha(captchaToken, captchaCode)) {
-    return res.status(400).json({ error: '验证码错误。' });
+  try {
+    const { username, password, email, captchaToken, captchaCode, inviteCode } = req.body || {};
+    if (!username || !password) return res.status(400).json({ error: '账号或密码缺失。' });
+    if (!verifyCaptcha(captchaToken, captchaCode)) {
+      return res.status(400).json({ error: '验证码错误。' });
+    }
+    const trimmedUsername = String(username || '').trim();
+    const exists = await getUserByName(trimmedUsername);
+    if (exists) return res.status(400).json({ error: '账号已存在。' });
+    const normalizedEmail = String(email || '').trim();
+    if (normalizedEmail) {
+      const emailExists = await knex('users').where({ email: normalizedEmail }).first();
+      if (emailExists) return res.status(400).json({ error: '该邮箱已被使用。' });
+    }
+    let inviterUser = null;
+    const parsedInviteUserId = parseInviteCode(inviteCode);
+    if (String(inviteCode || '').trim()) {
+      if (!parsedInviteUserId) return res.status(400).json({ error: '邀请码无效。' });
+      inviterUser = await knex('users').where({ id: parsedInviteUserId }).first();
+      if (!inviterUser) return res.status(400).json({ error: '邀请人不存在。' });
+    }
+    const newUserId = await createUser(trimmedUsername, password, normalizedEmail || null);
+    if (inviterUser && inviterUser.id !== newUserId) {
+      await bindInviteForUser(newUserId, inviterUser.id, {
+        inviterUsername: inviterUser.username || '',
+        inviteCode: String(inviteCode || '').trim(),
+        source: 'register'
+      });
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(`[register] requestId=${req.requestId || '-'} failed:`, err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: '注册失败，请稍后重试或联系管理员。' });
+    }
   }
-  const trimmedUsername = String(username || '').trim();
-  const exists = await getUserByName(trimmedUsername);
-  if (exists) return res.status(400).json({ error: '账号已存在。' });
-  if (email && email.trim()) {
-    const emailExists = await knex('users').where({ email: email.trim() }).first();
-    if (emailExists) return res.status(400).json({ error: '该邮箱已被使用。' });
-  }
-  let inviterUser = null;
-  const parsedInviteUserId = parseInviteCode(inviteCode);
-  if (String(inviteCode || '').trim()) {
-    if (!parsedInviteUserId) return res.status(400).json({ error: '邀请码无效。' });
-    inviterUser = await knex('users').where({ id: parsedInviteUserId }).first();
-    if (!inviterUser) return res.status(400).json({ error: '邀请人不存在。' });
-  }
-  const newUserId = await createUser(trimmedUsername, password, email || null);
-  if (inviterUser && inviterUser.id !== newUserId) {
-    await bindInviteForUser(newUserId, inviterUser.id, {
-      inviterUsername: inviterUser.username || '',
-      inviteCode: String(inviteCode || '').trim(),
-      source: 'register'
-    });
-  }
-  res.json({ ok: true });
 });
 
 app.post('/api/login', async (req, res) => {
