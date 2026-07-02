@@ -2398,6 +2398,122 @@ app.get('/admin/users', async (req, res) => {
   res.json({ ok: true, ...result });
 });
 
+function parseJsonSafeForAdmin(value, fallback) {
+  if (value == null) return fallback;
+  if (typeof value !== 'string') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
+
+function summarizeAdminItemEntry(entry) {
+  if (!entry || !entry.id) return null;
+  const tpl = ITEM_TEMPLATES[entry.id] || {};
+  return {
+    id: String(entry.id),
+    name: tpl.name || String(entry.id),
+    qty: Math.max(1, Math.floor(Number(entry.qty || 1))),
+    type: tpl.type || '',
+    slot: tpl.slot || '',
+    rarity: tpl.rarity || '',
+    refineLevel: Math.max(0, Math.floor(Number(entry.refine_level || 0))),
+    growthLevel: Math.max(0, Math.floor(Number(entry.growth_level || 0))),
+    baseRollPct: entry.base_roll_pct == null ? null : Math.max(0, Math.floor(Number(entry.base_roll_pct || 0))),
+    effects: entry.effects && typeof entry.effects === 'object' ? entry.effects : null,
+    durability: entry.durability == null ? null : Math.floor(Number(entry.durability || 0)),
+    maxDurability: entry.max_durability == null ? null : Math.floor(Number(entry.max_durability || 0))
+  };
+}
+
+function summarizeAdminEquipment(equipment) {
+  const source = equipment && typeof equipment === 'object' ? equipment : {};
+  const labels = {
+    weapon: '武器',
+    chest: '衣服',
+    head: '头盔',
+    waist: '腰带',
+    feet: '靴子',
+    neck: '项链',
+    ring_left: '戒指(左)',
+    ring_right: '戒指(右)',
+    bracelet_left: '手镯(左)',
+    bracelet_right: '手镯(右)'
+  };
+  return Object.entries(labels).map(([slot, label]) => ({
+    slot,
+    label,
+    item: summarizeAdminItemEntry(source[slot])
+  }));
+}
+
+function summarizeAdminPets(flags) {
+  const petState = flags?.pet && typeof flags.pet === 'object' ? flags.pet : {};
+  const pets = Array.isArray(petState.pets) ? petState.pets : [];
+  return pets.slice(0, 20).map((pet) => ({
+    id: String(pet?.id || ''),
+    name: String(pet?.name || pet?.role || pet?.species || '宠物'),
+    rarity: String(pet?.rarity || ''),
+    level: Math.max(1, Math.floor(Number(pet?.level || pet?.summonLevel || 1))),
+    active: String(pet?.id || '') === String(petState.activePetId || ''),
+    hp: Math.max(0, Math.floor(Number(pet?.hp || 0))),
+    maxHp: Math.max(0, Math.floor(Number(pet?.max_hp || pet?.maxHp || 0))),
+    skills: Array.isArray(pet?.skills) ? pet.skills.map((id) => String(id)).filter(Boolean) : [],
+    equipment: summarizeAdminEquipment(pet?.equipment || {}).filter((entry) => entry.item)
+  }));
+}
+
+app.get('/admin/users/:id/detail', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const userId = Math.max(0, Math.floor(Number(req.params.id || 0)));
+  if (!userId) return res.status(400).json({ error: '无效用户ID。' });
+  const user = await knex('users').where({ id: userId }).select('id', 'username', 'email', 'is_admin', 'created_at').first();
+  if (!user) return res.status(404).json({ error: '用户不存在。' });
+  const rows = await knex('characters')
+    .where({ user_id: userId })
+    .select('id', 'realm_id', 'name', 'class', 'level', 'exp', 'gold', 'yuanbao', 'hp', 'mp', 'max_hp', 'max_mp', 'position_json', 'inventory_json', 'warehouse_json', 'equipment_json', 'skills_json', 'flags_json', 'updated_at')
+    .orderBy('realm_id', 'asc')
+    .orderBy('level', 'desc');
+  const characters = rows.map((row) => {
+    const flags = parseJsonSafeForAdmin(row.flags_json, {});
+    const inventory = parseJsonSafeForAdmin(row.inventory_json, []);
+    const warehouse = parseJsonSafeForAdmin(row.warehouse_json, []);
+    const equipment = parseJsonSafeForAdmin(row.equipment_json, {});
+    const skills = parseJsonSafeForAdmin(row.skills_json, []);
+    return {
+      id: row.id,
+      realmId: row.realm_id || 1,
+      name: row.name,
+      classId: row.class,
+      level: row.level,
+      exp: row.exp,
+      gold: row.gold,
+      yuanbao: row.yuanbao || 0,
+      hp: row.hp,
+      mp: row.mp,
+      maxHp: row.max_hp,
+      maxMp: row.max_mp,
+      position: parseJsonSafeForAdmin(row.position_json, {}),
+      cultivationLevel: Math.floor(Number(flags?.cultivationLevel ?? -1)),
+      vip: {
+        vipExpiresAt: Number(flags?.vipExpiresAt || 0),
+        svipExpiresAt: Number(flags?.svipExpiresAt || 0),
+        offlineManaged: Boolean(flags?.offlineManagedAuto || flags?.offlineManagedPending),
+        autoFullEnabled: Boolean(flags?.autoFullEnabled)
+      },
+      equipment: summarizeAdminEquipment(equipment),
+      inventory: Array.isArray(inventory) ? inventory.map(summarizeAdminItemEntry).filter(Boolean).slice(0, 120) : [],
+      warehouse: Array.isArray(warehouse) ? warehouse.map(summarizeAdminItemEntry).filter(Boolean).slice(0, 120) : [],
+      pets: summarizeAdminPets(flags),
+      skills: Array.isArray(skills) ? skills.slice(0, 80) : [],
+      updatedAt: row.updated_at
+    };
+  });
+  res.json({ ok: true, user, characters });
+});
+
 app.post('/admin/users/delete', async (req, res) => {
   const admin = await requireAdmin(req);
   if (!admin) return res.status(401).json({ error: '无管理员权限。' });

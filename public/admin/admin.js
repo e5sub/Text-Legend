@@ -1852,6 +1852,144 @@ let currentSponsorsPage = 1;
 let totalSponsorsPages = 1;
 let allSponsorsData = [];
 
+function ensureUserDetailModal() {
+  let modal = document.getElementById('user-detail-modal');
+  if (modal) return modal;
+  modal = document.createElement('div');
+  modal.id = 'user-detail-modal';
+  modal.className = 'admin-detail-modal hidden';
+  modal.innerHTML = `
+    <div class="admin-detail-backdrop" data-close="1"></div>
+    <div class="admin-detail-panel">
+      <div class="admin-detail-head">
+        <h2 id="user-detail-title">玩家详情</h2>
+        <button id="user-detail-close" class="btn-small">关闭</button>
+      </div>
+      <div id="user-detail-body" class="admin-detail-body">加载中...</div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  modal.querySelector('#user-detail-close')?.addEventListener('click', () => modal.classList.add('hidden'));
+  modal.querySelector('.admin-detail-backdrop')?.addEventListener('click', () => modal.classList.add('hidden'));
+  return modal;
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function formatAdminNumber(value) {
+  const n = Number(value || 0);
+  return Number.isFinite(n) ? n.toLocaleString('zh-CN') : '0';
+}
+
+function formatAdminDate(value) {
+  if (!value) return '-';
+  const t = new Date(value).getTime();
+  if (!Number.isFinite(t)) return '-';
+  return new Date(t).toLocaleString('zh-CN');
+}
+
+function formatAdminVipTime(ts) {
+  const n = Number(ts || 0);
+  if (!n) return '无';
+  return new Date(n).toLocaleString('zh-CN');
+}
+
+function formatAdminItem(item) {
+  if (!item) return '<span class="muted">空</span>';
+  const meta = [];
+  if (item.qty > 1) meta.push(`x${item.qty}`);
+  if (item.refineLevel) meta.push(`锻造+${item.refineLevel}`);
+  if (item.growthLevel) meta.push(`成长+${item.growthLevel}`);
+  if (item.baseRollPct) meta.push(`${item.baseRollPct}%`);
+  if (item.effects && Object.keys(item.effects).length) meta.push(`特效${Object.keys(item.effects).length}`);
+  return `<span class="admin-item-name">${escapeHtml(item.name || item.id)}</span>${meta.length ? `<span class="admin-item-meta">${escapeHtml(meta.join(' / '))}</span>` : ''}`;
+}
+
+function renderAdminItemList(items, emptyText = '暂无') {
+  const list = Array.isArray(items) ? items : [];
+  if (!list.length) return `<div class="muted">${emptyText}</div>`;
+  return `<div class="admin-item-list">${list.map((item) => `<div class="admin-item-chip">${formatAdminItem(item)}</div>`).join('')}</div>`;
+}
+
+function renderUserDetail(data) {
+  const user = data.user || {};
+  const chars = Array.isArray(data.characters) ? data.characters : [];
+  const charHtml = chars.length ? chars.map((ch) => {
+    const equipment = Array.isArray(ch.equipment) ? ch.equipment : [];
+    const pets = Array.isArray(ch.pets) ? ch.pets : [];
+    return `
+      <section class="admin-character-card">
+        <div class="admin-character-title">
+          <strong>${escapeHtml(ch.name)}</strong>
+          <span>区服 ${escapeHtml(ch.realmId)} / ${escapeHtml(ch.classId)} / Lv${escapeHtml(ch.level)}</span>
+        </div>
+        <div class="admin-stat-grid">
+          <div>生命：${formatAdminNumber(ch.hp)} / ${formatAdminNumber(ch.maxHp)}</div>
+          <div>魔法：${formatAdminNumber(ch.mp)} / ${formatAdminNumber(ch.maxMp)}</div>
+          <div>经验：${formatAdminNumber(ch.exp)}</div>
+          <div>金币：${formatAdminNumber(ch.gold)}</div>
+          <div>元宝：${formatAdminNumber(ch.yuanbao)}</div>
+          <div>修真：${Number(ch.cultivationLevel) >= 0 ? ch.cultivationLevel : '未修真'}</div>
+          <div>位置：${escapeHtml(ch.position?.zone || '-')}:${escapeHtml(ch.position?.room || '-')}</div>
+          <div>智能挂机：${ch.vip?.autoFullEnabled ? '开' : '关'} / 托管：${ch.vip?.offlineManaged ? '是' : '否'}</div>
+          <div>VIP：${escapeHtml(formatAdminVipTime(ch.vip?.vipExpiresAt))}</div>
+          <div>SVIP：${escapeHtml(formatAdminVipTime(ch.vip?.svipExpiresAt))}</div>
+          <div>更新时间：${escapeHtml(formatAdminDate(ch.updatedAt))}</div>
+        </div>
+        <h3>装备</h3>
+        <div class="admin-equipment-grid">
+          ${equipment.map((entry) => `<div><b>${escapeHtml(entry.label)}</b>${formatAdminItem(entry.item)}</div>`).join('')}
+        </div>
+        <h3>宠物</h3>
+        ${pets.length ? pets.map((pet) => `
+          <div class="admin-pet-row">
+            <b>${escapeHtml(pet.name)}${pet.active ? '（出战）' : ''}</b>
+            <span>${escapeHtml(pet.rarity || '-')} Lv${escapeHtml(pet.level)} 生命 ${formatAdminNumber(pet.hp)}/${formatAdminNumber(pet.maxHp)}</span>
+            <span>技能：${escapeHtml((pet.skills || []).join('、') || '无')}</span>
+            ${pet.equipment?.length ? `<div class="admin-pet-equips">${pet.equipment.map((eq) => `<span>${escapeHtml(eq.label)}：${formatAdminItem(eq.item)}</span>`).join('')}</div>` : ''}
+          </div>
+        `).join('') : '<div class="muted">暂无宠物</div>'}
+        <h3>背包</h3>
+        ${renderAdminItemList(ch.inventory, '背包为空')}
+        <h3>仓库</h3>
+        ${renderAdminItemList(ch.warehouse, '仓库为空')}
+      </section>
+    `;
+  }).join('') : '<div class="muted">该账号暂无角色。</div>';
+  return `
+    <div class="admin-user-summary">
+      <div><b>账号：</b>${escapeHtml(user.username)}</div>
+      <div><b>邮箱：</b>${escapeHtml(user.email || '-')}</div>
+      <div><b>GM：</b>${user.is_admin ? '是' : '否'}</div>
+      <div><b>创建：</b>${escapeHtml(formatAdminDate(user.created_at))}</div>
+      <div><b>角色数：</b>${chars.length}</div>
+    </div>
+    ${charHtml}
+  `;
+}
+
+async function showUserDetail(userId, username) {
+  const modal = ensureUserDetailModal();
+  const title = modal.querySelector('#user-detail-title');
+  const body = modal.querySelector('#user-detail-body');
+  if (title) title.textContent = `玩家详情 - ${username}`;
+  if (body) body.innerHTML = '加载中...';
+  modal.classList.remove('hidden');
+  try {
+    const data = await api(`/admin/users/${encodeURIComponent(userId)}/detail`, 'GET');
+    if (body) body.innerHTML = renderUserDetail(data);
+  } catch (err) {
+    if (body) body.innerHTML = `<div class="msg" style="color:#dc3545;">加载失败：${escapeHtml(err.message)}</div>`;
+  }
+}
+
 function showDashboard() {
   loginSection.classList.add('hidden');
   dashboardSection.classList.remove('hidden');
@@ -3110,16 +3248,15 @@ async function refreshUsers(page = 1) {
       
       // 用户名
       const tdName = document.createElement('td');
-      tdName.textContent = u.username;
-      tdName.style.cursor = 'pointer';
-      tdName.title = u.is_admin ? '点击取消 GM' : '点击设为 GM';
-      tdName.addEventListener('click', async () => {
-        const nextAdmin = !u.is_admin;
-        const actionLabel = nextAdmin ? '设为 GM' : '取消 GM';
-        const confirmed = await customConfirm('确认操作', `确认对用户 "${u.username}" 执行 ${actionLabel} 吗？`);
-        if (!confirmed) return;
-        await quickToggleGM(u.username, nextAdmin);
+      const nameBtn = document.createElement('button');
+      nameBtn.type = 'button';
+      nameBtn.className = 'admin-link-button';
+      nameBtn.textContent = u.username;
+      nameBtn.title = '查看玩家信息、装备、宠物';
+      nameBtn.addEventListener('click', () => {
+        showUserDetail(u.id, u.username);
       });
+      tdName.appendChild(nameBtn);
       tr.appendChild(tdName);
       
       // GM权限
