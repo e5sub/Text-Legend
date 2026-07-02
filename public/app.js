@@ -19,6 +19,14 @@ const SERVER_TIME_SNAP_THRESHOLD_MS = 5000;
 const SERVER_TIME_MAX_ADJUST_PER_TICK_MS = 250;
 let vipSelfClaimEnabled = true;
 let svipSettings = { prices: { month: 100, quarter: 260, year: 900, permanent: 3000 } };
+(() => {
+  const host = String(window.location.hostname || '').toLowerCase();
+  const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '::1' || /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+  if (window.location.protocol === 'http:' && !isLocal) {
+    window.location.replace(`https://${window.location.host}${window.location.pathname}${window.location.search}${window.location.hash}`);
+  }
+})();
+
 let registerInviteCode = '';
 try {
   const inviteFromUrl = new URLSearchParams(window.location.search || '').get('invite');
@@ -10572,11 +10580,17 @@ async function readApiJson(res) {
 }
 
 async function apiPost(path, body) {
-  const res = await fetch(buildApiUrl(path), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
+  const url = buildApiUrl(path);
+  let res;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+  } catch (err) {
+    throw new Error(`无法连接服务器，请刷新页面或确认已使用 HTTPS 访问。(${err?.message || 'network error'})`);
+  }
   const data = await readApiJson(res);
   if (!res.ok) throw new Error(data.error || '请求失败');
   return data;
@@ -10587,7 +10601,13 @@ async function apiGet(path, withAuth = false) {
   if (withAuth && token) {
     headers.Authorization = `Bearer ${token}`;
   }
-  const res = await fetch(buildApiUrl(path), { headers });
+  const url = buildApiUrl(path);
+  let res;
+  try {
+    res = await fetch(url, { headers });
+  } catch (err) {
+    throw new Error(`无法连接服务器，请刷新页面或确认已使用 HTTPS 访问。(${err?.message || 'network error'})`);
+  }
   const data = await readApiJson(res);
   if (!res.ok) throw new Error(data.error || '请求失败');
   return data;
