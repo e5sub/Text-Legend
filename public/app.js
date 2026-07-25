@@ -12456,7 +12456,6 @@ if (forgeUi.confirm) {
       text: `forge ${forgeSelection.mainKey} | ${forgeSelection.secondaryKey}`,
       source: 'ui'
     });
-    forgeUi.modal.classList.add('hidden');
   });
 }
 if (refineUi.confirm) {
