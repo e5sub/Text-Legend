@@ -21310,7 +21310,17 @@ function shouldProcessManagedPlayerThisTick(player, shardIndex, shardCount = COM
 
 let CURRENT_PHASE = 'idle';
 
+let combatTickRunning = false;
+let combatTickSkipped = 0;
+
 async function combatTick() {
+  // 重入保护：上一次 tick 尚未结束时跳过本次，避免 setInterval 回调堆积导致 CPU 螺旋上升
+  if (combatTickRunning) {
+    combatTickSkipped += 1;
+    return;
+  }
+  combatTickRunning = true;
+  try {
   CURRENT_PHASE = 'combatTick_start';
 
   const markStateDirty = (player) => {
@@ -22715,6 +22725,9 @@ async function combatTick() {
   }
 
   CURRENT_PHASE = 'idle';
+  } finally {
+    combatTickRunning = false;
+  }
 }
 
 setInterval(combatTick, 1000);
@@ -23371,8 +23384,14 @@ async function start() {
   // 立即刷新一次
   await refreshSettingsSnapshot().catch(() => {});
 
-  // 脏标记强制保存检查循环（每250ms检查一次是否有超过截止时间的脏数据）
+  // 脏标记强制保存检查循环：仅当配置了非零的强制截止时间（PLAYER_SAVE_FORCE_DEADLINE_MS>0）
+  // 时才有意义——它用于兜底超过 deadline 仍没落盘的脏数据。
+  // 当 deadline=0 时，markPlayerDirty 直接走 queuePlayerSave 的常规防抖，本扫描纯属空转开销，
+  // 因此按需启用：间隔随 deadline 自适应，无 deadline 时降为低频探针以兼顾运行期被改大的情况。
   setInterval(() => {
+    const deadlineEnabled = PLAYER_SAVE_FORCE_DEADLINE_MS > 0;
+    // 运行期配置可能被刷新，deadline 被改回 0 时仍保留低频探针，避免再次改大时漏触发
+    if (!deadlineEnabled) return;
     const now = Date.now();
     let forceSaveCount = 0;
     for (const player of listOnlinePlayers()) {
@@ -23392,7 +23411,7 @@ async function start() {
     if (forceSaveCount > 0) {
       schedulePendingPlayerSaveFlush(100); // 尽快保存
     }
-  }, 250);
+  }, 1000);
   
   // 预热 VIP 自助领取缓存（现在通过 settings snapshot）
   console.log(`[Startup] VIP自领将通过全局配置快照缓存`);
