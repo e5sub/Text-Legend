@@ -1447,7 +1447,28 @@ async function resolveRealmId(rawRealmId) {
   return { realmId };
 }
 
-app.get('/api/captcha', (req, res) => {
+function apiRateLimit(maxRequests, windowMs) {
+  const hits = new Map();
+  return (req, res, next) => {
+    const key = req.ip || req.connection?.remoteAddress || 'unknown';
+    const now = Date.now();
+    const entry = hits.get(key);
+    if (!entry || now > entry.resetAt) {
+      hits.set(key, { count: 1, resetAt: now + windowMs });
+      return next();
+    }
+    if (entry.count >= maxRequests) {
+      return res.status(429).json({ error: '请求过于频繁，请稍后再试。' });
+    }
+    entry.count += 1;
+    next();
+  };
+}
+
+const captchaRateLimit = apiRateLimit(20, 60_000);
+const registerRateLimit = apiRateLimit(10, 60_000);
+
+app.get('/api/captcha', captchaRateLimit, (req, res) => {
   cleanupCaptchas();
   const payload = generateCaptcha();
   res.json({ ok: true, token: payload.token, svg: payload.svg });
@@ -1508,7 +1529,7 @@ app.get('/api/invite/stats', async (req, res) => {
   });
 });
 
-app.post('/api/register', async (req, res) => {
+app.post('/api/register', registerRateLimit, async (req, res) => {
   try {
     const { username, password, email, captchaToken, captchaCode, inviteCode } = req.body || {};
     if (!username || !password) return res.status(400).json({ error: '账号或密码缺失。' });
