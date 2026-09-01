@@ -2586,6 +2586,7 @@ app.post('/admin/users/force-offline', async (req, res) => {
     getRealmState(onlinePlayer.realmId || 1).lastSaveTime.delete(onlinePlayer.name);
     onlinePlayerRankTitles.delete(onlinePlayer.name);
     players.delete(socketId);
+    markPlayersByNameIndexDirty();
     kicked += 1;
   }
 
@@ -6706,6 +6707,13 @@ app.post('/api/sponsors/custom-title', async (req, res) => {
 });
 
 const players = new Map();
+// 在线玩家按 "realmId:name" 的懒构建索引，避免每次 playersByName 全量扫描
+const playersByNameIndex = new Map();
+let playersByNameIndexDirty = 0;
+function markPlayersByNameIndexDirty() {
+  playersByNameIndexDirty += 1;
+}
+const EMPTY_PLAYER_ARRAY = [];
 const realmStates = new Map();
 const mobStatePersistCache = new Map();
 let realmCache = [];
@@ -9429,6 +9437,7 @@ async function recoverManagedHostedPlayersOnStartup() {
       }
       compactManagedPlayerState(loaded);
       players.set(makeManagedPlayerKey(loaded), loaded);
+      markPlayersByNameIndexDirty();
       spawnMobs(loaded.position.zone, loaded.position.room, loaded.realmId || 1);
       recovered += 1;
     } catch (err) {
@@ -9556,9 +9565,26 @@ function clearTrade(trade, reason, realmId) {
   }
 }
 
+function rebuildPlayersByNameIndex() {
+  playersByNameIndex.clear();
+  for (const p of players.values()) {
+    if (!p || !p.name) continue;
+    playersByNameIndex.set(`${p.realmId || 1}:${p.name}`, p);
+  }
+  playersByNameIndexDirty = 0;
+}
+
 function playersByName(name, realmId = null) {
+  if (!name) return null;
+  if (playersByNameIndexDirty > 0) {
+    rebuildPlayersByNameIndex();
+  }
+  if (realmId) {
+    return playersByNameIndex.get(`${realmId}:${name}`) || null;
+  }
+  // 未指定区服时退化为全量扫描（保持原有语义：按插入顺序取第一个同名玩家）
   const list = Array.from(players.values());
-  return list.find((p) => p.name === name && (!realmId || p.realmId === realmId));
+  return list.find((p) => p.name === name) || null;
 }
 
 const CHARACTER_MIGRATE_YUANBAO_COST = 10;
@@ -17140,7 +17166,7 @@ function applyDamageToMob(mob, dmg, attackerName, realmId = null) {
     return { damageTaken: dmg, actualDamage: dmg };
   }
 
-function retaliateMobAgainstPlayer(mob, player, online) {
+function retaliateMobAgainstPlayer(mob, player, roomPlayers) {
   if (!mob) return;
   if (isMobInactive(mob)) {
     logInactiveMobAttack(mob, 'retaliate');
@@ -17155,12 +17181,7 @@ function retaliateMobAgainstPlayer(mob, player, online) {
   if (isBossAggro) {
     const targetName = mob.status?.aggroTarget;
     const aggroPlayer = targetName
-      ? online.find(
-          (p) =>
-            p.name === targetName &&
-            p.position.zone === player.position.zone &&
-            p.position.room === player.position.room
-        )
+      ? (Array.isArray(roomPlayers) ? roomPlayers : []).find((p) => p.name === targetName)
       : null;
     if (aggroPlayer) {
       mobTarget = aggroPlayer;
@@ -17214,13 +17235,8 @@ function retaliateMobAgainstPlayer(mob, player, online) {
       }
 
       // 通知房间内所有玩家
-      if (online && online.length > 0) {
-        const roomPlayers = online.filter((p) =>
-          p.position.zone === player.position.zone &&
-          p.position.room === player.position.room &&
-          p.hp > 0
-        );
-        roomPlayers.forEach((roomPlayer) => {
+      if (roomPlayers && roomPlayers.length > 0) {
+        roomPlayers.filter((p) => p.hp > 0).forEach((roomPlayer) => {
           roomPlayer.send(`${mob.name} 触发了无敌效果，10秒内免疫所有伤害、毒、麻痹、降攻击、降防效果！`);
         });
       }
@@ -17286,21 +17302,17 @@ function retaliateMobAgainstPlayer(mob, player, online) {
       isSpecialBoss &&
       isSplashBossTemplate(mobTemplate) &&
       isBossRoom(player.position.zone, player.position.room, player.realmId || 1) &&
-      online &&
-      online.length > 0
+      roomPlayers &&
+      roomPlayers.length > 0
     ) {
       if (!mob.status) mob.status = {};
       if (mob.status.aoeAttacking) return;
       mob.status.aoeAttacking = true;
       try {
         const aoeBase = Math.floor(mob.atk * 0.5);
-        const roomPlayers = online.filter((p) => 
-          p.position.zone === player.position.zone &&
-          p.position.room === player.position.room &&
-          p.hp > 0
-        );
+        const aoeTargets = roomPlayers.filter((p) => p.hp > 0);
 
-        roomPlayers.forEach((aoeTarget) => {
+        aoeTargets.forEach((aoeTarget) => {
           if (mobTarget && mobTarget.userId && aoeTarget.name === mobTarget.name) return;
           const aoeDealt = applyDamageToPlayer(
             aoeTarget,
@@ -17339,21 +17351,17 @@ function retaliateMobAgainstPlayer(mob, player, online) {
     isSpecialBoss &&
     isSplashBossTemplate(mobTemplate) &&
     isBossRoom(player.position.zone, player.position.room, player.realmId || 1) &&
-    online &&
-    online.length > 0
+    roomPlayers &&
+    roomPlayers.length > 0
   ) {
     if (!mob.status) mob.status = {};
     if (mob.status.aoeAttacking) return;
     mob.status.aoeAttacking = true;
     try {
       const aoeBase = Math.floor(mob.atk * 0.5);
-      const roomPlayers = online.filter((p) => 
-        p.position.zone === player.position.zone &&
-        p.position.room === player.position.room &&
-        p.hp > 0
-      );
+      const aoeTargets = roomPlayers.filter((p) => p.hp > 0);
 
-      roomPlayers.forEach((aoeTarget) => {
+      aoeTargets.forEach((aoeTarget) => {
         const aoeDealt = applyDamageToPlayer(
           aoeTarget,
           calcTaoistDamageFromValue(aoeBase, aoeTarget)
@@ -17954,6 +17962,7 @@ io.on('connection', (socket) => {
       getRealmState(onlinePlayer.realmId || 1).lastSaveTime.delete(onlinePlayer.name);
       onlinePlayerRankTitles.delete(onlinePlayer.name);
       players.delete(onlineSocketId);
+      markPlayersByNameIndexDirty();
     }
 
     // 同账号仅允许一个角色在线：允许同角色重登（走下面的顶号逻辑），禁止其他角色并发登录
@@ -17991,6 +18000,7 @@ io.on('connection', (socket) => {
         }));
         await savePlayer(existingPlayer, { immediate: true });
         players.delete(existingSocketId);
+          markPlayersByNameIndexDirty();
           replacedExistingSession = true;
           replacedManagedSession = true;
         } else {
@@ -18002,6 +18012,7 @@ io.on('connection', (socket) => {
       existingPlayer.socket?.disconnect?.();
           // 移除旧的玩家数据
           players.delete(existingSocketId);
+          markPlayersByNameIndexDirty();
           replacedExistingSession = true;
           // 从队伍中移除
           const party = getPartyByMember(name, existingPlayer.realmId || realmInfo.realmId);
@@ -18122,6 +18133,7 @@ io.on('connection', (socket) => {
     ensurePersonalBossPosition(loaded);
 
     players.set(socket.id, loaded);
+    markPlayersByNameIndexDirty();
     loaded.send(`欢迎回来，${loaded.name}。`);
     loaded.send(`金币: ${loaded.gold}`);
     loaded.send(`元宝: ${loaded.yuanbao || 0}`);
@@ -19871,6 +19883,7 @@ io.on('connection', (socket) => {
       }
       if (!shouldKeepManagedAuto && !shouldKeepManagedPending) {
         players.delete(socket.id);
+        markPlayersByNameIndexDirty();
       }
     }
   });
@@ -19952,18 +19965,16 @@ function refreshBuffs(target) {
   });
 }
 
-function applyMoonFairyAura(player, online) {
+function applyMoonFairyAura(player, roomPlayers) {
   const aliveSummons = getAliveSummons(player);
   const moonFairy = aliveSummons.find((summon) => summon.id === 'moon_fairy');
   if (!moonFairy) return;
   const realmId = player.realmId || 1;
   const party = getPartyByMember(player.name, realmId);
+  // roomPlayers 已限定为与 player 同房间的在线玩家，无需再过滤位置
   const members = party
-    ? online.filter(
-        (p) =>
-          party.members.includes(p.name) &&
-          p.position.zone === player.position.zone &&
-          p.position.room === player.position.room
+    ? (Array.isArray(roomPlayers) ? roomPlayers : []).filter((p) =>
+        party.members.includes(p.name)
       )
     : [player];
   const targets = members.slice();
@@ -21343,6 +21354,21 @@ async function combatTick() {
   const online = listOnlinePlayers();
   const roomMobsCache = new Map();
   const regenRooms = new Set();
+  // 每 tick 只构建一次 房间->玩家 索引，避免后续对 online 的多次全量 find/filter（O(N²)）
+  const onlinePlayersByRoom = new Map();
+  for (const idxPlayer of online) {
+    if (!idxPlayer?.position) continue;
+    const idxRealmId = getRoomRealmId(idxPlayer.position.zone, idxPlayer.position.room, idxPlayer.realmId || 1);
+    const idxKey = `${idxRealmId}:${idxPlayer.position.zone}:${idxPlayer.position.room}`;
+    let idxArr = onlinePlayersByRoom.get(idxKey);
+    if (!idxArr) {
+      idxArr = [];
+      onlinePlayersByRoom.set(idxKey, idxArr);
+    }
+    idxArr.push(idxPlayer);
+  }
+  const getRoomPlayers = (roomRealmId, zoneId, roomId) =>
+    onlinePlayersByRoom.get(`${roomRealmId}:${zoneId}:${roomId}`) || EMPTY_PLAYER_ARRAY;
 
   // 特殊BOSS人数缩放改为低频执行，避免每秒全图扫描
   if (tickNow - combatLastBossScaleAt >= bossScaleIntervalMs) {
@@ -21399,7 +21425,7 @@ async function combatTick() {
 
     refreshBuffs(player);
     if (!isManagedPlayer || !player._managedAuraAt || (now - Number(player._managedAuraAt || 0)) >= COMBAT_MANAGED_AURA_INTERVAL_MS) {
-      applyMoonFairyAura(player, online);
+      applyMoonFairyAura(player, getRoomPlayers(getRoomRealmId(player.position.zone, player.position.room, player.realmId || 1), player.position.zone, player.position.room));
       if (isManagedPlayer) player._managedAuraAt = now;
     }
     processPotionRegen(player);
@@ -21467,10 +21493,8 @@ async function combatTick() {
         player.combat = { targetId: aggroMob.id, targetType: 'mob', skillId: null };
       }
       if (!player.combat && CROSS_RANK_EVENT_STATE.active && isCrossRankRoom(player.position.zone, player.position.room)) {
-        const enemy = online.find((p) =>
+        const enemy = getRoomPlayers(roomRealmId, player.position.zone, player.position.room).find((p) =>
           p.name !== player.name &&
-          p.position.zone === player.position.zone &&
-          p.position.room === player.position.room &&
           p.hp > 0 &&
           (p.realmId || 1) !== (player.realmId || 1)
         );
@@ -21516,7 +21540,8 @@ async function combatTick() {
     }
 
       if (player.combat.targetType === 'player') {
-        const target = online.find((p) => p.name === player.combat.targetId);
+        const target = getRoomPlayers(roomRealmId, player.position.zone, player.position.room)
+          .find((p) => p.name === player.combat.targetId);
         if (!target || target.position.zone !== player.position.zone || target.position.room !== player.position.room) {
           player.combat = null;
           player.send('目标已消失。');
@@ -21777,10 +21802,9 @@ async function combatTick() {
       tryTriggerTreasureAutoPassiveOnHit(player, target, { targetType: 'player', baseDamage: dmg });
       if (skill && skill.type === 'dot') {
         if (skill.id === 'poison') {
-          const poisonTargets = online.filter((p) =>
+          const roomPoisonPlayers = getRoomPlayers(roomRealmId, player.position.zone, player.position.room);
+          const poisonTargets = roomPoisonPlayers.filter((p) =>
             p.name !== player.name &&
-            p.position.zone === player.position.zone &&
-            p.position.room === player.position.room &&
             p.hp > 0 &&
             !((inCultivationRoom || inCrossBossRoom || inCrossRankRoom) && (p.realmId || 1) === (player.realmId || 1)) &&
             !(isSabakZone(player.position.zone) && player.guild && p.guild && String(player.guild.id) === String(p.guild.id)) &&
@@ -21807,12 +21831,10 @@ async function combatTick() {
         player.send(`你的毒特效作用于 ${target.name}。`);
       }
       if (skill && skill.id === 'assassinate') {
-        const extraTargets = online.filter(
+        const extraTargets = getRoomPlayers(roomRealmId, player.position.zone, player.position.room).filter(
           (p) =>
             p.name !== player.name &&
             p.name !== target.name &&
-            p.position.zone === player.position.zone &&
-            p.position.room === player.position.room &&
             (!isSabakZone(player.position.zone) ||
               !(player.guild && p.guild && player.guild.id === p.guild.id))
         );
@@ -22078,7 +22100,7 @@ async function combatTick() {
             player.send(`禁疗效果作用于 ${target.name}。`);
           }
           if (target.id !== mob.id) {
-            retaliateMobAgainstPlayer(target, player, online);
+            retaliateMobAgainstPlayer(target, player, getRoomPlayers(roomRealmId, player.position.zone, player.position.room));
           }
         });
         const skillName = skill.id === 'slash' ? '普通攻击' : skill.name;
@@ -22284,7 +22306,7 @@ async function combatTick() {
             player.send(`你对 ${other.name} 造成 ${cleaveDmg} 点伤害。`);
             applyPetLifesteal(player, cleaveResult.damageTaken);
           }
-          retaliateMobAgainstPlayer(other, player, online);
+          retaliateMobAgainstPlayer(other, player, getRoomPlayers(roomRealmId, player.position.zone, player.position.room));
         });
       }
       if (skill && ['attack', 'spell', 'cleave', 'dot', 'aoe'].includes(skill.type)) {
@@ -22382,12 +22404,7 @@ async function combatTick() {
     if (isBossAggro) {
       const targetName = mob.status?.aggroTarget;
       const aggroPlayer = targetName
-        ? online.find(
-            (p) =>
-              p.name === targetName &&
-              p.position.zone === player.position.zone &&
-              p.position.room === player.position.room
-          )
+        ? getRoomPlayers(roomRealmId, player.position.zone, player.position.room).find((p) => p.name === targetName)
         : null;
       if (aggroPlayer) {
         mobTarget = aggroPlayer;
@@ -22471,11 +22488,7 @@ async function combatTick() {
           applyPoisonDebuff(mobTarget);
           dmg = calcTaoistDamageFromValue(Math.floor((mob.atk || 0) * mobSkillPower), mobTarget);
         } else if (mobSkill.type === 'aoe') {
-          const roomPlayers = online.filter((p) =>
-            p.position.zone === mobZoneId &&
-            p.position.room === mobRoomId &&
-            p.hp > 0
-          );
+          const roomPlayers = getRoomPlayers(roomRealmId, mobZoneId, mobRoomId).filter((p) => p.hp > 0);
           roomPlayers.forEach((target) => {
             const aoeDmg = Math.floor(
               calcMagicDamageFromValue(Math.floor((mob.atk || 0) * mobSkillPower), target) * enragedMultiplier
@@ -22600,12 +22613,8 @@ async function combatTick() {
           mob.status.aoeAttacking = true;
           try {
             const aoeBase = Math.floor(mob.atk * 0.5 * enragedMultiplier);
-            const roomPlayers = online.filter((p) => 
-              p.position.zone === player.position.zone &&
-              p.position.room === player.position.room &&
-              p.hp > 0
-            );
-            
+            const roomPlayers = getRoomPlayers(roomRealmId, player.position.zone, player.position.room).filter((p) => p.hp > 0);
+
             roomPlayers.forEach((aoeTarget) => {
               if (mobTarget && mobTarget.userId && aoeTarget.name === mobTarget.name) return;
               const aoeDealt = applyDamageToPlayer(
@@ -22651,12 +22660,8 @@ async function combatTick() {
           mob.status.aoeAttacking = true;
           try {
             const aoeBase = Math.floor(mob.atk * 0.5 * enragedMultiplier);
-            const roomPlayers = online.filter((p) => 
-              p.position.zone === player.position.zone &&
-              p.position.room === player.position.room &&
-              p.hp > 0
-            );
-            
+            const roomPlayers = getRoomPlayers(roomRealmId, player.position.zone, player.position.room).filter((p) => p.hp > 0);
+
             roomPlayers.forEach((aoeTarget) => {
               const aoeDealt = applyDamageToPlayer(
                 aoeTarget,
@@ -22733,18 +22738,30 @@ async function combatTick() {
 setInterval(combatTick, 1000);
 
 // 高频状态刷新tick，每3秒检查一次需要刷新的玩家状态
+let stateFlushTickRunning = false;
+const STATE_FLUSH_PARALLEL_BATCH = 8;
 async function stateFlushTick() {
-  const online = listOnlinePlayers();
-  
-  for (const player of online) {
-    // 托管玩家没有真实socket，不做UI state生成
-    if (isManagedHostedPlayer(player)) {
-      continue;
+  // 重入保护：上一次刷新尚未结束时跳过本次，避免异步重叠堆积
+  if (stateFlushTickRunning) return;
+  stateFlushTickRunning = true;
+  try {
+    const online = listOnlinePlayers();
+    const targets = [];
+    for (const player of online) {
+      // 托管玩家没有真实socket，不做UI state生成
+      if (isManagedHostedPlayer(player)) continue;
+      // 只处理有socket连接且标记了强制刷新的玩家
+      if (player.socket && player.forceStateRefresh) {
+        targets.push(player);
+      }
     }
-    // 只处理有socket连接且标记了强制刷新的玩家
-    if (player.socket && player.forceStateRefresh) {
-      await sendState(player).catch(() => {});
+    // 分批并行发送，避免大量逐条 await 拉长整轮刷新
+    for (let i = 0; i < targets.length; i += STATE_FLUSH_PARALLEL_BATCH) {
+      const chunk = targets.slice(i, i + STATE_FLUSH_PARALLEL_BATCH);
+      await Promise.allSettled(chunk.map((player) => sendState(player).catch(() => {})));
     }
+  } finally {
+    stateFlushTickRunning = false;
   }
 }
 
@@ -23129,6 +23146,9 @@ async function start() {
     }
     const realmIds = getRealmIds();
     const activeMobKeys = new Set();
+    const upsertRecords = [];
+    const upsertSnapshots = [];
+    const clearRecords = [];
     for (const realmId of realmIds) {
       const aliveMobs = getAllAliveMobs(realmId);
       for (const mob of aliveMobs) {
@@ -23136,24 +23156,40 @@ async function start() {
         activeMobKeys.add(cacheKey);
         if (!shouldPersistMobState(mob)) {
           if (mobStatePersistCache.has(cacheKey)) {
-            await clearMobRespawn(realmId, mob.zoneId, mob.roomId, mob.slotIndex);
+            clearRecords.push({
+              realm_id: realmId,
+              zone_id: mob.zoneId,
+              room_id: mob.roomId,
+              slot_index: mob.slotIndex
+            });
             mobStatePersistCache.delete(cacheKey);
           }
           continue;
         }
         const nextSnapshot = getMobPersistSnapshot(mob);
         if (mobStatePersistCache.get(cacheKey) === nextSnapshot) continue;
-        await saveMobState(
-          realmId,
-          mob.zoneId,
-          mob.roomId,
-          mob.slotIndex,
-          mob.templateId,
-          mob.currentHp,
-          mob.status
-        );
-        mobStatePersistCache.set(cacheKey, nextSnapshot);
+        upsertRecords.push({
+          realm_id: realmId,
+          zone_id: mob.zoneId,
+          room_id: mob.roomId,
+          slot_index: mob.slotIndex,
+          template_id: mob.templateId,
+          respawn_at: 0,
+          current_hp: mob.currentHp,
+          status: mob.status
+        });
+        upsertSnapshots.push([cacheKey, nextSnapshot]);
       }
+    }
+    // 批量落库，避免逐条 await 写库造成长时间的串行 I/O 阻塞
+    if (upsertRecords.length > 0) {
+      await batchUpsertMobRespawns(upsertRecords);
+      for (const [cacheKey, snapshot] of upsertSnapshots) {
+        mobStatePersistCache.set(cacheKey, snapshot);
+      }
+    }
+    if (clearRecords.length > 0) {
+      await batchClearMobRespawns(clearRecords);
     }
     for (const key of mobStatePersistCache.keys()) {
       if (!activeMobKeys.has(key)) {
