@@ -15447,12 +15447,12 @@ function resolvePetEquipSlotForItem(pet, itemTpl) {
   if (rawSlot === 'ring') {
     if (!pet.equipment.ring_left) return 'ring_left';
     if (!pet.equipment.ring_right) return 'ring_right';
-    return null;
+    return 'ring_left';
   }
   if (rawSlot === 'bracelet') {
     if (!pet.equipment.bracelet_left) return 'bracelet_left';
     if (!pet.equipment.bracelet_right) return 'bracelet_right';
-    return null;
+    return 'bracelet_left';
   }
   if (PET_EQUIP_SLOT_KEYS.includes(rawSlot)) return rawSlot;
   return null;
