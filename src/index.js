@@ -1447,7 +1447,48 @@ async function resolveRealmId(rawRealmId) {
   return { realmId };
 }
 
-app.get('/api/captcha', (req, res) => {
+// 内存限流：保护 /api/captcha、/api/register 等公网端点，防止被无限请求打满
+// bcrypt/写库/验证码生成（对应安全扫描 V-003）。
+// 键取真实来源地址：仅当对端是回环地址（本机反代）时才采信 X-Forwarded-For，
+// 避免 trust proxy:true 下随手伪造来源头绕过限流或撑爆内存。
+function apiRateLimit(maxRequests, windowMs) {
+  const hits = new Map();
+  const MAX_KEYS = 10000;
+  return (req, res, next) => {
+    const now = Date.now();
+    const socketAddr = String(req.socket?.remoteAddress || req.ip || '').replace(/^::ffff:/, '');
+    const isLoopback = socketAddr === '127.0.0.1' || socketAddr === '::1';
+    const key = isLoopback
+      ? String(req.ip || socketAddr).replace(/^::ffff:/, '')
+      : (socketAddr || 'unknown');
+    const entry = hits.get(key);
+    if (!entry || now > entry.resetAt) {
+      // 槽位有界：过大时先清过期项，仍超限则整体重建，内存不会被撑爆
+      if (hits.size >= MAX_KEYS) {
+        for (const [k, e] of hits) {
+          if (now > e.resetAt) hits.delete(k);
+        }
+        if (hits.size >= MAX_KEYS) hits.clear();
+      }
+      hits.set(key, { count: 1, resetAt: now + windowMs });
+      return next();
+    }
+    if (entry.count >= maxRequests) {
+      return res.status(429).json({ error: '请求过于频繁，请稍后再试。' });
+    }
+    entry.count += 1;
+    next();
+  };
+}
+
+const captchaRateLimit = apiRateLimit(20, 60000);
+const registerRateLimit = apiRateLimit(10, 60000);
+const loginRateLimit = apiRateLimit(20, 60000);
+const passwordChangeRateLimit = apiRateLimit(10, 60000);
+const passwordResetRequestRateLimit = apiRateLimit(5, 60000);
+const passwordResetRateLimit = apiRateLimit(5, 60000);
+
+app.get('/api/captcha', captchaRateLimit, (req, res) => {
   cleanupCaptchas();
   const payload = generateCaptcha();
   res.json({ ok: true, token: payload.token, svg: payload.svg });
@@ -1508,7 +1549,7 @@ app.get('/api/invite/stats', async (req, res) => {
   });
 });
 
-app.post('/api/register', async (req, res) => {
+app.post('/api/register', registerRateLimit, async (req, res) => {
   try {
     const { username, password, email, captchaToken, captchaCode, inviteCode } = req.body || {};
     if (!username || !password) return res.status(400).json({ error: '账号或密码缺失。' });
@@ -1547,7 +1588,7 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', loginRateLimit, async (req, res) => {
   const { username, password, captchaToken, captchaCode, realmId: rawRealmId } = req.body || {};
   if (!username || !password) return res.status(400).json({ error: '账号或密码缺失。' });
   if (!verifyCaptcha(captchaToken, captchaCode)) {
@@ -1570,7 +1611,7 @@ app.post('/api/login', async (req, res) => {
   res.json({ ok: true, token, characters: chars, realmId: realmInfo.realmId });
 });
 
-app.post('/api/password', async (req, res) => {
+app.post('/api/password', passwordChangeRateLimit, async (req, res) => {
   const { token, oldPassword, newPassword } = req.body || {};
   if (!token) return res.status(401).json({ error: '登录已过期。' });
   if (!oldPassword || !newPassword) return res.status(400).json({ error: '旧密码或新密码缺失。' });
@@ -1585,7 +1626,7 @@ app.post('/api/password', async (req, res) => {
 });
 
 // 密码重置功能
-app.post('/api/password-reset/request', async (req, res) => {
+app.post('/api/password-reset/request', passwordResetRequestRateLimit, async (req, res) => {
   const { email, username, captchaToken, captchaCode } = req.body || {};
   if (!email && !username) {
     return res.status(400).json({ error: '邮箱或账号必须提供一个。' });
@@ -1624,7 +1665,7 @@ app.post('/api/password-reset/request', async (req, res) => {
   }
 });
 
-app.post('/api/password-reset/reset', async (req, res) => {
+app.post('/api/password-reset/reset', passwordResetRateLimit, async (req, res) => {
   const { token, newPassword } = req.body || {};
   if (!token || !newPassword) {
     return res.status(400).json({ error: '重置令牌或新密码缺失。' });
