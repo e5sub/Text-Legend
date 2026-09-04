@@ -1447,6 +1447,7 @@ async function resolveRealmId(rawRealmId) {
   return { realmId };
 }
 
+<<<<<<< HEAD
 // 内存限流：保护 /api/captcha、/api/register 等公网端点，防止被无限请求打满
 // bcrypt/写库/验证码生成（对应安全扫描 V-003）。
 // 键取真实来源地址：仅当对端是回环地址（本机反代）时才采信 X-Forwarded-For，
@@ -1470,6 +1471,15 @@ function apiRateLimit(maxRequests, windowMs) {
         }
         if (hits.size >= MAX_KEYS) hits.clear();
       }
+=======
+function apiRateLimit(maxRequests, windowMs) {
+  const hits = new Map();
+  return (req, res, next) => {
+    const key = req.ip || req.connection?.remoteAddress || 'unknown';
+    const now = Date.now();
+    const entry = hits.get(key);
+    if (!entry || now > entry.resetAt) {
+>>>>>>> c47afe426f29d93923e07f6e064499593cef2d16
       hits.set(key, { count: 1, resetAt: now + windowMs });
       return next();
     }
@@ -1481,12 +1491,17 @@ function apiRateLimit(maxRequests, windowMs) {
   };
 }
 
+<<<<<<< HEAD
 const captchaRateLimit = apiRateLimit(20, 60000);
 const registerRateLimit = apiRateLimit(10, 60000);
 const loginRateLimit = apiRateLimit(20, 60000);
 const passwordChangeRateLimit = apiRateLimit(10, 60000);
 const passwordResetRequestRateLimit = apiRateLimit(5, 60000);
 const passwordResetRateLimit = apiRateLimit(5, 60000);
+=======
+const captchaRateLimit = apiRateLimit(20, 60_000);
+const registerRateLimit = apiRateLimit(10, 60_000);
+>>>>>>> c47afe426f29d93923e07f6e064499593cef2d16
 
 app.get('/api/captcha', captchaRateLimit, (req, res) => {
   cleanupCaptchas();
