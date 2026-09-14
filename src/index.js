@@ -12232,13 +12232,13 @@ function updateAutoFullCultivationBossRespawnWatch(player, roomRealmId, now = Da
 
 function tryAutoFullAction(player, roomMobs) {
   if (!player?.flags?.autoFullEnabled) return null;
-  // 托管玩家节流：每3秒执行一次
+  // 托管玩家节流：每5秒执行一次，降低无意义的高频全图寻路开销
   const isManaged = Boolean(player.flags?.offlineManagedAuto || player.flags?.offlineManagedPending);
   if (isManaged) {
     const now = Date.now();
     const nextAt = Number(player.flags._autoFullManagedNextAt || 0);
     if (nextAt > now) return null;
-    player.flags._autoFullManagedNextAt = now + 3000;
+    player.flags._autoFullManagedNextAt = now + 5000;
   }
   if (!isSvipActive(player)) {
     const trialInfo = getAutoFullTrialInfo(player);
@@ -21284,9 +21284,9 @@ const COMBAT_NON_CRITICAL_INTERVAL_AGGRESSIVE_MS = 9000;
 const COMBAT_BOSS_SCALE_INTERVAL_MS = 3000;
 const COMBAT_BOSS_SCALE_INTERVAL_NORMAL_MS = 4500;
 const COMBAT_BOSS_SCALE_INTERVAL_AGGRESSIVE_MS = 7000;
-const COMBAT_MANAGED_SHARDS = 3;
-const COMBAT_MANAGED_SHARDS_NORMAL = 5;
-const COMBAT_MANAGED_SHARDS_AGGRESSIVE = 8;
+const COMBAT_MANAGED_SHARDS = 5;
+const COMBAT_MANAGED_SHARDS_NORMAL = 7;
+const COMBAT_MANAGED_SHARDS_AGGRESSIVE = 10;
 const COMBAT_MANAGED_AURA_INTERVAL_MS = 2500;
 const combatStateDirtyQueue = new Set();
 let combatStateFlushScheduled = false;
