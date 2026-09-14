@@ -1016,12 +1016,8 @@ server.on('clientError', (err, socket) => {
 const io = new Server(server, {
   pingInterval: 25000,
   pingTimeout: 90000,
-  perMessageDeflate: {
-    threshold: 1024
-  },
-  httpCompression: {
-    threshold: 1024
-  }
+  perMessageDeflate: false,
+  httpCompression: false
 });
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
