@@ -8728,3 +8728,37 @@ body.dark .pet-book-entry {
 
 
 
+
+/* ========== 页脚版权栏 ========== */
+#footer-copyright {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px 24px;
+  padding: 10px 16px;
+  background: rgba(120, 64, 20, 0.9);
+  color: #fff3df;
+  font-size: 0.8rem;
+  margin-top: 16px;
+}
+
+#footer-copyright a,
+#footer-copyright span {
+  white-space: nowrap;
+}
+
+/* H5 / 窄屏：紧凑页脚 */
+@media (max-width: 640px) {
+  #footer-copyright {
+    gap: 3px 10px;
+    padding: 6px 10px;
+    font-size: 0.68rem;
+    margin-top: 8px;
+  }
+
+  #footer-copyright a,
+  #footer-copyright span {
+    margin-left: 0 !important;
+  }
+}
